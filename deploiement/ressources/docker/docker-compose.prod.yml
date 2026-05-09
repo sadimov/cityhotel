@@ -1,0 +1,266 @@
+# docker-compose.prod.yml — déploiement city sans Kubernetes (plan B simple)
+# Utilisation : copier sur le serveur dans /srv/city/compose/, créer .env (cf. .env.prod.example),
+#               docker compose --env-file .env up -d
+#
+# Composants :
+#   - traefik    : reverse proxy + TLS Let's Encrypt
+#   - frontend   : Angular static derrière nginx
+#   - backend    : Spring Boot 3.4 / Java 21
+#   - postgres   : Postgres 18.3
+#   - backup     : pg_dump quotidien
+
+name: city
+
+# === Volumes persistants (sur /srv/city/data via bind mount) ===
+volumes:
+  postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /srv/city/data/postgres
+      o: bind
+  traefik-acme:
+    driver: local
+    driver_opts:
+      type: none
+      device: /srv/city/data/traefik-acme
+      o: bind
+  backup-data:
+    driver: local
+    driver_opts:
+      type: none
+      device: /srv/city/backup
+      o: bind
+  backend-logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: /srv/city/logs/backend
+      o: bind
+
+# === Réseaux : isolation entre couches ===
+networks:
+  edge:        # exposé via traefik
+    driver: bridge
+  internal:    # interne, postgres jamais joignable depuis l'extérieur
+    driver: bridge
+    internal: true
+
+services:
+
+  # -------------------------------------------------------------------------
+  # Traefik 3 — reverse proxy + TLS Let's Encrypt
+  # -------------------------------------------------------------------------
+  traefik:
+    image: traefik:v3.2.3
+    container_name: city-traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    command:
+      - "--api.dashboard=false"
+      - "--log.level=INFO"
+      - "--accesslog=true"
+      - "--accesslog.filepath=/var/log/traefik/access.log"
+      - "--accesslog.format=json"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=city_edge"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+      - "--entrypoints.websecure.http.tls.certresolver=letsencrypt"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/acme/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      # Décommenter pour tester avec staging Let's Encrypt avant prod :
+      # - "--certificatesresolvers.letsencrypt.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "traefik-acme:/acme"
+      - "/srv/city/logs/traefik:/var/log/traefik"
+    networks:
+      - edge
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ping || exit 1"]
+      interval: 30s
+      timeout: 5s
+
+  # -------------------------------------------------------------------------
+  # Frontend Angular
+  # -------------------------------------------------------------------------
+  frontend:
+    image: ghcr.io/${REGISTRY_OWNER}/city-frontend:${APP_TAG}
+    container_name: city-frontend
+    restart: unless-stopped
+    networks:
+      - edge
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=city_edge"
+      - "traefik.http.routers.city-front.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.city-front.entrypoints=websecure"
+      - "traefik.http.routers.city-front.tls.certresolver=letsencrypt"
+      - "traefik.http.services.city-front.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.city-secheaders.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.city-secheaders.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.city-secheaders.headers.stsPreload=true"
+      - "traefik.http.middlewares.city-secheaders.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.city-secheaders.headers.referrerPolicy=strict-origin-when-cross-origin"
+      - "traefik.http.middlewares.city-secheaders.headers.frameDeny=true"
+      - "traefik.http.routers.city-front.middlewares=city-secheaders@docker"
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # -------------------------------------------------------------------------
+  # Backend Spring Boot
+  # -------------------------------------------------------------------------
+  backend:
+    image: ghcr.io/${REGISTRY_OWNER}/city-backend:${APP_TAG}
+    container_name: city-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      TZ: Africa/Nouakchott
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: ${POSTGRES_DB}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=75 -XX:+UseG1GC -Duser.timezone=Africa/Nouakchott"
+    volumes:
+      - "backend-logs:/app/logs"
+    networks:
+      - edge
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=city_edge"
+      - "traefik.http.routers.city-back.rule=Host(`${DOMAIN}`) && PathPrefix(`/citybackend`)"
+      - "traefik.http.routers.city-back.entrypoints=websecure"
+      - "traefik.http.routers.city-back.tls.certresolver=letsencrypt"
+      - "traefik.http.services.city-back.loadbalancer.server.port=8080"
+      - "traefik.http.routers.city-back.middlewares=city-secheaders@docker"
+    security_opt:
+      - "no-new-privileges:true"
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/citybackend/actuator/health/liveness || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+
+  # -------------------------------------------------------------------------
+  # Postgres 18
+  # -------------------------------------------------------------------------
+  postgres:
+    image: postgres:18.3-bookworm
+    container_name: city-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+      TZ: Africa/Nouakchott
+      PGTZ: Africa/Nouakchott
+    volumes:
+      - "postgres-data:/var/lib/postgresql/data"
+    networks:
+      - internal
+    # Postgres NE DOIT PAS être exposé : pas de section 'ports'.
+    command: >
+      postgres
+      -c shared_buffers=2GB
+      -c effective_cache_size=6GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=512MB
+      -c max_connections=100
+      -c wal_compression=on
+      -c log_min_duration_statement=1000
+      -c log_lock_waits=on
+      -c log_temp_files=0
+      -c log_line_prefix='%t [%p] %u@%d '
+      -c checkpoint_timeout=15min
+      -c max_wal_size=4GB
+      -c random_page_cost=1.1
+    security_opt:
+      - "no-new-privileges:true"
+    deploy:
+      resources:
+        limits:
+          memory: 6G
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------------
+  # Backup quotidien (pg_dump → gzip → retention)
+  # -------------------------------------------------------------------------
+  backup:
+    image: postgres:18.3-bookworm
+    container_name: city-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      TZ: Africa/Nouakchott
+      RETENTION_DAYS: "30"
+    volumes:
+      - "backup-data:/backup"
+      - "/srv/city/scripts/postgres-backup.sh:/usr/local/bin/postgres-backup.sh:ro"
+    networks:
+      - internal
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        # Boucle : backup quotidien à 02:00 NKC
+        while true; do
+          NOW=$$(date +%H:%M)
+          if [ "$$NOW" = "02:00" ]; then
+            /usr/local/bin/postgres-backup.sh
+            sleep 60
+          fi
+          sleep 30
+        done
+    security_opt:
+      - "no-new-privileges:true"

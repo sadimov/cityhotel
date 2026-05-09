@@ -1,0 +1,1 @@
+pour le design des pages utilise les frameworks css tel que tailwind ou bootstrap mais il faut que l'interface graphique soit différent des styles par défaut de ces Framework. ça doit être professionnel, propriétaire comme dans les interfaces web des solutions propriétaires, customizer

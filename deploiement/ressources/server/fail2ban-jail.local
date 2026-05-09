@@ -1,0 +1,70 @@
+# /etc/fail2ban/jail.local
+# Configuration fail2ban pour serveur city-prod.
+# Ne jamais éditer /etc/fail2ban/jail.conf : il est écrasé par les paquets.
+
+[DEFAULT]
+# Bantime par défaut : 1 h. Échec récidiviste : durée multipliée.
+bantime  = 1h
+findtime = 10m
+maxretry = 5
+
+# IP toujours autorisées (à compléter — bureau, VPN admin)
+ignoreip = 127.0.0.1/8 ::1
+
+# Backend : utiliser systemd-journald (pas de fichier log à parser)
+backend = systemd
+
+# Notifier l'équipe ops par mail à chaque ban
+destemail = ops@city.example.mr
+sender    = fail2ban@city.example.mr
+mta       = sendmail
+action    = %(action_mwl)s
+
+# Récidive : 1 semaine de ban après 3 récidives en 1 jour
+[recidive]
+enabled  = true
+bantime  = 1w
+findtime = 1d
+maxretry = 3
+
+# === Jail SSH ===
+[sshd]
+enabled  = true
+port     = 2222
+filter   = sshd
+maxretry = 3
+findtime = 5m
+bantime  = 1h
+mode     = aggressive
+
+# === Jail Traefik (auth basic / 401) ===
+# À activer après installation Traefik. Filter à compléter selon logs.
+[traefik-auth]
+enabled  = false
+port     = http,https
+filter   = traefik-auth
+logpath  = /var/log/traefik/access.log
+maxretry = 5
+findtime = 10m
+bantime  = 1h
+
+# === Jail Postgres (force-brute sur conn, si exposé) ===
+# Ne devrait JAMAIS être exposé en prod, mais en sécurité défense en profondeur.
+[postgresql]
+enabled  = false
+port     = 5432
+filter   = postgresql
+maxretry = 3
+findtime = 10m
+bantime  = 24h
+
+# === Jail générique HTTP 4xx (anti scan) ===
+# Ban après 30 erreurs 4xx en 1 minute.
+[http-get-dos]
+enabled  = false
+port     = http,https
+filter   = http-get-dos
+logpath  = /var/log/traefik/access.log
+maxretry = 30
+findtime = 1m
+bantime  = 30m

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./mvnw:*)",
+      "Bash(mvn:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(ng:*)",
+      "Bash(node:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(git stash:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(find:*)",
+      "Bash(tree:*)",
+      "Bash(jq:*)",
+      "Bash(psql:*)",
+      "Bash(docker:*)",
+      "Bash(curl http://localhost:*)",
+      "Bash(curl https://localhost:*)",
+      "Read(./**)",
+      "Edit(./**)",
+      "Write(./**)"
+    ],
+    "deny": [
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(sudo:*)",
+      "Bash(curl https://*.example.com:*)",
+      "Read(./.env)",
+      "Read(./citybackend/.env)",
+      "Read(./cityfrontend/.env)",
+      "Read(./**/secrets/**)",
+      "Read(./**/*.key)",
+      "Read(./**/*.pem)"
+    ]
+  },
+  "env": {
+    "PROJECT_NAME": "city-hotel",
+    "BACKEND_DIR": "citybackend",
+    "FRONTEND_DIR": "cityfrontend",
+    "DB_NAME": "cityprojectdb",
+    "DB_USER": "postgres"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -Eq 'rm -rf|drop database|truncate'; then echo 'Commande dangereuse bloquée par hook' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "FILE=\"$CLAUDE_TOOL_PATH\"; if [[ \"$FILE\" == *.java ]]; then echo \"[hook] Java édité: $FILE — penser à vérifier hotelId, @PreAuthorize, DTO\"; fi; if [[ \"$FILE\" == *.ts ]]; then echo \"[hook] TS édité: $FILE — penser à takeUntil, i18n, guards\"; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "model": "claude-opus-4-7"
+}

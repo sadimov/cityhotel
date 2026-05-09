@@ -1,0 +1,200 @@
+// Jenkinsfile — pipeline CI/CD city
+// Hypothèses :
+//   - Jenkins LTS avec agents Linux ayant Docker, Maven, Node 24, kubectl, kustomize.
+//   - Credentials configurées (id Jenkins) :
+//       ghcr-pat        : Personal Access Token GitHub (write:packages)
+//       gpg-signing-key : clé GPG pour signer les tags
+//       k8s-prod        : kubeconfig du cluster prod
+//   - Webhook git → Jenkins sur push tag v*
+//
+// Étapes :
+//   checkout → audit → tests → build → push → (deploy staging) → manual gate → deploy prod
+
+pipeline {
+  agent {
+    label 'docker && linux'
+  }
+
+  options {
+    timestamps()
+    timeout(time: 30, unit: 'MINUTES')
+    disableConcurrentBuilds()
+    buildDiscarder(logRotator(numToKeepStr: '20'))
+  }
+
+  environment {
+    REGISTRY    = 'ghcr.io'
+    REGISTRY_OWNER = 'your-org'                     // à remplacer
+    BACK_IMG    = "${REGISTRY}/${REGISTRY_OWNER}/city-backend"
+    FRONT_IMG   = "${REGISTRY}/${REGISTRY_OWNER}/city-frontend"
+    TZ          = 'Africa/Nouakchott'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        checkout scm
+        script {
+          env.GIT_TAG    = sh(returnStdout: true, script: 'git describe --tags --always').trim()
+          env.GIT_SHA    = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+          env.IS_TAG     = sh(returnStdout: true, script: 'git describe --exact-match --tags HEAD 2>/dev/null || echo "NO"').trim() != "NO" ? "true" : "false"
+          env.APP_TAG    = env.IS_TAG == "true" ? env.GIT_TAG : "edge-${env.GIT_SHA}"
+          echo "Building APP_TAG=${env.APP_TAG} (IS_TAG=${env.IS_TAG})"
+        }
+      }
+    }
+
+    stage('Audit & Lint') {
+      parallel {
+        stage('Backend audit') {
+          steps {
+            dir('citybackend') {
+              sh './mvnw -B -ntp -DskipTests verify -Dmaven.test.skip=false test-compile'
+            }
+          }
+        }
+        stage('Frontend lint') {
+          steps {
+            dir('cityfrontend') {
+              sh 'npm ci --no-audit --no-fund'
+              sh 'npm run lint || true'    // non bloquant en V1
+            }
+          }
+        }
+      }
+    }
+
+    stage('Tests') {
+      parallel {
+        stage('Backend tests') {
+          steps {
+            dir('citybackend') {
+              sh './mvnw -B -ntp verify'
+            }
+          }
+          post {
+            always {
+              junit allowEmptyResults: true, testResults: 'citybackend/target/*-reports/*.xml'
+            }
+          }
+        }
+        stage('Frontend tests') {
+          steps {
+            dir('cityfrontend') {
+              sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage || true'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build & Push images') {
+      when { anyOf { branch 'main' ; expression { env.IS_TAG == "true" } } }
+      parallel {
+        stage('Backend image') {
+          steps {
+            withCredentials([usernamePassword(
+                  credentialsId: 'ghcr-pat',
+                  usernameVariable: 'GHCR_USER',
+                  passwordVariable: 'GHCR_TOKEN')]) {
+              dir('citybackend') {
+                sh '''
+                  set -e
+                  ./mvnw -B -ntp -DskipTests \
+                    -Djib.to.image=${BACK_IMG}:${APP_TAG} \
+                    -Djib.to.auth.username=$GHCR_USER \
+                    -Djib.to.auth.password=$GHCR_TOKEN \
+                    -Djib.from.image=eclipse-temurin:21.0.5_11-jre-noble \
+                    -Djib.container.jvmFlags="-XX:MaxRAMPercentage=75,-XX:+UseG1GC,-Duser.timezone=Africa/Nouakchott" \
+                    -Djib.container.environment=SPRING_PROFILES_ACTIVE=prod \
+                    -Djib.container.ports=8080 \
+                    -Djib.container.user=10001 \
+                    com.google.cloud.tools:jib-maven-plugin:3.4.4:build
+                '''
+              }
+            }
+          }
+        }
+        stage('Frontend image') {
+          steps {
+            withCredentials([usernamePassword(
+                  credentialsId: 'ghcr-pat',
+                  usernameVariable: 'GHCR_USER',
+                  passwordVariable: 'GHCR_TOKEN')]) {
+              sh '''
+                echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+                docker build \
+                  -f deploiement/ressources/docker/Dockerfile.frontend \
+                  --build-arg API_BASE=/citybackend \
+                  -t ${FRONT_IMG}:${APP_TAG} \
+                  cityfrontend/
+                docker push ${FRONT_IMG}:${APP_TAG}
+                docker logout ghcr.io
+              '''
+            }
+          }
+        }
+      }
+    }
+
+    stage('Deploy staging') {
+      when { branch 'main' }
+      steps {
+        echo "Déploiement automatique en staging non implémenté en V1 (placeholder)."
+        // Exemple : kubectl --kubeconfig $K8S_STAGING set image deploy/city-backend backend=${BACK_IMG}:${APP_TAG}
+      }
+    }
+
+    stage('Approval prod') {
+      when { expression { env.IS_TAG == "true" } }
+      options { timeout(time: 4, unit: 'HOURS') }
+      steps {
+        input message: "Déployer ${APP_TAG} en PRODUCTION ?",
+              ok: "Oui, je suis sûr",
+              submitter: "tech-lead,ops-lead"
+      }
+    }
+
+    stage('Deploy prod') {
+      when { expression { env.IS_TAG == "true" } }
+      steps {
+        withCredentials([file(credentialsId: 'k8s-prod', variable: 'KUBECONFIG_FILE')]) {
+          sh '''
+            export KUBECONFIG=$KUBECONFIG_FILE
+            cd deploiement/ressources/k8s/
+            kustomize edit set image \
+              ghcr.io/REPLACE_ORG/city-backend=${BACK_IMG}:${APP_TAG} \
+              ghcr.io/REPLACE_ORG/city-frontend=${FRONT_IMG}:${APP_TAG}
+            kustomize build . | kubectl apply -f -
+            kubectl -n city rollout status deploy/city-backend  --timeout=10m
+            kubectl -n city rollout status deploy/city-frontend --timeout=5m
+          '''
+        }
+      }
+    }
+
+    stage('Smoke test prod') {
+      when { expression { env.IS_TAG == "true" } }
+      steps {
+        sh '''
+          curl -fsS https://city.example.mr/citybackend/actuator/health | jq -e '.status == "UP"'
+          curl -fsS https://city.example.mr/ | grep -i '<title>'
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "✓ Pipeline OK — ${APP_TAG}"
+      // Notifier Slack/Teams si configuré
+    }
+    failure {
+      echo "✗ Pipeline échec — voir logs"
+      // Notifier ops avec le numéro de build
+    }
+    always {
+      cleanWs()
+    }
+  }
+}

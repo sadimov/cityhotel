@@ -1,0 +1,49 @@
+// /etc/apt/apt.conf.d/52unattended-upgrades-city
+// Surcharge la configuration par défaut d'unattended-upgrades pour city-prod.
+// Override prioritaire (52 > 50) — laisser le fichier 50unattended-upgrades.conf
+// d'origine intact pour conserver les valeurs par défaut, ce fichier ne fait
+// qu'ajouter ou écraser les directives city.
+
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}-security";
+    "${distro_id}ESM:${distro_codename}-infra-security";
+    "${distro_id}ESM:${distro_codename}-apps-security";
+    "${distro_id}:${distro_codename}-updates";
+    // Ne pas activer -proposed ou -backports en prod : risque de régression.
+};
+
+// Paquets à NE JAMAIS auto-updater (versions verrouillées par décision archi)
+Unattended-Upgrade::Package-Blacklist {
+    "docker-ce";
+    "docker-ce-cli";
+    "containerd.io";
+    "k3s";
+    "postgresql-client-18";
+    // Ajouter ici toute lib dont la mise à jour casserait l'app (à valider en staging d'abord)
+};
+
+// Mail si problème ou paquet retenu
+Unattended-Upgrade::Mail "ops@city.example.mr";
+Unattended-Upgrade::MailOnlyOnError "false";
+
+// Log dédié
+Unattended-Upgrade::Verbose "true";
+Unattended-Upgrade::Debug "false";
+
+// Redémarrage automatique : DÉSACTIVÉ par défaut. La fenêtre 03:30 est OK
+// si vous voulez l'activer (commentez la ligne false et décommentez les autres).
+Unattended-Upgrade::Automatic-Reboot "false";
+// Unattended-Upgrade::Automatic-Reboot "true";
+// Unattended-Upgrade::Automatic-Reboot-WithUsers "false";
+// Unattended-Upgrade::Automatic-Reboot-Time "03:30";
+
+// Limiter la bande passante si liaison serveur saturée
+Unattended-Upgrade::DownloadLimit "5000";
+
+// Nettoyer les paquets inutilisés et supprimer les .deb téléchargés après install
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "false";
+
+// Période d'exécution (fichier /etc/apt/apt.conf.d/20auto-upgrades)
+// déjà géré par dpkg-reconfigure unattended-upgrades.

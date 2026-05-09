@@ -1,0 +1,24 @@
+
+
+Lis le fichier prompt_1.md et execute le prompt dedans
+
+
+Maintenant, oublie le développement et les modifications, c'est en cours de traitement dans une autre sessioin dans un autre terminal. 
+Concentrons sur le déploiement en production. NE FAIS AUCUNE MODIFICATION sur le projet, ne crée rien. Le projet est développé sur une machine 
+windows mais doit être déployé en production sur un serveur linux (ubuntu server lts sans interface graphique) via docker/k8s. Le serveur lui même est
+ encore sous windows server 2016. Donc j'ai besion de 3 procédures: 1-préparer le serveur (formattage, install linux, server hardening, autres)
+, 2-Préparer l'application et gestioin de code pour le déploiement en prod/docker..., 3-Déploiement final. J'ai dit procédure donc aucune 
+modification. A la racine, crée un dossier "deploiement" dans lequel génère ces procédures et les autres fichiers nécessaires.
+
+
+
+
+Maintenant je veux monter et executer un workflow pour l'automatisation des débogage, modification, changement et rdéploiement d'une nouvelle version à jour
+voici comment le workflow doit fonctionner: un testeur (un utilisateur humain) effectue quelques tests sur l'application, il note les anomalies,
+bugs ou manquements ou toute autre remarque qui demande une mise à jour sur l'application, les remarques sont envoyées (manuellement) à une adresse 
+dans une application de messagerie (gmail (email dédié à ce projet), whatsapp ou télégram(aide moi à choisir entre eux)) sous forme d'une message textuel, dès que le message 
+arrive, l'application de messagerie ou une autre, lit les remarques et les transforme en un prompt dev, transmet ce prompt à claude code (affine cette étape),
+ suit l'avancement et l'achèvement des modifications par claude code, dès que claude termine toutes les corrections, un nouveau déploiement est 
+ est déclenché automatiquement (affine cette étape), tests de non regression + git commit et gestioin de versions de code via github (git remote), push des nouvelles images 
+ vers le repo docker et finalement sur lerveur linux prod un pull est lancé automatiquement pour recupérer les nouvelles images à jour depuis le repo docker
+ et les déployer

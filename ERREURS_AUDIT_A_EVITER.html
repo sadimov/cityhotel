@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rapport d'Audit Technique — LiasseFiscale DGI Mauritanie</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --primary: #1a3a5c;
+    --secondary: #2e6da4;
+    --accent: #e74c3c;
+    --success: #27ae60;
+    --warning: #f39c12;
+    --info: #2980b9;
+    --light: #f8f9fa;
+    --border: #dee2e6;
+    --text: #2c3e50;
+    --muted: #6c757d;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.6;
+    color: var(--text);
+    background: #fff;
+  }
+
+  @page {
+    size: A4;
+    margin: 18mm 15mm 18mm 20mm;
+    @bottom-center {
+      content: "Confidentiel — ADIAS / DGI Mauritanie — " counter(page) " / " counter(pages);
+      font-size: 8pt;
+      color: #888;
+    }
+  }
+
+  @media print {
+    .no-print { display: none; }
+    .page-break { page-break-before: always; }
+    .avoid-break { page-break-inside: avoid; }
+    body { font-size: 9pt; }
+  }
+
+  /* ─── COVER PAGE ─── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 40px 0 30px;
+  }
+  .cover-top { border-bottom: 4px solid var(--primary); padding-bottom: 20px; margin-bottom: 30px; }
+  .cover-org { display: flex; align-items: center; gap: 16px; margin-bottom: 8px; }
+  .cover-org-badge {
+    background: var(--primary);
+    color: #fff;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 14pt;
+    border-radius: 4px;
+    letter-spacing: 1px;
+  }
+  .cover-org-name { font-size: 11pt; color: var(--muted); line-height: 1.4; }
+  .cover-main { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 40px 0; }
+  .cover-label {
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--secondary);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .cover-title {
+    font-size: 26pt;
+    font-weight: 700;
+    color: var(--primary);
+    line-height: 1.2;
+    margin-bottom: 12px;
+  }
+  .cover-subtitle {
+    font-size: 14pt;
+    color: var(--secondary);
+    margin-bottom: 30px;
+    font-weight: 400;
+  }
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 520px;
+    margin-top: 30px;
+  }
+  .cover-meta-item {
+    background: var(--light);
+    border-left: 3px solid var(--secondary);
+    padding: 10px 14px;
+    border-radius: 0 4px 4px 0;
+  }
+  .cover-meta-item .label { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+  .cover-meta-item .value { font-size: 10pt; font-weight: 600; color: var(--primary); margin-top: 2px; }
+  .cover-confidential {
+    background: #fef3cd;
+    border: 1px solid #f0ad4e;
+    border-radius: 4px;
+    padding: 10px 16px;
+    font-size: 9pt;
+    color: #856404;
+    font-weight: 500;
+  }
+  .cover-bottom { border-top: 2px solid var(--border); padding-top: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .cover-bottom-left { font-size: 8.5pt; color: var(--muted); }
+  .cover-version { background: var(--primary); color: #fff; padding: 6px 14px; border-radius: 4px; font-size: 9pt; font-weight: 600; }
+
+  /* ─── COMMON ─── */
+  h1 { font-size: 18pt; color: var(--primary); margin-bottom: 16px; font-weight: 700; }
+  h2 {
+    font-size: 13pt;
+    color: #fff;
+    background: var(--primary);
+    padding: 10px 16px;
+    margin: 28px 0 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    counter-increment: section;
+  }
+  h2::before { content: counter(section) ". "; opacity: 0.7; }
+  body { counter-reset: section; }
+  h3 { font-size: 11pt; color: var(--primary); margin: 20px 0 10px; font-weight: 600; border-bottom: 2px solid var(--secondary); padding-bottom: 4px; }
+  h4 { font-size: 10pt; color: var(--secondary); margin: 14px 0 8px; font-weight: 600; }
+  p { margin-bottom: 8px; }
+
+  /* ─── SECTIONS ─── */
+  .section { margin-bottom: 24px; }
+
+  /* ─── TOC ─── */
+  .toc { background: var(--light); border: 1px solid var(--border); border-radius: 6px; padding: 24px 28px; margin: 24px 0; }
+  .toc h3 { border: none; margin-top: 0; color: var(--primary); }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 6px 0; font-size: 10pt; }
+  .toc .toc-sub { padding-left: 20px; list-style: lower-alpha; }
+  .toc .toc-sub li { margin: 3px 0; font-size: 9pt; color: var(--muted); }
+
+  /* ─── EXECUTIVE SUMMARY BOX ─── */
+  .exec-summary {
+    border: 2px solid var(--secondary);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    background: #eaf4fb;
+  }
+  .exec-summary h3 { border: none; color: var(--secondary); margin-top: 0; }
+
+  /* ─── SCORE CARDS ─── */
+  .score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0; }
+  .score-card {
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+  .score-card .score-val { font-size: 22pt; font-weight: 700; line-height: 1; }
+  .score-card .score-label { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; color: var(--muted); }
+  .score-card .score-sub { font-size: 8pt; color: var(--muted); margin-top: 2px; }
+  .score-green { background: #eafaf1; color: var(--success); }
+  .score-orange { background: #fef5e4; color: var(--warning); }
+  .score-red { background: #fdedec; color: var(--accent); }
+  .score-blue { background: #eaf4fb; color: var(--info); }
+
+  /* ─── TABLES ─── */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 9pt; }
+  thead th {
+    background: var(--primary);
+    color: #fff;
+    padding: 8px 10px;
+    text-align: left;
+    font-weight: 600;
+  }
+  tbody tr:nth-child(even) { background: var(--light); }
+  tbody tr:hover { background: #e8f4fd; }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  td:first-child { font-weight: 500; }
+
+  /* ─── BADGES ─── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 8pt;
+    font-weight: 600;
+  }
+  .badge-critical { background: #fdedec; color: #c0392b; }
+  .badge-high { background: #fef5e4; color: #d35400; }
+  .badge-medium { background: #fef9e7; color: #b7950b; }
+  .badge-low { background: #eafaf1; color: #1e8449; }
+  .badge-info { background: #eaf4fb; color: #1a5276; }
+  .badge-ok { background: #eafaf1; color: #1e8449; }
+  .badge-nok { background: #fdedec; color: #c0392b; }
+  .badge-partial { background: #fef9e7; color: #b7950b; }
+
+  /* ─── FINDING CARDS ─── */
+  .finding {
+    border-left: 4px solid;
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+  }
+  .finding-critical { border-color: #e74c3c; background: #fdf2f2; }
+  .finding-high { border-color: #e67e22; background: #fef9f0; }
+  .finding-medium { border-color: #f1c40f; background: #fefdf0; }
+  .finding-low { border-color: #2ecc71; background: #f2fef5; }
+  .finding-info { border-color: #3498db; background: #f0f7ff; }
+  .finding-title { font-weight: 600; font-size: 10pt; margin-bottom: 4px; }
+  .finding-desc { font-size: 9pt; color: var(--text); }
+  .finding-rec { font-size: 8.5pt; color: var(--secondary); margin-top: 6px; font-style: italic; }
+
+  /* ─── CODE BLOCKS ─── */
+  pre, code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8.5pt;
+    background: #2b2b2b;
+    color: #f8f8f2;
+    border-radius: 4px;
+  }
+  pre { padding: 12px 14px; overflow-x: auto; margin: 10px 0; }
+  code { padding: 1px 5px; }
+
+  /* ─── INFO/WARN BOXES ─── */
+  .info-box {
+    border-radius: 4px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 9pt;
+  }
+  .info-box-blue { background: #eaf4fb; border-left: 3px solid var(--info); }
+  .info-box-orange { background: #fef5e4; border-left: 3px solid var(--warning); }
+  .info-box-red { background: #fdedec; border-left: 3px solid var(--accent); }
+  .info-box-green { background: #eafaf1; border-left: 3px solid var(--success); }
+
+  /* ─── RISK MATRIX ─── */
+  .risk-matrix table td {
+    text-align: center;
+    font-weight: 600;
+    font-size: 8pt;
+    padding: 8px;
+  }
+  .risk-low { background: #c8f7c5; color: #145a32; }
+  .risk-medium { background: #fad7a0; color: #784212; }
+  .risk-high { background: #f1948a; color: #7b241c; }
+  .risk-critical { background: #e74c3c; color: #fff; }
+  .risk-label { background: var(--primary); color: #fff; }
+
+  /* ─── CHECKLIST ─── */
+  .checklist { list-style: none; padding: 0; }
+  .checklist li { padding: 4px 0 4px 24px; position: relative; font-size: 9pt; }
+  .checklist li::before { position: absolute; left: 0; font-size: 11pt; }
+  .check-ok::before { content: "✅"; }
+  .check-nok::before { content: "❌"; }
+  .check-partial::before { content: "⚠️"; }
+  .check-info::before { content: "ℹ️"; }
+
+  /* ─── FOOTER (screen only) ─── */
+  .doc-footer {
+    margin-top: 40px;
+    padding-top: 12px;
+    border-top: 2px solid var(--border);
+    font-size: 8pt;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════
+     COVER PAGE
+══════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-top">
+    <div class="cover-org">
+      <div class="cover-org-badge">ADIAS</div>
+      <div class="cover-org-name">
+        <strong>Direction Générale des Impôts — Mauritanie</strong><br/>
+        Division Architecture &amp; Infrastructure des Applications Stratégiques
+      </div>
+    </div>
+  </div>
+
+  <div class="cover-main">
+    <div class="cover-label">Rapport d'Audit Technique — Intégration STT</div>
+    <div class="cover-title">Audit de la Plateforme<br/>LiasseFiscale</div>
+    <div class="cover-subtitle">Analyse de faisabilité et de préparation à l'intégration<br/>dans le Système de Télédéclaration Tributaire (STT)</div>
+
+    <div class="cover-meta-grid">
+      <div class="cover-meta-item">
+        <div class="label">Date d'audit</div>
+        <div class="value">23 Avril 2026</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Version auditée</div>
+        <div class="value">1.0.0-SNAPSHOT</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Équipe auditrice</div>
+        <div class="value">ADIAS DevOps</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Classification</div>
+        <div class="value">CONFIDENTIEL</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Backend</div>
+        <div class="value">Spring Boot 4.0.5 / Java 17</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="label">Frontend</div>
+        <div class="value">Angular 18 / Tailwind 4</div>
+      </div>
+    </div>
+
+    <div class="cover-confidential" style="margin-top:30px; max-width:520px;">
+      ⚠️ Ce document est strictement confidentiel. Il est destiné exclusivement aux équipes ADIAS et aux responsables DGI autorisés. Toute diffusion non autorisée est interdite.
+    </div>
+  </div>
+
+  <div class="cover-bottom">
+    <div class="cover-bottom-left">
+      Direction Générale des Impôts · République Islamique de Mauritanie<br/>
+      Audit réalisé dans le cadre de l'intégration LiasseFiscale ↔ STT
+    </div>
+    <div class="cover-version">v1.0 — Avril 2026</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     TABLE DES MATIÈRES
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<div class="toc avoid-break">
+  <h3>Table des matières</h3>
+  <ol>
+    <li>Résumé exécutif</li>
+    <li>Périmètre et méthodologie d'audit</li>
+    <li>Architecture générale
+      <ul class="toc-sub">
+        <li>Vue d'ensemble</li>
+        <li>Stack technologique</li>
+        <li>Schéma de déploiement actuel</li>
+      </ul>
+    </li>
+    <li>Analyse du backend (Spring Boot)
+      <ul class="toc-sub">
+        <li>Structure du code</li>
+        <li>Dépendances et versions</li>
+        <li>API REST et contrats</li>
+        <li>Gestion des erreurs</li>
+        <li>Services métier</li>
+      </ul>
+    </li>
+    <li>Analyse du frontend (Angular 18)
+      <ul class="toc-sub">
+        <li>Structure et composants</li>
+        <li>Authentification côté client</li>
+        <li>Gestion d'état</li>
+      </ul>
+    </li>
+    <li>Analyse de la base de données
+      <ul class="toc-sub">
+        <li>Schéma liasse</li>
+        <li>Migrations Flyway</li>
+        <li>Points de contact avec STT</li>
+      </ul>
+    </li>
+    <li>Audit de sécurité
+      <ul class="toc-sub">
+        <li>Authentification et autorisation</li>
+        <li>CORS et headers</li>
+        <li>Gestion des secrets</li>
+        <li>Vulnérabilités identifiées</li>
+      </ul>
+    </li>
+    <li>Qualité du code et maintenabilité</li>
+    <li>Performance et scalabilité</li>
+    <li>Préporation à l'intégration STT</li>
+    <li>Matrice des risques</li>
+    <li>Recommandations prioritaires</li>
+    <li>Conclusion</li>
+  </ol>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     1. RÉSUMÉ EXÉCUTIF
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Résumé exécutif</h2>
+
+<div class="exec-summary">
+  <h3>Synthèse de l'audit</h3>
+  <p>La plateforme <strong>LiasseFiscale</strong> est une application de gestion des déclarations fiscales développée pour la Direction Générale des Impôts de Mauritanie. L'audit a été conduit en avril 2026 par l'équipe ADIAS dans le cadre de son intégration comme module du Système de Télédéclaration Tributaire (STT).</p>
+  <p>L'application présente une <strong>architecture globalement bien structurée</strong>, avec une séparation claire des responsabilités, un modèle de données riche couvrant les 3 catégories de liasse fiscale (G, B, F) et une couverture fonctionnelle complète du processus de déclaration. Cependant, plusieurs <strong>points de vigilance critiques</strong> doivent être traités avant l'intégration en production.</p>
+</div>
+
+<div class="score-grid">
+  <div class="score-card score-orange avoid-break">
+    <div class="score-val">B+</div>
+    <div class="score-label">Architecture</div>
+    <div class="score-sub">Bonne structure, quelques gaps</div>
+  </div>
+  <div class="score-card score-red avoid-break">
+    <div class="score-val">C</div>
+    <div class="score-label">Sécurité</div>
+    <div class="score-sub">Plusieurs vulnérabilités critiques</div>
+  </div>
+  <div class="score-card score-orange avoid-break">
+    <div class="score-val">B</div>
+    <div class="score-label">Qualité code</div>
+    <div class="score-sub">Maintenable, tests insuffisants</div>
+  </div>
+  <div class="score-card score-orange avoid-break">
+    <div class="score-val">B-</div>
+    <div class="score-label">Intégrabilité</div>
+    <div class="score-sub">Adaptations requises</div>
+  </div>
+</div>
+
+<h3>Constatations clés</h3>
+<ul class="checklist">
+  <li class="check-nok"><strong>Authentification HTTP Basic</strong> : mécanisme inadapté à la production, incompatible avec STT (prd.alis_user / JWT)</li>
+  <li class="check-nok"><strong>Credentials localStorage</strong> : exposition des identifiants côté client, vulnérable aux attaques XSS</li>
+  <li class="check-nok"><strong>Tests automatisés absents</strong> : couverture quasi nulle (1 seul fichier placeholder)</li>
+  <li class="check-nok"><strong>Flyway désactivé</strong> : risque de divergence de schéma entre environnements</li>
+  <li class="check-partial"><strong>CORS trop permissif</strong> : plages réseau privées entières autorisées (192.168.x.x, 10.x.x.x)</li>
+  <li class="check-partial"><strong>Logging commenté</strong> : traçabilité opérationnelle insuffisante, audit trail absent</li>
+  <li class="check-partial"><strong>Services incomplets</strong> : SMS (TWILIO/ORANGE stubs), OTP non intégré, PDF déclaration absent</li>
+  <li class="check-partial"><strong>Secrets en dur</strong> : credentials SMTP et JWT par défaut dans application.yml</li>
+  <li class="check-ok"><strong>Modèle de données complet</strong> : 54 entités JPA couvrant les 3 catégories fiscales</li>
+  <li class="check-ok"><strong>Spring Boot 4 / Java 17</strong> : stack moderne, compatible avec l'écosystème STT</li>
+  <li class="check-ok"><strong>Séparation des responsabilités</strong> : architecture en couches bien respectée</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════
+     2. PÉRIMÈTRE ET MÉTHODOLOGIE
+══════════════════════════════════════════════════════════════ -->
+<h2>Périmètre et méthodologie</h2>
+
+<h3>Périmètre audité</h3>
+<table>
+  <thead><tr><th>Composant</th><th>Chemin</th><th>Inclus dans l'audit</th></tr></thead>
+  <tbody>
+    <tr><td>Backend Spring Boot</td><td>liassefiscale_backend/</td><td><span class="badge badge-ok">Oui</span></td></tr>
+    <tr><td>Frontend Angular</td><td>liassefiscale_frontend/</td><td><span class="badge badge-ok">Oui</span></td></tr>
+    <tr><td>Scripts de migration BDD</td><td>db/migration/ (V1–V16)</td><td><span class="badge badge-ok">Oui</span></td></tr>
+    <tr><td>Templates email Thymeleaf</td><td>resources/templates/emails/</td><td><span class="badge badge-ok">Oui</span></td></tr>
+    <tr><td>Structure BDD STT</td><td>stt/stt_db_structure.sql</td><td><span class="badge badge-ok">Oui (référence)</span></td></tr>
+    <tr><td>Infrastructure réseau/serveur</td><td>—</td><td><span class="badge badge-partial">Hors périmètre</span></td></tr>
+    <tr><td>Tests de pénétration actifs</td><td>—</td><td><span class="badge badge-partial">Hors périmètre</span></td></tr>
+  </tbody>
+</table>
+
+<h3>Méthodologie</h3>
+<p>L'audit a été conduit selon une approche en <strong>4 axes</strong> :</p>
+<ol style="padding-left:20px; font-size:9.5pt; line-height:1.8;">
+  <li><strong>Analyse statique du code</strong> — lecture complète du code source backend et frontend</li>
+  <li><strong>Revue architecturale</strong> — évaluation de la conception, des patterns utilisés et de leur cohérence</li>
+  <li><strong>Audit de sécurité</strong> — vérification des mécanismes d'authentification, de la gestion des secrets, des CORS, et des vulnérabilités OWASP</li>
+  <li><strong>Analyse d'intégrabilité</strong> — évaluation de la compatibilité avec la base de données STT et son modèle d'authentification</li>
+</ol>
+
+<!-- ══════════════════════════════════════════════════════════════
+     3. ARCHITECTURE GÉNÉRALE
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Architecture générale</h2>
+
+<h3>Vue d'ensemble</h3>
+<p>LiasseFiscale suit une architecture <strong>3-tiers classique</strong> avec séparation nette entre le frontend Angular (SPA), le backend Spring Boot (API REST) et la base de données PostgreSQL.</p>
+
+<div class="info-box info-box-blue avoid-break">
+  <strong>Schéma de déploiement actuel :</strong><br/>
+  <code>Navigateur (Angular 18 :8083) → Proxy → Spring Boot API (:9001) → PostgreSQL (schéma: liasse)</code><br/>
+  <br/>
+  Le frontend utilise un <code>proxy.conf.json</code> qui reroute les appels <code>/api/*</code> vers le backend.
+  En production, un reverse proxy (Nginx/Apache) est supposé gérer cette redirection.
+</div>
+
+<h3>Stack technologique</h3>
+<table>
+  <thead><tr><th>Couche</th><th>Technologie</th><th>Version</th><th>Statut</th></tr></thead>
+  <tbody>
+    <tr><td>Backend framework</td><td>Spring Boot</td><td>4.0.5</td><td><span class="badge badge-ok">Récent</span></td></tr>
+    <tr><td>Langage backend</td><td>Java</td><td>17 LTS</td><td><span class="badge badge-ok">LTS stable</span></td></tr>
+    <tr><td>ORM</td><td>Hibernate / Spring Data JPA</td><td>6.x</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>Base de données</td><td>PostgreSQL</td><td>15.2</td><td><span class="badge badge-ok">Production</span></td></tr>
+    <tr><td>Migrations BDD</td><td>Flyway</td><td>Désactivé</td><td><span class="badge badge-nok">Risque élevé</span></td></tr>
+    <tr><td>Sécurité</td><td>Spring Security + HTTP Basic</td><td>6.x</td><td><span class="badge badge-partial">À remplacer</span></td></tr>
+    <tr><td>Frontend framework</td><td>Angular</td><td>18.0.0</td><td><span class="badge badge-ok">Récent</span></td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS + Bootstrap</td><td>4.2.2 / 5.3.3</td><td><span class="badge badge-partial">Double système CSS</span></td></tr>
+    <tr><td>i18n</td><td>@ngx-translate/core</td><td>15.0.0</td><td><span class="badge badge-partial">Câblé, non branché</span></td></tr>
+    <tr><td>PDF génération</td><td>iText 7</td><td>7.2.6</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>Excel import</td><td>Apache POI</td><td>5.2.5</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>Email</td><td>Spring Mail + Thymeleaf</td><td>—</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>Documentation API</td><td>SpringDoc OpenAPI (Swagger)</td><td>2.8.8</td><td><span class="badge badge-ok">Présent</span></td></tr>
+  </tbody>
+</table>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ Coexistence Tailwind v4 + Bootstrap 5.3</div>
+  <div class="finding-desc">L'application utilise simultanément Tailwind CSS v4 et Bootstrap 5.3.3 pour le styling. Cette coexistence entraîne des conflits potentiels de classes CSS et augmente significativement la taille du bundle frontend. STT utilise un système de design unifié — la migration vers ce système sera nécessaire.</div>
+  <div class="finding-rec">→ Recommandation : Adopter le design system STT lors de l'intégration (cf. Plan d'intégration)</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     4. ANALYSE DU BACKEND
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Analyse du backend (Spring Boot)</h2>
+
+<h3>Structure du code</h3>
+<p>Le backend suit une architecture en couches standard avec 7 packages principaux :</p>
+
+<table>
+  <thead><tr><th>Package</th><th>Classes</th><th>Qualité</th><th>Observations</th></tr></thead>
+  <tbody>
+    <tr><td>controller</td><td>7 contrôleurs REST</td><td><span class="badge badge-ok">Bonne</span></td><td>Responsabilités bien délimitées, annotations claires</td></tr>
+    <tr><td>service</td><td>10 services</td><td><span class="badge badge-ok">Bonne</span></td><td>Logique métier séparée des contrôleurs</td></tr>
+    <tr><td>entity</td><td>54 entités JPA</td><td><span class="badge badge-partial">Moyenne</span></td><td>Mélange Lombok/@Data et getters/setters explicites</td></tr>
+    <tr><td>repository</td><td>37 repositories</td><td><span class="badge badge-ok">Bonne</span></td><td>Spring Data JPA, méthodes nommées cohérentes</td></tr>
+    <tr><td>dto</td><td>13 DTOs (records Java 17)</td><td><span class="badge badge-ok">Bonne</span></td><td>Records immutables — bonne pratique</td></tr>
+    <tr><td>config</td><td>SecurityConfig + CorsConfig</td><td><span class="badge badge-partial">Moyenne</span></td><td>CORS trop permissif, voir section sécurité</td></tr>
+    <tr><td>security</td><td>CustomUserDetailsService, OtpService</td><td><span class="badge badge-partial">Partielle</span></td><td>OTP préparé mais non intégré au flux</td></tr>
+    <tr><td>exception</td><td>3 classes (GlobalExceptionHandler)</td><td><span class="badge badge-ok">Bonne</span></td><td>Gestion centralisée des erreurs</td></tr>
+  </tbody>
+</table>
+
+<h3>Dépendances et versions</h3>
+<div class="finding finding-info avoid-break">
+  <div class="finding-title">ℹ️ Spring Boot 4.0.5 — Adoption précoce</div>
+  <div class="finding-desc">Spring Boot 4.0.5 est une version très récente (2025/2026). Bien que fonctionnelle, elle sort du cadre des versions LTS traditionnelles. La compatibilité avec les bibliothèques tierces (iText 7.2.6, POI 5.2.5) doit être vérifiée. STT utilise-t-il Spring Boot ? Si oui, l'alignement des versions facilitera le déploiement commun.</div>
+  <div class="finding-rec">→ Recommandation : Vérifier la matrice de compatibilité avec l'environnement STT avant déploiement</div>
+</div>
+
+<table>
+  <thead><tr><th>Dépendance</th><th>Version</th><th>Usage</th><th>Statut</th></tr></thead>
+  <tbody>
+    <tr><td>spring-boot</td><td>4.0.5</td><td>Framework principal</td><td><span class="badge badge-info">Très récent</span></td></tr>
+    <tr><td>postgresql driver</td><td>42.x</td><td>BDD</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>itext7-core</td><td>7.2.6</td><td>PDF génération</td><td><span class="badge badge-ok">Stable</span></td></tr>
+    <tr><td>poi-ooxml</td><td>5.2.5</td><td>Import Excel</td><td><span class="badge badge-ok">Stable</span></td></tr>
+    <tr><td>jjwt</td><td>0.12.6</td><td>JWT (préparé, inactif)</td><td><span class="badge badge-partial">Présent, commenté</span></td></tr>
+    <tr><td>springdoc-openapi</td><td>2.8.8</td><td>Swagger UI</td><td><span class="badge badge-ok">OK</span></td></tr>
+    <tr><td>mapstruct</td><td>1.5.5.Final</td><td>Mapping DTO</td><td><span class="badge badge-ok">Stable</span></td></tr>
+    <tr><td>lombok</td><td>1.18.36</td><td>Boilerplate réduction</td><td><span class="badge badge-partial">Usage incohérent</span></td></tr>
+    <tr><td>okhttp3</td><td>4.12.0</td><td>Client SMS HTTP</td><td><span class="badge badge-ok">OK</span></td></tr>
+  </tbody>
+</table>
+
+<h3>API REST et contrats</h3>
+<p>L'API expose <strong>7 contrôleurs</strong> pour un total d'environ <strong>60+ endpoints</strong>.</p>
+
+<table>
+  <thead><tr><th>Contrôleur</th><th>Base URL</th><th>Endpoints</th><th>Authentification</th></tr></thead>
+  <tbody>
+    <tr><td>AuthController</td><td>/api/auth</td><td>5</td><td>Public + Basic</td></tr>
+    <tr><td>DeclarationController</td><td>/api/declarations</td><td>12</td><td>Basic (rôle)</td></tr>
+    <tr><td>FormController</td><td>/api/declarations/{id}/*</td><td>56 (28×2)</td><td>Basic (rôle)</td></tr>
+    <tr><td>InscriptionController</td><td>/api/inscription</td><td>6</td><td>Public + Basic</td></tr>
+    <tr><td>UtilisateurController</td><td>/api/utilisateurs</td><td>6</td><td>Basic (ADMIN+)</td></tr>
+    <tr><td>StructureController</td><td>/api/structures</td><td>4</td><td>Basic (SUPER_ADMIN)</td></tr>
+    <tr><td>ContribuableController</td><td>/api/contribuables</td><td>~3</td><td>Basic (ADMIN+)</td></tr>
+  </tbody>
+</table>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">⚠️ Absence de versionning API</div>
+  <div class="finding-desc">Aucun préfixe de version (<code>/v1/</code>) n'est présent sur les endpoints. Lors de l'intégration dans STT, la coexistence avec d'autres APIs rendra la gestion des versions impossible sans refactoring.</div>
+  <div class="finding-rec">→ Recommandation : Ajouter un préfixe <code>/api/v1/</code> avant l'intégration. Peut se faire au niveau du reverse proxy sans toucher le code.</div>
+</div>
+
+<h3>Services métier</h3>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">⚠️ ExcelImportService — Couverture partielle</div>
+  <div class="finding-desc">L'import Excel supporte BilanActif, BilanPassif, ResultatComptable, BilanBanques, ResultatComptableBanques, InteretsBanques, DADS, ChargesReportées, Identification, ProvisionsBanques, CreancesRadiees. Les formulaires Immobilisations, Balance, Financement, AffectationRésultat, PrixTransferts ne sont pas parsés depuis Excel — uniquement accessibles via saisie manuelle.</div>
+  <div class="finding-rec">→ À compléter pour une couverture Excel complète des 3 catégories</div>
+</div>
+
+<div class="finding finding-low avoid-break">
+  <div class="finding-title">ℹ️ PdfService — Récépissés uniquement</div>
+  <div class="finding-desc">Le service PDF ne génère que les récépissés d'inscription. Il n'existe pas d'export PDF des déclarations complètes (endpoint <code>GET /declarations/{id}/pdf</code> manquant). Cette fonctionnalité est attendue par les utilisateurs.</div>
+  <div class="finding-rec">→ Implémenter l'export PDF complet de déclaration dans la prochaine itération</div>
+</div>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ SmsService — Providers TWILIO/ORANGE non implémentés</div>
+  <div class="finding-desc">Le SmsService dispose d'une architecture à 3 providers (LOCAL, TWILIO, ORANGE) mais seul le provider LOCAL est implémenté. Les providers TWILIO et ORANGE sont des stubs vides (<code>// TODO</code>). De plus, les logs sont commentés — en cas d'échec d'envoi SMS, aucune trace n'est conservée.</div>
+  <div class="finding-rec">→ Implémenter le provider mauritanien approprié et restaurer le logging</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     5. ANALYSE DU FRONTEND
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Analyse du frontend (Angular 18)</h2>
+
+<h3>Structure et composants</h3>
+<p>Le frontend utilise l'architecture <strong>Angular 18 Standalone Components</strong> (sans NgModules) — approche moderne et recommandée.</p>
+
+<table>
+  <thead><tr><th>Zone</th><th>Composants</th><th>Lignes de code</th><th>Complexité</th></tr></thead>
+  <tbody>
+    <tr><td>Authentification</td><td>6</td><td>~1 200</td><td><span class="badge badge-ok">Faible</span></td></tr>
+    <tr><td>Administration</td><td>7</td><td>~4 000</td><td><span class="badge badge-partial">Moyenne</span></td></tr>
+    <tr><td>Gestionnaire</td><td>1</td><td>~400</td><td><span class="badge badge-ok">Faible</span></td></tr>
+    <tr><td>Contribuable</td><td>4</td><td>~3 000</td><td><span class="badge badge-partial">Moyenne</span></td></tr>
+    <tr><td>Wizard de déclaration</td><td>1</td><td><strong>~3 361</strong></td><td><span class="badge badge-nok">Très élevée</span></td></tr>
+    <tr><td>Shared (layout, header)</td><td>4</td><td>~800</td><td><span class="badge badge-ok">Faible</span></td></tr>
+  </tbody>
+</table>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ DeclarationWizardComponent — Composant monolithique</div>
+  <div class="finding-desc">Le composant wizard (<code>declaration-wizard.component.ts</code>) contient <strong>~3 361 lignes de code</strong> gérant 21–24 étapes de formulaire, tous les FormGroups (28+), les calculs métier, le pré-chargement depuis la BDD, et la logique de navigation. Ce fichier est difficile à maintenir, tester et déboguer.</div>
+  <div class="finding-rec">→ Recommandation lors de l'intégration STT : découper ce composant en sous-composants par étape/catégorie pour faciliter la maintenance</div>
+</div>
+
+<h3>Authentification côté client</h3>
+
+<div class="finding finding-critical avoid-break">
+  <div class="finding-title">🔴 CRITIQUE — Credentials Base64 stockés dans localStorage</div>
+  <div class="finding-desc">L'intercepteur HTTP (<code>jwt.interceptor.ts</code>) encode les identifiants en Base64 et les stocke dans <code>localStorage</code> sous la clé <code>dgi_credentials</code>. Le localStorage est accessible par tout JavaScript de la page, rendant ces credentials vulnérables aux attaques XSS. Un seul script malveillant peut extraire l'ensemble des identifiants de l'utilisateur.
+  <br/><br/><strong>Impact :</strong> Compromission complète d'un compte utilisateur (y compris SUPER_ADMIN) via XSS.</div>
+  <div class="finding-rec">→ Migration vers JWT avec HttpOnly cookies (non accessible en JavaScript) lors de l'intégration STT est OBLIGATOIRE</div>
+</div>
+
+<h3>Gestion d'état et i18n</h3>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">⚠️ i18n câblé mais non branché</div>
+  <div class="finding-desc">Le service <code>i18n.service.ts</code> et la bibliothèque <code>@ngx-translate/core</code> sont présents. Les fichiers de traduction sont dans <code>src/i18n/</code>. Cependant, <strong>aucun composant n'utilise le pipe <code>translate</code></strong> — l'application est entièrement en français hardcodé. Le support arabe (AR) — requis pour la DGI mauritanienne — n'est pas actif.</div>
+  <div class="finding-rec">→ Activer l'i18n avec support RTL arabe lors de l'intégration STT</div>
+</div>
+
+<div class="finding finding-low avoid-break">
+  <div class="finding-title">ℹ️ OtpComponent — Présent mais non routé</div>
+  <div class="finding-desc">Le composant OTP (<code>otp.component.ts</code>) est présent mais non inclus dans le routeur. L'infrastructure OTP (Google Authenticator) est préparée côté backend (<code>OtpService.java</code>) mais non intégrée au flux de login.</div>
+  <div class="finding-rec">→ Intégrer l'OTP comme second facteur lors de l'intégration STT pour les comptes ADMIN+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     6. ANALYSE DE LA BASE DE DONNÉES
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Analyse de la base de données</h2>
+
+<h3>Schéma liasse</h3>
+<p>Le schéma <code>liasse</code> contient les tables de la plateforme LiasseFiscale, organisées en 3 groupes :</p>
+
+<table>
+  <thead><tr><th>Groupe</th><th>Tables principales</th><th>Nb tables</th></tr></thead>
+  <tbody>
+    <tr><td>Gestion des comptes</td><td>db_user, contribuable, structure, demande_inscription</td><td>4</td></tr>
+    <tr><td>Déclarations</td><td>declaration, identification_form, bilan_actif, bilan_passif, resultat_comptable</td><td>~12</td></tr>
+    <tr><td>Sous-formulaires (détail)</td><td>balance, immobilisations, financement, dads, honoraires, prestations, loyers, fournisseurs, prix_transferts, peche, interets, remuneration, affectation_resultat, declaration_impot, resultat_fiscal, charges_reportees</td><td>~16</td></tr>
+    <tr><td>Sous-formulaires banques (B)</td><td>bilan_banques, resultat_comptable_banques, balance_banques, provisions_banques, interets_banques, creances_radiees</td><td>6</td></tr>
+    <tr><td>Formulaires forfait (F)</td><td>identification_forfait, ibapp_forfait</td><td>2</td></tr>
+    <tr><td>Tables de lignes</td><td>ligne_balance, ligne_salarie, ligne_honoraire, ligne_interet, ligne_loyer, ligne_fournisseur, etc.</td><td>~15</td></tr>
+  </tbody>
+</table>
+
+<h3>Migrations Flyway</h3>
+
+<div class="finding finding-critical avoid-break">
+  <div class="finding-title">🔴 CRITIQUE — Flyway désactivé en production</div>
+  <div class="finding-desc">La configuration <code>spring.flyway.enabled: false</code> désactive complètement les migrations automatiques. Le schéma doit être appliqué manuellement via les 16 scripts V1–V16. En environnement multi-instance ou lors d'un déploiement STT, ce risque de divergence de schéma peut entraîner des erreurs silencieuses au runtime (<code>ddl-auto: validate</code> lèvera des exceptions si le schéma ne correspond pas).
+  <br/><strong>Impact :</strong> Downtime en cas de migration manuelle oubliée, perte de données potentielle.</div>
+  <div class="finding-rec">→ Réactiver Flyway avec <code>enabled: true</code> et <code>locations: classpath:db/migration</code> avant l'intégration STT</div>
+</div>
+
+<h3>Points de contact avec la base STT</h3>
+<p>La base de données STT (<code>postgres</code>) coexiste avec le schéma <code>liasse</code> dans la même instance PostgreSQL 15.2. Les points de jonction identifiés :</p>
+
+<table>
+  <thead><tr><th>Concept</th><th>Table LiasseFiscale (schéma liasse)</th><th>Table STT équivalente</th><th>Clé de jointure</th></tr></thead>
+  <tbody>
+    <tr><td>Contribuable / NIF</td><td>contribuable.cmatrfisc</td><td>taxpayer.nif.nif</td><td>NIF (clé métier)</td></tr>
+    <tr><td>Compte utilisateur</td><td>db_user (login, role, email)</td><td>prd.alis_user (username, email)</td><td>login = username</td></tr>
+    <tr><td>Division fiscale</td><td>structure (code, designation)</td><td>referential.division (code, label)</td><td>code structure</td></tr>
+    <tr><td>Déclaration fiscale</td><td>declaration (id, exercice, statut)</td><td>declaration.declaration (id, tax_type)</td><td>Nouveau lien à créer</td></tr>
+    <tr><td>Rôles utilisateurs</td><td>db_user.role (enum Java)</td><td>prd.alis_role (id, name)</td><td>Mapping à définir</td></tr>
+  </tbody>
+</table>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ Duplication des données contribuable</div>
+  <div class="finding-desc">La table <code>liasse.contribuable</code> duplique des données déjà présentes dans <code>taxpayer.taxpayer</code> (STT) : raison sociale, adresse, forme juridique, kserv. Cette duplication est une source de divergence potentielle. Le NIF est la seule clé commune exploitée actuellement.</div>
+  <div class="finding-rec">→ Lors de l'intégration, la table <code>liasse.contribuable</code> devrait être remplacée par une vue ou une foreign key vers <code>taxpayer.taxpayer</code></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     7. AUDIT DE SÉCURITÉ
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Audit de sécurité</h2>
+
+<h3>Authentification et autorisation</h3>
+
+<table>
+  <thead><tr><th>Contrôle de sécurité</th><th>Statut</th><th>Sévérité si absent</th><th>Détails</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>Authentification forte (MFA)</td>
+      <td><span class="badge badge-nok">Absent</span></td>
+      <td><span class="badge badge-critical">Critique</span></td>
+      <td>HTTP Basic uniquement. OTP préparé mais non intégré.</td>
+    </tr>
+    <tr>
+      <td>Stockage sécurisé des credentials</td>
+      <td><span class="badge badge-nok">Absent</span></td>
+      <td><span class="badge badge-critical">Critique</span></td>
+      <td>localStorage exposé au JavaScript. HttpOnly cookies requis.</td>
+    </tr>
+    <tr>
+      <td>Protection CSRF</td>
+      <td><span class="badge badge-partial">Partielle</span></td>
+      <td><span class="badge badge-high">Élevé</span></td>
+      <td>Pas de token CSRF explicite. Protection implicite via CORS + SameSite.</td>
+    </tr>
+    <tr>
+      <td>Rate limiting / brute force</td>
+      <td><span class="badge badge-nok">Absent</span></td>
+      <td><span class="badge badge-high">Élevé</span></td>
+      <td>Aucun limiteur de tentatives de connexion.</td>
+    </tr>
+    <tr>
+      <td>Chiffrement des mots de passe</td>
+      <td><span class="badge badge-ok">Présent</span></td>
+      <td>—</td>
+      <td>BCryptPasswordEncoder strength=12. Correct.</td>
+    </tr>
+    <tr>
+      <td>Expiration de session</td>
+      <td><span class="badge badge-partial">Partielle</span></td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>Pas de timeout de session configuré. Basic Auth est stateless.</td>
+    </tr>
+    <tr>
+      <td>Contrôle d'accès par rôle (RBAC)</td>
+      <td><span class="badge badge-ok">Présent</span></td>
+      <td>—</td>
+      <td>4 rôles : SUPER_ADMIN, ADMIN, GESTIONNAIRE, CONTRIBUABLE.</td>
+    </tr>
+    <tr>
+      <td>Réinitialisation de mot de passe sécurisée</td>
+      <td><span class="badge badge-partial">Partielle</span></td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>Token UUID, expiry 48h. Pas de validation du domaine email.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>CORS et headers HTTP</h3>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ CORS — Plages réseau privées trop larges</div>
+  <div class="finding-desc">La configuration CORS autorise <code>http://192.168.*.*:*</code> et <code>http://10.*.*.*:*</code> — ce qui couvre l'ensemble des réseaux privés RFC-1918. En environnement de bureau partagé ou dans un bureau DGI, n'importe quelle machine du réseau local pourrait émettre des requêtes Cross-Origin authentifiées vers l'API.
+  <br/><br/><strong>Extrait de configuration :</strong></div>
+  <div class="finding-rec">→ Restreindre les origines autorisées aux seules URLs connues. En production : uniquement <code>https://liassefiscale.impots.gov.mr</code> et les domaines STT.</div>
+</div>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">⚠️ Headers de sécurité HTTP absents</div>
+  <div class="finding-desc">Les headers de sécurité recommandés ne sont pas configurés : <code>X-Content-Type-Options</code>, <code>X-Frame-Options</code>, <code>Strict-Transport-Security (HSTS)</code>, <code>Content-Security-Policy</code>. Ces headers protègent contre le clickjacking, MIME sniffing, et les injections.</div>
+  <div class="finding-rec">→ Ajouter ces headers via Spring Security <code>.headers()</code> ou au niveau Nginx/reverse proxy</div>
+</div>
+
+<h3>Gestion des secrets</h3>
+
+<div class="finding finding-critical avoid-break">
+  <div class="finding-title">🔴 CRITIQUE — Credentials SMTP en dur dans application.yml</div>
+  <div class="finding-desc">Le fichier <code>application.yml</code> contient des credentials SMTP réels par défaut :<br/>
+  <code>username: sasidimed@gmail.com</code><br/>
+  <code>password: gryxpjdjevaiuhrn</code><br/>
+  <br/>Ces valeurs sont dans le dépôt de code source. Si le dépôt n'est pas privé ou si un développeur quitte l'équipe, ces credentials sont compromis.</div>
+  <div class="finding-rec">→ IMMÉDIAT : Remplacer par des variables d'environnement (<code>${MAIL_USER}</code>, <code>${MAIL_PASS}</code>). Révoquer et régénérer les credentials actuels. Ne jamais commettre de secrets dans le code.</div>
+</div>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">⚠️ Clé JWT par défaut dans le code source</div>
+  <div class="finding-desc">La clé secrète JWT est définie en valeur par défaut dans <code>application.yml</code> : <code>VGhpcyFpcyFhIXZlcnkhbG9uZyFzZWNyZXQha2V5IWZvciFsaWFzc2VGaXNjYWxlITIwMjQ=</code>. Bien que JWT ne soit pas activé actuellement, si l'activation se fait sans changer cette clé, tous les tokens seront signés avec un secret public.</div>
+  <div class="finding-rec">→ Configurer <code>JWT_SECRET</code> uniquement via variable d'environnement sans valeur par défaut dans le code</div>
+</div>
+
+<h3>Vulnérabilités OWASP Top 10 — Analyse</h3>
+
+<table>
+  <thead><tr><th>Catégorie OWASP</th><th>Statut</th><th>Observation</th></tr></thead>
+  <tbody>
+    <tr><td>A01 — Broken Access Control</td><td><span class="badge badge-partial">Partielle</span></td><td>RBAC présent mais pas de vérification d'ownership sur DeclarationController (un CONTRIBUABLE peut-il accéder aux déclarations d'un autre via l'ID ?)</td></tr>
+    <tr><td>A02 — Cryptographic Failures</td><td><span class="badge badge-partial">Partielle</span></td><td>BCrypt correct, mais credentials en localStorage non chiffrés</td></tr>
+    <tr><td>A03 — Injection</td><td><span class="badge badge-ok">Faible risque</span></td><td>Spring Data JPA avec requêtes paramétrées — protection SQL injection en place</td></tr>
+    <tr><td>A04 — Insecure Design</td><td><span class="badge badge-nok">Présent</span></td><td>Basic Auth, pas de MFA, audit trail absent</td></tr>
+    <tr><td>A05 — Security Misconfiguration</td><td><span class="badge badge-nok">Présent</span></td><td>CORS trop permissif, secrets en dur, Swagger exposé en production</td></tr>
+    <tr><td>A06 — Vulnerable Components</td><td><span class="badge badge-ok">Faible risque</span></td><td>Versions récentes, pas de CVE critique détecté</td></tr>
+    <tr><td>A07 — Auth Failures</td><td><span class="badge badge-nok">Présent</span></td><td>Pas de rate limiting, credentials en localStorage</td></tr>
+    <tr><td>A08 — Software Integrity Failures</td><td><span class="badge badge-partial">À vérifier</span></td><td>Pas de signature des releases, dépendances à vérifier via SBOM</td></tr>
+    <tr><td>A09 — Logging Failures</td><td><span class="badge badge-nok">Présent</span></td><td>Logs commentés dans EmailService, SmsService. Pas d'audit trail.</td></tr>
+    <tr><td>A10 — SSRF</td><td><span class="badge badge-ok">Faible risque</span></td><td>Pas de fetch d'URL dynamique externe identifié</td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════
+     8. QUALITÉ DU CODE
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Qualité du code et maintenabilité</h2>
+
+<h3>Points forts</h3>
+<ul class="checklist">
+  <li class="check-ok">Architecture en couches respectée (controller → service → repository → entity)</li>
+  <li class="check-ok">DTOs records Java 17 — immutables, concis et sûrs</li>
+  <li class="check-ok">ApiResponse&lt;T&gt; unifié avec factory methods <code>ok()</code> / <code>error()</code></li>
+  <li class="check-ok">Annotations Spring bien utilisées (@Service, @Repository, @Transactional)</li>
+  <li class="check-ok">GlobalExceptionHandler centralisé pour la gestion des erreurs</li>
+  <li class="check-ok">Angular standalone components — architecture moderne</li>
+  <li class="check-ok">Services Angular injectables avec signals pour l'état utilisateur</li>
+</ul>
+
+<h3>Points d'amélioration</h3>
+<ul class="checklist">
+  <li class="check-nok">Couverture de tests quasi nulle — 1 seul fichier placeholder <code>LiassefiscaleBackendApplicationTests.java</code></li>
+  <li class="check-nok">Logs commentés dans EmailService et SmsService — traçabilité opérationnelle absente</li>
+  <li class="check-partial">Usage incohérent de Lombok — certaines entités utilisent @Data, d'autres ont des getters/setters explicites</li>
+  <li class="check-partial">DeclarationWizardComponent monolithique (~3 361 lignes) — difficulté de maintenance</li>
+  <li class="check-partial">Certaines entités avec @RequiredArgsConstructor sans @NoArgsConstructor pour JPA (problèmes potentiels avec les proxies Hibernate)</li>
+  <li class="check-partial">Pas de documentation Swagger complète sur tous les endpoints</li>
+</ul>
+
+<h3>Métriques estimées</h3>
+<table>
+  <thead><tr><th>Métrique</th><th>Valeur</th><th>Évaluation</th></tr></thead>
+  <tbody>
+    <tr><td>Lignes de code backend</td><td>~15 000</td><td><span class="badge badge-info">Moyen</span></td></tr>
+    <tr><td>Lignes de code frontend</td><td>~25 000</td><td><span class="badge badge-info">Moyen</span></td></tr>
+    <tr><td>Entités JPA</td><td>54</td><td><span class="badge badge-info">Riche</span></td></tr>
+    <tr><td>Couverture de tests</td><td>&lt; 2%</td><td><span class="badge badge-nok">Insuffisant</span></td></tr>
+    <tr><td>Endpoints API</td><td>~80</td><td><span class="badge badge-ok">Complet</span></td></tr>
+    <tr><td>Composants Angular</td><td>23</td><td><span class="badge badge-ok">Raisonnable</span></td></tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════
+     9. PERFORMANCE ET SCALABILITÉ
+══════════════════════════════════════════════════════════════ -->
+<h2>Performance et scalabilité</h2>
+
+<h3>Backend</h3>
+<ul class="checklist">
+  <li class="check-ok">HikariCP pool : max 10 connexions, min 2 — correct pour une charge modérée</li>
+  <li class="check-ok">Opérations asynchrones (@Async) pour emails et SMS — non bloquant pour l'utilisateur</li>
+  <li class="check-ok">Import Excel en @Async — traitement non bloquant</li>
+  <li class="check-partial">Cache Spring simple (<code>type: simple</code>) — en mémoire, non distribué. Insuffisant si plusieurs instances</li>
+  <li class="check-partial">Pas de pagination sur tous les endpoints listes (FormController retourne des listes complètes)</li>
+  <li class="check-nok">Pas de compression GZIP configurée sur les réponses API</li>
+  <li class="check-nok">Pas de cache HTTP (Cache-Control headers) sur les ressources statiques frontend</li>
+</ul>
+
+<h3>Base de données</h3>
+<ul class="checklist">
+  <li class="check-ok">Indexes sur les colonnes de jointure (kpm, nif) à vérifier via les migrations</li>
+  <li class="check-partial">Relations OneToOne CascadeType.ALL sur tous les sous-formulaires — suppression en cascade potentiellement dangereuse</li>
+  <li class="check-partial">Chargement LAZY non configuré explicitement sur les relations — risque N+1 queries</li>
+  <li class="check-nok">Pas de partitionnement de table pour les grandes déclarations</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════
+     10. PRÉPARATION À L'INTÉGRATION STT
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Préparation à l'intégration STT</h2>
+
+<h3>Compatibilités confirmées</h3>
+<ul class="checklist">
+  <li class="check-ok">PostgreSQL 15.2 — même instance, ajout du schéma <code>liasse</code> dans la base <code>postgres</code> STT</li>
+  <li class="check-ok">Java 17 — compatible avec l'environnement JVM STT</li>
+  <li class="check-ok">Infrastructure JWT préparée (jjwt 0.12.6 dans pom.xml) — prête à activer</li>
+  <li class="check-ok">NIF comme clé métier commune — <code>liasse.contribuable.cmatrfisc</code> = <code>taxpayer.nif.nif</code></li>
+  <li class="check-ok">i18n (@ngx-translate) installé — prêt à activer pour FR/AR</li>
+</ul>
+
+<h3>Incompatibilités à résoudre</h3>
+<ul class="checklist">
+  <li class="check-nok">Authentification : HTTP Basic → STT utilise JWT / prd.alis_user</li>
+  <li class="check-nok">Gestion des utilisateurs : table <code>db_user</code> → fusion avec <code>prd.alis_user</code></li>
+  <li class="check-nok">Design system : Tailwind + Bootstrap → design system STT unifié</li>
+  <li class="check-nok">Structure des divisions : <code>liasse.structure</code> → <code>referential.division</code> (STT)</li>
+  <li class="check-nok">Données contribuable : <code>liasse.contribuable</code> → vue sur <code>taxpayer.taxpayer</code> (STT)</li>
+  <li class="check-nok">CORS : restrictions à durcir pour l'environnement STT</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════
+     11. MATRICE DES RISQUES
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Matrice des risques</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Risque identifié</th>
+      <th>Probabilité</th>
+      <th>Impact</th>
+      <th>Sévérité</th>
+      <th>Priorité</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Vol de credentials via XSS (localStorage)</td>
+      <td>Haute</td>
+      <td>Critique</td>
+      <td><span class="badge badge-critical">Critique</span></td>
+      <td>P0 — Avant mise en production</td>
+    </tr>
+    <tr>
+      <td>Secrets SMTP en clair dans le code source</td>
+      <td>Haute</td>
+      <td>Élevé</td>
+      <td><span class="badge badge-critical">Critique</span></td>
+      <td>P0 — Immédiat</td>
+    </tr>
+    <tr>
+      <td>Flyway désactivé → divergence de schéma</td>
+      <td>Haute</td>
+      <td>Élevé</td>
+      <td><span class="badge badge-high">Élevé</span></td>
+      <td>P1 — Avant intégration STT</td>
+    </tr>
+    <tr>
+      <td>Absence de rate limiting (brute force login)</td>
+      <td>Moyenne</td>
+      <td>Élevé</td>
+      <td><span class="badge badge-high">Élevé</span></td>
+      <td>P1 — Avant mise en production</td>
+    </tr>
+    <tr>
+      <td>CORS trop permissif (réseaux privés)</td>
+      <td>Faible</td>
+      <td>Élevé</td>
+      <td><span class="badge badge-high">Élevé</span></td>
+      <td>P1 — Lors de l'intégration</td>
+    </tr>
+    <tr>
+      <td>Absence de tests automatisés</td>
+      <td>Haute</td>
+      <td>Moyen</td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>P2 — À construire progressivement</td>
+    </tr>
+    <tr>
+      <td>Wizard monolithique difficile à maintenir</td>
+      <td>Haute</td>
+      <td>Moyen</td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>P2 — Lors de l'intégration Angular</td>
+    </tr>
+    <tr>
+      <td>Headers de sécurité HTTP absents</td>
+      <td>Faible</td>
+      <td>Moyen</td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>P2 — Configuration Nginx</td></tr>
+    <tr>
+      <td>i18n non activé (pas de support arabe)</td>
+      <td>Haute</td>
+      <td>Faible</td>
+      <td><span class="badge badge-low">Faible</span></td>
+      <td>P3 — Lors de l'intégration frontend</td>
+    </tr>
+    <tr>
+      <td>Logs commentés → pas d'audit trail</td>
+      <td>Haute</td>
+      <td>Moyen</td>
+      <td><span class="badge badge-medium">Moyen</span></td>
+      <td>P2 — Avant mise en production</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ══════════════════════════════════════════════════════════════
+     12. RECOMMANDATIONS PRIORITAIRES
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Recommandations prioritaires</h2>
+
+<h3>P0 — Blocants (avant tout déploiement)</h3>
+
+<div class="finding finding-critical avoid-break">
+  <div class="finding-title">1. Remplacer HTTP Basic Auth par JWT avec HttpOnly cookies</div>
+  <div class="finding-desc">L'infrastructure JWT est déjà présente dans le pom.xml (<code>jjwt 0.12.6</code>). Il faut l'activer et configurer Spring Security pour émettre des JWT signés stockés en HttpOnly cookie.</div>
+  <div class="finding-rec">Effort estimé : 3–5 jours développeur · Intégration avec prd.alis_user STT recommandée</div>
+</div>
+
+<div class="finding finding-critical avoid-break">
+  <div class="finding-title">2. Retirer les secrets du code source</div>
+  <div class="finding-desc">Remplacer immédiatement les credentials SMTP hardcodés dans <code>application.yml</code>. Utiliser exclusivement des variables d'environnement ou un vault (HashiCorp Vault, Spring Cloud Config).</div>
+  <div class="finding-rec">Effort estimé : 1 heure · IMMÉDIAT — Révoquer et régénérer les credentials actuels</div>
+</div>
+
+<h3>P1 — Haute priorité (avant intégration STT)</h3>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">3. Réactiver Flyway et versionner les migrations</div>
+  <div class="finding-desc">Réactiver <code>spring.flyway.enabled: true</code>. S'assurer que tous les scripts V1–V16 sont dans l'ordre correct et testés sur une instance fraîche. Configurer le chemin <code>liasse</code> pour Flyway dans la base STT.</div>
+  <div class="finding-rec">Effort estimé : 1–2 jours · Critique pour les déploiements automatisés CI/CD</div>
+</div>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">4. Implémenter le rate limiting sur les endpoints d'authentification</div>
+  <div class="finding-desc">Ajouter Spring Security Bucket4j ou un filtre de rate limiting sur <code>/api/auth/login</code>, <code>/api/auth/password/reset-request</code>. Limiter à 5 tentatives / minute / IP.</div>
+  <div class="finding-rec">Effort estimé : 1 jour · Alternative : configurer au niveau Nginx/reverse proxy</div>
+</div>
+
+<div class="finding finding-high avoid-break">
+  <div class="finding-title">5. Durcir la configuration CORS</div>
+  <div class="finding-desc">Supprimer les plages 192.168.x.x et 10.x.x.x des origines autorisées. En production : uniquement les domaines STT et DGI connus.</div>
+  <div class="finding-rec">Effort estimé : 30 minutes</div>
+</div>
+
+<h3>P2 — Importante (lors de l'intégration)</h3>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">6. Ajouter les headers de sécurité HTTP</div>
+  <div class="finding-desc">Configurer dans <code>SecurityConfig.java</code> ou Nginx : <code>X-Content-Type-Options: nosniff</code>, <code>X-Frame-Options: DENY</code>, <code>HSTS</code>, <code>CSP</code>.</div>
+  <div class="finding-rec">Effort estimé : 2 heures</div>
+</div>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">7. Restaurer les logs et implémenter un audit trail</div>
+  <div class="finding-desc">Décommenter et enrichir les logs dans EmailService, SmsService. Créer une table <code>audit_log</code> pour tracer les actions critiques : login, validation déclaration, création d'utilisateur, reset mot de passe.</div>
+  <div class="finding-rec">Effort estimé : 2–3 jours</div>
+</div>
+
+<div class="finding finding-medium avoid-break">
+  <div class="finding-title">8. Découper le DeclarationWizardComponent</div>
+  <div class="finding-desc">Décomposer le composant monolithique (~3 361 lignes) en sous-composants Angular par étape du wizard. Améliore la maintenabilité et facilite le test unitaire.</div>
+  <div class="finding-rec">Effort estimé : 5–8 jours</div>
+</div>
+
+<h3>P3 — Souhaitable (backlog)</h3>
+<ul style="padding-left:20px; font-size:9.5pt; line-height:2;">
+  <li>Activer l'i18n FR/AR avec support RTL dans tous les composants</li>
+  <li>Implémenter les tests unitaires (JUnit 5) et d'intégration (Spring Boot Test) avec couverture > 60%</li>
+  <li>Compléter l'import Excel pour tous les formulaires (Immobilisations, Balance, Financement, Prix Transferts)</li>
+  <li>Implémenter l'export PDF complet d'une déclaration</li>
+  <li>Intégrer le provider SMS mauritanien réel (TWILIO ou ORANGE)</li>
+  <li>Ajouter le versionning API (<code>/api/v1/</code>) pour la compatibilité future</li>
+  <li>Implémenter l'OTP comme second facteur pour les comptes ADMIN+</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════
+     13. CONCLUSION
+══════════════════════════════════════════════════════════════ -->
+<div class="page-break"></div>
+<h2>Conclusion</h2>
+
+<div class="exec-summary">
+  <h3>Verdict d'audit</h3>
+  <p>La plateforme LiasseFiscale est fonctionnellement complète et bien architecturée pour une application de première génération. Le modèle de données est riche et couvre l'ensemble des catégories fiscales. Cependant, l'application présente <strong>des lacunes de sécurité importantes</strong> qui la rendent <strong>non prête pour un déploiement en production immédiat</strong> dans l'environnement STT sans corrections.</p>
+
+  <p>Les deux points critiques — le stockage des credentials en localStorage et les secrets SMTP en dur dans le code — doivent être corrigés avant toute intégration. La migration vers le système d'authentification STT (prd.alis_user + JWT) est la transformation la plus structurante et devra être planifiée soigneusement.</p>
+
+  <p><strong>Recommandation de l'équipe ADIAS :</strong> Procéder à l'intégration selon le plan en 3 phases décrit dans le document complémentaire « Plan d'Intégration STT », avec une phase de sécurisation en priorité absolue.</p>
+</div>
+
+<table>
+  <thead><tr><th>Axe</th><th>Note</th><th>Justification</th></tr></thead>
+  <tbody>
+    <tr><td>Architecture et conception</td><td><strong>B+</strong></td><td>Bonne structure, découpage clair, stack moderne. Quelques points de dette technique.</td></tr>
+    <tr><td>Sécurité</td><td><strong>C</strong></td><td>Lacunes critiques sur l'authentification et la gestion des secrets.</td></tr>
+    <tr><td>Qualité du code</td><td><strong>B</strong></td><td>Code lisible et cohérent. Manque de tests. Composant wizard trop gros.</td></tr>
+    <tr><td>Couverture fonctionnelle</td><td><strong>A-</strong></td><td>3 catégories couvertes, 80+ endpoints, 54 entités. Quelques services incomplets (SMS, OTP).</td></tr>
+    <tr><td>Préparation intégration STT</td><td><strong>B-</strong></td><td>Points de contact identifiés. Authentification et données utilisateur/contribuable à migrer.</td></tr>
+    <tr><td><strong>Note globale</strong></td><td><strong>B-</strong></td><td>Solide fonctionnellement. Sécurisation et migration auth requises avant production.</td></tr>
+  </tbody>
+</table>
+
+<div class="doc-footer">
+  <div>Direction Générale des Impôts — République Islamique de Mauritanie</div>
+  <div>ADIAS DevOps · Audit LiasseFiscale · Avril 2026 · CONFIDENTIEL</div>
+</div>
+
+</body>
+</html>

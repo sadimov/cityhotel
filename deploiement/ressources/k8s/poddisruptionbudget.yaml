@@ -1,0 +1,22 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: city-backend-pdb
+  namespace: city
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: city-backend
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: city-frontend-pdb
+  namespace: city
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: city-frontend

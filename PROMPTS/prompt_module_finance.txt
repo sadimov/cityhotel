@@ -1,0 +1,68 @@
+⚠️ DOCTRINE ACTÉE Tour 20 (2026-05-07) — à lire AVANT de relancer une session sur ce module
+================================================================================
+City Hotel = comptabilité AUXILIAIRE CLIENT uniquement (factures, paiements, soldes
+clients par hôtel). La comptabilité GÉNÉRALE (partie double SYSCOHADA, classes 1-9,
+balances, bilan, compte de résultat, journaux, FEC, exercices clôturés) est
+EXTERNALISÉE vers Dolibarr via bridge Feign REST.
+
+Conséquences :
+- entity/finance/Compte = compte AUXILIAIRE client (CPT-CLI-{id}, CPT-SOC-{id}),
+  PAS un compte du Plan Comptable Général. Marqué @Deprecated le 2026-05-07.
+- entity/finance/OperationCompte = mouvement sur compte auxiliaire client,
+  PAS une écriture comptable partie double. Marqué @Deprecated le 2026-05-07.
+- Le mapping TypeLigneFacture → compte 70x (PCG) et ModePaiement → compte 51x/53x
+  est traité côté Dolibarr (table ParametrageComptable à venir au tour bridge).
+
+Cf. CLAUDE.md racine §6.2 + audit Tour 20 (5 🔴 + 6 🟠 + 5 💡) pour le détail.
+================================================================================
+
+Bonjour, j'ai un projet qui est une application web qui gère le métier d'hôtel.
+L'application doit permettre une gestion multi-hotels. Chaque hôtel a son propre espace. Un utilisateur se connecte 
+pour faire les opérations de gestion, selon son rôle, de son propre hôtel sans toucher ni même voir les autres hôtels.
+Voici les modules de gestion d'un hôtel que doit contenir cette application:
+- gestion des stocks (produits, stocks des produits, catégories des produits, bon de commandes, bon de sorties, demandes au sein d'un bon commande,
+    demandes au sein d'un bon de sortie, alerts de rupture ou de presque en rupture, alerts stocks dans le module "Reporting".
+    Fournisseurs, Factures des fournisseurs.
+- Reservation: Réservation, Nuitées, Night Audit (vérification à midi des check in d'aujourd'hui)
+- Paiements, Factures et Comptes (Le client et La société ont des comptes). Ce module en relation avec la comptabilité doit respecter les normes de
+    comptabilité en ce qui concerne la numérotation des factures, comptes, clients. Les factures pourront contenir des taxes. Prévoir une     liaison avec le logiciel de comptabilité "Dolibarr" pour pouvoir gérer la comptabilité de façon professionnelle. Dolibarr doit pouvoir gérer la comptabilité de chaque hôtel membre sans confusion avec celles des autres hôtels via une interaction transparente avec l'application city. L'intégration se fera exclusivement via l'API REST de Dolibarr afin de garder mon application propriétaire (pas de code Dolibarr embarqué).
+Documentation à consulter :
+
+API REST : https://wiki.dolibarr.org/index.php/Module_Web_Services_API_REST_(developer)
+API Explorer live (test sans installation) : https://demo.dolibarr.org/api/index.php/explorer/
+Doc dev générale : https://wiki.dolibarr.org/index.php/Developer_documentation
+Code source des classes API : https://github.com/Dolibarr/dolibarr/tree/develop/htdocs (chercher les fichiers api_*.class.php)
+
+Pattern d'appel REST : <server>/api/index.php/<endpoint> avec header DOLAPIKEY: <api_key>, méthodes GET/POST/PUT/DELETE, format JSON.
+Aide-moi à : [préciser ta tâche — ex. créer un client SDK, mapper les entités hôtel↔Dolibarr, écrire les premiers appels facture, etc.].
+
+Consulter aussi le plan comptable mauritanien  "plan_comptable_mauritanien.pdf" pour une bonne compréhension du métier de comptabilité.
+
+Le compte peut avoir des opérations de compte créditrice et autres débitrices. Une     facture a des lignes de facture. Une ligne de facture référencie une nuitée ou une autre charge (produit, service ou menu). Une opération de     compte débitrice référencie une ligne de facture. Un paiement est lié à une facture et aussi à une ligne facture.
+- Hôtels, Chambres et Salles: Chaque hôtel doit pouvoir gérer ses chambres et salles: (Chambres pour passer des nuits, Les salles pour les conférences
+  et les séminaires)
+- Clients & Sociétés: Les clients qui réservent les chambres et achètent au restaurant. Des sociétés peuvent éventuellement prendre les clients en
+    charges en partie ou en total.
+- Restaurant, Menus & Point de vente: Le restaurant de l'hôtel où le client peut prendre des plats ou produits et payer sur place ou mettre sur la
+    facture de la chambre.
+- Ménage: Nettoyage des chambres et autres
+- Reporting: Rapports financiers, occupations, chiffres affaires, clients, stocks...
+- Administration: Utilisateurs, Rôles, Hôtels & Données référentielles de l'application. Les droits d'accès aux différentes interfaces. Les roles           comme "ADMIN", "SUPERADMIN", "GERANT", "RECEPTION", "RESTAURANT", "RESREC". La table utilisateurs doit être nommée 'DBUsers' pour éviter le
+    conflit avec tout éventuel mot clé de db/language.
+- Profile: Permet à l'utilisateur de gérer son compte.
+- Notifications graphiques: notifications, pop-up, alerts, numéros et par emails.
+- Multilinguisme: L'application doit avoir 3 langues: arabe, français et anglais.
+
+Partie base de données:
+Voici la structure sql, ci-joint, des tables des schémas core, clients et finance de la base postgres.
+
+Partie backend:
+Les fichiers et informations du projet backend (en Spring boot) sont ci-joints et la partie d'authentification et le module "clients" sont déjà réalisés.
+
+Maintenant, on va passer au développement, côté backend,  du module finance. Développer le code backend (entity, repository, dto, service, controller) et implémenter les opérations CRUD pour toutes les tables du module. Implémenter les traitements métier nécessaires à la gestion.
+Relevé de compte pour un client, Relevé de compte pour une société. Gestion des factures. Gestion des paiements...
+
+
+# Partie frontend:
+Merci, maintenant on veut passer au côté frontend du module. Le projet frontend est créé avec angular avec typescript comme language, nodejs et npm pour les packages + jQuery + Tailwind (v4)+ DataTables datatables.net + Bootstrap. La partie auth, module "clients" et module "finance" côté frontend sont déjà réalisés et voici ci-joints les fichiers et informations du projet côté frontend cityfrontend. Implémenter tous les components nécessaires à la gestion. components relevés de compte pour les clients et les sociétés. consultation, gestion et téléchargement des factures, états, situations...
+

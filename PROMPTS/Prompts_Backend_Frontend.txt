@@ -1,0 +1,92 @@
+---- PROMPT CREATION DES PROJETS SPRING BOOT & ANGULAR & Module Users/Authentification ----
+
+BACKEND:
+
+
+FRONT: (+fichiers backend: pom.xml, application.yml, CitybackendApplication.java, ...
+Bonjour, j'ai un projet qui est une application web qui gère le métier d'hôtel. 
+L'application doit permettre une gestion multi-hotels. Chaque hôtel a son propre espace. Un utilisateur se connecte 
+pour faire les opérations de gestion, selon son rôle, de son propre hôtel sans toucher ni même voir les autres hôtels.
+Voici les modules de gestion d'un hôtel que doit contenir cette application:
+- gestion des stocks (produits, stocks des produits, catégories des produits, bon de commandes, bon de sorties, demandes au sein d'un bon commande,
+    demandes au sein d'un bon de sortie, alerts de rupture ou de presque en rupture, alerts stocks dans le module "Reporting".
+    Fournisseurs, Factures des fournisseurs.
+- Reservation: Réservation, Nuitées, Night Audit (vérification à midi des check in d'aujourd'hui)
+- Paiements, Factures et Comptes (Le client et La société ont des comptes). Ce module en relation avec la comptabilité doit respecter les normes de
+    comptabilité en ce qui concerne la numérotation des factures, comptes, clients. Les factures pourront contenir des taxes. Prévoir une     liaison avec le logiciel de comptabilité "Dolibarr". Le compte peut avoir des opérations de compte créditrice et autres débitrices. Une     facture a des lignes de facture. Une ligne de facture référencie une nuitée ou une autre charge (produit, service ou menu). Une opération de     compte débitrice référencie une ligne de facture. Un paiement est lié à une facture et aussi à une ligne facture.
+- Hôtels, Chambres et Salles: Chaque hôtel doit pouvoir gérer ses chambres et salles: (Chambres pour passer des nuits, Les salles pour les conférences
+  et les séminaires)
+- Clients & Sociétés: Les clients qui réservent les chambres et achètent au restaurant. Des sociétés peuvent éventuellement prendre les clients en
+    charges en partie ou en total.
+- Restaurant, Menus & Point de vente: Le restaurant de l'hôtel où le client peut prendre des plats ou produits et payer sur place ou mettre sur la
+    facture de la chambre.
+- Ménage: Nettoyage des chambres et autres
+- Reporting: Rapports financiers, occupations, chiffres affaires, clients, stocks...
+- Administration: Utilisateurs, Rôles, Hôtels & Données référentielles de l'application. Les droits d'accès aux différentes interfaces. Les roles           comme "ADMIN", "SUPERADMIN", "GERANT", "RECEPTION", "RESTAURANT", "RESREC". La table utilisateurs doit être nommée 'DBUsers' pour éviter le
+    conflit avec tout éventuel mot clé de db/language.
+- Profile: Permet à l'utilisateur de gérer son compte.
+- Notifications graphiques: notifications, pop-up, alerts, numéros et par emails.
+- Multilinguisme: L'application doit avoir 3 langues: arabe, français et anglais.
+Voici la structure sql des tables du schéma core de la base postgres.
+Et voici les informations du projet backend (en Spring boot) et la partie d'authentification déjà réalisée: Maintenant on va passer à la création du projet frontend avec angular avec typescript comme language, 
+nodejs et npm pour les packages + jQuery + Tailwind (v4)+ DataTables datatables.net + Bootstrap. 
+Le nom du projet doit être "cityfrontend". Le projet doit être no server side rendering (ssr disabled) 
+pour pouvoir utiliser localStorage. Ensuite, implémenter la partie authentification (basic auth avec username et password), 
+la gestion des accès et redirection selon le role de l'utilisateur. 
+#Identité Graphique
+Définir une identité graphique pour toute l'application. 
+La couleur du bg-info et le bleu clair doivent être la couleur principale des headers, traits, boutons et ombres. 
+Le blanc et le gris doivent être les couleurs des fonds et de background. 
+#Page Login
+La partie d'authentification doit comporter une page login, 
+avec un header de deux parties: à gauche le logo et le nom de l'application "City Hotel" sous-ligné et à droite 
+l'expression "Gestion des hôtels" et le bouton de changement de langue. La page login contient le formulaire de connexion 
+avec "Se souvenir de moi" et "Mot de passe oublié ?". 
+#Header
+Quand l'authentification est réussi, l'utilisateur est redirigé vers un component selon son role, Le header est mis à jour 
+avec à droite, le nom d'utilisateur, son avatar et son role entre parenthèses, l'icône de notifications et le bouton de déconnexion. 
+A gauche, le logo de l'application est remplacé par le logo de hôtel et le nom "City Hotel" est remplacé par le nom de 
+l'hôtel du user (Mettez à jour si nécessaire la base et backend pour prendre en charge la gestion des logos et avatars). 
+#Menu SideBar
+L'utilisateur connecté aura aussi son menu sidebar avec des liens et sous-liens, garnis d'icônes et de transitions, 
+accessibles selon son rôle. Ce menu doit pouvoir être réduit à icônes seulement ou même collapsed: 
+🛒 Produits & Cat. (ADMIN, GERANT, SUPERADMIN)
+   Produits (ADMIN, GERANT, SUPERADMIN)
+   Catégories (ADMIN, GERANT, SUPERADMIN)
+ 📑 Commandes & Sort. (MAGASIN, GERANT, RESTAURANT, RESREC, SUPERADMIN)
+   Bons de commandes (MAGASIN, GERANT, SUPERADMIN)
+   Bons de sorties (MAGASIN, GERANT, RESTAURANT, RESREC, SUPERADMIN)
+ 🗓️ Réservations (RECEPTION, GERANT, RESREC, SUPERADMIN)
+   Réservations (RECEPTION, GERANT, RESREC, SUPERADMIN)
+   Night Audit (RECEPTION, GERANT, RESREC, SUPERADMIN)
+ 💳 Paiements (RECEPTION, GERANT, RESREC, SUPERADMIN)
+   Relevé de compte (RECEPTION, GERANT, RESREC, SUPERADMIN)
+ 🏨 Hôtels & Chambres (ADMIN, GERANT, SUPERADMIN)
+   Ajout hôtel (ADMIN, SUPERADMIN)
+   Hôtels (ADMIN, SUPERADMIN)
+   Ajout chambre (ADMIN, GERANT, SUPERADMIN)
+   Chambres (ADMIN, GERANT, SUPERADMIN)
+   Types chambre (libellé original : “Types hambre”) (ADMIN, GERANT, SUPERADMIN)
+   Prix chambre (ADMIN, GERANT, SUPERADMIN)
+ 👥 Clients & Sociétés (GERANT, RECEPTION, RESREC, SUPERADMIN)
+   Ajout client (GERANT, RECEPTION, RESREC, SUPERADMIN)
+   Clients (GERANT, RECEPTION, RESREC, SUPERADMIN)
+   Ajout société (GERANT, RECEPTION, RESREC, SUPERADMIN)
+   Sociétés (GERANT, RECEPTION, RESREC, SUPERADMIN)
+ 🍽️ Restaurant (RESTAURANT, RESREC, SUPERADMIN)
+   Menus (RESTAURANT, RESREC, SUPERADMIN)
+   Point vente (RESTAURANT, RESREC, SUPERADMIN)
+ 🧹 Ménage (MENAGE, GERANT, SUPERADMIN)
+   Dashboard (MENAGE, GERANT, SUPERADMIN)
+   Tâches (MENAGE, GERANT, SUPERADMIN)
+   Personnel ménage (MENAGE, GERANT, SUPERADMIN)
+   Planning & historique (MENAGE, GERANT, SUPERADMIN)
+   Historique (MENAGE, GERANT, SUPERADMIN)
+ 📈 Reporting (ADMIN, GERANT, SUPERADMIN)
+   Dashboard (ADMIN, GERANT, SUPERADMIN)
+   Finances (ADMIN, GERANT, SUPERADMIN)
+   Rapports Réservations (ADMIN, GERANT, SUPERADMIN)
+   Rapports Clients (ADMIN, GERANT, SUPERADMIN)
+   Alerts des Stocks (ADMIN, GERANT, SUPERADMIN)
+ 👤 Profile (tous rôles connectés)
+   Profile (tous rôles connectés)

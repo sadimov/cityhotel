@@ -1,0 +1,113 @@
+Bonjour, j'ai un projet qui est une application web qui gère le métier d'hôtel. 
+L'application doit permettre une gestion multi-hotels. Chaque hôtel a son propre espace. Un utilisateur se connecte 
+pour faire les opérations de gestion, selon son rôle, de son propre hôtel sans toucher ni même voir les autres hôtels.
+Voici les modules de gestion d'un hôtel que doit contenir cette application:
+- gestion des stocks (produits, stocks des produits, catégories des produits, bon de commandes, bon de sorties, demandes au sein d'un bon commande,
+    demandes au sein d'un bon de sortie, alerts de rupture ou de presque en rupture, alerts stocks dans le module "Reporting".
+    Fournisseurs, Factures des fournisseurs.
+- Reservation: Réservation, Nuitées, Night Audit (vérification à midi des check in d'aujourd'hui)
+- Paiements, Factures et Comptes (Le client et La société ont des comptes). Ce module en relation avec la comptabilité doit respecter les normes de
+    comptabilité en ce qui concerne la numérotation des factures, comptes, clients. Les factures pourront contenir des taxes. Prévoir une     liaison avec le logiciel de comptabilité "Dolibarr". Le compte peut avoir des opérations de compte créditrice et autres débitrices. Une     facture a des lignes de facture. Une ligne de facture référencie une nuitée ou une autre charge (produit, service ou menu). Une opération de     compte débitrice référencie une ligne de facture. Un paiement est lié à une facture et aussi à une ligne facture.
+- Hôtels, Chambres et Salles: Chaque hôtel doit pouvoir gérer ses chambres et salles: (Chambres pour passer des nuits, Les salles pour les conférences
+  et les séminaires)
+- Clients & Sociétés: Les clients qui réservent les chambres et achètent au restaurant. Des sociétés peuvent éventuellement prendre les clients en
+    charges en partie ou en total.
+- Restaurant, Menus & Point de vente: Le restaurant de l'hôtel où le client peut prendre des plats ou produits et payer sur place ou mettre sur la
+    facture de la chambre.
+- Ménage: Nettoyage des chambres et autres
+- Reporting: Rapports financiers, occupations, chiffres affaires, clients, stocks...
+- Administration: Utilisateurs, Rôles, Hôtels & Données référentielles de l'application. Les droits d'accès aux différentes interfaces. Les roles           comme "ADMIN", "SUPERADMIN", "GERANT", "RECEPTION", "RESTAURANT", "RESREC". La table utilisateurs doit être nommée 'DBUsers' pour éviter le
+    conflit avec tout éventuel mot clé de db/language.
+- Profile: Permet à l'utilisateur de gérer son compte.
+- Notifications graphiques: notifications, pop-up, alerts, numéros et par emails.
+- Multilinguisme: L'application doit avoir 3 langues: arabe, français et anglais.
+
+Partie base de données:
+Voici la structure sql, ci-joint, des tables des schémas core, finance, clients, hébergement de la base postgres.
+
+La partie backend du projet est développé en Spring boot.
+
+Le module "hébergement" est déjà développé côté backend (entity, repository, dto, service, controller) et sont implémentées les opérations CRUD pour toutes les tables. Le module hébergement utilise les entités du module "clients" et affecte les entités du module finance via les facture, les lignes factures, opérations de comptes...
+
+Le module "hébergement" est déjà développé aussi côté frontend du module. Le projet frontend est créé avec angular avec typescript comme language, nodejs et npm pour les packages + jQuery + Tailwind (v4)+ DataTables datatables.net + Bootstrap. La partie auth, module "clients", module "finance" et module "hébergement" côté frontend sont déjà réalisés et voici ci-joints les fichiers et informations du projet côté frontend cityfrontend. Implémenter tous les components nécessaires à la gestion.
+
+Maintenant nous voulons ajouter au module "hébergement" côté frontend, un component "reservations-calendar" dont voici la description:
+
+
+1. Objectif du Module
+Offrir une interface graphique intuitive pour visualiser, créer, modifier et annuler les réservations d’un hôtel. Le composant Calendar affiche une grille où chaque colonne représente un jour et chaque ligne une chambre (groupées par type (types_chambres) : Single, Double, Suite...), permettant d’interagir directement avec les réservations via clics, glisser-déposer et menus contextuels.
+
+2. Affichage et Initialisation
+Grille dynamique :
+
+Colonnes : Générées à partir d’un intervalle de jours (par défaut le mois courant, ajustable via un "date range picker" affichant deux mois successifs). L’en-tête comporte deux parties : une case avec le chiffre 0 (fond bleu, texte blanc) et, en dessous, le numéro du jour et ses trois premières lettres en français.
+Lignes : Représentent les chambres de l’hôtel de l’utilisateur connecté, regroupées par type. Chaque groupe est précédé d’une ligne grise (sans cases) indiquant le type (avec le message "Cliquer et glisser la souris pour réserver").
+Design des cellules :
+
+Les cases d’intersection ont des bordures grises légères.
+Les colonnes sont colorées selon leur position : avant aujourd’hui (fond gris hachuré), week-end (gris clair), sinon (blanc).
+
+3. Affichage des Réservations (à partir d'une liste ReservationClient)
+Chaque réservation s’affiche sous forme d’un rectangle couvrant de la date de début à la date de fin pour la chambre concernée.
+La couleur du rectangle dépend du statut de la réservation :
+0 → Rouge (non confirmée)
+0 et date début proche (demain ou plus) → Rose
+2 → Vert (confirmée)
+2 et date fin proche → Vert clair
+4 → Orange
+Le rectangle affiche en son centre le nom du client en blanc.
+
+4. Interactions Utilisateur
+Création de réservation :
+
+Clic simple sur une case vide ouvre un modal (#reservModal) pré-rempli avec la chambre et la date cliquée (date début = jour cliqué, date fin = jour suivant), la case se colore en rouge.
+Drag & Drop horizontal sur une ligne de chambre permet de sélectionner plusieurs jours. Pendant le drag, les cases parcourues se colorent en rouge ; au relâchement, le modal s’ouvre avec la plage sélectionnée.
+Une méthode permet d’annuler toute coloration si la création est annulée.
+Consultation et modification :
+
+Clic simple sur une réservation exécute consultReservation() pour afficher les détails.
+Clic droit sur une réservation affiche un menu contextuel à la position du curseur, proposant :
+Paiements (redirige vers un autre component en passant l’ID de ReservationClient)
+Check-In (exécute checkIn(...))
+Modifier/Déplacer (exécute openModifyReservationModal(...))
+Check Out (si applicable)
+Actualisation :
+
+Après création, modification ou suppression, le calendrier se met à jour instantanément (via BehaviorSubject ou WebSocket) afin de refléter les changements en temps réel.
+
+5. Contraintes et Validations
+Restrictions d’interaction :
+
+Aucune action (clic ou drag) sur les cases de jours passés.
+Le drag-n-drop est autorisé uniquement horizontalement sur une même ligne (sinon, action annulée).
+Empêcher la réservation si le drag couvre une case déjà occupée.
+Le clic droit sur une case vide est inactif.
+Les zones de séparation entre types de chambres ne déclenchent aucune action.
+Validation et feedback utilisateur :
+
+Des messages d’erreur clairs (ex. : "Date passée", "Conflit de réservation") s’affichent si une action non autorisée est tentée.
+Des confirmations (via modales ou toasts) pour les actions sensibles (check-in, check-out, suppression).
+
+6. Aspects Techniques et Performance
+Technologies :
+
+Frontend : Angular (composant Calendar personnalisé ou intégration de FullCalendar/Angular Material)
+Mécanismes de rafraîchissement : Utilisation de BehaviorSubject et/ou WebSocket pour actualiser la vue en temps réel.
+Optimisation du DOM :
+
+Utilisation d’Angular OnPush ou de la virtualisation pour limiter les re-rendus, surtout pour un grand nombre de chambres et de jours.
+Chargement paresseux des données pour éviter de surcharger l’interface.
+Adaptabilité et configuration :
+
+Possibilité de configurer l’intervalle de dates affiché, les couleurs et d’autres paramètres via des options ou paramètres utilisateur.
+Prévoir une interface responsive adaptée aux différentes résolutions d’écran.
+
+7. Conclusion
+Ce cahier des charges définit un module Calendar en tant que composant Angular qui :
+
+Affiche une grille dynamique et personnalisable avec des colonnes correspondant aux jours et des lignes correspondant aux chambres (groupées par type).
+Permet une interaction riche et intuitive (clic simple, drag & drop, menu contextuel) pour gérer les réservations, avec un système de feedback immédiat et de validation des actions.
+Intègre des restrictions robustes pour éviter les actions invalides, et offre des mises à jour en temps réel pour garantir la cohérence des données affichées.
+
+
+

@@ -1,0 +1,71 @@
+# IDE
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# Build
+target/
+build/
+dist/
+out/
+*.class
+
+# Frontend
+node_modules/
+.angular/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.p12
+secrets/
+
+# Claude Code
+.claude/projects/
+.claude/sessions/
+.claude/.cache/
+
+# DB locale / dumps
+*.dump
+*.bak
+
+# Tools
+.gradle/
+.mvn/wrapper/maven-wrapper.jar
+
+# === Ajouts city-claude-setup ===
+
+# Helper local poste dev (Java 21 sans JAVA_HOME système)
+_run_mvn_*.ps1
+
+# Prompts user de session (à conserver localement, pas en repo)
+prompt_*.md
+carto.md
+
+# Stock brut — matière première de génération (cf. CLAUDE.md §2bis)
+# Ces dossiers contiennent du code mélangé/hétérogène servant de source
+# pour /integrate-module. Ne JAMAIS les committer : seul le code intégré
+# dans citybackend/ et cityfrontend/ est la vérité du projet.
+/CLIENTS/
+/FINANCE/
+/HEBERGEMENT/
+/INVENTORY/
+/MENAGE/
+/RESTAURANT/
+

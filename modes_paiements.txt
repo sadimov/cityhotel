@@ -1,0 +1,9 @@
+Le client peut utiliser plusieurs modes de paiements comme:
+
+- Cach (Espèces): Billets et pièces Ouguiya MRU ou devises: Dollar $, Euro €
+
+- Chèques bancaires
+
+- Terminal CB
+
+- Wallets sur mobile: Bankily, Masrivi, SEDAD, CLICK, AMANETY, BFI CASH, MoovMoney, GazaPay

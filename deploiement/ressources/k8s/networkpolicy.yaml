@@ -1,0 +1,149 @@
+# NetworkPolicies — défense en profondeur.
+# K3s utilise flannel (par défaut) qui n'applique PAS les NetworkPolicies.
+# Pour qu'elles soient effectives, installer un CNI compatible (Calico) ou
+# bien K3s avec --flannel-backend=none + Calico. Sinon ces fichiers sont
+# documentation uniquement (et restent utiles pour la migration future).
+#
+# Si NetworkPolicies non actives, l'isolation des couches est seulement
+# logique (Service ClusterIP non exposé hors cluster) — ce qui suffit pour
+# une V1 single-node, mais à durcir pour un multi-node.
+
+# === 1. Default deny dans le namespace city ===
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: city
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# === 2. Frontend : ingress depuis Traefik (kube-system) uniquement ===
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: city-frontend-policy
+  namespace: city
+spec:
+  podSelector:
+    matchLabels:
+      app: city-frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 80
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53                      # DNS
+        - protocol: TCP
+          port: 53
+
+---
+# === 3. Backend : ingress depuis Traefik + frontend ; egress vers postgres + DNS + SMTP ===
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: city-backend-policy
+  namespace: city
+spec:
+  podSelector:
+    matchLabels:
+      app: city-backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system   # Traefik
+        - podSelector:
+            matchLabels:
+              app: city-frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Postgres (même namespace)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: city-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # SMTP sortant (mail relay)
+    - to: []                          # Internet
+      ports:
+        - protocol: TCP
+          port: 587
+        - protocol: TCP
+          port: 465
+        - protocol: TCP
+          port: 25
+    # Dolibarr API + autres tiers (HTTPS)
+    - to: []
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# === 4. Postgres : ingress depuis backend + backup uniquement ===
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: city-postgres-policy
+  namespace: city
+spec:
+  podSelector:
+    matchLabels:
+      app: city-postgres
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: city-backend
+        - podSelector:
+            matchLabels:
+              app: city-postgres-backup
+      ports:
+        - protocol: TCP
+          port: 5432
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

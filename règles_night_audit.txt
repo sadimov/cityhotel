@@ -1,0 +1,86 @@
+Le Night Audit sert à fermer la journée de travail de l’hôtel.
+
+La journée de l’hôtel ne suit pas forcément la date normale du calendrier.
+Par exemple, même si la date réelle change, le système reste dans la même journée tant que le Night Audit n’est pas fait.
+
+Donc :
+
+Si le Night Audit n’est pas lancé, l’hôtel reste toujours dans la même journée de travail.
+
+⸻
+
+2. Heure du Night Audit
+
+Le Night Audit doit être prévu à midi.
+
+À midi, le système prépare la clôture de la journée hôtelière.
+
+⸻
+
+3. Avant de lancer le Night Audit
+
+Avant la clôture, le système doit vérifier les opérations importantes :
+
+Clients déjà à l’hôtel
+
+Pour chaque client présent :
+
+* Est-ce que le client va continuer son séjour ?
+* Ou est-ce que le client va faire son départ ?
+
+Si le client continue, le système garde sa chambre occupée.
+Si le client part, la réception doit faire le check-out avant la clôture.
+
+⸻
+
+4. Réservations du jour
+
+Le système doit aussi vérifier les réservations prévues.
+
+Pour chaque réservation :
+
+* Est-ce que le client est arrivé ?
+* Est-ce qu’il faut faire le check-in ?
+* Ou est-ce que la réservation reste non arrivée ?
+
+La réception doit décider avant la clôture.
+
+⸻
+
+5. Alerte aux utilisateurs
+
+Quand on lance le Night Audit, le système affiche un message à tous les utilisateurs :
+
+Attention, le Night Audit va commencer dans 3 minutes. Veuillez terminer vos opérations en cours.
+
+Pendant ces 3 minutes, les utilisateurs peuvent finir :
+
+* check-in
+* check-out
+* encaissements
+* modifications importantes
+
+⸻
+
+6. Après les 3 minutes
+
+Après les 3 minutes, le système bloque les nouvelles opérations.
+
+Les utilisateurs ne peuvent plus modifier la journée en cours.
+
+Le système peut alors fermer la journée proprement.
+
+⸻
+
+7. Résultat après le Night Audit
+
+Après la clôture :
+
+* la journée hôtelière est fermée
+* une nouvelle journée commence
+* les chambres sont mises à jour
+* les clients restants continuent leur séjour
+* les clients partis sont clôturés
+* les réservations non traitées restent visibles selon leur statut
+
+Le night audit ne s'exécute pas automatiquement. A midi pile, un modal s'ouvre dans l'écran d'un utilisateur ayant les rôles ADMIN et NIGHTAUDIT pour qu'il clique sur lancer ou reporter

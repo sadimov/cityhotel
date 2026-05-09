@@ -1,0 +1,87 @@
+# syntax=docker/dockerfile:1.7
+# ----------------------------------------------------------------------------
+# city-backend — image de production
+# Stack palier 1 : Java 21 + Spring Boot 3.4.5
+# Build : multi-stage Maven 3.9 (sur eclipse-temurin 21 JDK) → JRE 21 noble
+#
+# A construire depuis la racine de citybackend/ :
+#   docker build -f deploiement/ressources/docker/Dockerfile.backend \
+#                -t ghcr.io/<org>/city-backend:<tag> \
+#                citybackend/
+#
+# Alternative recommandée : Jib (cf. 02_preparation_application.md §2.1)
+# ----------------------------------------------------------------------------
+
+# ---------- Stage 1 : Build avec dépendances mises en cache ----------
+FROM eclipse-temurin:21.0.5_11-jdk-noble AS builder
+
+# Outils nécessaires (curl pour debugging, apt-get clean en fin)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /build
+
+# Étape 1.a : copier le pom.xml + Maven wrapper et précharger les dépendances
+# Cette couche est mise en cache tant que le pom.xml ne change pas.
+COPY mvnw mvnw.cmd ./
+COPY .mvn .mvn
+COPY pom.xml ./
+RUN chmod +x mvnw && \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
+
+# Étape 1.b : copier le code source et compiler
+COPY src ./src
+RUN ./mvnw -B -ntp -DskipTests \
+        -Dmaven.test.skip=true \
+        clean package && \
+    # Renommer le jar pour avoir un nom déterministe
+    mv target/citybackend-*.jar target/app.jar && \
+    # Extraire les couches Spring Boot pour optimiser le build d'image
+    java -Djarmode=layertools -jar target/app.jar extract --destination target/extracted
+
+# ---------- Stage 2 : Image runtime minimale ----------
+FROM eclipse-temurin:21.0.5_11-jre-noble AS runtime
+
+# Métadonnées OCI
+LABEL org.opencontainers.image.title="city-backend" \
+      org.opencontainers.image.description="API Spring Boot multi-tenant City Hotel" \
+      org.opencontainers.image.vendor="city-projects" \
+      org.opencontainers.image.licenses="proprietary"
+
+# Sécurité : utilisateur non-root
+RUN groupadd --system --gid 10001 city && \
+    useradd  --system --uid 10001 --gid city --home-dir /app --shell /sbin/nologin city
+
+# Outils minimaux pour healthcheck (curl) et timezone
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      curl tzdata ca-certificates dumb-init \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sf /usr/share/zoneinfo/Africa/Nouakchott /etc/localtime \
+    && echo "Africa/Nouakchott" > /etc/timezone
+
+WORKDIR /app
+
+# Copier les couches Spring Boot dans l'ordre de stabilité (cache hits)
+COPY --from=builder --chown=city:city /build/target/extracted/dependencies/         ./
+COPY --from=builder --chown=city:city /build/target/extracted/spring-boot-loader/   ./
+COPY --from=builder --chown=city:city /build/target/extracted/snapshot-dependencies/ ./
+COPY --from=builder --chown=city:city /build/target/extracted/application/          ./
+
+# Préparer le dossier logs (monté en volume si besoin)
+RUN mkdir -p /app/logs && chown city:city /app/logs
+
+USER 10001
+EXPOSE 8080
+
+# Variables d'env par défaut (override par k8s ConfigMap / Secret)
+ENV SPRING_PROFILES_ACTIVE=prod \
+    TZ=Africa/Nouakchott \
+    JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75 -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError -Djava.security.egd=file:/dev/./urandom -Duser.timezone=Africa/Nouakchott"
+
+# Healthcheck (Kubernetes utilise readinessProbe, ce HEALTHCHECK sert à docker compose)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD curl -fsS http://localhost:8080/citybackend/actuator/health/liveness || exit 1
+
+# dumb-init = PID 1 propre, gestion des signaux (SIGTERM rolling restart k8s)
+ENTRYPOINT ["dumb-init", "--", "java", "org.springframework.boot.loader.launch.JarLauncher"]

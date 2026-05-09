@@ -1,0 +1,36 @@
+Bonjour, j'ai un projet qui est une application web qui gère le métier d'hôtel. 
+L'application doit permettre une gestion multi-hotels. Chaque hôtel a son propre espace. Un utilisateur se connecte 
+pour faire les opérations de gestion, selon son rôle, de son propre hôtel sans toucher ni même voir les autres hôtels.
+Voici les modules de gestion d'un hôtel que doit contenir cette application:
+- gestion des stocks (produits, stocks des produits, catégories des produits, bon de commandes, bon de sorties, demandes au sein d'un bon commande,
+    demandes au sein d'un bon de sortie, alerts de rupture ou de presque en rupture, alerts stocks dans le module "Reporting".
+    Fournisseurs, Factures des fournisseurs.
+- Reservation: Réservation, Nuitées, Night Audit (vérification à midi des check in d'aujourd'hui)
+- Paiements, Factures et Comptes (Le client et La société ont des comptes). Ce module en relation avec la comptabilité doit respecter les normes de
+    comptabilité en ce qui concerne la numérotation des factures, comptes, clients. Les factures pourront contenir des taxes. Prévoir une     liaison avec le logiciel de comptabilité "Dolibarr". Le compte peut avoir des opérations de compte créditrice et autres débitrices. Une     facture a des lignes de facture. Une ligne de facture référencie une nuitée ou une autre charge (produit, service ou menu). Une opération de     compte débitrice référencie une ligne de facture. Un paiement est lié à une facture et aussi à une ligne facture.
+- Hôtels, Chambres et Salles: Chaque hôtel doit pouvoir gérer ses chambres et salles: (Chambres pour passer des nuits, Les salles pour les conférences
+  et les séminaires)
+- Clients & Sociétés: Les clients qui réservent les chambres et achètent au restaurant. Des sociétés peuvent éventuellement prendre les clients en
+    charges en partie ou en total.
+- Restaurant, Menus & Point de vente: Le restaurant de l'hôtel où le client peut prendre des plats ou produits et payer sur place ou mettre sur la
+    facture de la chambre.
+- Ménage: Nettoyage des chambres et autres
+- Reporting: Rapports financiers, occupations, chiffres affaires, clients, stocks...
+- Administration: Utilisateurs, Rôles, Hôtels & Données référentielles de l'application. Les droits d'accès aux différentes interfaces. Les roles           comme "ADMIN", "SUPERADMIN", "GERANT", "RECEPTION", "RESTAURANT", "RESREC". La table utilisateurs doit être nommée 'DBUsers' pour éviter le
+    conflit avec tout éventuel mot clé de db/language.
+- Profile: Permet à l'utilisateur de gérer son compte.
+- Notifications graphiques: notifications, pop-up, alerts, numéros et par emails.
+- Multilinguisme: L'application doit avoir 3 langues: arabe, français et anglais.
+
+Partie base de données:
+Voici la structure sql, ci-joint, des tables des schémas core, hebergement et menage de la base postgres.
+
+Partie backend:
+Les fichiers et informations du projet backend (en Spring boot) sont ci-joints et la partie d'authentification et le module "hebergement" déjà réalisés.
+
+Maintenant, on va passer au développement, côté backend,  du module "ménage". Développer le code backend (entity, repository, dto, service, controller) et implémenter les opérations CRUD pour toutes les tables du modules. Implémenter les traitements métier nécessaires à la gestion. Le
+module "menage" peut éventuellement utiliser le module "hebergement".
+
+
+Merci, maintenant on veut passer au côté frontend du module. Le projet frontend est créé avec angular avec typescript comme language, nodejs et npm pour les packages + jQuery + Tailwind (v4)+ DataTables datatables.net + Bootstrap. La partie auth et le module "hebergement" côté frontend sont déjà réalisés et voici ci-joints les fichiers et informations du projet côté frontend cityfrontend.
+

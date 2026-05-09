@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: city
+  labels:
+    name: city
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: city-critical
+value: 1000
+globalDefault: false
+description: "Composants critiques city (Postgres). Ne doivent pas être évincés."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: city-application
+value: 500
+globalDefault: false
+description: "Backend Spring Boot."
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: city-presentation
+value: 100
+globalDefault: false
+description: "Frontend nginx (stateless, recréable)."

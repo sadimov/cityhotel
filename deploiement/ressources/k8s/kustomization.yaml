@@ -1,0 +1,45 @@
+# Kustomization principale — agrège tous les manifests city.
+# Ne pas inclure les *.example (à générer/sceller hors-git).
+#
+# Usage :
+#   kubectl apply -k deploiement/ressources/k8s/                        # déploie tout
+#   kubectl apply -k deploiement/ressources/k8s/ --dry-run=server       # validation
+#
+# Pour overrider l'image en CI (sans modifier le yaml) :
+#   cd deploiement/ressources/k8s/
+#   kustomize edit set image ghcr.io/REPLACE_ORG/city-backend=ghcr.io/myorg/city-backend:1.0.1
+#   kustomize build . | kubectl apply -f -
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: city
+
+resources:
+  - namespace.yaml
+  - configmap-backend.yaml
+  - postgres-statefulset.yaml
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+  - ingress.yaml
+  - networkpolicy.yaml
+  - poddisruptionbudget.yaml
+  - backup-cronjob.yaml
+  # Les Secrets ne sont PAS listés ici. Ils doivent être appliqués séparément
+  # (kubectl create secret, sealed-secrets, SOPS, External Secrets, etc.).
+  # Le ClusterIssuer letsencrypt-issuer.yaml s'applique au niveau cluster (cluster-wide),
+  # à appliquer une seule fois en dehors de cette kustomization.
+
+# Image overrides (pratique pour les pipelines CI) :
+images:
+  - name: ghcr.io/REPLACE_ORG/city-backend
+    newName: ghcr.io/REPLACE_ORG/city-backend
+    newTag: "1.0.0"
+  - name: ghcr.io/REPLACE_ORG/city-frontend
+    newName: ghcr.io/REPLACE_ORG/city-frontend
+    newTag: "1.0.0"
+
+# Labels communs
+commonLabels:
+  app.kubernetes.io/part-of: city-hotel
+  app.kubernetes.io/managed-by: kustomize

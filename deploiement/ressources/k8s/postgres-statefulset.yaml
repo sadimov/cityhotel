@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: city-postgres
+  namespace: city
+  labels:
+    app: city-postgres
+spec:
+  clusterIP: None              # headless service (StatefulSet)
+  selector:
+    app: city-postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: city-postgres-config
+  namespace: city
+data:
+  # Tunings adaptés à un serveur 16 Gi RAM
+  postgresql.conf: |
+    listen_addresses = '*'
+    max_connections = 100
+    shared_buffers = 2GB
+    effective_cache_size = 6GB
+    work_mem = 16MB
+    maintenance_work_mem = 512MB
+    wal_compression = on
+    log_min_duration_statement = 1000
+    log_lock_waits = on
+    log_temp_files = 0
+    log_line_prefix = '%t [%p] %u@%d '
+    checkpoint_timeout = 15min
+    max_wal_size = 4GB
+    random_page_cost = 1.1
+    timezone = 'Africa/Nouakchott'
+    log_timezone = 'Africa/Nouakchott'
+    datestyle = 'iso, mdy'
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: city-postgres
+  namespace: city
+  labels:
+    app: city-postgres
+spec:
+  serviceName: city-postgres
+  replicas: 1
+  updateStrategy:
+    type: OnDelete                      # jamais de rolling auto sur la DB
+  selector:
+    matchLabels:
+      app: city-postgres
+  template:
+    metadata:
+      labels:
+        app: city-postgres
+    spec:
+      priorityClassName: city-critical
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999                  # postgres user dans l'image officielle
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: postgres:18.3-bookworm
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: city-postgres-secret
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+            - name: TZ
+              value: Africa/Nouakchott
+            - name: POSTGRES_INITDB_ARGS
+              value: "--data-checksums"
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "6Gi"
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: config
+              mountPath: /etc/postgresql/postgresql.conf
+              subPath: postgresql.conf
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "cityapp", "-d", "cityprojectdb"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "cityapp", "-d", "cityprojectdb"]
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # Postgres a besoin d'écrire dans /tmp/run pid
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: config
+          configMap:
+            name: city-postgres-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 200Gi

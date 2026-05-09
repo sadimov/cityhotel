@@ -1,0 +1,122 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: city-backup-pvc
+  namespace: city
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: city-backup-script
+  namespace: city
+data:
+  postgres-backup.sh: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+    BACKUP_DIR="${BACKUP_DIR:-/backup}"
+    RETENTION_DAYS="${RETENTION_DAYS:-30}"
+    DAY=$(date +%Y-%m-%d)
+    FILE="${BACKUP_DIR}/${PGDATABASE}_${DAY}.sql.gz"
+    mkdir -p "${BACKUP_DIR}"
+    echo "[$(date -Iseconds)] backup begin → ${FILE}"
+    pg_dump --format=plain --no-owner --no-privileges --quote-all-identifiers \
+      | gzip -9 > "${FILE}.tmp"
+    mv "${FILE}.tmp" "${FILE}"
+    SIZE=$(du -h "${FILE}" | cut -f1)
+    echo "[$(date -Iseconds)] backup OK ${FILE} ${SIZE}"
+    # Vérification
+    gzip -t "${FILE}"
+    # Rotation
+    DELETED=$(find "${BACKUP_DIR}" -maxdepth 1 -type f -name "${PGDATABASE}_*.sql.gz" -mtime "+${RETENTION_DAYS}" -delete -print | wc -l)
+    echo "[$(date -Iseconds)] rotation : ${DELETED} fichier(s) supprimé(s)"
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: city-postgres-backup
+  namespace: city
+spec:
+  # 02:00 NKC = 02:00 UTC (Africa/Nouakchott = UTC+0, GMT)
+  schedule: "0 2 * * *"
+  timeZone: "Africa/Nouakchott"     # nécessite Kubernetes ≥ 1.27 (K3s 1.31 OK)
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 86400
+      template:
+        metadata:
+          labels:
+            app: city-postgres-backup
+        spec:
+          restartPolicy: OnFailure
+          priorityClassName: city-application
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            fsGroup: 999
+          containers:
+            - name: backup
+              image: postgres:18.3-bookworm
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/bash", "/scripts/postgres-backup.sh"]
+              env:
+                - name: PGHOST
+                  value: city-postgres
+                - name: PGPORT
+                  value: "5432"
+                - name: PGDATABASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: city-postgres-secret
+                      key: POSTGRES_DB
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: city-postgres-secret
+                      key: POSTGRES_USER
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: city-postgres-secret
+                      key: POSTGRES_PASSWORD
+                - name: BACKUP_DIR
+                  value: /backup
+                - name: RETENTION_DAYS
+                  value: "30"
+              resources:
+                requests:
+                  cpu: "100m"
+                  memory: "128Mi"
+                limits:
+                  cpu: "500m"
+                  memory: "256Mi"
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: script
+                  mountPath: /scripts
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+          volumes:
+            - name: backup
+              persistentVolumeClaim:
+                claimName: city-backup-pvc
+            - name: script
+              configMap:
+                name: city-backup-script
+                defaultMode: 0755

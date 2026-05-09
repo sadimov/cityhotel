@@ -1,0 +1,164 @@
+Le component point de vente (POS) utilise les modules "clients", "hebergement", "inventory" et "finance". ces 4 modules sont déjà prêts.
+ci-joint les interfaces, models et services côté frontend de ces modules.
+
+Voici comment fonctionne le point de vente:
+un client demande auprès du point de vente un menu (plats, boisson, café...) et/ou des prduits (bouteille, canette,...), des services..
+
+Le responsable vente commence par rechercher/filtrer par prénom ou tel du client parmi les clients de l'hôtel. Si le client est trouvé, on affiche ses réservations en cours s'il y en a. La liste des réservations en cours doit être affichée avec pour chaque réservation ses infos, pour faciliter la sélection de la réservation. Le client peut ne pas avoir de réservation en cours.
+
+Ensuite, on procède à la sélection des produits, services et menus demandés par le client.
+Une facture est construite au fur et à mesure des sélections avec ses lignes (libellé, quantité, prix, sous-total..) et total.
+
+A la fin le client peut décider de payer immédiatement la commande en lui imprimant/téléchargeant la facture sur le champ, ou encore
+mettre les charges de la commande sur la facture de sa réservation (s'il y en a) qui sera réglée avant ou lors du check out.
+
+Voici une description détaillée du métier point de vente (POS):
+Vue d’ensemble
+
+Le POS sert deux cas d’usage :
+
+Vente immédiate (“walk-in” ou client externe) → encaissement direct et émission d’une facture.
+
+Vente imputée au séjour d’un client hébergé → les lignes sont ajoutées à une réservation (poste “à la chambre / folio”) pour facturation ultérieure (à la sortie ou lors d’un regroupement).
+
+Acteurs & données manipulées
+
+Client : recherché par Nom ou Téléphone ; la sélection active charge ses réservations en cours/historiques.
+
+Réservation : choisie via un bouton radio pour activer l’imputation “Ajouter à la Réservation”.
+
+Articles :
+
+Produits (stockables) avec prix fixe connu.
+
+Services (non stockables) dont le prix est saisi au moment de la vente.
+
+Menus Restaurant (carte dédiée), toujours à prix fixe.
+
+Panier / Lignes sélectionnées : libellé, quantité, prix unitaire, sous-total, et Total calculé.
+
+Parcours détaillé
+1) Identification du client
+
+Saisie libre (Nom/Téléphone) → liste cliquable des clients correspondants.
+
+Clic sur un client → il devient selectedClient (mis en surbrillance) et le bloc “Réservations pour …” s’affiche.
+
+2) Choix éventuel d’une réservation (cas “imputer au séjour”)
+
+Les réservations liées au client sont listées.
+
+L’utilisateur doit sélectionner une réservation (radio) pour débloquer le bouton “Ajouter à la Réservation”.
+
+Sans réservation sélectionnée, on pourra quand même vendre au comptoir via “Payer Maintenant”.
+
+3) Sélection des ventes
+
+Recherche d’articles via deux canaux :
+
+Produits & Services (recherche générale) :
+
+Produit : prix déjà défini → bouton Ajouter actif uniquement si un prix existe.
+
+Service : l’UI force à saisir un prix avant d’ajouter.
+
+Restaurant (Menus) : recherche dédiée sur une carte de plats à prix fixe.
+
+À chaque Ajouter, la ligne entre dans le panier avec quantité (modifiable), prix unitaire et sous-total.
+
+Le Total se met à jour à chaque modification (quantité/suppression).
+
+Règles implicites :
+
+Contrôle de prix : impossible d’ajouter un service sans prix ; impossible d’ajouter un produit si le prix est manquant.
+
+Inventaire (implicite) : les produits sont des articles stockables → ces ventes sont éligibles à décrémenter le stock (la logique n’apparaît pas ici, mais le métier POS l’implique).
+
+4) Sortie : soit encaisser, soit imputer au folio
+a) Encaissement immédiat (“Payer Maintenant”)
+
+Ouvre un modal Paiement (formulaire payForm) :
+
+Montant payé (montant encaissé ; la présence de ce champ laisse envisager les paiements partiels).
+
+Mode de paiement : Espèces, Chèque, Bankily (mobile money), Carte bancaire.
+
+Motif & Description : champs libres pour le journal de caisse/banque.
+
+Valider le paiement déclenche :
+
+L’enregistrement de l’opération de caisse/banque (journal “OperationCompte…”).
+
+La génération de la facture (bloc imprimable ci-dessous).
+
+Affichage d’un modal “Facture générée” proposant Imprimer / Télécharger.
+
+b) Imputation à la réservation (“Ajouter à la Réservation”)
+
+Disponible uniquement si une réservation est sélectionnée.
+
+Les lignes du panier sont portées sur le folio de la chambre (débit client interne).
+
+Pas d’encaissement immédiat : la facture/encaissement interviendra plus tard (check-out ou facturation intermédiaire).
+
+Métier attendu : création de lignes de charge reliées à la réservation (et, si produits, décrément de stock).
+
+5) Facturation & justificatifs
+
+Le document facture inclut :
+
+En-tête hôtel : logo (base64), nom (titlecase), adresse, ville/BP/pays, téléphone, email, site web.
+
+Informations vente : Date du jour, #Facture (invoiceId).
+
+Client : nom/prénom.
+
+Détails achats : tableau des lignes (N°, Produit, Quantité, Prix unitaire, Sous-total).
+
+Totaux : Total en MRU (formaté).
+
+Actions : Imprimer ou Télécharger la facture.
+
+Monnaie : MRU (ouguiya).
+
+Charges / Taxes : aucune TVA/Taxe/Service fee n’apparaît dans le template → le total est la somme simple des sous-totaux.
+
+États de l’UI et sécurités
+
+Loader visuel pendant les opérations (sauvegarde, encaissement, génération facture).
+
+Bouton “Ajouter à la Réservation” désactivé tant qu’aucune réservation n’est cochée.
+
+Validation de prix pour services/produits.
+
+Suppression de ligne possible dans le panier.
+
+Quantité modifiable à tout moment avec recalcul du Total.
+
+Interprétation métier (règles implicites)
+
+Deux circuits financiers :
+
+Vente comptoir → encaissement immédiat (journal caisse/banque) + facture instantanée.
+
+Vente à la chambre → pas d’encaissement immédiat, création de charges folio rattachées à la réservation (facturation différée).
+
+Gestion de stock présumée pour les produits (décrément à la validation).
+
+Tarification des services à la main → souplesse pour prestations à la demande.
+
+Modes de paiement locaux adaptés (incl. Bankily).
+
+Paiement partiel potentiellement autorisé (champ “Montant payé” ≠ Total).
+
+Limites visibles (non gérées dans ce template)
+
+Pas de remise/promotion, pas de taxes ni pourboires.
+
+Pas de multi-TVA ni ventilation comptable par nature.
+
+Pas de éclatement par centre de coût (Restaurant/Bar/Laundry).
+
+Pas de gestion d’acompte ni de reste à payer affiché dans la facture.
+
+Pas de création de client (seulement recherche/sélection).
