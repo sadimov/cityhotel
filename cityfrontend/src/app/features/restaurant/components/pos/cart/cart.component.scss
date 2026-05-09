@@ -1,0 +1,9 @@
+/* Composant POS — panier en cours. */
+.cart-lines {
+  max-height: calc(100vh - 24rem);
+  min-height: 12rem;
+}
+
+.qty-input {
+  width: 3.25rem;
+}

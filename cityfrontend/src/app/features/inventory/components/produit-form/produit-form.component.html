@@ -1,0 +1,229 @@
+<section class="produit-form">
+  <header class="produit-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'inventory.produit.form.titleEdit'
+          : 'inventory.produit.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="produit-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.produit.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="codeProduit" class="form-label">
+            {{ 'inventory.produit.fields.codeProduit' | translate }}
+          </label>
+          <input
+            id="codeProduit"
+            type="text"
+            class="form-control"
+            formControlName="codeProduit"
+            [class.is-invalid]="form.get('codeProduit')?.invalid && form.get('codeProduit')?.touched"
+          />
+          @if (form.get('codeProduit')?.touched && form.get('codeProduit')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'inventory.produit.errors.codeProduitRequired' | translate }}
+            </div>
+          }
+          @if (form.get('codeProduit')?.touched && form.get('codeProduit')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">
+              {{ 'inventory.produit.errors.codeProduitPattern' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-8">
+          <label for="nomProduit" class="form-label">
+            {{ 'inventory.produit.fields.nomProduit' | translate }}
+          </label>
+          <input
+            id="nomProduit"
+            type="text"
+            class="form-control"
+            formControlName="nomProduit"
+            [class.is-invalid]="form.get('nomProduit')?.invalid && form.get('nomProduit')?.touched"
+          />
+          @if (form.get('nomProduit')?.touched && form.get('nomProduit')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'inventory.produit.errors.nomProduitRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">
+            {{ 'inventory.produit.fields.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            class="form-control"
+            rows="2"
+            formControlName="description"
+          ></textarea>
+        </div>
+
+        <div class="col-md-4">
+          <label for="categorieId" class="form-label">
+            {{ 'inventory.produit.fields.categorie' | translate }}
+          </label>
+          <select
+            id="categorieId"
+            class="form-select"
+            formControlName="categorieId"
+            [class.is-invalid]="form.get('categorieId')?.invalid && form.get('categorieId')?.touched"
+          >
+            <option [ngValue]="null">--</option>
+            @for (cat of categories; track cat.categorieId) {
+              <option [ngValue]="cat.categorieId">
+                {{ cat.nomCategorie }}
+              </option>
+            }
+          </select>
+          @if (form.get('categorieId')?.touched && form.get('categorieId')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'inventory.produit.errors.categorieRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="uniteMesure" class="form-label">
+            {{ 'inventory.produit.fields.uniteMesure' | translate }}
+          </label>
+          <select id="uniteMesure" class="form-select" formControlName="uniteMesure">
+            @for (unite of unites; track unite.value) {
+              <option [value]="unite.value">{{ unite.labelKey | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="fournisseurPrincipalId" class="form-label">
+            {{ 'inventory.produit.fields.fournisseurPrincipal' | translate }}
+          </label>
+          <select
+            id="fournisseurPrincipalId"
+            class="form-select"
+            formControlName="fournisseurPrincipalId"
+          >
+            <option [ngValue]="null">--</option>
+            @for (f of fournisseurs; track f.fournisseurId) {
+              <option [ngValue]="f.fournisseurId">{{ f.nomFournisseur }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label for="prixUnitaire" class="form-label">
+            {{ 'inventory.produit.fields.prixUnitaire' | translate }}
+          </label>
+          <input
+            id="prixUnitaire"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="prixUnitaire"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="stockActuel" class="form-label">
+            {{ 'inventory.produit.fields.stockActuel' | translate }}
+          </label>
+          <input
+            id="stockActuel"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="stockActuel"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="seuilAlerte" class="form-label">
+            {{ 'inventory.produit.fields.seuilAlerte' | translate }}
+          </label>
+          <input
+            id="seuilAlerte"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="seuilAlerte"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="seuilCritique" class="form-label">
+            {{ 'inventory.produit.fields.seuilCritique' | translate }}
+          </label>
+          <input
+            id="seuilCritique"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="seuilCritique"
+          />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center gap-3 pt-3">
+          <div class="form-check">
+            <input
+              id="estFacturable"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="estFacturable"
+            />
+            <label for="estFacturable" class="form-check-label">
+              {{ 'inventory.produit.fields.estFacturable' | translate }}
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'inventory.produit.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="produit-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'inventory.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'inventory.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

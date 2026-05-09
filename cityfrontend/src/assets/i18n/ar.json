@@ -1,0 +1,1021 @@
+{
+  "app": {
+    "name": "سيتي هوتيل",
+    "subtitle": "إدارة الفنادق"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "remember_me": "تذكرني",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "login_button": "دخول",
+    "logout": "تسجيل الخروج",
+    "confirm_logout": "هل أنت متأكد من تسجيل الخروج؟"
+  },
+  "menu": {
+    "dashboard": "لوحة التحكم",
+    "products": "المنتجات والفئات",
+    "orders": "الطلبات والمخرجات",
+    "reservations": "الحجوزات",
+    "payments": "المدفوعات",
+    "hotels": "الفنادق والغرف",
+    "clients": "العملاء والشركات",
+    "restaurant": "المطعم",
+    "housekeeping": "التنظيف",
+    "reporting": "التقارير",
+    "profile": "الملف الشخصي"
+  },
+  "submenu": {
+    "products": {
+      "products": "المنتجات",
+      "categories": "الفئات"
+    },
+    "orders": {
+      "purchase_orders": "أوامر الشراء",
+      "delivery_orders": "أوامر التسليم"
+    },
+    "reservations": {
+      "reservations": "الحجوزات",
+      "night_audit": "مراجعة ليلية"
+    }
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "close": "إغلاق",
+    "language": "اللغة",
+    "comingSoon": "هذه الميزة قادمة مع وحدة المالية."
+  },
+  "header": {
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "user_menu": "قائمة المستخدم"
+  },
+  "sidebar": {
+    "navigation": "قائمة التنقل",
+    "minimize": "تصغير",
+    "restore": "استعادة",
+    "expand": "توسيع",
+    "collapse": "طي"
+  },
+  "clients": {
+    "list": {
+      "title": "العملاء",
+      "search": "البحث عن عميل",
+      "empty": "لا يوجد عميل",
+      "error": "تعذر تحميل قائمة العملاء.",
+      "retry": "إعادة المحاولة",
+      "actions": "الإجراءات",
+      "pagination": "ترقيم صفحات العملاء"
+    },
+    "form": {
+      "titleCreate": "عميل جديد",
+      "titleEdit": "تعديل العميل",
+      "loadError": "تعذر تحميل بيانات هذا العميل."
+    },
+    "actions": {
+      "create": "عميل جديد",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "save": "حفظ",
+      "cancel": "إلغاء"
+    },
+    "fields": {
+      "numeroClient": "رقم العميل",
+      "nom": "اللقب",
+      "prenom": "الاسم",
+      "email": "البريد الإلكتروني",
+      "telephone": "الهاتف",
+      "adresse": "العنوان",
+      "ville": "المدينة",
+      "pays": "الدولة",
+      "numeroIdentification": "رقم الهوية",
+      "dateNaissance": "تاريخ الميلاد"
+    },
+    "errors": {
+      "prenomRequired": "الاسم مطلوب.",
+      "nomRequired": "اللقب مطلوب.",
+      "emailInvalid": "عنوان البريد الإلكتروني غير صالح."
+    },
+    "messages": {
+      "createSuccess": "تم إنشاء العميل بنجاح",
+      "updateSuccess": "تم تعديل العميل بنجاح",
+      "deleteSuccess": "تم حذف العميل",
+      "deleteConfirm": "هل تريد حذف هذا العميل؟",
+      "deleteError": "تعذر حذف هذا العميل.",
+      "saveError": "تعذر حفظ بيانات هذا العميل."
+    }
+  },
+  "hebergement": {
+    "calendar": {
+      "title": "تقويم الحجوزات",
+      "previous": "الشهر السابق",
+      "next": "الشهر التالي",
+      "today": "اليوم",
+      "error": "تعذر تحميل التقويم.",
+      "retry": "إعادة المحاولة",
+      "weekday": {
+        "mon": "اثن",
+        "tue": "ثلا",
+        "wed": "أرب",
+        "thu": "خمي",
+        "fri": "جمع",
+        "sat": "سبت",
+        "sun": "أحد"
+      }
+    },
+    "list": {
+      "title": "قائمة الحجوزات",
+      "search": "بحث (رقم الحجز، العميل...)",
+      "empty": "لا توجد حجوزات",
+      "error": "تعذر تحميل قائمة الحجوزات.",
+      "retry": "إعادة المحاولة",
+      "actions": "الإجراءات",
+      "pagination": "ترقيم صفحات الحجوزات"
+    },
+    "form": {
+      "titleCreate": "حجز جديد",
+      "titleEdit": "تعديل الحجز",
+      "loadError": "تعذر تحميل بيانات هذا الحجز."
+    },
+    "checkIn": {
+      "title": "تسجيل وصول العميل",
+      "searchLabel": "الحجز المراد تسجيله",
+      "searchPlaceholder": "رقم الحجز أو اسم العميل",
+      "searchError": "تعذر إجراء البحث.",
+      "noResults": "لم يتم العثور على أي حجز.",
+      "selectReservation": "اختيار هذا الحجز",
+      "confirmTitle": "هل تؤكد تسجيل الوصول؟",
+      "success": "تم تسجيل الوصول",
+      "error": "تعذر تسجيل الوصول."
+    },
+    "actions": {
+      "create": "حجز جديد",
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "checkIn": "تسجيل وصول",
+      "checkOut": "تسجيل مغادرة",
+      "save": "حفظ",
+      "close": "إغلاق"
+    },
+    "fields": {
+      "numeroReservation": "رقم الحجز",
+      "client": "العميل",
+      "clientId": "معرّف العميل الرئيسي",
+      "societeId": "معرّف الشركة",
+      "dateArrivee": "تاريخ الوصول",
+      "dateDepart": "تاريخ المغادرة",
+      "nbNuits": "الليالي",
+      "nbAdultes": "البالغون",
+      "nbEnfants": "الأطفال",
+      "statut": "الحالة",
+      "montantTotal": "المبلغ الإجمالي",
+      "motifSejour": "سبب الإقامة",
+      "commentaires": "ملاحظات",
+      "reductionPourcentage": "خصم (%)"
+    },
+    "statut": {
+      "en_attente": "قيد الانتظار",
+      "confirmee": "مؤكد",
+      "arrivee": "وصول",
+      "partie": "مغادرة",
+      "annulee": "ملغى"
+    },
+    "errors": {
+      "clientRequired": "العميل الرئيسي مطلوب.",
+      "dateArriveeRequired": "تاريخ الوصول مطلوب.",
+      "dateDepartRequired": "تاريخ المغادرة مطلوب."
+    },
+    "messages": {
+      "createSuccess": "تم إنشاء الحجز بنجاح",
+      "updateSuccess": "تم تعديل الحجز بنجاح",
+      "saveError": "تعذر حفظ الحجز.",
+      "cancelConfirm": "هل تريد إلغاء هذا الحجز؟",
+      "cancelMotif": "سبب الإلغاء",
+      "cancelMotifRequired": "السبب مطلوب.",
+      "cancelSuccess": "تم إلغاء الحجز",
+      "cancelError": "تعذر إلغاء الحجز."
+    }
+  },
+  "inventory": {
+    "actions": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق"
+    },
+    "produit": {
+      "list": {
+        "title": "قائمة المنتجات",
+        "search": "البحث عن منتج",
+        "empty": "لا يوجد منتج",
+        "error": "تعذر تحميل قائمة المنتجات.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات المنتجات"
+      },
+      "form": {
+        "titleCreate": "منتج جديد",
+        "titleEdit": "تعديل المنتج",
+        "loadError": "تعذر تحميل بيانات هذا المنتج."
+      },
+      "actions": {
+        "create": "منتج جديد",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "fields": {
+        "codeProduit": "الرمز",
+        "nomProduit": "الاسم",
+        "description": "الوصف",
+        "categorie": "الفئة",
+        "uniteMesure": "الوحدة",
+        "prixUnitaire": "سعر الوحدة",
+        "stockActuel": "المخزون الحالي",
+        "seuilAlerte": "حد التنبيه",
+        "seuilCritique": "الحد الحرج",
+        "fournisseurPrincipal": "المورد الرئيسي",
+        "estFacturable": "قابل للفوترة",
+        "actif": "نشط",
+        "statutStock": "حالة المخزون"
+      },
+      "unites": {
+        "kg": "كيلوغرام (كغ)",
+        "g": "غرام (غ)",
+        "l": "لتر (ل)",
+        "ml": "ملليلتر (مل)",
+        "unite": "وحدة (قطعة)",
+        "boite": "علبة",
+        "paquet": "حزمة",
+        "bouteille": "زجاجة",
+        "carton": "كرتون"
+      },
+      "errors": {
+        "codeProduitRequired": "رمز المنتج مطلوب.",
+        "codeProduitPattern": "يجب أن يتكون الرمز من 3 إلى 20 حرفًا أبجديًا رقميًا.",
+        "nomProduitRequired": "الاسم مطلوب.",
+        "categorieRequired": "الفئة مطلوبة."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء المنتج بنجاح",
+        "updateSuccess": "تم تعديل المنتج بنجاح",
+        "deleteSuccess": "تم حذف المنتج",
+        "deleteConfirm": "هل تريد حذف هذا المنتج؟",
+        "deleteError": "تعذر حذف هذا المنتج.",
+        "saveError": "تعذر حفظ بيانات هذا المنتج."
+      }
+    },
+    "bonCommande": {
+      "list": {
+        "title": "أوامر الشراء",
+        "search": "بحث (رقم الأمر، المورد...)",
+        "empty": "لا يوجد أمر شراء",
+        "error": "تعذر تحميل أوامر الشراء.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات أوامر الشراء",
+        "filterAll": "جميع الحالات"
+      },
+      "form": {
+        "titleCreate": "أمر شراء جديد",
+        "titleEdit": "تعديل أمر الشراء",
+        "loadError": "تعذر تحميل بيانات أمر الشراء هذا."
+      },
+      "actions": {
+        "create": "أمر جديد",
+        "edit": "تعديل",
+        "cancel": "إلغاء",
+        "valider": "تأكيد",
+        "receptionner": "استلام"
+      },
+      "fields": {
+        "numeroBon": "رقم الأمر",
+        "numeroBonAuto": "تلقائي",
+        "fournisseur": "المورد",
+        "dateCommande": "تاريخ الأمر",
+        "dateLivraisonPrevue": "التسليم المتوقع",
+        "dateLivraisonReelle": "التسليم الفعلي",
+        "statut": "الحالة",
+        "montantTotal": "المبلغ الإجمالي",
+        "commentaires": "ملاحظات"
+      },
+      "statut": {
+        "brouillon": "مسودة",
+        "envoye": "أُرسل",
+        "confirme": "مؤكد",
+        "recu_partiel": "استلام جزئي",
+        "recu_complet": "استلام كامل",
+        "annule": "ملغى"
+      },
+      "lignes": {
+        "title": "بنود الأمر",
+        "add": "إضافة بند",
+        "remove": "حذف البند",
+        "produit": "المنتج",
+        "quantite": "الكمية",
+        "prixUnitaire": "سعر الوحدة",
+        "sousTotal": "المجموع الفرعي",
+        "total": "المجموع"
+      },
+      "errors": {
+        "fournisseurRequired": "المورد مطلوب.",
+        "dateCommandeRequired": "تاريخ الأمر مطلوب.",
+        "lignesRequired": "يجب إضافة بند واحد على الأقل.",
+        "produitRequired": "المنتج مطلوب.",
+        "quantiteMin": "يجب أن تكون الكمية 1 أو أكثر.",
+        "prixUnitaireMin": "لا يمكن أن يكون سعر الوحدة سالبًا."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء أمر الشراء بنجاح",
+        "updateSuccess": "تم تعديل أمر الشراء بنجاح",
+        "saveError": "تعذر حفظ أمر الشراء."
+      }
+    },
+    "stock": {
+      "list": {
+        "title": "حالة المخزون",
+        "empty": "لا يوجد منتج في المخزون",
+        "error": "تعذر تحميل المخزون.",
+        "retry": "إعادة المحاولة",
+        "pagination": "ترقيم صفحات المخزون",
+        "filterAll": "جميع الحالات"
+      },
+      "fields": {
+        "quantiteActuelle": "الكمية الحالية",
+        "seuilAlerte": "حد التنبيه",
+        "seuilCritique": "الحد الحرج",
+        "valeurStock": "قيمة المخزون",
+        "statutStock": "الحالة"
+      },
+      "statut": {
+        "normal": "طبيعي",
+        "alerte": "تنبيه",
+        "critique": "حرج",
+        "unknown": "غير محدد"
+      }
+    }
+  },
+  "restaurant": {
+    "actions": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق"
+    },
+    "article": {
+      "list": {
+        "title": "أصناف القائمة",
+        "search": "البحث عن صنف",
+        "empty": "لا توجد أصناف",
+        "error": "تعذر تحميل أصناف القائمة.",
+        "retry": "إعادة المحاولة",
+        "actions": "إجراءات",
+        "pagination": "ترقيم صفحات الأصناف",
+        "filterCategorieAll": "كل الفئات",
+        "filterDisponibilite": "التوفر",
+        "filterStatut": "كل الحالات"
+      },
+      "form": {
+        "titleCreate": "صنف جديد",
+        "titleEdit": "تعديل الصنف",
+        "loadError": "تعذر تحميل هذا الصنف."
+      },
+      "actions": {
+        "create": "صنف جديد",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "toggleDisponibilite": "تبديل التوفر"
+      },
+      "fields": {
+        "codeArticle": "الرمز",
+        "nomArticle": "الاسم",
+        "nomArticleEn": "الاسم (EN)",
+        "nomArticleAr": "الاسم (AR)",
+        "categorie": "الفئة",
+        "description": "الوصف",
+        "descriptionEn": "الوصف (EN)",
+        "descriptionAr": "الوصف (AR)",
+        "prix": "السعر",
+        "coutIngredients": "تكلفة المكونات",
+        "tempsPreparation": "وقت التحضير (دقيقة)",
+        "allergenes": "المواد المسببة للحساسية",
+        "allergenesHint": "مفصولة بفاصلة",
+        "allergenesPlaceholder": "غلوتين، لاكتوز، فول سوداني",
+        "imageUrl": "رابط الصورة",
+        "disponible": "متوفر",
+        "actif": "مفعّل"
+      },
+      "disponibilite": {
+        "disponible": "متوفر",
+        "indisponible": "غير متوفر"
+      },
+      "statut": {
+        "actif": "مفعّل",
+        "inactif": "غير مفعّل"
+      },
+      "errors": {
+        "categorieRequired": "الفئة مطلوبة.",
+        "nomRequired": "اسم الصنف مطلوب.",
+        "nomMinLength": "يجب أن يحتوي الاسم على حرفين على الأقل.",
+        "prixRequired": "السعر مطلوب.",
+        "prixMin": "لا يمكن أن يكون السعر سالباً."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الصنف بنجاح",
+        "updateSuccess": "تم تعديل الصنف بنجاح",
+        "deleteSuccess": "تم حذف الصنف",
+        "deleteConfirm": "حذف هذا الصنف؟",
+        "deleteError": "تعذر حذف هذا الصنف.",
+        "saveError": "تعذر حفظ الصنف.",
+        "toggleError": "تعذر تحديث التوفر."
+      }
+    },
+    "categorie": {
+      "list": {
+        "title": "فئات القائمة",
+        "search": "البحث عن فئة",
+        "empty": "لا توجد فئات",
+        "error": "تعذر تحميل الفئات.",
+        "retry": "إعادة المحاولة",
+        "actions": "إجراءات",
+        "pagination": "ترقيم صفحات الفئات",
+        "filterAll": "كل الحالات"
+      },
+      "form": {
+        "titleCreate": "فئة جديدة",
+        "titleEdit": "تعديل الفئة",
+        "loadError": "تعذر تحميل هذه الفئة."
+      },
+      "actions": {
+        "create": "فئة جديدة",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "fields": {
+        "nomCategorie": "الاسم",
+        "nomCategorieEn": "الاسم (EN)",
+        "nomCategorieAr": "الاسم (AR)",
+        "description": "الوصف",
+        "ordreAffichage": "الترتيب",
+        "actif": "مفعّلة",
+        "nombreArticles": "الأصناف"
+      },
+      "statut": {
+        "actif": "مفعّلة",
+        "inactif": "غير مفعّلة"
+      },
+      "errors": {
+        "nomRequired": "اسم الفئة مطلوب.",
+        "nomMinLength": "يجب أن يحتوي الاسم على حرفين على الأقل.",
+        "ordreMin": "لا يمكن أن يكون الترتيب سالباً."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الفئة بنجاح",
+        "updateSuccess": "تم تعديل الفئة بنجاح",
+        "deleteSuccess": "تم حذف الفئة",
+        "deleteConfirm": "حذف هذه الفئة؟",
+        "deleteError": "تعذر حذف هذه الفئة.",
+        "saveError": "تعذر حفظ الفئة."
+      }
+    },
+    "pos": {
+      "title": "نقطة البيع",
+      "currency": "أوقية",
+      "client": {
+        "title": "العميل",
+        "searchLabel": "البحث عن عميل",
+        "searchPlaceholder": "الاسم أو رقم الهاتف",
+        "noResults": "لم يتم العثور على أي عميل.",
+        "change": "تغيير"
+      },
+      "reservation": {
+        "title": "الحجوزات الجارية",
+        "noActive": "لا يوجد حجز جارٍ لهذا العميل.",
+        "statut": "الحالة",
+        "clear": "إلغاء اختيار الحجز"
+      },
+      "articles": {
+        "title": "الأصناف",
+        "search": "البحث عن صنف",
+        "allCategories": "الكل",
+        "empty": "لا يوجد صنف متاح.",
+        "unavailable": "غير متوفر"
+      },
+      "cart": {
+        "title": "السلة",
+        "empty": "السلة فارغة. اختر أصنافًا للبدء.",
+        "article": "الصنف",
+        "quantity": "الكمية",
+        "subtotal": "الإجمالي الفرعي",
+        "total": "الإجمالي",
+        "increment": "زيادة الكمية",
+        "decrement": "تخفيض الكمية",
+        "remove": "حذف السطر",
+        "clear": "تفريغ السلة",
+        "checkout": "الدفع نقدًا",
+        "reportChambre": "تحميل على الغرفة"
+      },
+      "payment": {
+        "title": "الدفع",
+        "totalDue": "المبلغ المستحق",
+        "modeLabel": "وسيلة الدفع",
+        "amountLabel": "المبلغ المدفوع",
+        "referenceLabel": "مرجع الدفع",
+        "referencePlaceholder": "رقم الشيك أو رقم العملية…",
+        "commentsLabel": "ملاحظات",
+        "confirm": "تأكيد الدفع",
+        "modesGroup": {
+          "quick": "وسائل سريعة",
+          "others": "وسائل أخرى"
+        },
+        "modes": {
+          "ESPECES": "نقدًا",
+          "CHEQUE": "شيك",
+          "CARTE_BANCAIRE": "بطاقة بنكية",
+          "BANKILY": "بنكيلي",
+          "MASRIVI": "مصرفي",
+          "SEDAD": "سداد",
+          "CLICK": "كليك",
+          "AMANETY": "أمانتي",
+          "BFI_CASH": "BFI كاش",
+          "MOOV_MONEY": "موف موني",
+          "GAZAPAY": "غازا باي",
+          "VIREMENT": "تحويل بنكي"
+        },
+        "errors": {
+          "amountInvalid": "المبلغ المدفوع غير صالح.",
+          "referenceRequired": "المرجع إلزامي لهذه الوسيلة."
+        }
+      },
+      "errors": {
+        "loadCategories": "تعذر تحميل الفئات.",
+        "loadArticles": "تعذر تحميل الأصناف.",
+        "loadReservations": "تعذر تحميل حجوزات العميل.",
+        "searchClients": "فشل البحث عن العملاء.",
+        "invalidArticle": "لا يمكن إضافة هذا الصنف.",
+        "invalidPayload": "الطلب غير مكتمل.",
+        "encaissement": "فشلت عملية الدفع. أعد المحاولة.",
+        "reportChambre": "فشل التحميل على الغرفة.",
+        "reservationRequired": "اختر حجزًا أولًا."
+      },
+      "messages": {
+        "encaissementSuccess": "تم تحصيل الطلب بنجاح.",
+        "reportSuccess": "تم تحميل الطلب على الغرفة.",
+        "reportConfirmTitle": "هل تريد التحميل على الغرفة؟",
+        "reportConfirmText": "ستضاف الرسوم إلى فاتورة الحجز وستُحصّل عند المغادرة."
+      },
+      "ticket": {
+        "print": "طباعة إيصال الصندوق",
+        "printKitchen": "طباعة تذكرة المطبخ",
+        "reprint": "إعادة الطباعة"
+      }
+    }
+  },
+  "finance": {
+    "actions": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "back": "رجوع",
+      "confirm": "تأكيد"
+    },
+    "facture": {
+      "list": {
+        "title": "قائمة الفواتير",
+        "empty": "لا توجد فاتورة",
+        "error": "تعذر تحميل قائمة الفواتير.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات الفواتير",
+        "filterAll": "جميع الحالات"
+      },
+      "form": {
+        "titleCreate": "فاتورة جديدة",
+        "loadError": "تعذر تحميل بيانات هذه الفاتورة."
+      },
+      "detail": {
+        "title": "تفاصيل الفاتورة",
+        "notFound": "الفاتورة غير موجودة.",
+        "error": "تعذر تحميل تفاصيل الفاتورة."
+      },
+      "actions": {
+        "create": "فاتورة جديدة",
+        "view": "عرض التفاصيل",
+        "emettre": "إصدار",
+        "annuler": "إلغاء الفاتورة",
+        "encaisser": "تحصيل"
+      },
+      "fields": {
+        "numeroFacture": "رقم الفاتورة",
+        "cible": "هدف الفاتورة",
+        "compteId": "معرّف الحساب",
+        "clientId": "معرّف العميل",
+        "societeId": "معرّف الشركة",
+        "reservationId": "معرّف الحجز",
+        "fournisseurId": "معرّف المورّد",
+        "typeFacture": "النوع",
+        "dateFacture": "تاريخ الفاتورة",
+        "dateEcheance": "تاريخ الاستحقاق",
+        "devise": "العملة",
+        "statut": "الحالة",
+        "montantHt": "المبلغ بدون ضريبة",
+        "montantTva": "ضريبة القيمة المضافة",
+        "montantTtc": "المبلغ شامل الضريبة",
+        "montantPaye": "المبلغ المدفوع",
+        "montantRestant": "الرصيد المستحق",
+        "commentaires": "ملاحظات"
+      },
+      "type": {
+        "FACTURE": "فاتورة عميل",
+        "AVOIR": "إشعار دائن",
+        "PROFORMA": "فاتورة مبدئية",
+        "FACTURE_FOURNISSEUR": "فاتورة مورّد"
+      },
+      "statut": {
+        "BROUILLON": "مسودة",
+        "EMISE": "صادرة",
+        "PARTIELLEMENT_PAYEE": "مدفوعة جزئيًا",
+        "PAYEE": "مدفوعة",
+        "ANNULEE": "ملغاة"
+      },
+      "lignes": {
+        "title": "بنود الفاتورة",
+        "add": "إضافة بند",
+        "remove": "حذف البند",
+        "type": "النوع",
+        "libelle": "البيان",
+        "quantite": "الكمية",
+        "prixUnitaire": "سعر الوحدة",
+        "sousTotal": "المجموع الفرعي",
+        "montantTtc": "المبلغ شامل الضريبة",
+        "total": "المجموع",
+        "empty": "لا توجد بنود في هذه الفاتورة.",
+        "emptyAllowed": "لم تتم إضافة أي بند — سيتم إنشاء الفاتورة كمسودة.",
+        "typeOption": {
+          "NUITEE": "ليلة إقامة",
+          "PRODUIT": "منتج",
+          "COMMANDE": "طلب مطعم",
+          "SERVICE": "خدمة",
+          "DIVERS": "متفرقات"
+        }
+      },
+      "errors": {
+        "cibleRequired": "يجب تحديد هدف واحد على الأقل (حساب أو عميل أو شركة أو حجز أو مورّد).",
+        "dateFactureRequired": "تاريخ الفاتورة مطلوب.",
+        "libelleRequired": "بيان البند مطلوب.",
+        "quantiteMin": "يجب أن تكون الكمية موجبة.",
+        "prixUnitaireMin": "لا يمكن أن يكون سعر الوحدة سالبًا."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الفاتورة بنجاح",
+        "saveError": "تعذر حفظ الفاتورة.",
+        "emettreConfirm": "هل تريد إصدار هذه الفاتورة؟",
+        "emettreSuccess": "تم إصدار الفاتورة",
+        "emettreError": "تعذر إصدار الفاتورة.",
+        "cancelConfirm": "هل تريد إلغاء هذه الفاتورة؟",
+        "cancelSuccess": "تم إلغاء الفاتورة",
+        "cancelError": "تعذر إلغاء الفاتورة."
+      }
+    },
+    "paiement": {
+      "list": {
+        "title": "سجل المدفوعات",
+        "empty": "لا توجد مدفوعات",
+        "emptyForFacture": "لا توجد مدفوعات مسجلة لهذه الفاتورة.",
+        "error": "تعذر تحميل قائمة المدفوعات.",
+        "retry": "إعادة المحاولة",
+        "pagination": "ترقيم صفحات المدفوعات",
+        "filterAllModes": "جميع الطرق",
+        "filterAllStatuts": "جميع الحالات"
+      },
+      "form": {
+        "title": "تسجيل دفعة",
+        "loadError": "تعذر تحميل معلومات الفاتورة."
+      },
+      "actions": {
+        "encaisser": "تحصيل",
+        "annuler": "إلغاء الدفع"
+      },
+      "fields": {
+        "numeroPaiement": "رقم الدفع",
+        "datePaiement": "تاريخ الدفع",
+        "modePaiement": "طريقة الدفع",
+        "montantTotal": "المبلغ",
+        "montant": "المبلغ المراد تحصيله",
+        "referencePaiement": "المرجع",
+        "referencePaiementPlaceholder": "رقم الشيك / المعاملة / التفويض",
+        "statut": "الحالة",
+        "commentaires": "ملاحظات"
+      },
+      "mode": {
+        "ESPECES": "نقدًا",
+        "CHEQUE": "شيك",
+        "CARTE_BANCAIRE": "بطاقة بنكية",
+        "BANKILY": "بنكيلي",
+        "MASRIVI": "مصرفي",
+        "SEDAD": "سداد",
+        "CLICK": "كليك",
+        "AMANETY": "أمانتي",
+        "BFI_CASH": "بي إف آي كاش",
+        "MOOV_MONEY": "موف موني",
+        "GAZAPAY": "غازا باي",
+        "VIREMENT": "تحويل بنكي"
+      },
+      "statut": {
+        "VALIDE": "معتمد",
+        "EN_ATTENTE": "قيد الانتظار",
+        "REFUSE": "مرفوض",
+        "ANNULE": "ملغى"
+      },
+      "errors": {
+        "montantRequired": "المبلغ مطلوب.",
+        "montantMin": "يجب أن يكون المبلغ أكبر من صفر.",
+        "montantMax": "لا يمكن أن يتجاوز المبلغ الرصيد المستحق",
+        "datePaiementRequired": "تاريخ الدفع مطلوب.",
+        "modeRequired": "طريقة الدفع مطلوبة.",
+        "referenceRequired": "المرجع مطلوب لهذه الطريقة."
+      },
+      "messages": {
+        "createSuccess": "تم تسجيل الدفعة بنجاح",
+        "saveError": "تعذر حفظ الدفعة.",
+        "cancelConfirm": "هل تريد إلغاء هذه الدفعة؟",
+        "cancelSuccess": "تم إلغاء الدفعة",
+        "cancelError": "تعذر إلغاء الدفعة."
+      }
+    }
+  },
+  "menage": {
+    "actions": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "confirm": "تأكيد"
+    },
+    "personnel": {
+      "list": {
+        "title": "موظفو التنظيف",
+        "search": "البحث عن موظف",
+        "empty": "لا يوجد موظفون",
+        "error": "تعذر تحميل قائمة الموظفين.",
+        "retry": "إعادة المحاولة",
+        "actions": "إجراءات",
+        "pagination": "ترقيم صفحات الموظفين",
+        "filterStatut": "كل الحالات",
+        "filterSpecialite": "كل التخصصات"
+      },
+      "form": {
+        "titleCreate": "موظف جديد",
+        "titleEdit": "تعديل بيانات الموظف",
+        "loadError": "تعذر تحميل بيانات الموظف."
+      },
+      "actions": {
+        "create": "موظف جديد",
+        "edit": "تعديل",
+        "desactiver": "تعطيل",
+        "reactiver": "إعادة تنشيط"
+      },
+      "fields": {
+        "numeroEmploye": "رقم الموظف",
+        "prenom": "الاسم الأول",
+        "nom": "اللقب",
+        "nomComplet": "الاسم الكامل",
+        "telephone": "الهاتف",
+        "email": "البريد الإلكتروني",
+        "dateEmbauche": "تاريخ التوظيف",
+        "specialites": "التخصصات",
+        "specialitesHint": "مفصولة بفاصلة",
+        "specialitesPlaceholder": "غرف، قاعات",
+        "actif": "نشط"
+      },
+      "specialite": {
+        "chambres": "الغرف",
+        "salles": "القاعات",
+        "exterieur": "الخارج",
+        "buanderie": "المغسلة",
+        "lingerie": "الكتان",
+        "maintenance": "الصيانة"
+      },
+      "statut": {
+        "actif": "نشط",
+        "inactif": "غير نشط"
+      },
+      "errors": {
+        "numeroEmployeRequired": "رقم الموظف مطلوب.",
+        "prenomRequired": "الاسم الأول مطلوب.",
+        "nomRequired": "اللقب مطلوب.",
+        "emailFormat": "صيغة البريد الإلكتروني غير صحيحة."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الموظف بنجاح.",
+        "updateSuccess": "تم تحديث بيانات الموظف.",
+        "saveError": "تعذر حفظ الموظف.",
+        "desactiverConfirm": "هل تريد تعطيل هذا الموظف؟",
+        "desactiverSuccess": "تم تعطيل الموظف.",
+        "desactiverError": "تعذر تعطيل الموظف.",
+        "reactiverConfirm": "هل تريد إعادة تنشيط هذا الموظف؟",
+        "reactiverSuccess": "تم تنشيط الموظف.",
+        "reactiverError": "تعذر تنشيط الموظف."
+      }
+    },
+    "tache": {
+      "list": {
+        "title": "مهام التنظيف",
+        "search": "البحث عن مهمة",
+        "empty": "لا توجد مهام",
+        "error": "تعذر تحميل المهام.",
+        "retry": "إعادة المحاولة",
+        "actions": "إجراءات",
+        "pagination": "ترقيم صفحات المهام",
+        "filterType": "كل الأنواع",
+        "filterPriorite": "كل الأولويات",
+        "shortcut": "تصفية سريعة",
+        "shortcutAll": "الكل",
+        "shortcutEnCours": "قيد التنفيذ",
+        "shortcutEnRetard": "متأخرة",
+        "shortcutNonAssignees": "غير مُسندة"
+      },
+      "form": {
+        "titleCreate": "مهمة جديدة",
+        "titleEdit": "تعديل المهمة",
+        "loadError": "تعذر تحميل المهمة."
+      },
+      "detail": {
+        "title": "تفاصيل المهمة",
+        "back": "العودة إلى القائمة",
+        "loadError": "تعذر تحميل المهمة.",
+        "assignedSince": "آخر تحديث",
+        "historyDeferred": "سيتم عرض سجل الإجراءات هنا قريبًا.",
+        "sections": {
+          "identity": "التعريف",
+          "schedule": "التخطيط",
+          "assignment": "الإسناد",
+          "report": "التقرير",
+          "history": "السجل"
+        },
+        "fields": {
+          "tacheId": "المعرّف",
+          "heureDebutReelle": "البدء الفعلي",
+          "heureFinReelle": "الانتهاء الفعلي"
+        }
+      },
+      "actions": {
+        "create": "مهمة جديدة",
+        "edit": "تعديل",
+        "delete": "حذف",
+        "assigner": "إسناد",
+        "commencer": "بدء",
+        "terminer": "إنهاء"
+      },
+      "fields": {
+        "chambre": "الغرفة",
+        "personnel": "الموظف",
+        "personnelOptional": "اختياري",
+        "nonAssignee": "غير مُسندة",
+        "statut": "الحالة",
+        "typeNettoyage": "النوع",
+        "priorite": "الأولوية",
+        "datePlanifiee": "التاريخ المخطط",
+        "heureDebutPrevue": "وقت البدء",
+        "heureFinPrevue": "وقت الانتهاء",
+        "duree": "المدة",
+        "minutes": "دقيقة",
+        "commentaires": "ملاحظات",
+        "problemesDetectes": "المشكلات المكتشفة",
+        "materielUtilise": "المعدات المستخدمة",
+        "materielHint": "مفصولة بفاصلة",
+        "materielPlaceholder": "مكنسة، منظف، مناديل",
+        "noteQualite": "تقييم الجودة"
+      },
+      "typeNettoyage": {
+        "QUOTIDIEN": "يومي",
+        "GRAND_MENAGE": "تنظيف شامل",
+        "MAINTENANCE": "صيانة"
+      },
+      "priorite": {
+        "1": "عادية",
+        "2": "عاجلة",
+        "3": "حرجة"
+      },
+      "errors": {
+        "chambreRequired": "رقم الغرفة مطلوب.",
+        "dateRequired": "التاريخ المخطط مطلوب.",
+        "personnelRequired": "يرجى اختيار موظف.",
+        "noteRange": "تقييم الجودة يجب أن يكون بين 1 و 5."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء المهمة بنجاح.",
+        "updateSuccess": "تم تحديث المهمة.",
+        "saveError": "تعذر حفظ المهمة.",
+        "deleteConfirm": "هل تريد حذف هذه المهمة؟",
+        "deleteSuccess": "تم حذف المهمة.",
+        "deleteError": "تعذر حذف المهمة.",
+        "assignerTitle": "إسناد المهمة",
+        "assignerSelect": "اختيار موظف",
+        "assignerSuccess": "تم إسناد المهمة.",
+        "assignerError": "تعذر إسناد المهمة.",
+        "commencerSuccess": "تم بدء المهمة.",
+        "commencerError": "تعذر بدء المهمة.",
+        "terminerTitle": "إنهاء المهمة",
+        "terminerSuccess": "تم إنهاء المهمة.",
+        "terminerError": "تعذر إنهاء المهمة."
+      }
+    },
+    "dashboard": {
+      "title": "لوحة قيادة التنظيف",
+      "refresh": "تحديث",
+      "error": "تعذر تحميل لوحة القيادة.",
+      "retry": "إعادة المحاولة",
+      "chartsDeferred": "سيتم إضافة الرسوم البيانية لاحقًا.",
+      "kpi": {
+        "personnelActif": "الموظفون النشطون",
+        "tachesAujourdhui": "مهام اليوم",
+        "tachesEnCours": "مهام قيد التنفيذ",
+        "tachesTerminees": "مهام منجزة",
+        "tachesEnRetard": "مهام متأخرة",
+        "tachesUrgentes": "مهام عاجلة",
+        "tauxRealisation": "معدل الإنجاز",
+        "tempsMoyen": "متوسط الوقت"
+      },
+      "repartition": {
+        "parStatut": "حسب الحالة",
+        "parType": "حسب النوع",
+        "parPriorite": "حسب الأولوية",
+        "empty": "لا توجد بيانات."
+      }
+    },
+    "planning": {
+      "list": {
+        "title": "جدول عمل الموظفين",
+        "empty": "لا يوجد جدول مسجل",
+        "error": "تعذر تحميل الجدول.",
+        "retry": "إعادة المحاولة",
+        "actions": "إجراءات",
+        "filterEtage": "الطابق",
+        "filterEtageAll": "كل الطوابق",
+        "filterStatut": "الحالة",
+        "filterStatutAll": "كل الحالات"
+      },
+      "actions": {
+        "create": "جدول جديد",
+        "edit": "تعديل",
+        "delete": "حذف"
+      },
+      "fields": {
+        "dateTravail": "التاريخ",
+        "personnel": "الموظف",
+        "etage": "الطابق",
+        "secteur": "القطاع",
+        "horaire": "التوقيت",
+        "statut": "الحالة",
+        "commentaires": "ملاحظات"
+      },
+      "statut": {
+        "disponible": "متاح",
+        "indisponible": "غير متاح"
+      },
+      "errors": {
+        "personnelRequired": "اختيار الموظف مطلوب.",
+        "dateRequired": "التاريخ مطلوب.",
+        "horaireRequired": "التوقيت مطلوب."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الجدول بنجاح.",
+        "updateSuccess": "تم تحديث الجدول.",
+        "saveError": "تعذر حفظ الجدول.",
+        "deleteConfirm": "هل تريد حذف هذا الجدول؟",
+        "deleteSuccess": "تم حذف الجدول.",
+        "deleteError": "تعذر حذف الجدول."
+      }
+    },
+    "assignation": {
+      "title": "إسناد المهمة",
+      "label": "الموظف",
+      "current": "المُسند حاليًا",
+      "currentBadge": "الحالي",
+      "choose": "اختر الموظف لإسناد المهمة إليه.",
+      "validate": "إسناد",
+      "cancel": "إلغاء",
+      "empty": "لا يوجد موظف نشط متاح."
+    }
+  },
+  "error": {
+    "auth": {
+      "invalidCredentials": "بيانات الاعتماد غير صحيحة.",
+      "forbidden": "تم رفض الوصول.",
+      "noToken": "لا يوجد رمز مصادقة.",
+      "refreshFailed": "تعذر تحديث الجلسة.",
+      "loadCurrentUserFailed": "تعذر تحميل معلومات المستخدم.",
+      "logout": "خطأ أثناء تسجيل الخروج."
+    },
+    "network": {
+      "unreachable": "الخادم غير متاح. تحقق من اتصالك."
+    },
+    "server": {
+      "unavailable": "الخادم غير متاح مؤقتًا."
+    }
+  }
+}

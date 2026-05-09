@@ -1,0 +1,174 @@
+<section class="articles-list">
+  <header class="articles-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'restaurant.article.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'restaurant.article.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="articles-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control articles-list__search"
+      [placeholder]="'restaurant.article.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'restaurant.article.list.search' | translate"
+    />
+    <select
+      class="form-select articles-list__filter"
+      (change)="onCategorieFilterChange($any($event.target).value)"
+      [attr.aria-label]="'restaurant.article.fields.categorie' | translate"
+    >
+      <option value="">{{ 'restaurant.article.list.filterCategorieAll' | translate }}</option>
+      @for (cat of categories; track cat.categorieId) {
+        <option [value]="cat.categorieId">{{ cat.nomCategorie }}</option>
+      }
+    </select>
+    <select
+      class="form-select articles-list__filter"
+      (change)="onDisponibleFilterChange($any($event.target).value)"
+      [attr.aria-label]="'restaurant.article.fields.disponible' | translate"
+    >
+      <option value="">{{ 'restaurant.article.list.filterDisponibilite' | translate }}</option>
+      <option value="true">{{ 'restaurant.article.disponibilite.disponible' | translate }}</option>
+      <option value="false">{{ 'restaurant.article.disponibilite.indisponible' | translate }}</option>
+    </select>
+    <select
+      class="form-select articles-list__filter"
+      (change)="onActifFilterChange($any($event.target).value)"
+      [attr.aria-label]="'restaurant.article.fields.actif' | translate"
+    >
+      <option value="">{{ 'restaurant.article.list.filterStatut' | translate }}</option>
+      <option value="true">{{ 'restaurant.article.statut.actif' | translate }}</option>
+      <option value="false">{{ 'restaurant.article.statut.inactif' | translate }}</option>
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="articles-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'restaurant.article.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'restaurant.article.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'restaurant.article.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'restaurant.article.fields.codeArticle' | translate }}</th>
+            <th scope="col">{{ 'restaurant.article.fields.nomArticle' | translate }}</th>
+            <th scope="col">{{ 'restaurant.article.fields.categorie' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'restaurant.article.fields.prix' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'restaurant.article.fields.tempsPreparation' | translate }}</th>
+            <th scope="col">{{ 'restaurant.article.fields.disponible' | translate }}</th>
+            <th scope="col">{{ 'restaurant.article.fields.actif' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'restaurant.article.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (article of page.content; track article.articleId) {
+            <tr>
+              <td><code>{{ article.codeArticle || '-' }}</code></td>
+              <td>
+                <strong>{{ article.nomArticle }}</strong>
+                @if (article.nomArticleAr) {
+                  <small class="text-muted d-block" dir="rtl">{{ article.nomArticleAr }}</small>
+                }
+              </td>
+              <td>{{ categorieNom(article) }}</td>
+              <td class="text-end">{{ article.prix | number:'1.2-2' }}</td>
+              <td class="text-end">{{ article.tempsPreparation ?? '-' }}</td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [ngClass]="article.disponible ? 'btn-success' : 'btn-outline-secondary'"
+                  (click)="toggleDisponibilite(article)"
+                  [disabled]="togglingId === article.articleId"
+                  [attr.aria-label]="'restaurant.article.actions.toggleDisponibilite' | translate"
+                >
+                  @if (togglingId === article.articleId) {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  } @else {
+                    {{ (article.disponible ? 'restaurant.article.disponibilite.disponible' : 'restaurant.article.disponibilite.indisponible') | translate }}
+                  }
+                </button>
+              </td>
+              <td>
+                <span class="badge" [ngClass]="article.actif ? 'text-bg-success' : 'text-bg-secondary'">
+                  {{ (article.actif ? 'restaurant.article.statut.actif' : 'restaurant.article.statut.inactif') | translate }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(article)"
+                  [attr.aria-label]="'restaurant.article.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="remove(article)"
+                  [disabled]="deleting"
+                  [attr.aria-label]="'restaurant.article.actions.delete' | translate"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'restaurant.article.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

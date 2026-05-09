@@ -1,0 +1,71 @@
+// ===========================================================================
+// _theme.scss — Tokens de design propriétaire City Hotel
+// ---------------------------------------------------------------------------
+// Importé en tête de `src/styles.scss` (avant Tailwind / Bootstrap) afin que
+// les variables CSS soient disponibles dans toute la cascade.
+//
+// NB : la palette `primary-50…900` Tailwind est définie dans `@theme {}` côté
+// `styles.scss` (config CSS-first v4). Ce fichier complète avec les tokens
+// sémantiques transverses (surfaces, ombres, transitions, dimensions shell).
+// ===========================================================================
+
+:root {
+  // ─── Surfaces ────────────────────────────────────────────────────────────
+  --surface-bg:       #f8fafc;          // gris très clair (slate-50)
+  --surface-card:     #ffffff;          // fond carte
+  --surface-muted:    #f1f5f9;          // hover / bandes de tableau (slate-100)
+  --surface-overlay:  rgba(15, 23, 42, 0.45);
+
+  // ─── Bordures sémantiques ────────────────────────────────────────────────
+  --border-soft:      #e2e8f0;          // slate-200
+  --border-subtle:    #f0f9ff;          // sky-50 (séparateur intra-shell)
+
+  // ─── Header propriétaire (gradient sky-500 → sky-600) ────────────────────
+  --header-gradient-from: #0ea5e9;      // sky-500
+  --header-gradient-to:   #0284c7;      // sky-600
+  --header-border-bottom: #0369a1;      // sky-700 (1px sous le gradient)
+  --header-text:          #ffffff;
+  --header-text-muted:    rgba(255, 255, 255, 0.78);
+  --header-pill-active:   #ffffff;
+  --header-pill-active-text: #0369a1;   // sky-700
+  --header-pill-hover-bg: rgba(255, 255, 255, 0.12);
+
+  // ─── Sidebar propriétaire ────────────────────────────────────────────────
+  --sidebar-bg:           #ffffff;
+  --sidebar-border:       #e0f2fe;      // sky-100
+  --sidebar-title:        #0369a1;      // sky-700
+  --sidebar-item-text:    #334155;      // slate-700
+  --sidebar-item-muted:   #64748b;      // slate-500
+  --sidebar-hover-bg:     #f0f9ff;      // sky-50
+  --sidebar-hover-text:   #0284c7;      // sky-600
+  --sidebar-active-bg:    #e0f2fe;      // sky-100
+  --sidebar-active-text:  #0369a1;      // sky-700
+  --sidebar-active-edge:  #0284c7;      // sky-600 (bord gauche actif)
+  --sidebar-hover-edge:   #38bdf8;      // sky-400 (bord gauche hover)
+  --sidebar-footer-bg:    #f8fafc;      // slate-50
+
+  // ─── Ombres custom hôtel (alignées palette sky) ──────────────────────────
+  --shadow-hotel:    0 4px 6px -1px rgba(14, 165, 233, 0.10),
+                     0 2px 4px -2px rgba(14, 165, 233, 0.08);
+  --shadow-hotel-md: 0 8px 16px -4px rgba(14, 165, 233, 0.14),
+                     0 4px 8px -3px rgba(14, 165, 233, 0.10);
+  --shadow-hotel-lg: 0 12px 24px -6px rgba(14, 165, 233, 0.18),
+                     0 6px 12px -4px rgba(14, 165, 233, 0.12);
+  --shadow-sidebar:  2px 0 8px -2px rgba(15, 23, 42, 0.06);
+
+  // ─── Transitions standardisées ───────────────────────────────────────────
+  --transition-base:  200ms ease;
+  --transition-fast:  120ms ease;
+  --transition-slow:  320ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  // ─── Dimensions shell (header + sidebar) ─────────────────────────────────
+  --header-height:    64px;
+  --sidebar-width:        264px;
+  --sidebar-width-min:    72px;
+  --sidebar-width-mobile: 280px;
+
+  // ─── Z-index harmonisés (alignés Bootstrap) ──────────────────────────────
+  --z-header:   1030;
+  --z-sidebar:  1020;
+  --z-overlay:  1025;
+}

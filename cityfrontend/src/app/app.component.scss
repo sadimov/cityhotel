@@ -1,0 +1,104 @@
+// Styles pour le composant principal de l'application
+:host {
+  display: block;
+  //min-height: 100vh;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+// Styles globaux pour l'application
+:host-context(body) {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-secondary, #f8f9fa);
+  color: var(--text-primary, #212529);
+}
+
+// Animation globale pour les transitions de routes
+router-outlet {
+  display: block;
+  width: 100%;
+  //min-height: 100vh;
+}
+
+// Loader global pour les transitions
+:host-context(.app-loading) {
+  router-outlet {
+    opacity: 0.7;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+}
+
+// Styles pour l'état de chargement
+.app-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(3px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .loading-content {
+    text-align: center;
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(33, 150, 243, 0.1);
+      border-left: 4px solid var(--primary-color, #2196f3);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    
+    .loading-text {
+      color: var(--primary-color, #2196f3);
+      font-weight: 500;
+    }
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Gestion de l'accessibilité
+:host-context(.high-contrast) {
+  router-outlet {
+    filter: contrast(1.5);
+  }
+}
+
+// Responsive pour mobile
+@media (max-width: 768px) {
+  :host {
+    font-size: 14px;
+  }
+}
+
+// Mode sombre
+:host-context(.dark-theme) {
+  :host-context(body) {
+    background-color: #1a1a1a;
+    color: #ffffff;
+  }
+  
+  .app-loading-overlay {
+    background: rgba(26, 26, 26, 0.8);
+  }
+}
+
+// Direction RTL
+:host-context([dir="rtl"]) {
+  direction: rtl;
+  
+  router-outlet {
+    direction: rtl;
+  }
+}

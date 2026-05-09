@@ -1,0 +1,138 @@
+<section class="category-form">
+  <header class="category-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'restaurant.categorie.form.titleEdit'
+          : 'restaurant.categorie.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="category-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'restaurant.categorie.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label for="nomCategorie" class="form-label">
+            {{ 'restaurant.categorie.fields.nomCategorie' | translate }}
+          </label>
+          <input
+            id="nomCategorie"
+            type="text"
+            class="form-control"
+            formControlName="nomCategorie"
+            [class.is-invalid]="form.get('nomCategorie')?.invalid && form.get('nomCategorie')?.touched"
+          />
+          @if (form.get('nomCategorie')?.touched && form.get('nomCategorie')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.categorie.errors.nomRequired' | translate }}
+            </div>
+          }
+          @if (form.get('nomCategorie')?.touched && form.get('nomCategorie')?.errors?.['minlength']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.categorie.errors.nomMinLength' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="ordreAffichage" class="form-label">
+            {{ 'restaurant.categorie.fields.ordreAffichage' | translate }}
+          </label>
+          <input
+            id="ordreAffichage"
+            type="number"
+            min="0"
+            step="1"
+            class="form-control"
+            formControlName="ordreAffichage"
+            [class.is-invalid]="form.get('ordreAffichage')?.invalid && form.get('ordreAffichage')?.touched"
+          />
+          @if (form.get('ordreAffichage')?.touched && form.get('ordreAffichage')?.errors?.['min']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.categorie.errors.ordreMin' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="nomCategorieEn" class="form-label">
+            {{ 'restaurant.categorie.fields.nomCategorieEn' | translate }}
+          </label>
+          <input
+            id="nomCategorieEn"
+            type="text"
+            class="form-control"
+            formControlName="nomCategorieEn"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="nomCategorieAr" class="form-label">
+            {{ 'restaurant.categorie.fields.nomCategorieAr' | translate }}
+          </label>
+          <input
+            id="nomCategorieAr"
+            type="text"
+            class="form-control"
+            formControlName="nomCategorieAr"
+            dir="rtl"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">
+            {{ 'restaurant.categorie.fields.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            class="form-control"
+            rows="2"
+            formControlName="description"
+          ></textarea>
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center pt-3">
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'restaurant.categorie.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="category-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'restaurant.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'restaurant.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

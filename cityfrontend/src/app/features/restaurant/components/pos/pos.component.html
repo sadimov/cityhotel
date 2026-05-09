@@ -1,0 +1,30 @@
+<div class="pos-container p-3">
+  <div class="row g-3">
+    <!-- Colonne client + réservations -->
+    <div class="col-12 col-lg-3">
+      <app-pos-client-search></app-pos-client-search>
+    </div>
+
+    <!-- Colonne articles -->
+    <div class="col-12 col-lg-5">
+      <app-pos-article-grid></app-pos-article-grid>
+    </div>
+
+    <!-- Colonne panier -->
+    <div class="col-12 col-lg-4">
+      <app-pos-cart
+        (checkoutComptant)="openPaymentModal()"
+        (reportChambre)="onReportChambre()"
+      ></app-pos-cart>
+    </div>
+  </div>
+
+  <!-- Modal paiement -->
+  <app-pos-payment-modal
+    [open]="paymentModalOpen"
+    [total]="paymentModalTotal"
+    [submitting]="(submitting$ | async) ?? false"
+    (close)="closePaymentModal()"
+    (submitPayment)="onSubmitPayment($event)"
+  ></app-pos-payment-modal>
+</div>

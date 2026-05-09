@@ -1,0 +1,140 @@
+<section class="facture-detail">
+  @if (state === 'loading') {
+    <div class="facture-detail__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'notfound') {
+    <div class="alert alert-warning" role="alert">
+      {{ 'finance.facture.detail.notFound' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="goBack()">
+        {{ 'finance.actions.back' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'finance.facture.detail.error' | translate }}
+    </div>
+  } @else if (facture) {
+    <header class="facture-detail__header d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="h4 m-0">
+          {{ 'finance.facture.detail.title' | translate }}
+          <code class="ms-2">{{ facture.numeroFacture }}</code>
+        </h2>
+        <small class="text-muted">{{ facture.dateFacture }}</small>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+          {{ 'finance.actions.back' | translate }}
+        </button>
+        @if (peutEmettre) {
+          <button
+            type="button"
+            class="btn btn-outline-info"
+            (click)="emettre()"
+            [disabled]="emitting"
+          >
+            <i class="bi bi-send me-1" aria-hidden="true"></i>
+            {{ 'finance.facture.actions.emettre' | translate }}
+          </button>
+        }
+        @if (peutAnnuler) {
+          <button
+            type="button"
+            class="btn btn-outline-danger"
+            (click)="annuler()"
+            [disabled]="cancelling"
+          >
+            <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+            {{ 'finance.facture.actions.annuler' | translate }}
+          </button>
+        }
+        @if (peutEncaisser) {
+          <button type="button" class="btn btn-success" (click)="encaisser()">
+            <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+            {{ 'finance.facture.actions.encaisser' | translate }}
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.typeFacture' | translate }}</dt>
+          <dd class="col-7">{{ ('finance.facture.type.' + facture.typeFacture) | translate }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.compteId' | translate }}</dt>
+          <dd class="col-7">{{ facture.compteId || '-' }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.devise' | translate }}</dt>
+          <dd class="col-7">{{ facture.devise || '-' }}</dd>
+        </dl>
+      </div>
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.dateFacture' | translate }}</dt>
+          <dd class="col-7">{{ facture.dateFacture || '-' }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.dateEcheance' | translate }}</dt>
+          <dd class="col-7">{{ facture.dateEcheance || '-' }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.statut' | translate }}</dt>
+          <dd class="col-7">
+            <span class="badge" [ngClass]="badgeClass(facture.statut)">
+              {{ statutKey(facture.statut) | translate }}
+            </span>
+          </dd>
+        </dl>
+      </div>
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.montantTtc' | translate }}</dt>
+          <dd class="col-7">{{ facture.montantTtc | number:'1.2-2' }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.montantPaye' | translate }}</dt>
+          <dd class="col-7">{{ facture.montantPaye | number:'1.2-2' }}</dd>
+          <dt class="col-5 text-muted">{{ 'finance.facture.fields.montantRestant' | translate }}</dt>
+          <dd class="col-7 fw-bold">{{ facture.montantRestant | number:'1.2-2' }}</dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3 class="h6 mt-4 mb-2">{{ 'finance.facture.lignes.title' | translate }}</h3>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'finance.facture.lignes.type' | translate }}</th>
+            <th scope="col">{{ 'finance.facture.lignes.libelle' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'finance.facture.lignes.quantite' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'finance.facture.lignes.prixUnitaire' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'finance.facture.lignes.montantTtc' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of facture.lignes; track l.ligneFactureId || $index) {
+            <tr>
+              <td>{{ ('finance.facture.lignes.typeOption.' + l.typeLigne) | translate }}</td>
+              <td>{{ l.libelle }}</td>
+              <td class="text-end">{{ l.quantite | number:'1.0-3' }}</td>
+              <td class="text-end">{{ l.prixUnitaire | number:'1.2-2' }}</td>
+              <td class="text-end">{{ (l.montantTtc ?? (l.quantite * l.prixUnitaire)) | number:'1.2-2' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="5" class="text-center text-muted">
+                {{ 'finance.facture.lignes.empty' | translate }}
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (facture.commentaires) {
+      <div class="mb-3">
+        <strong>{{ 'finance.facture.fields.commentaires' | translate }}:</strong>
+        <p class="m-0 text-muted">{{ facture.commentaires }}</p>
+      </div>
+    }
+  }
+</section>

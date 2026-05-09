@@ -1,0 +1,44 @@
+<!-- Layout principal de l'application -->
+@if (!isLoading) {
+  <div class="main-layout">
+    <!-- Header principal -->
+    <app-header></app-header>
+    <!-- Contenu principal avec sidebar -->
+    <div class="layout-content">
+      <!-- Sidebar de navigation -->
+      <app-sidebar></app-sidebar>
+      <!-- Zone de contenu principal -->
+      <main class="main-content" role="main">
+        <div class="content-wrapper">
+          <!-- Breadcrumb optionnel -->
+          <!-- <nav aria-label="breadcrumb" class="breadcrumb-nav">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Accueil</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+          </ol>
+        </nav> -->
+        <!-- Contenu de la route -->
+        <div class="route-content fade-in">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+}
+
+<!-- Loader de l'application -->
+@if (isLoading) {
+  <div class="app-loader">
+    <div class="loader-container">
+      <div class="loader-content">
+        <img src="assets/images/logo-city-hotel.png"
+          alt="City Hotel Logo"
+          class="loader-logo">
+          <div class="spinner mb-3"></div>
+          <h5 class="text-primary">{{ 'common.loading' | translate }}</h5>
+          <small class="text-muted">Chargement de votre espace de travail...</small>
+        </div>
+      </div>
+    </div>
+  }

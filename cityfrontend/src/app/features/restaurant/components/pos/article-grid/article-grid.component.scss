@@ -1,0 +1,13 @@
+/* Composant POS — grille articles. Styles minimaux pour cohérence tactile. */
+.article-tile {
+  min-height: 4.5rem;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.article-tile:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+.article-tile:not(:disabled):hover {
+  box-shadow: 0 0.25rem 0.5rem rgba(13, 110, 253, 0.08);
+}

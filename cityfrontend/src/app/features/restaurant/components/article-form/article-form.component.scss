@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+.article-form {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,504 @@
+// =============================================================================
+// sidebar.component.scss — Sidebar propriétaire City Hotel
+// =============================================================================
+// Palette : sky-* via les tokens de _theme.scss (--sidebar-*).
+// Pas de classes Bootstrap (`nav-pills`, `btn-outline-*`) — design custom.
+// =============================================================================
+
+// ─── Conteneur sidebar ──────────────────────────────────────────────────────
+.sidebar {
+  width: var(--sidebar-width);
+  min-height: calc(100vh - var(--header-height));
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  z-index: var(--z-sidebar);
+  transition: width var(--transition-slow), transform var(--transition-slow);
+  box-shadow: var(--shadow-sidebar);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+
+  &.collapsed {
+    width: 0;
+    border-right: none;
+    box-shadow: none;
+  }
+
+  &.minimized {
+    width: var(--sidebar-width-min);
+
+    .sidebar-content { display: none !important; }
+    .sidebar-minimized { display: block !important; }
+  }
+
+  // Scrollbar interne discrète
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-primary-200);
+    border-radius: 2px;
+    &:hover { background: var(--color-primary-400); }
+  }
+}
+
+// ─── Header sidebar ─────────────────────────────────────────────────────────
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--sidebar-border);
+  background: var(--surface-card);
+}
+
+.sidebar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+
+  &__icon {
+    color: var(--color-primary-600);
+    font-size: 0.875rem;
+  }
+
+  &__text {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--sidebar-title);
+    letter-spacing: 0.2px;
+  }
+}
+
+.sidebar-controls {
+  display: inline-flex;
+  gap: 4px;
+}
+
+// Bouton toggle propriétaire (rond, fond sky-50, icône sky-600)
+.sidebar-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              border-color var(--transition-base);
+
+  &:hover {
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+    border-color: var(--color-primary-200);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-400);
+    outline-offset: 1px;
+  }
+}
+
+// ─── Contenu principal ──────────────────────────────────────────────────────
+.sidebar-content {
+  padding: 0.75rem 0 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-item {
+  & + & { margin-top: 1px; }
+}
+
+// Lien standard (item de niveau 1)
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 10px 18px;
+  color: var(--sidebar-item-text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              border-color var(--transition-base);
+
+  &:hover {
+    background: var(--sidebar-hover-bg);
+    color: var(--sidebar-hover-text);
+    border-left-color: var(--sidebar-hover-edge);
+  }
+
+  &.is-active {
+    background: var(--sidebar-active-bg);
+    color: var(--sidebar-active-text);
+    border-left-color: var(--sidebar-active-edge);
+    font-weight: 600;
+  }
+
+  &__icon {
+    width: 22px;
+    text-align: center;
+    margin-right: 12px;
+    font-size: 0.9375rem;
+    flex-shrink: 0;
+  }
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  &__chevron {
+    font-size: 0.6875rem;
+    color: var(--sidebar-item-muted);
+    transition: transform var(--transition-base);
+
+    &.is-open { transform: rotate(180deg); }
+  }
+
+  &--parent { user-select: none; }
+}
+
+// ─── Sous-menu (niveau 2) ───────────────────────────────────────────────────
+.submenu {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  background: var(--color-primary-50);
+  transition: max-height var(--transition-slow), opacity var(--transition-slow);
+
+  &.show {
+    max-height: 600px;
+    opacity: 1;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+  }
+
+  &__item { margin: 0; }
+}
+
+.submenu-link {
+  display: flex;
+  align-items: center;
+  padding: 8px 18px 8px 50px;
+  color: var(--sidebar-item-muted);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              border-color var(--transition-base);
+  position: relative;
+
+  &:hover {
+    background: rgba(14, 165, 233, 0.06);
+    color: var(--color-primary-700);
+    border-left-color: var(--sidebar-hover-edge);
+  }
+
+  &.is-active {
+    color: var(--color-primary-600);
+    font-weight: 600;
+    border-left-color: var(--color-primary-600);
+    background: rgba(14, 165, 233, 0.10);
+
+    // Dot indicator devant les enfants actifs
+    &::before {
+      content: '';
+      position: absolute;
+      left: 38px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-primary-600);
+    }
+  }
+
+  &__icon {
+    width: 18px;
+    margin-right: 8px;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+
+  &__text { line-height: 1.2; }
+}
+
+// ─── Footer sidebar (utilisateur connecté) ──────────────────────────────────
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--sidebar-border);
+  background: var(--sidebar-footer-bg);
+}
+
+.sidebar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface-card);
+  border-radius: 10px;
+  border: 1px solid var(--color-primary-100);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  &__avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  &__info { min-width: 0; flex: 1; }
+  &__caption { color: var(--text-muted); font-size: 0.6875rem; display: block; }
+  &__name { color: var(--text-primary); font-weight: 600; font-size: 0.8125rem; }
+  &__role { color: var(--color-primary-600); font-size: 0.75rem; }
+}
+
+// ─── Mode minimisé (icônes seules) ──────────────────────────────────────────
+.sidebar-minimized {
+  display: none;
+  padding: 0.75rem 0;
+  flex: 1;
+}
+
+.sidebar-nav--minimized {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  .sidebar-item + .sidebar-item { margin-top: 4px; }
+}
+
+.minimized-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto;
+  border-radius: 10px;
+  color: var(--sidebar-item-text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base),
+              color var(--transition-base),
+              transform var(--transition-fast);
+
+  &:hover {
+    background: var(--color-primary-50);
+    color: var(--color-primary-600);
+    transform: scale(1.05);
+  }
+
+  &.is-active {
+    background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(14, 165, 233, 0.30);
+  }
+
+  i { font-size: 1rem; }
+}
+
+// Conteneur tooltip (sous-menu au hover en mode minimisé)
+.minimized-menu-container {
+  position: relative;
+
+  &:hover .minimized-submenu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(0);
+  }
+}
+
+.minimized-submenu {
+  position: absolute;
+  left: var(--sidebar-width-min);
+  top: 0;
+  min-width: 220px;
+  background: var(--surface-card);
+  border: 1px solid var(--color-primary-100);
+  border-radius: 10px;
+  box-shadow: var(--shadow-hotel-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-10px);
+  transition: opacity var(--transition-base),
+              visibility var(--transition-base),
+              transform var(--transition-base);
+  z-index: 1050;
+
+  .submenu-content { padding: 12px; }
+
+  .submenu-title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-primary-700);
+    margin: 0 0 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-primary-100);
+  }
+
+  .submenu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li { margin-bottom: 2px; }
+
+    a {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      color: var(--sidebar-item-text);
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: background-color var(--transition-base), color var(--transition-base);
+
+      &:hover {
+        background: var(--color-primary-50);
+        color: var(--color-primary-700);
+      }
+
+      &.is-active {
+        background: linear-gradient(135deg, var(--color-primary-500) 0%, var(--color-primary-700) 100%);
+        color: #fff;
+      }
+
+      i { width: 16px; margin-right: 8px; font-size: 0.75rem; }
+    }
+  }
+}
+
+// ─── Overlay mobile ─────────────────────────────────────────────────────────
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--surface-overlay);
+  z-index: calc(var(--z-sidebar) - 1);
+
+  @media (max-width: 768px) { display: block; }
+}
+
+// Icône centrée en mode minimisé (ancien hook conservé pour le HTML)
+.sidebar-icon-center {
+  display: block;
+  text-align: center;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+// ─── Responsive ─────────────────────────────────────────────────────────────
+@media (max-width: 1200px) {
+  .sidebar { width: 248px; &.minimized { width: 64px; } }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: var(--sidebar-width-mobile);
+    transform: translateX(-100%);
+
+    &:not(.collapsed) { transform: translateX(0); }
+
+    &.minimized {
+      width: var(--sidebar-width-mobile);
+      .sidebar-content { display: block !important; }
+      .sidebar-minimized { display: none !important; }
+    }
+  }
+}
+
+// ─── RTL (arabe) ────────────────────────────────────────────────────────────
+[dir="rtl"] {
+  .sidebar {
+    left: auto;
+    right: 0;
+    border-right: none;
+    border-left: 1px solid var(--sidebar-border);
+    box-shadow: -2px 0 8px -2px rgba(15, 23, 42, 0.06);
+  }
+
+  .sidebar-link {
+    border-left: none;
+    border-right: 3px solid transparent;
+
+    &:hover { border-right-color: var(--sidebar-hover-edge); }
+    &.is-active { border-right-color: var(--sidebar-active-edge); }
+
+    &__icon { margin-right: 0; margin-left: 12px; }
+  }
+
+  .submenu-link {
+    padding: 8px 50px 8px 18px;
+    border-left: none;
+    border-right: 3px solid transparent;
+
+    &:hover { border-right-color: var(--sidebar-hover-edge); }
+    &.is-active {
+      border-right-color: var(--color-primary-600);
+
+      &::before { left: auto; right: 38px; }
+    }
+
+    &__icon { margin-right: 0; margin-left: 8px; }
+  }
+
+  .minimized-submenu {
+    left: auto;
+    right: var(--sidebar-width-min);
+    transform: translateX(10px);
+
+    .submenu-list a i { margin-right: 0; margin-left: 8px; }
+  }
+}
+
+// ─── Animation d'entrée ─────────────────────────────────────────────────────
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+.sidebar { animation: slideInLeft 0.3s ease-out; }

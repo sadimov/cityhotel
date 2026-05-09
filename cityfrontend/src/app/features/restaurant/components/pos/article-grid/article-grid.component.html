@@ -1,0 +1,81 @@
+<div class="bg-white rounded-2xl shadow p-4">
+  <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+    <h3 class="text-base font-semibold text-sky-700 mb-0">
+      {{ 'restaurant.pos.articles.title' | translate }}
+    </h3>
+    <input
+      type="search"
+      class="form-control form-control-sm w-auto"
+      [placeholder]="'restaurant.pos.articles.search' | translate"
+      [value]="(articleSearch$ | async) ?? ''"
+      (input)="onSearchChange($any($event.target).value)"
+    />
+  </div>
+
+  <!-- Onglets catégories -->
+  @let cats = (categories$ | async) ?? [];
+  @let selectedCatId = (selectedCategorieId$ | async);
+  <div class="d-flex flex-wrap gap-2 mb-3">
+    <button
+      type="button"
+      class="btn btn-sm"
+      [class.btn-info]="selectedCatId === null"
+      [class.text-white]="selectedCatId === null"
+      [class.btn-outline-secondary]="selectedCatId !== null"
+      (click)="onSelectCategorie(null)"
+    >
+      {{ 'restaurant.pos.articles.allCategories' | translate }}
+    </button>
+    @for (c of cats; track trackByCategorieId($index, c)) {
+      <button
+        type="button"
+        class="btn btn-sm"
+        [class.btn-info]="selectedCatId === c.categorieId"
+        [class.text-white]="selectedCatId === c.categorieId"
+        [class.btn-outline-secondary]="selectedCatId !== c.categorieId"
+        (click)="onSelectCategorie(c.categorieId ?? null)"
+      >
+        {{ c.nomCategorie }}
+      </button>
+    }
+  </div>
+
+  <!-- Grille articles -->
+  @if (articlesLoading$ | async) {
+    <div class="text-center text-muted py-4">
+      {{ 'common.loading' | translate }}
+    </div>
+  } @else {
+    @let items = (filteredArticles$ | async) ?? [];
+    @if (items.length === 0) {
+      <div class="text-center text-muted py-4 small">
+        {{ 'restaurant.pos.articles.empty' | translate }}
+      </div>
+    } @else {
+      <div class="row g-2">
+        @for (a of items; track trackByArticleId($index, a)) {
+          <div class="col-6 col-md-4 col-lg-3">
+            <button
+              type="button"
+              class="btn w-100 text-start border h-100 article-tile"
+              [class.btn-light]="a.disponible !== false"
+              [class.btn-outline-secondary]="a.disponible === false"
+              [disabled]="a.disponible === false"
+              (click)="onAddArticle(a)"
+            >
+              <div class="fw-semibold text-truncate">{{ a.nomArticle }}</div>
+              <div class="text-info small fw-medium">
+                {{ a.prix | number:'1.2-2' }} {{ 'restaurant.pos.currency' | translate }}
+              </div>
+              @if (a.disponible === false) {
+                <div class="badge bg-secondary mt-1">
+                  {{ 'restaurant.pos.articles.unavailable' | translate }}
+                </div>
+              }
+            </button>
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

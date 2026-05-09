@@ -1,0 +1,125 @@
+:host {
+  display: block;
+}
+
+.reservations-calendar {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__monthLabel {
+    font-size: 1rem;
+    color: #555;
+  }
+
+  &__grid {
+    border: 1px solid #e3e6ea;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  &__weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8f9fa;
+    border-bottom: 1px solid #e3e6ea;
+  }
+
+  &__weekday {
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #444;
+    text-transform: uppercase;
+  }
+
+  &__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-auto-rows: minmax(96px, 1fr);
+  }
+
+  &__cell {
+    border-right: 1px solid #f0f1f3;
+    border-bottom: 1px solid #f0f1f3;
+    padding: 0.35rem;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+
+    &:nth-child(7n) {
+      border-right: none;
+    }
+
+    &--out {
+      background: #fafafa;
+      color: #b8b8b8;
+    }
+
+    &--today {
+      background: #e7f6fc;
+      box-shadow: inset 0 0 0 2px #0dcaf0;
+    }
+  }
+
+  &__day {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: inherit;
+    margin-bottom: 0.2rem;
+  }
+
+  &__chips {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  &__chip {
+    border: none;
+    border-radius: 0.25rem;
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: filter 200ms ease;
+
+    &:hover {
+      filter: brightness(0.92);
+    }
+
+    // Color coding par statut (cohérent avec roles_utilisateurs.txt /
+    // identité graphique bleu clair).
+    &--en-attente {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    &--confirmee {
+      background: #cfe9ff;
+      color: #0a4275;
+    }
+
+    &--arrivee {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    &--partie {
+      background: #e2e3e5;
+      color: #41464b;
+    }
+
+    &--annulee {
+      background: #f8d7da;
+      color: #842029;
+      text-decoration: line-through;
+    }
+  }
+}

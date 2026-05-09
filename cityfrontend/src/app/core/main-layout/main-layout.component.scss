@@ -1,0 +1,175 @@
+// =============================================================================
+// main-layout.component.scss — Wrapper header + sidebar + router-outlet
+// =============================================================================
+// Utilise les tokens shell (--header-height, --sidebar-width*, --transition-*).
+// =============================================================================
+
+.main-layout {
+  min-height: 100vh;
+  background-color: var(--surface-bg);
+}
+
+.layout-content {
+  display: flex;
+  min-height: calc(100vh - var(--header-height));
+  position: relative;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  min-height: calc(100vh - var(--header-height));
+  transition: margin-left var(--transition-slow), margin-right var(--transition-slow);
+  background-color: var(--surface-bg);
+
+  @media (max-width: 768px) { margin-left: 0; }
+}
+
+.content-wrapper {
+  padding: 1.75rem 2rem;
+  max-width: 100%;
+
+  @media (max-width: 768px) { padding: 1rem; }
+}
+
+.breadcrumb-nav {
+  background: transparent;
+  padding: 0 0 1rem 0;
+  margin-bottom: 1.5rem;
+
+  .breadcrumb {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-lg);
+    padding: 0.75rem 1rem;
+    margin: 0;
+    box-shadow: var(--shadow-sm);
+
+    .breadcrumb-item {
+      font-size: 0.875rem;
+
+      a {
+        color: var(--color-primary-600);
+        text-decoration: none;
+
+        &:hover {
+          color: var(--color-primary-700);
+          text-decoration: underline;
+        }
+      }
+
+      &.active { color: var(--text-secondary); }
+
+      &:not(:last-child)::after {
+        content: '\f054';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        margin: 0 0.5rem;
+        color: var(--text-muted);
+      }
+    }
+  }
+}
+
+.route-content {
+  animation: fadeInUp 0.4s ease-out;
+  min-height: calc(100vh - 200px);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ─── Loader d'application ───────────────────────────────────────────────────
+.app-loader {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+
+  .loader-container { text-align: center; padding: 2rem; }
+
+  .loader-content {
+    background: #fff;
+    padding: 3rem 2rem;
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--shadow-hotel-lg);
+    max-width: 400px;
+
+    .loader-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 2rem;
+      border-radius: var(--border-radius-lg);
+      box-shadow: var(--shadow-hotel);
+    }
+
+    h5 { margin-bottom: 0.5rem; font-weight: 600; color: var(--color-primary-700); }
+    small { font-size: 0.875rem; }
+  }
+}
+
+// ─── Adaptation à l'état du sidebar ─────────────────────────────────────────
+@media (max-width: 1200px) {
+  .main-content { margin-left: 248px; }
+}
+
+@media (max-width: 768px) {
+  .main-content { margin-left: 0; width: 100%; }
+  .content-wrapper { padding: 1rem 0.75rem; }
+  .breadcrumb-nav .breadcrumb { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
+}
+
+// La sidebar est *frère* du main-content via le HTML : on peut donc utiliser
+// le sélecteur ::ng-deep n'est pas nécessaire — Angular n'isole pas les
+// classes globales `.sidebar`. On gère via les variables/sélecteur descendant.
+.sidebar.collapsed ~ .main-content { margin-left: 0; }
+
+.sidebar.minimized ~ .main-content {
+  margin-left: var(--sidebar-width-min);
+
+  @media (max-width: 768px) { margin-left: 0; }
+}
+
+// ─── RTL ────────────────────────────────────────────────────────────────────
+[dir="rtl"] {
+  .main-content {
+    margin-left: 0;
+    margin-right: var(--sidebar-width);
+
+    @media (max-width: 768px) { margin-right: 0; }
+  }
+
+  .sidebar.collapsed ~ .main-content { margin-right: 0; }
+  .sidebar.minimized ~ .main-content {
+    margin-right: var(--sidebar-width-min);
+
+    @media (max-width: 768px) { margin-right: 0; }
+  }
+
+  .breadcrumb-item:not(:last-child)::after {
+    content: '\f053';
+    margin: 0 0.5rem;
+  }
+}
+
+// Animation harmonisée
+.layout-content {
+  transition: all var(--transition-slow);
+}
+
+// Print styles
+@media print {
+  .main-content {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    width: 100% !important;
+  }
+
+  .content-wrapper { padding: 0 !important; }
+  .breadcrumb-nav { display: none !important; }
+}

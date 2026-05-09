@@ -1,0 +1,546 @@
+// Styles pour le dashboard
+.dashboard-container {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 249, 250, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: var(--border-radius-lg);
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-hotel);
+  border: 1px solid rgba(33, 150, 243, 0.1);
+  
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+// Cartes de statistiques
+.stat-card {
+  border: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hotel-lg);
+    
+    .card-hover-effect {
+      opacity: 1;
+    }
+    
+    .stat-icon .icon-circle {
+      transform: scale(1.1);
+    }
+  }
+  
+  &.border-primary { border-color: rgba(33, 150, 243, 0.2); }
+  &.border-success { border-color: rgba(40, 167, 69, 0.2); }
+  &.border-warning { border-color: rgba(255, 193, 7, 0.2); }
+  &.border-danger { border-color: rgba(220, 53, 69, 0.2); }
+  &.border-info { border-color: rgba(23, 162, 184, 0.2); }
+  &.border-secondary { border-color: rgba(108, 117, 125, 0.2); }
+  
+  .card-body {
+    position: relative;
+    z-index: 2;
+  }
+  
+  .stat-content {
+    flex: 1;
+    
+    .card-title {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    
+    .card-subtitle {
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .trend {
+      font-weight: 500;
+      
+      i {
+        margin-right: 0.25rem;
+      }
+    }
+  }
+  
+  .stat-icon {
+    .icon-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s ease;
+      
+      i {
+        font-size: 1.5rem;
+      }
+    }
+  }
+  
+  .card-hover-effect {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(33, 150, 243, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+}
+
+// Couleurs de fond subtiles
+.bg-primary-subtle { background-color: rgba(33, 150, 243, 0.1) !important; }
+.bg-success-subtle { background-color: rgba(40, 167, 69, 0.1) !important; }
+.bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1) !important; }
+.bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+.bg-info-subtle { background-color: rgba(23, 162, 184, 0.1) !important; }
+.bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+
+// Cartes d'actions rapides
+.action-card {
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    
+    .action-arrow {
+      transform: translateX(5px);
+    }
+    
+    .icon-circle-lg {
+      transform: scale(1.05);
+    }
+  }
+  
+  .card-body {
+    position: relative;
+    
+    .action-icon {
+      .icon-circle-lg {
+        width: 50px;
+        height: 50px;
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.3s ease;
+        
+        i {
+          font-size: 1.25rem;
+        }
+      }
+    }
+    
+    .action-content {
+      flex: 1;
+      
+      .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+      }
+      
+      .card-text {
+        font-size: 0.875rem;
+        line-height: 1.5;
+      }
+    }
+    
+    .action-arrow {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      transition: transform 0.3s ease;
+      opacity: 0.5;
+    }
+  }
+}
+
+// Timeline d'activité
+.activity-timeline {
+  position: relative;
+  
+  .timeline-item {
+    position: relative;
+    padding-left: 2rem;
+    padding-bottom: 1.5rem;
+    
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem;
+      top: 1.5rem;
+      bottom: -0.5rem;
+      width: 2px;
+      background: linear-gradient(to bottom, #dee2e6, transparent);
+    }
+    
+    .timeline-marker {
+      position: absolute;
+      left: 0;
+      top: 0.25rem;
+      width: 1rem;
+      height: 1rem;
+      border-radius: 50%;
+      border: 2px solid white;
+      z-index: 2;
+    }
+    
+    .timeline-content {
+      h6 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+      }
+      
+      p {
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+      
+      small {
+        font-size: 0.75rem;
+      }
+    }
+  }
+}
+
+// Placeholder pour graphiques
+.chart-placeholder {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: var(--border-radius);
+  border: 2px dashed #dee2e6;
+  
+  i {
+    opacity: 0.6;
+  }
+}
+
+// Alertes personnalisées
+.alert {
+  border-radius: var(--border-radius-lg);
+  border: none;
+  
+  .alert-heading {
+    font-weight: 600;
+  }
+  
+  &.alert-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-left: 4px solid var(--warning-color);
+  }
+}
+
+// Responsive design
+@media (max-width: 1200px) {
+  .dashboard-header {
+    padding: 1.5rem;
+    
+    h1 {
+      font-size: 1.75rem;
+    }
+  }
+  
+  .stat-card {
+    .stat-icon .icon-circle {
+      width: 50px;
+      height: 50px;
+      
+      i {
+        font-size: 1.25rem;
+      }
+    }
+    
+    .stat-content .card-title {
+      font-size: 1.75rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    padding: 0;
+  }
+  
+  .dashboard-header {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .row {
+      text-align: center;
+      
+      .col-md-4 {
+        text-align: center !important;
+        margin-top: 1rem;
+      }
+    }
+  }
+  
+  .stat-card {
+    margin-bottom: 1rem;
+    
+    .card-body {
+      padding: 1.5rem 1rem;
+    }
+    
+    .stat-content .card-title {
+      font-size: 1.5rem;
+    }
+    
+    .stat-icon .icon-circle {
+      width: 45px;
+      height: 45px;
+      
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+  
+  .action-card {
+    .card-body {
+      padding: 1.5rem 1rem;
+    }
+    
+    .action-icon .icon-circle-lg {
+      width: 40px;
+      height: 40px;
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+    
+    .action-content {
+      .card-title {
+        font-size: 1rem;
+      }
+      
+      .card-text {
+        font-size: 0.8rem;
+      }
+    }
+  }
+  
+  .activity-timeline {
+    .timeline-item {
+      padding-left: 1.5rem;
+      
+      .timeline-marker {
+        width: 0.75rem;
+        height: 0.75rem;
+      }
+      
+      &:not(:last-child)::before {
+        left: 0.375rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .dashboard-header {
+    padding: 0.75rem;
+    
+    h1 {
+      font-size: 1.25rem;
+    }
+    
+    p {
+      font-size: 0.8rem;
+    }
+  }
+  
+  .row.g-4 {
+    gap: 1rem !important;
+  }
+  
+  .action-card {
+    .card-body {
+      .d-flex {
+        flex-direction: column;
+        text-align: center;
+        
+        .action-icon {
+          margin-bottom: 1rem;
+          margin-right: 0 !important;
+        }
+      }
+      
+      .action-arrow {
+        display: none;
+      }
+    }
+  }
+}
+
+// Direction RTL pour l'arabe
+[dir="rtl"] {
+  .activity-timeline {
+    .timeline-item {
+      padding-left: 0;
+      padding-right: 2rem;
+      
+      &:not(:last-child)::before {
+        left: auto;
+        right: 0.5rem;
+      }
+      
+      .timeline-marker {
+        left: auto;
+        right: 0;
+      }
+    }
+  }
+  
+  .action-card {
+    .card-body {
+      .action-arrow {
+        right: auto;
+        left: 1rem;
+        
+        i {
+          transform: rotate(180deg);
+        }
+      }
+    }
+    
+    &:hover .action-arrow {
+      transform: translateX(-5px);
+    }
+  }
+  
+  .alert {
+    border-left: none;
+    border-right: 4px solid var(--warning-color);
+  }
+}
+
+// Animations
+@keyframes dashboardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-content {
+  animation: dashboardFadeIn 0.6s ease-out;
+}
+
+// Mode sombre (optionnel)
+.dark-theme {
+  .dashboard-header {
+    background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .stat-card {
+    background-color: #2a2a2a;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    
+    .card-hover-effect {
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(33, 150, 243, 0.1) 100%);
+    }
+  }
+  
+  .action-card {
+    background-color: #2a2a2a;
+  }
+  
+  .activity-timeline {
+    .timeline-item {
+      &:not(:last-child)::before {
+        background: linear-gradient(to bottom, #555, transparent);
+      }
+    }
+  }
+  
+  .chart-placeholder {
+    background: linear-gradient(135deg, #2a2a2a 0%, #3a3a3a 100%);
+    border-color: #555;
+  }
+}
+
+// Effets de focus pour l'accessibilité
+.stat-card:focus,
+.action-card:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+// Animation de chargement
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(33, 150, 243, 0.1);
+  border-left: 4px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Print styles
+@media print {
+  .dashboard-header {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+  
+  .stat-card,
+  .action-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+  }
+  
+  .action-card .action-arrow {
+    display: none !important;
+  }
+  
+  .chart-placeholder {
+    border-style: solid !important;
+  }
+}

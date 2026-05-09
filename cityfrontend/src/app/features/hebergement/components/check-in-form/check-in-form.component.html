@@ -1,0 +1,102 @@
+<section class="check-in-form">
+  <header class="check-in-form__header d-flex align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'hebergement.checkIn.title' | translate }}</h2>
+  </header>
+
+  <div class="check-in-form__search mb-3">
+    <label for="checkin-terme" class="form-label">
+      {{ 'hebergement.checkIn.searchLabel' | translate }}
+    </label>
+    <input
+      id="checkin-terme"
+      type="search"
+      class="form-control"
+      [placeholder]="'hebergement.checkIn.searchPlaceholder' | translate"
+      [value]="form.get('terme')?.value || ''"
+      (input)="onTermeChange($any($event.target).value)"
+      autocomplete="off"
+    />
+  </div>
+
+  @if (state === 'searching') {
+    <div class="check-in-form__loading text-center py-4">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'hebergement.checkIn.searchError' | translate }}
+    </div>
+  } @else if (results.length === 0 && (form.get('terme')?.value || '').length >= 2) {
+    <div class="alert alert-info" role="status">
+      {{ 'hebergement.checkIn.noResults' | translate }}
+    </div>
+  } @else if (results.length > 0) {
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col"></th>
+            <th scope="col">{{ 'hebergement.fields.numeroReservation' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.client' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.dateArrivee' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.dateDepart' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.statut' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of results; track r.reservationId) {
+            <tr
+              [class.table-primary]="selected?.reservationId === r.reservationId"
+              [class.text-muted]="!isSelectable(r)"
+            >
+              <td>
+                <input
+                  type="radio"
+                  class="form-check-input"
+                  name="checkinSelection"
+                  [checked]="selected?.reservationId === r.reservationId"
+                  [disabled]="!isSelectable(r)"
+                  (change)="select(r)"
+                  [attr.aria-label]="'hebergement.checkIn.selectReservation' | translate"
+                />
+              </td>
+              <td>{{ r.numeroReservation || '-' }}</td>
+              <td>{{ r.nomClientPrincipal || '-' }}</td>
+              <td>{{ r.dateArrivee || '-' }}</td>
+              <td>{{ r.dateDepart || '-' }}</td>
+              <td>
+                <span class="badge text-bg-secondary">
+                  {{ statutKey(r) | translate }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div class="check-in-form__actions d-flex justify-content-end gap-2 mt-4">
+    <button
+      type="button"
+      class="btn btn-outline-secondary"
+      (click)="goBack()"
+      [disabled]="state === 'submitting'"
+    >
+      {{ 'hebergement.actions.close' | translate }}
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="confirm()"
+      [disabled]="!selected || !isSelectable(selected) || state === 'submitting'"
+    >
+      @if (state === 'submitting') {
+        <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+      }
+      {{ 'hebergement.actions.checkIn' | translate }}
+    </button>
+  </div>
+</section>

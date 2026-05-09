@@ -1,0 +1,242 @@
+<section class="article-form">
+  <header class="article-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'restaurant.article.form.titleEdit'
+          : 'restaurant.article.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="article-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'restaurant.article.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="categorieId" class="form-label">
+            {{ 'restaurant.article.fields.categorie' | translate }}
+          </label>
+          <select
+            id="categorieId"
+            class="form-select"
+            formControlName="categorieId"
+            [class.is-invalid]="form.get('categorieId')?.invalid && form.get('categorieId')?.touched"
+          >
+            <option [ngValue]="null">--</option>
+            @for (cat of categories; track cat.categorieId) {
+              <option [ngValue]="cat.categorieId">{{ cat.nomCategorie }}</option>
+            }
+          </select>
+          @if (form.get('categorieId')?.touched && form.get('categorieId')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.categorieRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="codeArticle" class="form-label">
+            {{ 'restaurant.article.fields.codeArticle' | translate }}
+          </label>
+          <input
+            id="codeArticle"
+            type="text"
+            class="form-control"
+            formControlName="codeArticle"
+          />
+        </div>
+
+        <div class="col-md-5">
+          <label for="nomArticle" class="form-label">
+            {{ 'restaurant.article.fields.nomArticle' | translate }}
+          </label>
+          <input
+            id="nomArticle"
+            type="text"
+            class="form-control"
+            formControlName="nomArticle"
+            [class.is-invalid]="form.get('nomArticle')?.invalid && form.get('nomArticle')?.touched"
+          />
+          @if (form.get('nomArticle')?.touched && form.get('nomArticle')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.nomRequired' | translate }}
+            </div>
+          }
+          @if (form.get('nomArticle')?.touched && form.get('nomArticle')?.errors?.['minlength']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.nomMinLength' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="nomArticleEn" class="form-label">
+            {{ 'restaurant.article.fields.nomArticleEn' | translate }}
+          </label>
+          <input
+            id="nomArticleEn"
+            type="text"
+            class="form-control"
+            formControlName="nomArticleEn"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="nomArticleAr" class="form-label">
+            {{ 'restaurant.article.fields.nomArticleAr' | translate }}
+          </label>
+          <input
+            id="nomArticleAr"
+            type="text"
+            class="form-control"
+            formControlName="nomArticleAr"
+            dir="rtl"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">
+            {{ 'restaurant.article.fields.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            class="form-control"
+            rows="2"
+            formControlName="description"
+          ></textarea>
+        </div>
+
+        <div class="col-md-3">
+          <label for="prix" class="form-label">
+            {{ 'restaurant.article.fields.prix' | translate }}
+          </label>
+          <input
+            id="prix"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="prix"
+            [class.is-invalid]="form.get('prix')?.invalid && form.get('prix')?.touched"
+          />
+          @if (form.get('prix')?.touched && form.get('prix')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.prixRequired' | translate }}
+            </div>
+          }
+          @if (form.get('prix')?.touched && form.get('prix')?.errors?.['min']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.prixMin' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="coutIngredients" class="form-label">
+            {{ 'restaurant.article.fields.coutIngredients' | translate }}
+          </label>
+          <input
+            id="coutIngredients"
+            type="number"
+            min="0"
+            step="0.01"
+            class="form-control"
+            formControlName="coutIngredients"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="tempsPreparation" class="form-label">
+            {{ 'restaurant.article.fields.tempsPreparation' | translate }}
+          </label>
+          <input
+            id="tempsPreparation"
+            type="number"
+            min="0"
+            step="1"
+            class="form-control"
+            formControlName="tempsPreparation"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="imageUrl" class="form-label">
+            {{ 'restaurant.article.fields.imageUrl' | translate }}
+          </label>
+          <input
+            id="imageUrl"
+            type="text"
+            class="form-control"
+            formControlName="imageUrl"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="allergenes" class="form-label">
+            {{ 'restaurant.article.fields.allergenes' | translate }}
+            <small class="text-muted">— {{ 'restaurant.article.fields.allergenesHint' | translate }}</small>
+          </label>
+          <input
+            id="allergenes"
+            type="text"
+            class="form-control"
+            formControlName="allergenes"
+            [placeholder]="'restaurant.article.fields.allergenesPlaceholder' | translate"
+          />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center gap-3 pt-3">
+          <div class="form-check">
+            <input
+              id="disponible"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="disponible"
+            />
+            <label for="disponible" class="form-check-label">
+              {{ 'restaurant.article.fields.disponible' | translate }}
+            </label>
+          </div>
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'restaurant.article.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="article-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'restaurant.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'restaurant.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

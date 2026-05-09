@@ -1,0 +1,10 @@
+/* Composant POS — recherche client. Styles minimaux : on délègue à
+   Tailwind utility classes côté template. Quelques ajustements pour les
+   listes scrollables / feedback de sélection. */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.max-h-60 {
+  max-height: 15rem;
+}

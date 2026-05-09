@@ -1,0 +1,191 @@
+<!-- Sidebar de navigation avec menu déroulant -->
+<nav class="sidebar"
+  [class.collapsed]="isCollapsed"
+  [class.minimized]="isMinimized"
+  [attr.aria-label]="'Navigation principale'">
+
+  <!-- En-tête du sidebar -->
+  <div class="sidebar-header">
+    @if (!isMinimized) {
+      <div class="sidebar-title">
+        <i class="fas fa-bars sidebar-title__icon"></i>
+        <h5 class="sidebar-title__text">{{ 'sidebar.navigation' | translate }}</h5>
+      </div>
+    }
+
+    <div class="sidebar-controls">
+      <button type="button"
+              class="sidebar-toggle-btn"
+              (click)="toggleMinimize()"
+              [attr.aria-label]="(isMinimized ? 'sidebar.restore' : 'sidebar.minimize') | translate"
+              [title]="(isMinimized ? 'sidebar.restore' : 'sidebar.minimize') | translate">
+        <i [class]="isMinimized ? 'fas fa-expand-alt' : 'fas fa-compress-alt'"></i>
+      </button>
+
+      <button type="button"
+              class="sidebar-toggle-btn"
+              (click)="toggleCollapse()"
+              [attr.aria-label]="(isCollapsed ? 'sidebar.expand' : 'sidebar.collapse') | translate"
+              [title]="(isCollapsed ? 'sidebar.expand' : 'sidebar.collapse') | translate">
+        <i [class]="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenu du menu -->
+  <div class="sidebar-content" [class.d-none]="isCollapsed">
+    <ul class="sidebar-nav">
+
+      <!-- Items de menu -->
+      @for (item of getVisibleItems(); track trackByFn($index, item)) {
+        <li class="sidebar-item">
+          <!-- Menu principal sans enfants -->
+          @if (!item.children || item.children.length === 0) {
+            <a class="sidebar-link"
+               [class.is-active]="isItemActive(item)"
+               (click)="navigateTo(item.route!)"
+               [attr.aria-label]="translationService.translate(item.label)"
+               [title]="isMinimized ? translationService.translate(item.label) : ''">
+              <i [class]="item.icon"
+                 [class.sidebar-link__icon]="!isMinimized"
+                 [class.sidebar-icon-center]="isMinimized"></i>
+              @if (!isMinimized) {
+                <span class="sidebar-link__text">{{ item.label | translate }}</span>
+              }
+            </a>
+          }
+          <!-- Menu principal avec enfants -->
+          @if (item.children && item.children.length > 0) {
+            <div>
+              <a class="sidebar-link sidebar-link--parent"
+                 [class.is-active]="hasActiveChild(item)"
+                 [class.is-expanded]="item.expanded"
+                 (click)="toggleMenu(item)"
+                 [attr.aria-expanded]="item.expanded"
+                 [attr.aria-label]="translationService.translate(item.label)"
+                 [title]="isMinimized ? translationService.translate(item.label) : ''">
+                <i [class]="item.icon"
+                   [class.sidebar-link__icon]="!isMinimized"
+                   [class.sidebar-icon-center]="isMinimized"></i>
+                @if (!isMinimized) {
+                  <span class="sidebar-link__text">{{ item.label | translate }}</span>
+                  <i class="fas fa-chevron-down sidebar-link__chevron"
+                     [class.is-open]="item.expanded"></i>
+                }
+              </a>
+              <!-- Sous-menu -->
+              <div class="submenu"
+                   [class.show]="item.expanded && !isMinimized"
+                   [attr.aria-hidden]="!item.expanded">
+                <ul class="submenu__list">
+                  @for (child of item.children; track trackByChildFn($index, child)) {
+                    <li class="submenu__item"
+                        [style.display]="isItemVisible(child) ? 'block' : 'none'">
+                      <a class="submenu-link"
+                         [class.is-active]="isItemActive(child)"
+                         (click)="navigateTo(child.route!)"
+                         [attr.aria-label]="translationService.translate(child.label)">
+                        <i [class]="child.icon" class="submenu-link__icon"></i>
+                        <span class="submenu-link__text">{{ child.label | translate }}</span>
+                      </a>
+                    </li>
+                  }
+                </ul>
+              </div>
+              <!-- Tooltip pour mode minimisé -->
+              @if (isMinimized && item.children) {
+                <div class="minimized-tooltip"
+                  [attr.data-tooltip]="translationService.translate(item.label)">
+                  <div class="tooltip-content">
+                    <div class="tooltip-title">{{ item.label | translate }}</div>
+                    <ul class="tooltip-menu">
+                      @for (child of item.children; track child) {
+                        <li
+                          [style.display]="isItemVisible(child) ? 'block' : 'none'">
+                          <a (click)="navigateTo(child.route!)">
+                            <i [class]="child.icon"></i>
+                            {{ child.label | translate }}
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </li>
+      }
+    </ul>
+
+    <!-- Footer sidebar : utilisateur courant -->
+    @if (!isMinimized) {
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-user__avatar">
+            <span>{{ currentUser?.prenom?.charAt(0) }}{{ currentUser?.nom?.charAt(0) }}</span>
+          </div>
+          <div class="sidebar-user__info">
+            <small class="sidebar-user__caption">Connecté en tant que :</small>
+            <div class="sidebar-user__name">{{ currentUser?.prenom }} {{ currentUser?.nom }}</div>
+            <small class="sidebar-user__role">{{ currentUser?.roleNom }}</small>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Mode minimisé - icônes seulement -->
+  <div class="sidebar-minimized" [class.d-none]="!isMinimized">
+    <ul class="sidebar-nav sidebar-nav--minimized">
+      @for (item of getVisibleItems(); track trackByFn($index, item)) {
+        <li class="sidebar-item">
+          <!-- Item simple -->
+          @if (!item.children || item.children.length === 0) {
+            <a class="minimized-link"
+               [class.is-active]="isItemActive(item)"
+               (click)="navigateTo(item.route!)"
+               [attr.aria-label]="translationService.translate(item.label)"
+               [title]="translationService.translate(item.label)">
+              <i [class]="item.icon"></i>
+            </a>
+          }
+          <!-- Item avec enfants -->
+          @if (item.children && item.children.length > 0) {
+            <div class="minimized-menu-container">
+              <a class="minimized-link"
+                 [class.is-active]="hasActiveChild(item)"
+                 [attr.aria-label]="translationService.translate(item.label)"
+                 [title]="translationService.translate(item.label)">
+                <i [class]="item.icon"></i>
+              </a>
+              <!-- Tooltip avec sous-menu -->
+              <div class="minimized-submenu">
+                <div class="submenu-content">
+                  <h6 class="submenu-title">{{ item.label | translate }}</h6>
+                  <ul class="submenu-list">
+                    @for (child of item.children; track child) {
+                      <li [style.display]="isItemVisible(child) ? 'block' : 'none'">
+                        <a (click)="navigateTo(child.route!)"
+                           [class.is-active]="isItemActive(child)">
+                          <i [class]="child.icon"></i>
+                          {{ child.label | translate }}
+                        </a>
+                      </li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+</nav>
+
+<!-- Overlay pour fermer le sidebar sur mobile -->
+@if (!isCollapsed) {
+  <div class="sidebar-overlay"
+  (click)="toggleCollapse()"></div>
+}

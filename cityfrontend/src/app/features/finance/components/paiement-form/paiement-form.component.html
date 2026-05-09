@@ -1,0 +1,157 @@
+<section class="paiement-form">
+  <header class="paiement-form__header mb-3">
+    <h2 class="h4 m-0">{{ 'finance.paiement.form.title' | translate }}</h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="paiement-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'finance.paiement.form.loadError' | translate }}
+    </div>
+  } @else if (facture) {
+    <div class="alert alert-info">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <div>
+          <strong>{{ 'finance.facture.fields.numeroFacture' | translate }}:</strong>
+          <code class="ms-1">{{ facture.numeroFacture }}</code>
+        </div>
+        <div>
+          <strong>{{ 'finance.facture.fields.compteId' | translate }}:</strong>
+          {{ facture.compteId || '-' }}
+        </div>
+        <div>
+          <strong>{{ 'finance.facture.fields.montantTtc' | translate }}:</strong>
+          {{ facture.montantTtc | number:'1.2-2' }}
+        </div>
+        <div>
+          <strong>{{ 'finance.facture.fields.montantPaye' | translate }}:</strong>
+          {{ facture.montantPaye | number:'1.2-2' }}
+        </div>
+        <div>
+          <strong>{{ 'finance.facture.fields.montantRestant' | translate }}:</strong>
+          <span class="fw-bold">{{ facture.montantRestant | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="modePaiement" class="form-label">
+            {{ 'finance.paiement.fields.modePaiement' | translate }}
+          </label>
+          <select
+            id="modePaiement"
+            class="form-select"
+            formControlName="modePaiement"
+            [class.is-invalid]="form.get('modePaiement')?.invalid && form.get('modePaiement')?.touched"
+          >
+            @for (m of modes; track m) {
+              <option [value]="m">{{ ('finance.paiement.mode.' + m) | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label for="montant" class="form-label">
+            {{ 'finance.paiement.fields.montant' | translate }}
+          </label>
+          <input
+            id="montant"
+            type="number"
+            min="0.01"
+            step="0.01"
+            class="form-control text-end"
+            formControlName="montant"
+            [class.is-invalid]="form.get('montant')?.invalid && form.get('montant')?.touched"
+          />
+          @if (form.get('montant')?.touched && form.get('montant')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'finance.paiement.errors.montantRequired' | translate }}
+            </div>
+          }
+          @if (form.get('montant')?.touched && form.get('montant')?.errors?.['min']) {
+            <div class="invalid-feedback d-block">
+              {{ 'finance.paiement.errors.montantMin' | translate }}
+            </div>
+          }
+          @if (form.get('montant')?.touched && form.get('montant')?.errors?.['maxMontant']) {
+            <div class="invalid-feedback d-block">
+              {{ 'finance.paiement.errors.montantMax' | translate }}
+              ({{ facture.montantRestant | number:'1.2-2' }})
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="datePaiement" class="form-label">
+            {{ 'finance.paiement.fields.datePaiement' | translate }}
+          </label>
+          <input
+            id="datePaiement"
+            type="date"
+            class="form-control"
+            formControlName="datePaiement"
+            [class.is-invalid]="form.get('datePaiement')?.invalid && form.get('datePaiement')?.touched"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="referencePaiement" class="form-label">
+            {{ 'finance.paiement.fields.referencePaiement' | translate }}
+            @if (isReferenceRequired()) {
+              <span class="text-danger">*</span>
+            }
+          </label>
+          <input
+            id="referencePaiement"
+            type="text"
+            class="form-control"
+            formControlName="referencePaiement"
+            [class.is-invalid]="form.get('referencePaiement')?.invalid && form.get('referencePaiement')?.touched"
+            [placeholder]="'finance.paiement.fields.referencePaiementPlaceholder' | translate"
+          />
+          @if (form.get('referencePaiement')?.touched && form.get('referencePaiement')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'finance.paiement.errors.referenceRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="commentaires" class="form-label">
+            {{ 'finance.paiement.fields.commentaires' | translate }}
+          </label>
+          <textarea
+            id="commentaires"
+            class="form-control"
+            rows="2"
+            formControlName="commentaires"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="paiement-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+          {{ 'finance.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-success"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+          {{ 'finance.paiement.actions.encaisser' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

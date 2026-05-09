@@ -1,0 +1,19 @@
+/* Modal de paiement POS — implémentation maison (pas de dépendance ng-bootstrap
+   dans cityfrontend, on garde un overlay simple pour rester aligné avec
+   SweetAlert2 / Bootstrap natif). */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1080;
+  /* L'overlay doit ÊTRE opaque même quand Bootstrap déclare son propre
+     `.modal-backdrop`. */
+  opacity: 1;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}

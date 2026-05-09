@@ -1,0 +1,85 @@
+// Styles pour le layout d'authentification
+.auth-layout {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background-attachment: fixed;
+  position: relative;
+  overflow-x: hidden;
+  
+  // Motif de fond subtil
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(33, 150, 243, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(33, 150, 243, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  
+  // Animation de particules flottantes (optionnel)
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, rgba(33, 150, 243, 0.1), transparent),
+      radial-gradient(2px 2px at 40px 70px, rgba(33, 150, 243, 0.1), transparent),
+      radial-gradient(1px 1px at 90px 40px, rgba(33, 150, 243, 0.1), transparent),
+      radial-gradient(1px 1px at 130px 80px, rgba(33, 150, 243, 0.1), transparent);
+    background-repeat: repeat;
+    background-size: 150px 100px;
+    animation: float 20s infinite linear;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+}
+
+// Animation de flottement
+@keyframes float {
+  0% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  66% {
+    transform: translateY(5px) translateX(-5px);
+  }
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .auth-layout {
+    &::after {
+      animation-duration: 30s;
+      opacity: 0.3;
+    }
+  }
+}
+
+// Direction RTL
+[dir="rtl"] .auth-layout {
+  &::after {
+    animation-direction: reverse;
+  }
+}
+
+// Mode sombre (optionnel)
+.dark-theme .auth-layout {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  
+  &::before {
+    background-image: 
+      radial-gradient(circle at 25% 25%, rgba(33, 150, 243, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 75% 75%, rgba(33, 150, 243, 0.05) 0%, transparent 50%);
+  }
+}

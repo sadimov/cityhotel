@@ -1,0 +1,145 @@
+@if (open) {
+  <div
+    class="modal-backdrop d-flex align-items-center justify-content-center"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'restaurant.pos.payment.title' | translate"
+  >
+    <div class="modal-card bg-white rounded-2xl shadow-lg p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0 text-sky-700">
+          {{ 'restaurant.pos.payment.title' | translate }}
+        </h3>
+        <button
+          type="button"
+          class="btn-close"
+          [attr.aria-label]="'common.close' | translate"
+          (click)="onCancel()"
+        ></button>
+      </div>
+
+      <div class="alert alert-info py-2 mb-3 d-flex justify-content-between align-items-center">
+        <span class="small text-muted">
+          {{ 'restaurant.pos.payment.totalDue' | translate }}
+        </span>
+        <span class="h5 mb-0 fw-bold">
+          {{ total | number:'1.2-2' }} {{ 'restaurant.pos.currency' | translate }}
+        </span>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <!-- Modes rapides -->
+        <div class="mb-3">
+          <label class="form-label small fw-medium">
+            {{ 'restaurant.pos.payment.modeLabel' | translate }}
+          </label>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            @for (mode of quickModes; track mode) {
+              <button
+                type="button"
+                class="btn"
+                [class.btn-info]="form.value.modePaiement === mode"
+                [class.text-white]="form.value.modePaiement === mode"
+                [class.btn-outline-info]="form.value.modePaiement !== mode"
+                (click)="selectQuickMode(mode)"
+              >
+                {{ 'restaurant.pos.payment.modes.' + mode | translate }}
+              </button>
+            }
+          </div>
+          <select formControlName="modePaiement" class="form-select form-select-sm">
+            <optgroup [label]="'restaurant.pos.payment.modesGroup.quick' | translate">
+              @for (mode of quickModes; track mode) {
+                <option [value]="mode">
+                  {{ 'restaurant.pos.payment.modes.' + mode | translate }}
+                </option>
+              }
+            </optgroup>
+            <optgroup [label]="'restaurant.pos.payment.modesGroup.others' | translate">
+              @for (mode of otherModes; track mode) {
+                <option [value]="mode">
+                  {{ 'restaurant.pos.payment.modes.' + mode | translate }}
+                </option>
+              }
+            </optgroup>
+          </select>
+        </div>
+
+        <!-- Montant -->
+        <div class="mb-3">
+          <label class="form-label small fw-medium" for="pos-payment-amount">
+            {{ 'restaurant.pos.payment.amountLabel' | translate }}
+          </label>
+          <input
+            id="pos-payment-amount"
+            type="number"
+            min="0.01"
+            step="0.01"
+            class="form-control"
+            formControlName="montantPaye"
+          />
+          @if (form.get('montantPaye')?.touched && form.get('montantPaye')?.invalid) {
+            <div class="invalid-feedback d-block small">
+              {{ 'restaurant.pos.payment.errors.amountInvalid' | translate }}
+            </div>
+          }
+        </div>
+
+        <!-- Référence (chèque, carte, ...) -->
+        @if (modePaiementWithRefRequired) {
+          <div class="mb-3">
+            <label class="form-label small fw-medium" for="pos-payment-ref">
+              {{ 'restaurant.pos.payment.referenceLabel' | translate }}
+            </label>
+            <input
+              id="pos-payment-ref"
+              type="text"
+              class="form-control"
+              formControlName="referencePaiement"
+              [placeholder]="'restaurant.pos.payment.referencePlaceholder' | translate"
+            />
+            @if (form.get('referencePaiement')?.touched && form.get('referencePaiement')?.invalid) {
+              <div class="invalid-feedback d-block small">
+                {{ 'restaurant.pos.payment.errors.referenceRequired' | translate }}
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Commentaires -->
+        <div class="mb-3">
+          <label class="form-label small fw-medium" for="pos-payment-comments">
+            {{ 'restaurant.pos.payment.commentsLabel' | translate }}
+          </label>
+          <textarea
+            id="pos-payment-comments"
+            class="form-control"
+            rows="2"
+            formControlName="commentaires"
+          ></textarea>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            [disabled]="submitting"
+            (click)="onCancel()"
+          >
+            {{ 'common.cancel' | translate }}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-info text-white"
+            [disabled]="form.invalid || submitting"
+          >
+            @if (submitting) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            {{ 'restaurant.pos.payment.confirm' | translate }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

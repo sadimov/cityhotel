@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.articles-list {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__search {
+    max-width: 320px;
+    flex: 1 1 240px;
+  }
+
+  &__filter {
+    max-width: 220px;
+    flex: 0 1 auto;
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

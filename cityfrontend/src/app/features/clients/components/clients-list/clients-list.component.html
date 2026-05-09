@@ -1,0 +1,122 @@
+<section class="clients-list">
+  <header class="clients-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'clients.list.title' | translate }}</h2>
+    <button
+      type="button"
+      class="btn btn-primary"
+      (click)="createNew()"
+    >
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'clients.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="clients-list__toolbar mb-3">
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="'clients.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'clients.list.search' | translate"
+    />
+  </div>
+
+  @if (state === 'loading') {
+    <div class="clients-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'clients.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'clients.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'clients.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'clients.fields.numeroClient' | translate }}</th>
+            <th scope="col">{{ 'clients.fields.nom' | translate }}</th>
+            <th scope="col">{{ 'clients.fields.email' | translate }}</th>
+            <th scope="col">{{ 'clients.fields.telephone' | translate }}</th>
+            <th scope="col">{{ 'clients.fields.ville' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'clients.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (client of page.content; track client.clientId) {
+            <tr>
+              <td>{{ client.numeroClient || '-' }}</td>
+              <td>{{ displayName(client) }}</td>
+              <td>{{ client.email || '-' }}</td>
+              <td>{{ client.telephone || '-' }}</td>
+              <td>{{ client.ville || '-' }}</td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(client)"
+                  [attr.aria-label]="'clients.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="remove(client)"
+                  [disabled]="deleting"
+                  [attr.aria-label]="'clients.actions.delete' | translate"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'clients.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

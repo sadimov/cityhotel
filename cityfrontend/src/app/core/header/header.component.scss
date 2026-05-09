@@ -1,0 +1,516 @@
+// =============================================================================
+// header.component.scss — Header propriétaire City Hotel
+// =============================================================================
+// Palette : sky-* (cf. _theme.scss et @theme {} de styles.scss).
+// Pas de classes Bootstrap visuelles (`bg-info`, `btn-primary`, etc.) — tout
+// est custom pour respecter la consigne « pas du Bootstrap par défaut ».
+// =============================================================================
+
+// ─── Conteneur principal ────────────────────────────────────────────────────
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--header-height);
+  color: var(--header-text);
+  background-image: linear-gradient(135deg,
+    var(--header-gradient-from) 0%,
+    var(--header-gradient-to) 100%);
+  border-bottom: 1px solid var(--header-border-bottom);
+  box-shadow: var(--shadow-hotel-lg);
+  backdrop-filter: blur(8px);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 100%;
+  padding: 0 1.25rem;
+}
+
+// ─── Bloc gauche : logo + identité ──────────────────────────────────────────
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.app-header__logo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  flex-shrink: 0;
+}
+
+.app-header__brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--header-text);
+  letter-spacing: -0.2px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-header__subtitle {
+  font-size: 0.75rem;
+  color: var(--header-text-muted);
+  margin-top: 2px;
+}
+
+// ─── Bloc droit : actions ───────────────────────────────────────────────────
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+// ─── Sélecteur de langue (pill group) ───────────────────────────────────────
+.lang-switcher {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  gap: 2px;
+
+  &__btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--header-text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color var(--transition-base), color var(--transition-base);
+
+    &:hover:not(.is-active) {
+      background: var(--header-pill-hover-bg);
+      color: var(--header-text);
+    }
+
+    &.is-active {
+      background: var(--header-pill-active);
+      color: var(--header-pill-active-text);
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.10);
+    }
+
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 1px;
+    }
+  }
+}
+
+// ─── Bouton icône (notifications) ───────────────────────────────────────────
+.icon-button {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  color: var(--header-text);
+  cursor: pointer;
+  transition: background-color var(--transition-base), transform var(--transition-fast);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  i {
+    font-size: 1rem;
+  }
+
+  &__badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #ef4444; // red-500
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--header-gradient-to);
+    animation: pulse-badge 2s infinite;
+  }
+}
+
+@keyframes pulse-badge {
+  0%, 100% { box-shadow: 0 0 0 2px var(--header-gradient-to); }
+  50%      { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.45); }
+}
+
+// ─── Profil utilisateur (trigger) ───────────────────────────────────────────
+.app-header__profile,
+.app-header__notif {
+  position: relative;
+}
+
+.profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 4px 10px 4px 4px;
+  border: 0;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  color: var(--header-text);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  &__chevron {
+    font-size: 0.75rem;
+    transition: transform var(--transition-base);
+    opacity: 0.85;
+
+    &.is-open {
+      transform: rotate(180deg);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .profile-info {
+      display: none;
+    }
+  }
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+
+  &__name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--header-text);
+  }
+
+  &__role {
+    font-size: 0.6875rem;
+    color: var(--header-text-muted);
+  }
+}
+
+// ─── Avatar (cercle, normal + lg) ───────────────────────────────────────────
+.profile-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
+  background: var(--color-primary-700); // fallback
+
+  &--lg {
+    width: 52px;
+    height: 52px;
+    border-color: var(--color-primary-100);
+  }
+
+  &__img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  &__initials {
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+
+    &--online  { background-color: #22c55e; } // green-500
+    &--away    { background-color: #f59e0b; } // amber-500
+    &--offline { background-color: #94a3b8; } // slate-400
+  }
+}
+
+// Couleurs d'avatar par rôle (palette retravaillée sky/teal/amber/rose)
+.avatar-color-superadmin { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); } // rose
+.avatar-color-admin      { background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%); } // sky
+.avatar-color-gerant     { background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%); } // teal
+.avatar-color-reception  { background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%); } // sky-400
+.avatar-color-restaurant { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); } // amber
+.avatar-color-resrec     { background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%); } // violet
+.avatar-color-menage     { background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%); } // cyan
+.avatar-color-magasin    { background: linear-gradient(135deg, #f97316 0%, #c2410c 100%); } // orange
+.avatar-color-default    { background: linear-gradient(135deg, #94a3b8 0%, #475569 100%); } // slate
+
+// ─── Dropdowns custom (notifications + profil) ──────────────────────────────
+.city-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 320px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16),
+              0 4px 8px rgba(15, 23, 42, 0.08);
+  border: 1px solid var(--border-soft);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--transition-base),
+              transform var(--transition-base),
+              visibility var(--transition-base);
+  z-index: var(--z-header);
+
+  &.is-open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--color-primary-50);
+    border-bottom: 1px solid var(--color-primary-100);
+
+    h6 { color: var(--color-primary-700); font-weight: 600; }
+    small { color: var(--text-secondary); }
+  }
+
+  &__divider {
+    height: 1px;
+    background: var(--border-soft);
+    margin: 0;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    padding: 10px 18px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--transition-base), color var(--transition-base);
+
+    i {
+      width: 18px;
+      text-align: center;
+      color: var(--color-primary-600);
+    }
+
+    &:hover {
+      background: var(--color-primary-50);
+      color: var(--color-primary-700);
+    }
+
+    &--danger {
+      color: #dc2626;
+      i { color: #dc2626; }
+
+      &:hover {
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+    }
+  }
+
+  &__footer {
+    text-align: center;
+    padding: 10px 18px;
+    border-top: 1px solid var(--border-soft);
+
+    a {
+      font-size: 0.8125rem;
+      color: var(--color-primary-600);
+      text-decoration: none;
+
+      &:hover { color: var(--color-primary-700); text-decoration: underline; }
+    }
+  }
+}
+
+// Notifications dropdown (largeur + liste)
+.notifications-dropdown {
+  min-width: 360px;
+}
+
+.notifications-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notif-item {
+  display: flex;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background-color var(--transition-base);
+
+  &:hover { background: var(--surface-muted); }
+  &:last-child { border-bottom: 0; }
+
+  &__icon {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.875rem;
+
+    &--success { background: #dcfce7; color: #15803d; }
+    &--warning { background: #fef3c7; color: #b45309; }
+    &--primary { background: var(--color-primary-100); color: var(--color-primary-700); }
+  }
+
+  &__body { flex: 1; min-width: 0; }
+  &__title { font-weight: 600; font-size: 0.875rem; }
+
+  small { color: var(--text-secondary); font-size: 0.75rem; }
+}
+
+// Profile dropdown (header avec gradient sky léger)
+.profile-dropdown {
+  min-width: 300px;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, #ffffff 100%);
+    border-bottom: 1px solid var(--color-primary-100);
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9375rem;
+  }
+
+  &__email {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+  }
+
+  &__role-badge {
+    align-self: flex-start;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--color-primary-100);
+    color: var(--color-primary-700);
+    font-size: 0.6875rem;
+    font-weight: 600;
+  }
+}
+
+// ─── Overlay (clic extérieur) ───────────────────────────────────────────────
+.header-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: calc(var(--z-header) - 1);
+}
+
+// ─── Responsive ─────────────────────────────────────────────────────────────
+@media (max-width: 768px) {
+  .app-header__inner {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .app-header__title { font-size: 1rem; }
+  .app-header__subtitle { display: none; }
+
+  .lang-switcher {
+    &__btn {
+      padding: 3px 7px;
+      font-size: 0.6875rem;
+    }
+  }
+
+  .city-dropdown {
+    min-width: calc(100vw - 24px);
+    right: 12px !important;
+  }
+}
+
+// ─── RTL (arabe) ────────────────────────────────────────────────────────────
+[dir="rtl"] {
+  .app-header__inner {
+    flex-direction: row; // pas de row-reverse : on garde l'ordre logique brand→actions
+  }
+
+  .city-dropdown {
+    right: auto;
+    left: 0;
+  }
+
+  .icon-button__badge {
+    right: auto;
+    left: 4px;
+  }
+
+  .profile-avatar__status {
+    right: auto;
+    left: 0;
+  }
+}

@@ -1,0 +1,1021 @@
+{
+  "app": {
+    "name": "City Hotel",
+    "subtitle": "Hotel Management"
+  },
+  "auth": {
+    "login": "Login",
+    "username": "Username",
+    "password": "Password",
+    "remember_me": "Remember me",
+    "forgot_password": "Forgot password?",
+    "login_button": "Sign In",
+    "logout": "Logout",
+    "confirm_logout": "Are you sure you want to log out?"
+  },
+  "menu": {
+    "dashboard": "Dashboard",
+    "products": "Products & Cat.",
+    "orders": "Orders & Outputs",
+    "reservations": "Reservations",
+    "payments": "Payments",
+    "hotels": "Hotels & Rooms",
+    "clients": "Clients & Companies",
+    "restaurant": "Restaurant",
+    "housekeeping": "Housekeeping",
+    "reporting": "Reporting",
+    "profile": "Profile"
+  },
+  "submenu": {
+    "products": {
+      "products": "Products",
+      "categories": "Categories"
+    },
+    "orders": {
+      "purchase_orders": "Purchase Orders",
+      "delivery_orders": "Delivery Orders"
+    },
+    "reservations": {
+      "reservations": "Reservations",
+      "night_audit": "Night Audit"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "add": "Add",
+    "search": "Search",
+    "close": "Close",
+    "language": "Language",
+    "comingSoon": "This feature is coming with the Finance module."
+  },
+  "header": {
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "user_menu": "User menu"
+  },
+  "sidebar": {
+    "navigation": "Navigation Menu",
+    "minimize": "Minimize",
+    "restore": "Restore",
+    "expand": "Expand",
+    "collapse": "Collapse"
+  },
+  "clients": {
+    "list": {
+      "title": "Clients",
+      "search": "Search a client",
+      "empty": "No client found",
+      "error": "Unable to load the clients list.",
+      "retry": "Retry",
+      "actions": "Actions",
+      "pagination": "Clients pagination"
+    },
+    "form": {
+      "titleCreate": "New client",
+      "titleEdit": "Edit client",
+      "loadError": "Unable to load this client."
+    },
+    "actions": {
+      "create": "New client",
+      "edit": "Edit",
+      "delete": "Delete",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "fields": {
+      "numeroClient": "Client #",
+      "nom": "Last name",
+      "prenom": "First name",
+      "email": "Email",
+      "telephone": "Phone",
+      "adresse": "Address",
+      "ville": "City",
+      "pays": "Country",
+      "numeroIdentification": "ID number",
+      "dateNaissance": "Date of birth"
+    },
+    "errors": {
+      "prenomRequired": "First name is required.",
+      "nomRequired": "Last name is required.",
+      "emailInvalid": "Email address is invalid."
+    },
+    "messages": {
+      "createSuccess": "Client created successfully",
+      "updateSuccess": "Client updated successfully",
+      "deleteSuccess": "Client deleted",
+      "deleteConfirm": "Delete this client?",
+      "deleteError": "Unable to delete this client.",
+      "saveError": "Unable to save this client."
+    }
+  },
+  "hebergement": {
+    "calendar": {
+      "title": "Reservations calendar",
+      "previous": "Previous month",
+      "next": "Next month",
+      "today": "Today",
+      "error": "Unable to load the calendar.",
+      "retry": "Retry",
+      "weekday": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "list": {
+      "title": "Reservations",
+      "search": "Search (reservation #, client...)",
+      "empty": "No reservation found",
+      "error": "Unable to load reservations.",
+      "retry": "Retry",
+      "actions": "Actions",
+      "pagination": "Reservations pagination"
+    },
+    "form": {
+      "titleCreate": "New reservation",
+      "titleEdit": "Edit reservation",
+      "loadError": "Unable to load this reservation."
+    },
+    "checkIn": {
+      "title": "Guest check-in",
+      "searchLabel": "Reservation to check in",
+      "searchPlaceholder": "Reservation # or client name",
+      "searchError": "Search failed.",
+      "noResults": "No matching reservation found.",
+      "selectReservation": "Select this reservation",
+      "confirmTitle": "Confirm check-in?",
+      "success": "Check-in completed",
+      "error": "Unable to perform check-in."
+    },
+    "actions": {
+      "create": "New reservation",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "save": "Save",
+      "close": "Close"
+    },
+    "fields": {
+      "numeroReservation": "Reservation #",
+      "client": "Client",
+      "clientId": "Main client ID",
+      "societeId": "Company ID",
+      "dateArrivee": "Arrival date",
+      "dateDepart": "Departure date",
+      "nbNuits": "Nights",
+      "nbAdultes": "Adults",
+      "nbEnfants": "Children",
+      "statut": "Status",
+      "montantTotal": "Total amount",
+      "motifSejour": "Stay purpose",
+      "commentaires": "Comments",
+      "reductionPourcentage": "Discount (%)"
+    },
+    "statut": {
+      "en_attente": "Pending",
+      "confirmee": "Confirmed",
+      "arrivee": "Arrived",
+      "partie": "Departed",
+      "annulee": "Cancelled"
+    },
+    "errors": {
+      "clientRequired": "Main client is required.",
+      "dateArriveeRequired": "Arrival date is required.",
+      "dateDepartRequired": "Departure date is required."
+    },
+    "messages": {
+      "createSuccess": "Reservation created successfully",
+      "updateSuccess": "Reservation updated successfully",
+      "saveError": "Unable to save the reservation.",
+      "cancelConfirm": "Cancel this reservation?",
+      "cancelMotif": "Cancellation reason",
+      "cancelMotifRequired": "Reason is required.",
+      "cancelSuccess": "Reservation cancelled",
+      "cancelError": "Unable to cancel the reservation."
+    }
+  },
+  "inventory": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "produit": {
+      "list": {
+        "title": "Products",
+        "search": "Search a product",
+        "empty": "No product found",
+        "error": "Unable to load the product list.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Products pagination"
+      },
+      "form": {
+        "titleCreate": "New product",
+        "titleEdit": "Edit product",
+        "loadError": "Unable to load this product."
+      },
+      "actions": {
+        "create": "New product",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "fields": {
+        "codeProduit": "Code",
+        "nomProduit": "Name",
+        "description": "Description",
+        "categorie": "Category",
+        "uniteMesure": "Unit",
+        "prixUnitaire": "Unit price",
+        "stockActuel": "Current stock",
+        "seuilAlerte": "Alert threshold",
+        "seuilCritique": "Critical threshold",
+        "fournisseurPrincipal": "Main supplier",
+        "estFacturable": "Billable",
+        "actif": "Active",
+        "statutStock": "Stock status"
+      },
+      "unites": {
+        "kg": "Kilogram (kg)",
+        "g": "Gram (g)",
+        "l": "Litre (l)",
+        "ml": "Millilitre (ml)",
+        "unite": "Unit (piece)",
+        "boite": "Box",
+        "paquet": "Pack",
+        "bouteille": "Bottle",
+        "carton": "Carton"
+      },
+      "errors": {
+        "codeProduitRequired": "Product code is required.",
+        "codeProduitPattern": "Code must be 3-20 alphanumeric characters.",
+        "nomProduitRequired": "Name is required.",
+        "categorieRequired": "Category is required."
+      },
+      "messages": {
+        "createSuccess": "Product created successfully",
+        "updateSuccess": "Product updated successfully",
+        "deleteSuccess": "Product deleted",
+        "deleteConfirm": "Delete this product?",
+        "deleteError": "Unable to delete this product.",
+        "saveError": "Unable to save the product."
+      }
+    },
+    "bonCommande": {
+      "list": {
+        "title": "Purchase orders",
+        "search": "Search (order #, supplier...)",
+        "empty": "No purchase order found",
+        "error": "Unable to load purchase orders.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Purchase orders pagination",
+        "filterAll": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New purchase order",
+        "titleEdit": "Edit purchase order",
+        "loadError": "Unable to load this purchase order."
+      },
+      "actions": {
+        "create": "New order",
+        "edit": "Edit",
+        "cancel": "Cancel",
+        "valider": "Validate",
+        "receptionner": "Receive"
+      },
+      "fields": {
+        "numeroBon": "Order #",
+        "numeroBonAuto": "Auto-generated",
+        "fournisseur": "Supplier",
+        "dateCommande": "Order date",
+        "dateLivraisonPrevue": "Expected delivery",
+        "dateLivraisonReelle": "Actual delivery",
+        "statut": "Status",
+        "montantTotal": "Total amount",
+        "commentaires": "Comments"
+      },
+      "statut": {
+        "brouillon": "Draft",
+        "envoye": "Sent",
+        "confirme": "Confirmed",
+        "recu_partiel": "Partially received",
+        "recu_complet": "Fully received",
+        "annule": "Cancelled"
+      },
+      "lignes": {
+        "title": "Order lines",
+        "add": "Add line",
+        "remove": "Remove line",
+        "produit": "Product",
+        "quantite": "Quantity",
+        "prixUnitaire": "Unit price",
+        "sousTotal": "Subtotal",
+        "total": "Total"
+      },
+      "errors": {
+        "fournisseurRequired": "Supplier is required.",
+        "dateCommandeRequired": "Order date is required.",
+        "lignesRequired": "At least one line is required.",
+        "produitRequired": "Product is required.",
+        "quantiteMin": "Quantity must be 1 or greater.",
+        "prixUnitaireMin": "Unit price cannot be negative."
+      },
+      "messages": {
+        "createSuccess": "Purchase order created successfully",
+        "updateSuccess": "Purchase order updated successfully",
+        "saveError": "Unable to save the purchase order."
+      }
+    },
+    "stock": {
+      "list": {
+        "title": "Stock status",
+        "empty": "No product in stock",
+        "error": "Unable to load stocks.",
+        "retry": "Retry",
+        "pagination": "Stocks pagination",
+        "filterAll": "All statuses"
+      },
+      "fields": {
+        "quantiteActuelle": "Current quantity",
+        "seuilAlerte": "Alert threshold",
+        "seuilCritique": "Critical threshold",
+        "valeurStock": "Stock value",
+        "statutStock": "Status"
+      },
+      "statut": {
+        "normal": "Normal",
+        "alerte": "Alert",
+        "critique": "Critical",
+        "unknown": "Unknown"
+      }
+    }
+  },
+  "restaurant": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "article": {
+      "list": {
+        "title": "Menu items",
+        "search": "Search a menu item",
+        "empty": "No menu item found",
+        "error": "Unable to load menu items.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Menu items pagination",
+        "filterCategorieAll": "All categories",
+        "filterDisponibilite": "Availability",
+        "filterStatut": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New menu item",
+        "titleEdit": "Edit menu item",
+        "loadError": "Unable to load this menu item."
+      },
+      "actions": {
+        "create": "New menu item",
+        "edit": "Edit",
+        "delete": "Delete",
+        "toggleDisponibilite": "Toggle availability"
+      },
+      "fields": {
+        "codeArticle": "Code",
+        "nomArticle": "Name",
+        "nomArticleEn": "Name (EN)",
+        "nomArticleAr": "Name (AR)",
+        "categorie": "Category",
+        "description": "Description",
+        "descriptionEn": "Description (EN)",
+        "descriptionAr": "Description (AR)",
+        "prix": "Price",
+        "coutIngredients": "Ingredients cost",
+        "tempsPreparation": "Prep. time (min)",
+        "allergenes": "Allergens",
+        "allergenesHint": "comma-separated",
+        "allergenesPlaceholder": "gluten, lactose, peanuts",
+        "imageUrl": "Image URL",
+        "disponible": "Available",
+        "actif": "Active"
+      },
+      "disponibilite": {
+        "disponible": "Available",
+        "indisponible": "Unavailable"
+      },
+      "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+      },
+      "errors": {
+        "categorieRequired": "Category is required.",
+        "nomRequired": "Item name is required.",
+        "nomMinLength": "Name must contain at least 2 characters.",
+        "prixRequired": "Price is required.",
+        "prixMin": "Price cannot be negative."
+      },
+      "messages": {
+        "createSuccess": "Menu item created successfully",
+        "updateSuccess": "Menu item updated successfully",
+        "deleteSuccess": "Menu item deleted",
+        "deleteConfirm": "Delete this menu item?",
+        "deleteError": "Unable to delete this menu item.",
+        "saveError": "Unable to save the menu item.",
+        "toggleError": "Unable to update availability."
+      }
+    },
+    "categorie": {
+      "list": {
+        "title": "Menu categories",
+        "search": "Search a category",
+        "empty": "No category found",
+        "error": "Unable to load categories.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Categories pagination",
+        "filterAll": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New category",
+        "titleEdit": "Edit category",
+        "loadError": "Unable to load this category."
+      },
+      "actions": {
+        "create": "New category",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "fields": {
+        "nomCategorie": "Name",
+        "nomCategorieEn": "Name (EN)",
+        "nomCategorieAr": "Name (AR)",
+        "description": "Description",
+        "ordreAffichage": "Order",
+        "actif": "Active",
+        "nombreArticles": "Items"
+      },
+      "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+      },
+      "errors": {
+        "nomRequired": "Category name is required.",
+        "nomMinLength": "Name must contain at least 2 characters.",
+        "ordreMin": "Order cannot be negative."
+      },
+      "messages": {
+        "createSuccess": "Category created successfully",
+        "updateSuccess": "Category updated successfully",
+        "deleteSuccess": "Category deleted",
+        "deleteConfirm": "Delete this category?",
+        "deleteError": "Unable to delete this category.",
+        "saveError": "Unable to save the category."
+      }
+    },
+    "pos": {
+      "title": "Point of sale",
+      "currency": "MRU",
+      "client": {
+        "title": "Customer",
+        "searchLabel": "Search customer",
+        "searchPlaceholder": "Last name, first name or phone",
+        "noResults": "No customer found.",
+        "change": "Change"
+      },
+      "reservation": {
+        "title": "Active reservations",
+        "noActive": "No active reservation for this customer.",
+        "statut": "Status",
+        "clear": "Unselect reservation"
+      },
+      "articles": {
+        "title": "Items",
+        "search": "Search an item",
+        "allCategories": "All",
+        "empty": "No item available.",
+        "unavailable": "Unavailable"
+      },
+      "cart": {
+        "title": "Cart",
+        "empty": "Cart is empty. Select items to start.",
+        "article": "Item",
+        "quantity": "Qty",
+        "subtotal": "Subtotal",
+        "total": "Total",
+        "increment": "Increase quantity",
+        "decrement": "Decrease quantity",
+        "remove": "Remove line",
+        "clear": "Clear cart",
+        "checkout": "Cash checkout",
+        "reportChambre": "Charge to room"
+      },
+      "payment": {
+        "title": "Checkout",
+        "totalDue": "Total due",
+        "modeLabel": "Payment method",
+        "amountLabel": "Amount paid",
+        "referenceLabel": "Payment reference",
+        "referencePlaceholder": "Cheque #, transaction, authorisation…",
+        "commentsLabel": "Comments",
+        "confirm": "Confirm payment",
+        "modesGroup": {
+          "quick": "Quick methods",
+          "others": "Other methods"
+        },
+        "modes": {
+          "ESPECES": "Cash",
+          "CHEQUE": "Cheque",
+          "CARTE_BANCAIRE": "Credit card",
+          "BANKILY": "Bankily",
+          "MASRIVI": "Masrivi",
+          "SEDAD": "Sedad",
+          "CLICK": "Click",
+          "AMANETY": "Amanety",
+          "BFI_CASH": "BFI Cash",
+          "MOOV_MONEY": "Moov Money",
+          "GAZAPAY": "GazaPay",
+          "VIREMENT": "Bank transfer"
+        },
+        "errors": {
+          "amountInvalid": "Amount paid is invalid.",
+          "referenceRequired": "Reference is required for this payment method."
+        }
+      },
+      "errors": {
+        "loadCategories": "Unable to load categories.",
+        "loadArticles": "Unable to load items.",
+        "loadReservations": "Unable to load customer reservations.",
+        "searchClients": "Customer search failed.",
+        "invalidArticle": "This item cannot be added.",
+        "invalidPayload": "The order is incomplete.",
+        "encaissement": "Checkout failed. Please retry.",
+        "reportChambre": "Charging to room failed.",
+        "reservationRequired": "Select a reservation first."
+      },
+      "messages": {
+        "encaissementSuccess": "Order checked out successfully.",
+        "reportSuccess": "Order charged to the room.",
+        "reportConfirmTitle": "Charge to the room?",
+        "reportConfirmText": "Charges will be added to the reservation folio and invoiced at check-out."
+      },
+      "ticket": {
+        "print": "Print cash receipt",
+        "printKitchen": "Print kitchen ticket",
+        "reprint": "Reprint"
+      }
+    }
+  },
+  "finance": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "back": "Back",
+      "confirm": "Confirm"
+    },
+    "facture": {
+      "list": {
+        "title": "Invoices",
+        "empty": "No invoice found",
+        "error": "Unable to load the invoice list.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Invoices pagination",
+        "filterAll": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New invoice",
+        "loadError": "Unable to load this invoice."
+      },
+      "detail": {
+        "title": "Invoice detail",
+        "notFound": "Invoice not found.",
+        "error": "Unable to load invoice detail."
+      },
+      "actions": {
+        "create": "New invoice",
+        "view": "View detail",
+        "emettre": "Issue",
+        "annuler": "Cancel invoice",
+        "encaisser": "Collect payment"
+      },
+      "fields": {
+        "numeroFacture": "Invoice #",
+        "cible": "Invoice target",
+        "compteId": "Account ID",
+        "clientId": "Client ID",
+        "societeId": "Company ID",
+        "reservationId": "Reservation ID",
+        "fournisseurId": "Supplier ID",
+        "typeFacture": "Type",
+        "dateFacture": "Invoice date",
+        "dateEcheance": "Due date",
+        "devise": "Currency",
+        "statut": "Status",
+        "montantHt": "Amount excl. tax",
+        "montantTva": "VAT",
+        "montantTtc": "Amount incl. tax",
+        "montantPaye": "Paid amount",
+        "montantRestant": "Outstanding",
+        "commentaires": "Comments"
+      },
+      "type": {
+        "FACTURE": "Customer invoice",
+        "AVOIR": "Credit note",
+        "PROFORMA": "Proforma",
+        "FACTURE_FOURNISSEUR": "Supplier invoice"
+      },
+      "statut": {
+        "BROUILLON": "Draft",
+        "EMISE": "Issued",
+        "PARTIELLEMENT_PAYEE": "Partially paid",
+        "PAYEE": "Paid",
+        "ANNULEE": "Cancelled"
+      },
+      "lignes": {
+        "title": "Invoice lines",
+        "add": "Add line",
+        "remove": "Remove line",
+        "type": "Type",
+        "libelle": "Label",
+        "quantite": "Quantity",
+        "prixUnitaire": "Unit price",
+        "sousTotal": "Subtotal",
+        "montantTtc": "Total incl. tax",
+        "total": "Total",
+        "empty": "No line on this invoice.",
+        "emptyAllowed": "No line added — the invoice will be created as a draft.",
+        "typeOption": {
+          "NUITEE": "Night",
+          "PRODUIT": "Product",
+          "COMMANDE": "Restaurant order",
+          "SERVICE": "Service",
+          "DIVERS": "Misc"
+        }
+      },
+      "errors": {
+        "cibleRequired": "At least one target (account, client, company, reservation or supplier) is required.",
+        "dateFactureRequired": "Invoice date is required.",
+        "libelleRequired": "Line label is required.",
+        "quantiteMin": "Quantity must be strictly positive.",
+        "prixUnitaireMin": "Unit price cannot be negative."
+      },
+      "messages": {
+        "createSuccess": "Invoice created successfully",
+        "saveError": "Unable to save the invoice.",
+        "emettreConfirm": "Issue this invoice?",
+        "emettreSuccess": "Invoice issued",
+        "emettreError": "Unable to issue the invoice.",
+        "cancelConfirm": "Cancel this invoice?",
+        "cancelSuccess": "Invoice cancelled",
+        "cancelError": "Unable to cancel the invoice."
+      }
+    },
+    "paiement": {
+      "list": {
+        "title": "Payment history",
+        "empty": "No payment found",
+        "emptyForFacture": "No payment recorded for this invoice.",
+        "error": "Unable to load the payment list.",
+        "retry": "Retry",
+        "pagination": "Payments pagination",
+        "filterAllModes": "All modes",
+        "filterAllStatuts": "All statuses"
+      },
+      "form": {
+        "title": "Collect a payment",
+        "loadError": "Unable to load invoice information."
+      },
+      "actions": {
+        "encaisser": "Collect",
+        "annuler": "Cancel payment"
+      },
+      "fields": {
+        "numeroPaiement": "Payment #",
+        "datePaiement": "Payment date",
+        "modePaiement": "Payment mode",
+        "montantTotal": "Amount",
+        "montant": "Amount to collect",
+        "referencePaiement": "Reference",
+        "referencePaiementPlaceholder": "Cheque # / transaction # / authorization",
+        "statut": "Status",
+        "commentaires": "Comments"
+      },
+      "mode": {
+        "ESPECES": "Cash",
+        "CHEQUE": "Cheque",
+        "CARTE_BANCAIRE": "Card",
+        "BANKILY": "Bankily",
+        "MASRIVI": "Masrivi",
+        "SEDAD": "Sedad",
+        "CLICK": "Click",
+        "AMANETY": "Amanety",
+        "BFI_CASH": "BFI Cash",
+        "MOOV_MONEY": "Moov Money",
+        "GAZAPAY": "GazaPay",
+        "VIREMENT": "Bank transfer"
+      },
+      "statut": {
+        "VALIDE": "Validated",
+        "EN_ATTENTE": "Pending",
+        "REFUSE": "Refused",
+        "ANNULE": "Cancelled"
+      },
+      "errors": {
+        "montantRequired": "Amount is required.",
+        "montantMin": "Amount must be greater than zero.",
+        "montantMax": "Amount cannot exceed outstanding balance",
+        "datePaiementRequired": "Payment date is required.",
+        "modeRequired": "Payment mode is required.",
+        "referenceRequired": "Reference is required for this payment mode."
+      },
+      "messages": {
+        "createSuccess": "Payment recorded successfully",
+        "saveError": "Unable to save the payment.",
+        "cancelConfirm": "Cancel this payment?",
+        "cancelSuccess": "Payment cancelled",
+        "cancelError": "Unable to cancel the payment."
+      }
+    }
+  },
+  "menage": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "confirm": "Confirm"
+    },
+    "personnel": {
+      "list": {
+        "title": "Housekeeping staff",
+        "search": "Search an employee",
+        "empty": "No staff found",
+        "error": "Unable to load staff.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Staff pagination",
+        "filterStatut": "All statuses",
+        "filterSpecialite": "All specialties"
+      },
+      "form": {
+        "titleCreate": "New staff member",
+        "titleEdit": "Edit staff member",
+        "loadError": "Unable to load this employee."
+      },
+      "actions": {
+        "create": "New staff",
+        "edit": "Edit",
+        "desactiver": "Deactivate",
+        "reactiver": "Reactivate"
+      },
+      "fields": {
+        "numeroEmploye": "Employee #",
+        "prenom": "First name",
+        "nom": "Last name",
+        "nomComplet": "Full name",
+        "telephone": "Phone",
+        "email": "Email",
+        "dateEmbauche": "Hire date",
+        "specialites": "Specialties",
+        "specialitesHint": "comma-separated",
+        "specialitesPlaceholder": "rooms, halls",
+        "actif": "Active"
+      },
+      "specialite": {
+        "chambres": "Rooms",
+        "salles": "Halls",
+        "exterieur": "Outdoor",
+        "buanderie": "Laundry",
+        "lingerie": "Linen",
+        "maintenance": "Maintenance"
+      },
+      "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+      },
+      "errors": {
+        "numeroEmployeRequired": "Employee number is required.",
+        "prenomRequired": "First name is required.",
+        "nomRequired": "Last name is required.",
+        "emailFormat": "Invalid email format."
+      },
+      "messages": {
+        "createSuccess": "Staff created successfully.",
+        "updateSuccess": "Staff updated.",
+        "saveError": "Unable to save staff.",
+        "desactiverConfirm": "Deactivate this staff member?",
+        "desactiverSuccess": "Staff deactivated.",
+        "desactiverError": "Unable to deactivate staff.",
+        "reactiverConfirm": "Reactivate this staff member?",
+        "reactiverSuccess": "Staff reactivated.",
+        "reactiverError": "Unable to reactivate staff."
+      }
+    },
+    "tache": {
+      "list": {
+        "title": "Housekeeping tasks",
+        "search": "Search a task",
+        "empty": "No tasks found",
+        "error": "Unable to load tasks.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Tasks pagination",
+        "filterType": "All types",
+        "filterPriorite": "All priorities",
+        "shortcut": "Quick filter",
+        "shortcutAll": "All",
+        "shortcutEnCours": "In progress",
+        "shortcutEnRetard": "Overdue",
+        "shortcutNonAssignees": "Unassigned"
+      },
+      "form": {
+        "titleCreate": "New task",
+        "titleEdit": "Edit task",
+        "loadError": "Unable to load this task."
+      },
+      "detail": {
+        "title": "Task detail",
+        "back": "Back to list",
+        "loadError": "Unable to load this task.",
+        "assignedSince": "Last update",
+        "historyDeferred": "Action history will be displayed here soon.",
+        "sections": {
+          "identity": "Identification",
+          "schedule": "Schedule",
+          "assignment": "Assignment",
+          "report": "Report",
+          "history": "History"
+        },
+        "fields": {
+          "tacheId": "ID",
+          "heureDebutReelle": "Actual start",
+          "heureFinReelle": "Actual end"
+        }
+      },
+      "actions": {
+        "create": "New task",
+        "edit": "Edit",
+        "delete": "Delete",
+        "assigner": "Assign",
+        "commencer": "Start",
+        "terminer": "Finish"
+      },
+      "fields": {
+        "chambre": "Room",
+        "personnel": "Staff",
+        "personnelOptional": "optional",
+        "nonAssignee": "Unassigned",
+        "statut": "Status",
+        "typeNettoyage": "Type",
+        "priorite": "Priority",
+        "datePlanifiee": "Planned date",
+        "heureDebutPrevue": "Start time",
+        "heureFinPrevue": "End time",
+        "duree": "Duration",
+        "minutes": "min",
+        "commentaires": "Comments",
+        "problemesDetectes": "Issues detected",
+        "materielUtilise": "Equipment used",
+        "materielHint": "comma-separated",
+        "materielPlaceholder": "vacuum, detergent, wipes",
+        "noteQualite": "Quality rating"
+      },
+      "typeNettoyage": {
+        "QUOTIDIEN": "Daily",
+        "GRAND_MENAGE": "Deep cleaning",
+        "MAINTENANCE": "Maintenance"
+      },
+      "priorite": {
+        "1": "Normal",
+        "2": "Urgent",
+        "3": "Critical"
+      },
+      "errors": {
+        "chambreRequired": "Room is required.",
+        "dateRequired": "Planned date is required.",
+        "personnelRequired": "Please select a staff member.",
+        "noteRange": "Quality rating must be between 1 and 5."
+      },
+      "messages": {
+        "createSuccess": "Task created successfully.",
+        "updateSuccess": "Task updated.",
+        "saveError": "Unable to save the task.",
+        "deleteConfirm": "Delete this task?",
+        "deleteSuccess": "Task deleted.",
+        "deleteError": "Unable to delete the task.",
+        "assignerTitle": "Assign task",
+        "assignerSelect": "Choose a staff member",
+        "assignerSuccess": "Task assigned.",
+        "assignerError": "Unable to assign the task.",
+        "commencerSuccess": "Task started.",
+        "commencerError": "Unable to start the task.",
+        "terminerTitle": "Finish task",
+        "terminerSuccess": "Task finished.",
+        "terminerError": "Unable to finish the task."
+      }
+    },
+    "dashboard": {
+      "title": "Housekeeping dashboard",
+      "refresh": "Refresh",
+      "error": "Unable to load the dashboard.",
+      "retry": "Retry",
+      "chartsDeferred": "Trend charts will be added soon.",
+      "kpi": {
+        "personnelActif": "Active staff",
+        "tachesAujourdhui": "Today's tasks",
+        "tachesEnCours": "Tasks in progress",
+        "tachesTerminees": "Completed tasks",
+        "tachesEnRetard": "Overdue tasks",
+        "tachesUrgentes": "Urgent tasks",
+        "tauxRealisation": "Completion rate",
+        "tempsMoyen": "Average time"
+      },
+      "repartition": {
+        "parStatut": "By status",
+        "parType": "By type",
+        "parPriorite": "By priority",
+        "empty": "No data."
+      }
+    },
+    "planning": {
+      "list": {
+        "title": "Staff planning",
+        "empty": "No planning found",
+        "error": "Unable to load planning.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "filterEtage": "Floor",
+        "filterEtageAll": "All floors",
+        "filterStatut": "Status",
+        "filterStatutAll": "All statuses"
+      },
+      "actions": {
+        "create": "New planning",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "fields": {
+        "dateTravail": "Date",
+        "personnel": "Staff",
+        "etage": "Floor",
+        "secteur": "Sector",
+        "horaire": "Schedule",
+        "statut": "Status",
+        "commentaires": "Notes"
+      },
+      "statut": {
+        "disponible": "Available",
+        "indisponible": "Unavailable"
+      },
+      "errors": {
+        "personnelRequired": "Staff is required.",
+        "dateRequired": "Date is required.",
+        "horaireRequired": "Schedule is required."
+      },
+      "messages": {
+        "createSuccess": "Planning created successfully.",
+        "updateSuccess": "Planning updated.",
+        "saveError": "Unable to save the planning.",
+        "deleteConfirm": "Delete this planning?",
+        "deleteSuccess": "Planning deleted.",
+        "deleteError": "Unable to delete the planning."
+      }
+    },
+    "assignation": {
+      "title": "Assign task",
+      "label": "Staff",
+      "current": "Currently assigned",
+      "currentBadge": "Current",
+      "choose": "Select the staff member to assign.",
+      "validate": "Assign",
+      "cancel": "Cancel",
+      "empty": "No active staff available."
+    }
+  },
+  "error": {
+    "auth": {
+      "invalidCredentials": "Invalid credentials.",
+      "forbidden": "Access denied.",
+      "noToken": "No authentication token.",
+      "refreshFailed": "Unable to refresh session.",
+      "loadCurrentUserFailed": "Unable to load user information.",
+      "logout": "Error during logout."
+    },
+    "network": {
+      "unreachable": "Server unreachable. Check your connection."
+    },
+    "server": {
+      "unavailable": "Server temporarily unavailable."
+    }
+  }
+}

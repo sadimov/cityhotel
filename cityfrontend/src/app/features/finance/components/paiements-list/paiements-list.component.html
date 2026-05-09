@@ -1,0 +1,116 @@
+<section class="paiements-list">
+  <header class="paiements-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'finance.paiement.list.title' | translate }}</h2>
+  </header>
+
+  <div class="paiements-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <select
+      class="form-select paiements-list__filter"
+      [value]="selectedMode"
+      (change)="onModeChange($any($event.target).value)"
+      [attr.aria-label]="'finance.paiement.fields.modePaiement' | translate"
+    >
+      <option value="">{{ 'finance.paiement.list.filterAllModes' | translate }}</option>
+      @for (m of modes; track m) {
+        <option [value]="m">{{ ('finance.paiement.mode.' + m) | translate }}</option>
+      }
+    </select>
+    <select
+      class="form-select paiements-list__filter"
+      [value]="selectedStatut"
+      (change)="onStatutChange($any($event.target).value)"
+      [attr.aria-label]="'finance.paiement.fields.statut' | translate"
+    >
+      <option value="">{{ 'finance.paiement.list.filterAllStatuts' | translate }}</option>
+      @for (s of statuts; track s) {
+        <option [value]="s">{{ ('finance.paiement.statut.' + s) | translate }}</option>
+      }
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="paiements-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'finance.paiement.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'finance.paiement.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'finance.paiement.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'finance.paiement.fields.numeroPaiement' | translate }}</th>
+            <th scope="col">{{ 'finance.facture.fields.compteId' | translate }}</th>
+            <th scope="col">{{ 'finance.paiement.fields.datePaiement' | translate }}</th>
+            <th scope="col">{{ 'finance.paiement.fields.modePaiement' | translate }}</th>
+            <th scope="col">{{ 'finance.paiement.fields.referencePaiement' | translate }}</th>
+            <th scope="col">{{ 'finance.paiement.fields.statut' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'finance.paiement.fields.montantTotal' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paiements; track p.paiementId) {
+            <tr>
+              <td><code>{{ p.numeroPaiement }}</code></td>
+              <td>{{ p.compteId || '-' }}</td>
+              <td>{{ p.datePaiement }}</td>
+              <td>{{ modeKey(p.modePaiement) | translate }}</td>
+              <td>{{ p.referencePaiement || '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeStatutClass(p.statut)">
+                  {{ statutKey(p.statut) | translate }}
+                </span>
+              </td>
+              <td class="text-end">{{ p.montantTotal | number:'1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'finance.paiement.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

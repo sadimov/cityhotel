@@ -1,0 +1,184 @@
+<section class="reservation-form">
+  <header class="reservation-form__header d-flex align-items-center mb-3">
+    <h2 class="h4 m-0">
+      @if (isEditing) {
+        {{ 'hebergement.form.titleEdit' | translate }}
+      } @else {
+        {{ 'hebergement.form.titleCreate' | translate }}
+      }
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="reservation-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'hebergement.form.loadError' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="cancelEdit()">
+        {{ 'hebergement.actions.close' | translate }}
+      </button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="res-client" class="form-label">
+            {{ 'hebergement.fields.clientId' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="res-client"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="clientPrincipalId"
+            [class.is-invalid]="form.controls['clientPrincipalId'].invalid && form.controls['clientPrincipalId'].touched"
+          />
+          @if (form.controls['clientPrincipalId'].invalid && form.controls['clientPrincipalId'].touched) {
+            <div class="invalid-feedback">
+              {{ 'hebergement.errors.clientRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="res-societe" class="form-label">
+            {{ 'hebergement.fields.societeId' | translate }}
+          </label>
+          <input
+            id="res-societe"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="societeId"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="res-arrivee" class="form-label">
+            {{ 'hebergement.fields.dateArrivee' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="res-arrivee"
+            type="date"
+            class="form-control"
+            formControlName="dateArrivee"
+            [class.is-invalid]="form.controls['dateArrivee'].invalid && form.controls['dateArrivee'].touched"
+          />
+          @if (form.controls['dateArrivee'].invalid && form.controls['dateArrivee'].touched) {
+            <div class="invalid-feedback">
+              {{ 'hebergement.errors.dateArriveeRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="res-depart" class="form-label">
+            {{ 'hebergement.fields.dateDepart' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="res-depart"
+            type="date"
+            class="form-control"
+            formControlName="dateDepart"
+            [class.is-invalid]="form.controls['dateDepart'].invalid && form.controls['dateDepart'].touched"
+          />
+          @if (form.controls['dateDepart'].invalid && form.controls['dateDepart'].touched) {
+            <div class="invalid-feedback">
+              {{ 'hebergement.errors.dateDepartRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="res-adultes" class="form-label">
+            {{ 'hebergement.fields.nbAdultes' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="res-adultes"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="nbAdultes"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="res-enfants" class="form-label">
+            {{ 'hebergement.fields.nbEnfants' | translate }}
+          </label>
+          <input
+            id="res-enfants"
+            type="number"
+            min="0"
+            class="form-control"
+            formControlName="nbEnfants"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="res-reduction" class="form-label">
+            {{ 'hebergement.fields.reductionPourcentage' | translate }}
+          </label>
+          <input
+            id="res-reduction"
+            type="number"
+            min="0"
+            max="100"
+            step="0.5"
+            class="form-control"
+            formControlName="reductionPourcentage"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="res-motif" class="form-label">
+            {{ 'hebergement.fields.motifSejour' | translate }}
+          </label>
+          <input
+            id="res-motif"
+            type="text"
+            class="form-control"
+            formControlName="motifSejour"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="res-commentaires" class="form-label">
+            {{ 'hebergement.fields.commentaires' | translate }}
+          </label>
+          <textarea
+            id="res-commentaires"
+            rows="3"
+            class="form-control"
+            formControlName="commentaires"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="reservation-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancelEdit()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'hebergement.actions.close' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'hebergement.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

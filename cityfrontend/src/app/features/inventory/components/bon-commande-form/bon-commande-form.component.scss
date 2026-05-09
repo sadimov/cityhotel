@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.bon-commande-form {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__lignes {
+    background: var(--bs-gray-100, #f8f9fa);
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+}

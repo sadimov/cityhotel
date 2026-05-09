@@ -1,0 +1,21 @@
+:host {
+  display: block;
+}
+
+.reservation-form {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__actions {
+    border-top: 1px solid #e9ecef;
+    padding-top: 1rem;
+  }
+}

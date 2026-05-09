@@ -1,0 +1,140 @@
+<section class="reservations-list">
+  <header class="reservations-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'hebergement.list.title' | translate }}</h2>
+    <div class="d-flex gap-2">
+      <button
+        type="button"
+        class="btn btn-outline-primary"
+        (click)="goCheckIn()"
+      >
+        <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+        {{ 'hebergement.actions.checkIn' | translate }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="createNew()"
+      >
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        {{ 'hebergement.actions.create' | translate }}
+      </button>
+    </div>
+  </header>
+
+  <div class="reservations-list__toolbar mb-3">
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="'hebergement.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'hebergement.list.search' | translate"
+    />
+  </div>
+
+  @if (state === 'loading') {
+    <div class="reservations-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'hebergement.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'hebergement.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'hebergement.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'hebergement.fields.numeroReservation' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.client' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.dateArrivee' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.dateDepart' | translate }}</th>
+            <th scope="col" class="text-center">{{ 'hebergement.fields.nbNuits' | translate }}</th>
+            <th scope="col">{{ 'hebergement.fields.statut' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'hebergement.fields.montantTotal' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'hebergement.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (reservation of page.content; track reservation.reservationId) {
+            <tr>
+              <td>{{ reservation.numeroReservation || '-' }}</td>
+              <td>{{ reservation.nomClientPrincipal || '-' }}</td>
+              <td>{{ reservation.dateArrivee || '-' }}</td>
+              <td>{{ reservation.dateDepart || '-' }}</td>
+              <td class="text-center">{{ reservation.nbNuits ?? '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeClass(reservation.statut)">
+                  {{ statutKey(reservation.statut) | translate }}
+                </span>
+              </td>
+              <td class="text-end">{{ reservation.montantTotal ?? 0 | number:'1.2-2' }}</td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(reservation)"
+                  [attr.aria-label]="'hebergement.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="cancel(reservation)"
+                  [disabled]="cancelling || reservation.statut === StatutReservation.ANNULEE"
+                  [attr.aria-label]="'hebergement.actions.cancel' | translate"
+                >
+                  <i class="bi bi-x-circle" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'hebergement.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

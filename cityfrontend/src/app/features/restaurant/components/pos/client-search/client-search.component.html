@@ -1,0 +1,117 @@
+<div class="bg-white rounded-2xl shadow p-4 mb-4">
+  <h3 class="text-base font-semibold mb-3 text-sky-700">
+    {{ 'restaurant.pos.client.title' | translate }}
+  </h3>
+
+  @let selected = (selectedClient$ | async);
+
+  @if (!selected) {
+    <div class="mb-3">
+      <label class="form-label small text-muted">
+        {{ 'restaurant.pos.client.searchLabel' | translate }}
+      </label>
+      <input
+        type="text"
+        class="form-control form-control-sm"
+        [placeholder]="'restaurant.pos.client.searchPlaceholder' | translate"
+        [value]="(clientSearch$ | async) ?? ''"
+        (input)="onSearchInput($any($event.target).value)"
+      />
+    </div>
+
+    @if (clientResultsLoading$ | async) {
+      <div class="text-center text-muted py-2 small">
+        {{ 'common.loading' | translate }}
+      </div>
+    }
+
+    @let results = (clientResults$ | async) ?? [];
+    @if (results.length > 0) {
+      <ul class="list-group list-group-flush max-h-60 overflow-auto">
+        @for (c of results; track trackByClientId($index, c)) {
+          <li
+            class="list-group-item list-group-item-action small cursor-pointer"
+            (click)="onSelectClient(c)"
+          >
+            <div class="fw-medium">{{ c.prenom }} {{ c.nom }}</div>
+            <div class="text-muted small">{{ c.telephone || '—' }}</div>
+          </li>
+        }
+      </ul>
+    } @else if (((clientSearch$ | async) ?? '').length > 0 && !(clientResultsLoading$ | async)) {
+      <div class="text-muted small py-2">
+        {{ 'restaurant.pos.client.noResults' | translate }}
+      </div>
+    }
+  } @else {
+    <div class="d-flex align-items-start justify-content-between border rounded p-2 bg-sky-50">
+      <div>
+        <div class="fw-semibold">{{ selected.prenom }} {{ selected.nom }}</div>
+        <div class="text-muted small">{{ selected.telephone || '—' }}</div>
+        @if (selected.email) {
+          <div class="text-muted small">{{ selected.email }}</div>
+        }
+      </div>
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        (click)="onClearClient()"
+        [attr.aria-label]="'restaurant.pos.client.change' | translate"
+      >
+        {{ 'restaurant.pos.client.change' | translate }}
+      </button>
+    </div>
+
+    <hr class="my-3" />
+
+    <h4 class="text-sm font-semibold mb-2">
+      {{ 'restaurant.pos.reservation.title' | translate }}
+    </h4>
+
+    @if (reservationsLoading$ | async) {
+      <div class="text-center text-muted py-2 small">
+        {{ 'common.loading' | translate }}
+      </div>
+    } @else {
+      @let reservations = (activeReservations$ | async) ?? [];
+      @if (reservations.length === 0) {
+        <div class="text-muted small">
+          {{ 'restaurant.pos.reservation.noActive' | translate }}
+        </div>
+      } @else {
+        @let selectedReservation = (selectedReservation$ | async);
+        <div class="d-flex flex-column gap-2">
+          @for (r of reservations; track trackByReservationId($index, r)) {
+            <button
+              type="button"
+              class="btn btn-sm text-start border"
+              [class.btn-info]="selectedReservation?.reservationId === r.reservationId"
+              [class.text-white]="selectedReservation?.reservationId === r.reservationId"
+              [class.btn-light]="selectedReservation?.reservationId !== r.reservationId"
+              (click)="onSelectReservation(r)"
+            >
+              <div class="fw-semibold">
+                #{{ r.numeroReservation || r.reservationId }}
+              </div>
+              <div class="small">
+                {{ r.dateArrivee }} → {{ r.dateDepart }}
+              </div>
+              <div class="small">
+                {{ 'restaurant.pos.reservation.statut' | translate }} : {{ r.statut }}
+              </div>
+            </button>
+          }
+          @if (selectedReservation) {
+            <button
+              type="button"
+              class="btn btn-sm btn-link text-danger p-0"
+              (click)="onClearReservation()"
+            >
+              {{ 'restaurant.pos.reservation.clear' | translate }}
+            </button>
+          }
+        </div>
+      }
+    }
+  }
+</div>

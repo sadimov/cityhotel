@@ -1,0 +1,185 @@
+<!-- Header propriétaire City Hotel -->
+<header class="app-header sticky-top" role="banner">
+  <div class="app-header__inner">
+    <!-- ─── Bloc identité (logo + nom hôtel) ─────────────────────────────── -->
+    <div class="app-header__brand">
+      <img [src]="getHotelLogo()"
+           [alt]="(currentUser?.hotelNom || ('app.name' | translate)) + ' Logo'"
+           (error)="onHotelLogoError($event)"
+           class="app-header__logo"
+           width="44"
+           height="44">
+      <div class="app-header__brand-text">
+        <h1 class="app-header__title">
+          {{ currentUser?.hotelNom || ('app.name' | translate) }}
+        </h1>
+        @if (currentUser?.hotelCode) {
+          <small class="app-header__subtitle">
+            <i class="fas fa-map-marker-alt me-1"></i>
+            {{ currentUser?.hotelCode }}
+          </small>
+        }
+      </div>
+    </div>
+
+    <!-- ─── Actions droite ───────────────────────────────────────────────── -->
+    <div class="app-header__actions">
+      <!-- Sélecteur de langue (pill group) — visible directement dans la barre -->
+      <div class="lang-switcher" role="group" [attr.aria-label]="'common.language' | translate">
+        <button type="button"
+                class="lang-switcher__btn"
+                [class.is-active]="getCurrentLanguage() === 'fr'"
+                (click)="changeLanguage('fr')"
+                aria-label="Français">
+          FR
+        </button>
+        <button type="button"
+                class="lang-switcher__btn"
+                [class.is-active]="getCurrentLanguage() === 'ar'"
+                (click)="changeLanguage('ar')"
+                aria-label="العربية">
+          AR
+        </button>
+        <button type="button"
+                class="lang-switcher__btn"
+                [class.is-active]="getCurrentLanguage() === 'en'"
+                (click)="changeLanguage('en')"
+                aria-label="English">
+          EN
+        </button>
+      </div>
+
+      <!-- ─── Notifications ─────────────────────────────────────────────── -->
+      <div class="app-header__notif">
+        <button type="button"
+                class="icon-button"
+                (click)="toggleNotifications()"
+                [attr.aria-label]="'header.notifications' | translate"
+                [attr.aria-expanded]="showNotifications">
+          <i class="fas fa-bell"></i>
+          @if (notificationsCount > 0) {
+            <span class="icon-button__badge">
+              {{ notificationsCount > 9 ? '9+' : notificationsCount }}
+              <span class="visually-hidden">{{ 'header.notifications' | translate }}</span>
+            </span>
+          }
+        </button>
+
+        <!-- Dropdown notifications -->
+        <div class="city-dropdown notifications-dropdown"
+             [class.is-open]="showNotifications"
+             (click)="$event.stopPropagation()">
+          <div class="city-dropdown__header">
+            <h6 class="mb-0">{{ 'header.notifications' | translate }}</h6>
+            <small>{{ notificationsCount }} nouvelles</small>
+          </div>
+          <div class="notifications-list">
+            <a href="#" class="notif-item">
+              <i class="fas fa-calendar-check notif-item__icon notif-item__icon--success"></i>
+              <div class="notif-item__body">
+                <div class="notif-item__title">Nouvelle réservation</div>
+                <small>Chambre 101 - Jean Dupont</small>
+                <small class="d-block">Il y a 5 minutes</small>
+              </div>
+            </a>
+            <a href="#" class="notif-item">
+              <i class="fas fa-exclamation-triangle notif-item__icon notif-item__icon--warning"></i>
+              <div class="notif-item__body">
+                <div class="notif-item__title">Stock faible</div>
+                <small>Produit de nettoyage - 2 unités</small>
+                <small class="d-block">Il y a 1 heure</small>
+              </div>
+            </a>
+            <a href="#" class="notif-item">
+              <i class="fas fa-credit-card notif-item__icon notif-item__icon--primary"></i>
+              <div class="notif-item__body">
+                <div class="notif-item__title">Paiement reçu</div>
+                <small>Facture #2024-001 - 150€</small>
+                <small class="d-block">Il y a 2 heures</small>
+              </div>
+            </a>
+          </div>
+          <div class="city-dropdown__footer">
+            <a href="#">Voir toutes les notifications</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Profil utilisateur ────────────────────────────────────────── -->
+      <div class="app-header__profile">
+        <button type="button"
+                class="profile-trigger"
+                (click)="toggleUserDropdown()"
+                [attr.aria-label]="'header.user_menu' | translate"
+                [attr.aria-expanded]="showUserDropdown">
+          <span class="profile-avatar" [ngClass]="getAvatarColorClass()">
+            @if (getUserAvatar() !== 'assets/images/default-avatar.png') {
+              <img [src]="getUserAvatar()"
+                   [alt]="currentUser?.nomComplet"
+                   (error)="onImageError($event)"
+                   class="profile-avatar__img">
+            } @else {
+              <span class="profile-avatar__initials">{{ getUserInitials() }}</span>
+            }
+            <span class="profile-avatar__status profile-avatar__status--online" aria-hidden="true"></span>
+          </span>
+
+          <span class="profile-info">
+            <span class="profile-info__name">{{ currentUser?.nomComplet }}</span>
+            <small class="profile-info__role">{{ currentUser?.roleNom }}</small>
+          </span>
+
+          <i class="fas fa-chevron-down profile-trigger__chevron"
+             [class.is-open]="showUserDropdown"></i>
+        </button>
+
+        <!-- Dropdown profil -->
+        <div class="city-dropdown profile-dropdown"
+             [class.is-open]="showUserDropdown"
+             (click)="$event.stopPropagation()">
+          <div class="profile-dropdown__header">
+            <span class="profile-avatar profile-avatar--lg" [ngClass]="getAvatarColorClass()">
+              @if (getUserAvatar() !== 'assets/images/default-avatar.png') {
+                <img [src]="getUserAvatar()"
+                     [alt]="currentUser?.nomComplet"
+                     (error)="onImageError($event)"
+                     class="profile-avatar__img">
+              } @else {
+                <span class="profile-avatar__initials">{{ getUserInitials() }}</span>
+              }
+            </span>
+            <div class="profile-dropdown__identity">
+              <div class="profile-dropdown__name">{{ currentUser?.nomComplet }}</div>
+              <small class="profile-dropdown__email">{{ currentUser?.email }}</small>
+              <span class="profile-dropdown__role-badge">{{ currentUser?.roleNom }}</span>
+            </div>
+          </div>
+
+          <div class="city-dropdown__divider"></div>
+
+          <a class="city-dropdown__item" (click)="navigateToProfile()">
+            <i class="fas fa-user-circle me-2"></i>
+            {{ 'menu.profile' | translate }}
+          </a>
+
+          <a class="city-dropdown__item" href="#">
+            <i class="fas fa-cog me-2"></i>
+            {{ 'header.settings' | translate }}
+          </a>
+
+          <div class="city-dropdown__divider"></div>
+
+          <a class="city-dropdown__item city-dropdown__item--danger" (click)="logout()">
+            <i class="fas fa-sign-out-alt me-2"></i>
+            {{ 'auth.logout' | translate }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Overlay pour fermer les dropdowns au clic à l'extérieur -->
+@if (showUserDropdown || showNotifications) {
+  <div class="header-overlay" (click)="closeDropdowns()" aria-hidden="true"></div>
+}

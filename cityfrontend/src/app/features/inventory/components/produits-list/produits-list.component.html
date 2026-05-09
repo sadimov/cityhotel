@@ -1,0 +1,126 @@
+<section class="produits-list">
+  <header class="produits-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'inventory.produit.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'inventory.produit.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="produits-list__toolbar mb-3">
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="'inventory.produit.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'inventory.produit.list.search' | translate"
+    />
+  </div>
+
+  @if (state === 'loading') {
+    <div class="produits-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.produit.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'inventory.produit.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'inventory.produit.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'inventory.produit.fields.codeProduit' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.nomProduit' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.categorie' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.uniteMesure' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.produit.fields.prixUnitaire' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.produit.fields.stockActuel' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.statutStock' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.produit.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (produit of page.content; track produit.produitId) {
+            <tr>
+              <td><code>{{ produit.codeProduit }}</code></td>
+              <td>{{ produit.nomProduit }}</td>
+              <td>{{ produit.nomCategorie || '-' }}</td>
+              <td>{{ produit.uniteMesure }}</td>
+              <td class="text-end">{{ produit.prixUnitaire | number:'1.2-2' }}</td>
+              <td class="text-end">{{ produit.stockActuel | number:'1.0-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeClass(produit.statutStock)">
+                  {{ statutStockKey(produit.statutStock) | translate }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(produit)"
+                  [attr.aria-label]="'inventory.produit.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="remove(produit)"
+                  [disabled]="deleting"
+                  [attr.aria-label]="'inventory.produit.actions.delete' | translate"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'inventory.produit.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

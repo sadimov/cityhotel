@@ -1,0 +1,107 @@
+<section class="stocks-list">
+  <header class="stocks-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'inventory.stock.list.title' | translate }}</h2>
+  </header>
+
+  <div class="stocks-list__toolbar mb-3">
+    <select
+      class="form-select stocks-list__statut"
+      [value]="selectedStatut"
+      (change)="onStatutChange($any($event.target).value)"
+      [attr.aria-label]="'inventory.stock.fields.statutStock' | translate"
+    >
+      <option value="">{{ 'inventory.stock.list.filterAll' | translate }}</option>
+      @for (s of statutsStock; track s) {
+        <option [value]="s">{{ ('inventory.stock.statut.' + s.toLowerCase()) | translate }}</option>
+      }
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="stocks-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.stock.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'inventory.stock.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'inventory.stock.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'inventory.produit.fields.codeProduit' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.nomProduit' | translate }}</th>
+            <th scope="col">{{ 'inventory.produit.fields.uniteMesure' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.stock.fields.quantiteActuelle' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.stock.fields.seuilAlerte' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.stock.fields.seuilCritique' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'inventory.stock.fields.valeurStock' | translate }}</th>
+            <th scope="col">{{ 'inventory.stock.fields.statutStock' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of page.content; track p.produitId) {
+            <tr>
+              <td><code>{{ p.codeProduit }}</code></td>
+              <td>{{ p.nomProduit }}</td>
+              <td>{{ p.uniteMesure }}</td>
+              <td class="text-end">{{ p.stockActuel | number:'1.0-2' }}</td>
+              <td class="text-end">{{ p.seuilAlerte | number:'1.0-2' }}</td>
+              <td class="text-end">{{ p.seuilCritique | number:'1.0-2' }}</td>
+              <td class="text-end">{{ p.valeurStock ?? 0 | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeClass(p.statutStock)">
+                  {{ statutKey(p.statutStock) | translate }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'inventory.stock.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

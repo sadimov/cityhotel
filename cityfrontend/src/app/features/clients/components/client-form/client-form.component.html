@@ -1,0 +1,177 @@
+<section class="client-form">
+  <header class="client-form__header d-flex align-items-center mb-3">
+    <h2 class="h4 m-0">
+      @if (isEditing) {
+        {{ 'clients.form.titleEdit' | translate }}
+      } @else {
+        {{ 'clients.form.titleCreate' | translate }}
+      }
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="client-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'clients.form.loadError' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="cancel()">
+        {{ 'clients.actions.cancel' | translate }}
+      </button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="client-prenom" class="form-label">
+            {{ 'clients.fields.prenom' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="client-prenom"
+            type="text"
+            class="form-control"
+            formControlName="prenom"
+            [class.is-invalid]="form.controls['prenom'].invalid && form.controls['prenom'].touched"
+          />
+          @if (form.controls['prenom'].invalid && form.controls['prenom'].touched) {
+            <div class="invalid-feedback">
+              {{ 'clients.errors.prenomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-nom" class="form-label">
+            {{ 'clients.fields.nom' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="client-nom"
+            type="text"
+            class="form-control"
+            formControlName="nom"
+            [class.is-invalid]="form.controls['nom'].invalid && form.controls['nom'].touched"
+          />
+          @if (form.controls['nom'].invalid && form.controls['nom'].touched) {
+            <div class="invalid-feedback">
+              {{ 'clients.errors.nomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-email" class="form-label">
+            {{ 'clients.fields.email' | translate }}
+          </label>
+          <input
+            id="client-email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            [class.is-invalid]="form.controls['email'].invalid && form.controls['email'].touched"
+          />
+          @if (form.controls['email'].invalid && form.controls['email'].touched) {
+            <div class="invalid-feedback">
+              {{ 'clients.errors.emailInvalid' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-telephone" class="form-label">
+            {{ 'clients.fields.telephone' | translate }}
+          </label>
+          <input
+            id="client-telephone"
+            type="tel"
+            class="form-control"
+            formControlName="telephone"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="client-adresse" class="form-label">
+            {{ 'clients.fields.adresse' | translate }}
+          </label>
+          <input
+            id="client-adresse"
+            type="text"
+            class="form-control"
+            formControlName="adresse"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-ville" class="form-label">
+            {{ 'clients.fields.ville' | translate }}
+          </label>
+          <input
+            id="client-ville"
+            type="text"
+            class="form-control"
+            formControlName="ville"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-pays" class="form-label">
+            {{ 'clients.fields.pays' | translate }}
+          </label>
+          <input
+            id="client-pays"
+            type="text"
+            class="form-control"
+            formControlName="pays"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-numId" class="form-label">
+            {{ 'clients.fields.numeroIdentification' | translate }}
+          </label>
+          <input
+            id="client-numId"
+            type="text"
+            class="form-control"
+            formControlName="numeroIdentification"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="client-naissance" class="form-label">
+            {{ 'clients.fields.dateNaissance' | translate }}
+          </label>
+          <input
+            id="client-naissance"
+            type="date"
+            class="form-control"
+            formControlName="dateNaissance"
+          />
+        </div>
+      </div>
+
+      <div class="client-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'clients.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'clients.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -1,0 +1,89 @@
+<section class="reservations-calendar">
+  <header class="reservations-calendar__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'hebergement.calendar.title' | translate }}</h2>
+    <div class="d-flex gap-2">
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="prevMonth()"
+        [attr.aria-label]="'hebergement.calendar.previous' | translate"
+      >
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="goToday()"
+      >
+        {{ 'hebergement.calendar.today' | translate }}
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="nextMonth()"
+        [attr.aria-label]="'hebergement.calendar.next' | translate"
+      >
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="reservations-calendar__monthLabel mb-2 text-capitalize fw-semibold">
+    {{ monthLabel }}
+  </div>
+
+  @if (state === 'loading') {
+    <div class="reservations-calendar__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'hebergement.calendar.error' | translate }}
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-danger ms-2"
+        (click)="goToday()"
+      >
+        {{ 'hebergement.calendar.retry' | translate }}
+      </button>
+    </div>
+  } @else {
+    <div class="reservations-calendar__grid" role="grid">
+      <div class="reservations-calendar__weekdays" role="row">
+        @for (key of weekdayKeys; track key) {
+          <div class="reservations-calendar__weekday" role="columnheader">
+            {{ key | translate }}
+          </div>
+        }
+      </div>
+
+      <div class="reservations-calendar__days">
+        @for (cell of cells; track cell.iso) {
+          <div
+            class="reservations-calendar__cell"
+            [class.reservations-calendar__cell--out]="!cell.inCurrentMonth"
+            [class.reservations-calendar__cell--today]="cell.isToday"
+            role="gridcell"
+          >
+            <div class="reservations-calendar__day">{{ cell.day }}</div>
+            <div class="reservations-calendar__chips">
+              @for (r of cell.reservations; track r.reservationId) {
+                <button
+                  type="button"
+                  class="reservations-calendar__chip"
+                  [ngClass]="statutClass(r.statut)"
+                  (click)="goToReservation(r)"
+                  [attr.title]="r.numeroReservation + ' — ' + (r.nomClientPrincipal || '')"
+                >
+                  {{ r.nomClientPrincipal || r.numeroReservation }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</section>

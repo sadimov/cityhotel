@@ -1,0 +1,7 @@
+/* POS Restaurant — point d'entrée. Le layout 3 colonnes utilise la grille
+   Bootstrap (`col-lg-3 / col-lg-5 / col-lg-4`). En mobile, les colonnes
+   s'empilent verticalement (col-12). */
+.pos-container {
+  background: var(--bs-light, #f8f9fa);
+  min-height: calc(100vh - 4rem);
+}

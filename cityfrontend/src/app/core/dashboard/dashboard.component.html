@@ -1,0 +1,219 @@
+<!-- Dashboard principal -->
+<div class="dashboard-container">
+  <!-- En-tête du dashboard -->
+  <div class="dashboard-header mb-4">
+    <div class="row align-items-center">
+      <div class="col-md-8">
+        <h1 class="h3 mb-1 text-primary fw-bold">
+          {{ getWelcomeMessage() }}
+        </h1>
+        <p class="text-muted mb-0">
+          Voici un aperçu de l'activité de votre hôtel aujourd'hui
+        </p>
+      </div>
+      <div class="col-md-4 text-end">
+        <button class="btn btn-outline-primary"
+          (click)="refreshData()"
+          [disabled]="isLoading">
+          <i class="fas fa-sync-alt me-2"
+          [class.fa-spin]="isLoading"></i>
+          Actualiser
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loader -->
+  @if (isLoading) {
+    <div class="text-center py-5">
+      <div class="spinner mb-3"></div>
+      <p class="text-muted">{{ 'common.loading' | translate }}</p>
+    </div>
+  }
+
+  <!-- Contenu du dashboard -->
+  @if (!isLoading) {
+    <div class="dashboard-content fade-in">
+      <!-- Cartes de statistiques -->
+      <div class="row g-4 mb-5">
+        @for (card of getVisibleCards(); track trackByCardFn($index, card)) {
+          <div class="col-xl-3 col-lg-4 col-md-6"
+            >
+            <div class="card stat-card h-100"
+              [class]="'border-' + card.color"
+              [routerLink]="card.route"
+              style="cursor: pointer;">
+              <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="stat-content">
+                    <h6 class="card-subtitle mb-2 text-muted fw-semibold">
+                      {{ card.title }}
+                    </h6>
+                    <h3 class="card-title mb-1 fw-bold"
+                      [class]="'text-' + card.color">
+                      {{ card.value }}
+                    </h3>
+                    @if (card.trend) {
+                      <div class="trend">
+                        <small [class]="card.trend.isPositive ? 'text-success' : 'text-danger'">
+                          <i [class]="card.trend.isPositive ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                          {{ card.trend.value }}%
+                          <span class="text-muted">vs hier</span>
+                        </small>
+                      </div>
+                    }
+                  </div>
+                  <div class="stat-icon">
+                    <div class="icon-circle" [class]="'bg-' + card.color + '-subtle'">
+                      <i [class]="card.icon + ' text-' + card.color"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Effet de hover -->
+              <div class="card-hover-effect"></div>
+            </div>
+          </div>
+        }
+      </div>
+      <!-- Actions rapides -->
+      @if (getVisibleActions().length > 0) {
+        <div class="row mb-5">
+          <div class="col-12">
+            <h4 class="mb-4 text-primary">
+              <i class="fas fa-bolt me-2"></i>
+              Actions Rapides
+            </h4>
+          </div>
+          @for (action of getVisibleActions(); track trackByActionFn($index, action)) {
+            <div class="col-xl-4 col-lg-6 col-md-6"
+              >
+              <div class="card action-card h-100 mb-4"
+                [routerLink]="action.route"
+                style="cursor: pointer;">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-start">
+                    <div class="action-icon me-3">
+                      <div class="icon-circle-lg" [class]="'bg-' + action.color">
+                        <i [class]="action.icon + ' text-white'"></i>
+                      </div>
+                    </div>
+                    <div class="action-content">
+                      <h5 class="card-title mb-2 fw-semibold">
+                        {{ action.title }}
+                      </h5>
+                      <p class="card-text text-muted mb-0">
+                        {{ action.description }}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="action-arrow">
+                    <i class="fas fa-arrow-right text-muted"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+      <!-- Activité récente et graphiques -->
+      <div class="row g-4">
+        <!-- Activité récente -->
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-clock me-2 text-primary"></i>
+                Activité Récente
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="activity-timeline">
+                <div class="timeline-item">
+                  <div class="timeline-marker bg-success"></div>
+                  <div class="timeline-content">
+                    <h6 class="mb-1">Nouvelle réservation</h6>
+                    <p class="text-muted mb-1">Chambre 101 - Jean Dupont</p>
+                    <small class="text-muted">Il y a 5 minutes</small>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-marker bg-primary"></div>
+                  <div class="timeline-content">
+                    <h6 class="mb-1">Check-in effectué</h6>
+                    <p class="text-muted mb-1">Chambre 205 - Marie Martin</p>
+                    <small class="text-muted">Il y a 15 minutes</small>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-marker bg-warning"></div>
+                  <div class="timeline-content">
+                    <h6 class="mb-1">Commande restaurant</h6>
+                    <p class="text-muted mb-1">Table 8 - Menu déjeuner</p>
+                    <small class="text-muted">Il y a 30 minutes</small>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-marker bg-info"></div>
+                  <div class="timeline-content">
+                    <h6 class="mb-1">Tâche ménage terminée</h6>
+                    <p class="text-muted mb-1">Nettoyage chambre 302</p>
+                    <small class="text-muted">Il y a 45 minutes</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer text-center">
+              <a href="/activity" class="text-decoration-none">
+                Voir toute l'activité
+                <i class="fas fa-arrow-right ms-1"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+        <!-- Graphique d'occupation -->
+        <div class="col-lg-6">
+          <div class="card h-100">
+            <div class="card-header">
+              <h5 class="mb-0">
+                <i class="fas fa-chart-line me-2 text-primary"></i>
+                Taux d'Occupation
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="occupancy-chart">
+                <!-- Placeholder pour le graphique -->
+                <div class="chart-placeholder text-center py-5">
+                  <i class="fas fa-chart-area fa-3x text-muted mb-3"></i>
+                  <p class="text-muted">Graphique d'occupation des 7 derniers jours</p>
+                  <small class="text-muted">Intégration avec une bibliothèque de graphiques à venir</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Alertes et notifications -->
+      @if (currentUser && (currentUser.roleCode === 'ADMIN' || currentUser.roleCode === 'GERANT' || currentUser.roleCode === 'SUPERADMIN')) {
+        <div class="row mt-4">
+          <div class="col-12">
+            <div class="alert alert-warning border-0 shadow-sm">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                  <h6 class="alert-heading mb-1">Alertes de Stock</h6>
+                  <p class="mb-0">3 produits sont en rupture de stock et nécessitent votre attention.</p>
+                </div>
+                <div class="ms-auto">
+                  <a href="/reporting/stock-alerts" class="btn btn-warning btn-sm">
+                    Voir les alertes
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

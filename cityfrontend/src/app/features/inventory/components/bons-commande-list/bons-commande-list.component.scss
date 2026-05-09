@@ -1,0 +1,26 @@
+:host {
+  display: block;
+}
+
+.bons-commande-list {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__search {
+    max-width: 360px;
+    flex: 1 1 240px;
+  }
+
+  &__statut {
+    max-width: 220px;
+    flex: 0 0 auto;
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
