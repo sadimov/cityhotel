@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 9bis - Alignement schema 'client' avec les patterns projet.
+  Changesets additifs (002 deja applique : ne PAS le modifier - risque
+  checksum mismatch en prod).
+
+  Resout les findings du Tour 9 :
+  - 003.1  : created_by NOT NULL sur societes + clients (defense en profondeur,
+             le sentinel "system" du JpaAuditingConfig garantit toujours non-null
+             cote applicatif ; la contrainte SQL detecte la ligne orpheline).
+  - 003.2  : created_at/updated_at -> TIMESTAMP WITH TIME ZONE pour matcher
+             {@code Instant} JPA (UTC neutre ; sans TZ Postgres convertit en
+             heure serveur d'ou divergence dev/CI/prod).
+  - 003.3  : FK fk_clients_societe -> ON DELETE SET NULL pour eviter
+             ForeignKeyViolation non typee lors d'un DELETE de societe ayant
+             des clients (rattachement deja optionnel cote JPA via Long societeId
+             nullable).
+
+  Note : le 4eme finding (alignement entite Java AuditableEntity sur SQL
+  NOT NULL) est traite COTE JPA uniquement (pas via SQL - le SQL est deja
+  NOT NULL via 002 sur created_at/updated_at, c'est l'entite qui doit s'aligner).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 003.1 : created_by NOT NULL sur societes + clients
+         ==================================================================== -->
+    <changeSet id="003-1-created-by-not-null-client" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="societes" schemaName="client" columnName="created_by"/>
+            <columnExists tableName="clients"  schemaName="client" columnName="created_by"/>
+        </preConditions>
+        <comment>
+            created_by NOT NULL : le sentinel "system" du JpaAuditingConfig
+            garantit non-null cote applicatif ; la contrainte SQL agit en
+            defense en profondeur (detection ligne orpheline = INSERT ayant
+            contourne le flow normal).
+        </comment>
+        <addNotNullConstraint
+                tableName="societes" schemaName="client"
+                columnName="created_by" columnDataType="VARCHAR(80)"
+                defaultNullValue="system"/>
+        <addNotNullConstraint
+                tableName="clients" schemaName="client"
+                columnName="created_by" columnDataType="VARCHAR(80)"
+                defaultNullValue="system"/>
+        <rollback>
+            <dropNotNullConstraint tableName="societes" schemaName="client" columnName="created_by"/>
+            <dropNotNullConstraint tableName="clients"  schemaName="client" columnName="created_by"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003.2 : created_at, updated_at -> TIMESTAMP WITH TIME ZONE
+         ==================================================================== -->
+    <changeSet id="003-2-timestamps-with-tz-client" author="cityprojects">
+        <comment>
+            TIMESTAMPTZ matche {@code Instant} JPA (UTC neutre).
+            TIMESTAMP sans TZ : Postgres convertit en heure serveur ; divergence
+            dev/CI/prod avec TZ differente. Tests H2 : Liquibase desactive en
+            profil test (cf. application-test.properties), Hibernate genere les
+            tables via ddl-auto=create-drop, donc cet ALTER ne s'execute pas
+            en H2 - risque H2 incompat ecarte.
+        </comment>
+        <modifyDataType tableName="societes" schemaName="client" columnName="created_at" newDataType="TIMESTAMP WITH TIME ZONE"/>
+        <modifyDataType tableName="societes" schemaName="client" columnName="updated_at" newDataType="TIMESTAMP WITH TIME ZONE"/>
+        <modifyDataType tableName="clients"  schemaName="client" columnName="created_at" newDataType="TIMESTAMP WITH TIME ZONE"/>
+        <modifyDataType tableName="clients"  schemaName="client" columnName="updated_at" newDataType="TIMESTAMP WITH TIME ZONE"/>
+        <rollback>
+            <modifyDataType tableName="societes" schemaName="client" columnName="created_at" newDataType="TIMESTAMP"/>
+            <modifyDataType tableName="societes" schemaName="client" columnName="updated_at" newDataType="TIMESTAMP"/>
+            <modifyDataType tableName="clients"  schemaName="client" columnName="created_at" newDataType="TIMESTAMP"/>
+            <modifyDataType tableName="clients"  schemaName="client" columnName="updated_at" newDataType="TIMESTAMP"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003.3 : FK fk_clients_societe ON DELETE SET NULL
+         ==================================================================== -->
+    <changeSet id="003-3-fk-client-societe-on-delete-set-null" author="cityprojects">
+        <comment>
+            Rattachement Client -> Societe deja optionnel cote JPA
+            (Long societeId nullable). Aligner la FK sur ON DELETE SET NULL
+            pour eviter ForeignKeyViolation non typee lors d'un DELETE de
+            societe (cf. SocieteController.delete : DELETE physique autorise
+            si pas de clients ACTIFS, mais des clients inactifs peuvent
+            subsister - SET NULL preserve l'integrite).
+        </comment>
+        <dropForeignKeyConstraint
+                baseTableName="clients" baseTableSchemaName="client"
+                constraintName="fk_clients_societe"/>
+        <addForeignKeyConstraint
+                baseTableName="clients" baseTableSchemaName="client" baseColumnNames="societe_id"
+                referencedTableName="societes" referencedTableSchemaName="client" referencedColumnNames="societe_id"
+                constraintName="fk_clients_societe" onDelete="SET NULL"/>
+        <rollback>
+            <dropForeignKeyConstraint
+                    baseTableName="clients" baseTableSchemaName="client"
+                    constraintName="fk_clients_societe"/>
+            <addForeignKeyConstraint
+                    baseTableName="clients" baseTableSchemaName="client" baseColumnNames="societe_id"
+                    referencedTableName="societes" referencedTableSchemaName="client" referencedColumnNames="societe_id"
+                    constraintName="fk_clients_societe"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

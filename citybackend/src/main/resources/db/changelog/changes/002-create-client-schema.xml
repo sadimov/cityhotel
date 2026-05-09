@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 8 - Schema 'client' : societes + clients (module clients).
+
+  Source eclatee depuis HEBERGEMENT/files_back/Services_module_clients.java
+  (mono mal place dans /HEBERGEMENT/, cf. CARTOGRAPHIE_MODULES.md ligne 108).
+
+  Conventions appliquees :
+  - Schema 'client' (singulier, coherent avec l'arbo Java entity/client/).
+  - PK technique BIGSERIAL (pattern projet, cf. NumerotationSequence).
+  - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0 (sentinel ROOT
+    interdit comme hotel_id reel, cf. CityTenantIdentifierResolver).
+  - Colonnes audit Spring Data JPA : created_at, updated_at, created_by,
+    updated_by (gerees par AuditingEntityListener via AuditableEntity).
+    NB : ces colonnes remplacent les date_creation/date_modification du
+    SQL d'origine, alignees sur le pattern projet (cf. NumerotationSequence).
+  - Pas de FK vers core.donnees_referentielles : cette table n'existe pas
+    encore dans le projet (sera ajoutee dans un tour ulterieur). Les
+    colonnes nationalite_id et type_identification_id restent BIGINT
+    nullable, sans FK pour l'instant. La FK sera ajoutee dans le changeset
+    de creation de la table donnees_referentielles.
+
+  Le precedent fichier 002-create-client-schema.sql etait VIDE (0 ligne)
+  depuis l'origine du projet. Liquibase etant desactive jusqu'au Tour 5A,
+  aucun changeset n'avait ete applique ; le remplacement par ce XML est
+  donc sans risque (pas de DATABASECHANGELOG.MD5SUM a invalider).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 002.1 : creation du schema 'client'
+         ==================================================================== -->
+    <changeSet id="002-create-client-schema" author="cityprojects">
+        <comment>Creation du schema SQL 'client' (singulier, coherent avec l'arbo Java).</comment>
+        <sql>CREATE SCHEMA IF NOT EXISTS client</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS client CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 002.2 : table client.societes
+         ==================================================================== -->
+    <changeSet id="002-create-table-societes" author="cityprojects">
+        <comment>
+            Table client.societes : entreprises auxquelles peuvent etre rattaches
+            des clients (B2B). Isolation tenant via hotel_id + @TenantId Hibernate.
+        </comment>
+
+        <createTable tableName="societes" schemaName="client">
+            <column name="societe_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_societes" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="societe_nom" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="siret" type="VARCHAR(20)"/>
+            <column name="adresse" type="TEXT"/>
+            <column name="ville" type="VARCHAR(100)"/>
+            <column name="pays" type="VARCHAR(100)"/>
+            <column name="telephone" type="VARCHAR(20)"/>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="contact_principal" type="VARCHAR(200)"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)"/>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="societes"
+            baseTableSchemaName="client"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels"
+            referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_societes_hotel"/>
+
+        <sql>
+            ALTER TABLE client.societes
+            ADD CONSTRAINT chk_societes_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="societes" schemaName="client" indexName="ix_societes_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="societes" schemaName="client" indexName="ix_societes_hotel_nom">
+            <column name="hotel_id"/>
+            <column name="societe_nom"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="societes" schemaName="client"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 002.3 : table client.clients
+         ==================================================================== -->
+    <changeSet id="002-create-table-clients" author="cityprojects">
+        <comment>
+            Table client.clients : personnes physiques (clients de l'hotel).
+            numero_client est genere par hotel via NumerotationService (type CLI).
+            Unicite stricte du numero_client par hotel (UNIQUE (hotel_id, numero_client))
+            puisque la sequence est segmentee par hotel.
+        </comment>
+
+        <createTable tableName="clients" schemaName="client">
+            <column name="client_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_clients" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_client" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prenom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nationalite_id" type="BIGINT"/>
+            <column name="telephone" type="VARCHAR(20)"/>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="adresse" type="TEXT"/>
+            <column name="ville" type="VARCHAR(100)"/>
+            <column name="pays" type="VARCHAR(100)"/>
+            <column name="type_identification_id" type="BIGINT"/>
+            <column name="numero_identification" type="VARCHAR(50)"/>
+            <column name="date_naissance" type="DATE"/>
+            <column name="societe_id" type="BIGINT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)"/>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="clients"
+            baseTableSchemaName="client"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels"
+            referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_clients_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="clients"
+            baseTableSchemaName="client"
+            baseColumnNames="societe_id"
+            referencedTableName="societes"
+            referencedTableSchemaName="client"
+            referencedColumnNames="societe_id"
+            constraintName="fk_clients_societe"/>
+
+        <addUniqueConstraint
+            tableName="clients"
+            schemaName="client"
+            columnNames="hotel_id, numero_client"
+            constraintName="uk_clients_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE client.clients
+            ADD CONSTRAINT chk_clients_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="clients" schemaName="client" indexName="ix_clients_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="clients" schemaName="client" indexName="ix_clients_hotel_nom">
+            <column name="hotel_id"/>
+            <column name="nom"/>
+            <column name="prenom"/>
+        </createIndex>
+
+        <createIndex tableName="clients" schemaName="client" indexName="ix_clients_societe">
+            <column name="societe_id"/>
+        </createIndex>
+
+        <createIndex tableName="clients" schemaName="client" indexName="ix_clients_hotel_email">
+            <column name="hotel_id"/>
+            <column name="email"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="clients" schemaName="client"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
