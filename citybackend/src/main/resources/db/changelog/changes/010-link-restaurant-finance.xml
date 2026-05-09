@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 24 - Link table finance.lignes_factures -> restaurant.commandes.
+
+  Closes la TODO posee dans FactureServiceImpl.creerLigne() (Tour 19,
+  ligne ~362) :
+      "TODO Vague 2 / restaurant : valider commandeId via CommandeRepository
+       quand le module restaurant sera integre."
+
+  L'entite LigneFacture (Tour 19) declare deja le champ Long commandeId
+  (cf. entity/finance/LigneFacture.java), seule manque la FK SQL vers
+  restaurant.commandes (creee au changeset 009 du Tour 24).
+
+  Strategie : changeset additif (addForeignKeyConstraint), JAMAIS modifier
+  006-create-finance-schema.xml deja applique.
+
+  ON DELETE SET NULL : si une commande est purgee, la ligne facture survit
+  avec commande_id = NULL (la facture reste exploitable historiquement).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="010-1-add-fk-lignes-factures-commande" author="cityprojects">
+        <comment>
+            Ajoute la FK lignes_factures.commande_id -&gt; restaurant.commandes(commande_id).
+            La colonne commande_id existe deja dans lignes_factures (Tour 19,
+            6.5). On y rattache simplement la FK maintenant que la table
+            restaurant.commandes existe (Tour 24, changeset 009).
+        </comment>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_factures" baseTableSchemaName="finance"
+            baseColumnNames="commande_id"
+            referencedTableName="commandes" referencedTableSchemaName="restaurant"
+            referencedColumnNames="commande_id"
+            constraintName="fk_lignes_factures_commande"
+            onDelete="SET NULL"/>
+
+        <createIndex tableName="lignes_factures" schemaName="finance" indexName="ix_lignes_factures_commande">
+            <column name="commande_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableName="lignes_factures" baseTableSchemaName="finance"
+                constraintName="fk_lignes_factures_commande"/>
+            <dropIndex tableName="lignes_factures" schemaName="finance" indexName="ix_lignes_factures_commande"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

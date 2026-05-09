@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 23 - Schema 'restaurant' (CATALOGUE UNIQUEMENT) :
+    - categories_menus : regroupement metier des plats/boissons
+    - articles_menus   : entree du menu (plat, boisson, dessert, ...) avec prix
+
+  Source de reference (structure uniquement, NON copiee) :
+    RESTAURANT/resultat_chatgpt/restaurant-backend-module/src/main/java/.../entity/restaurant/{ArticleMenu, CategorieMenu}.java
+
+  ⛔ HORS PERIMETRE TOUR 23 (POS - reporte au Tour 24+) :
+    - tables `commandes` / `lignes_commande`
+    - flux POS (panier, ticket, cloture caisse)
+
+  Conventions Tour 9bis appliquees DIRECTEMENT (pas de dette technique) :
+    - Schema 'restaurant'.
+    - PK technique BIGSERIAL (categorie_id, article_id).
+    - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0
+      (sentinel ROOT interdit comme hotel_id reel).
+    - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA UTC).
+    - created_by NOT NULL avec defaultValue="system".
+    - updated_by VARCHAR(80) nullable.
+    - UNIQUE (hotel_id, code_article) sur articles_menus.
+    - Index (hotel_id, statut), (hotel_id, categorie_id), (hotel_id, actif).
+
+  Le precedent fichier 004-create-restaurant-schema.sql (1 ligne CREATE SCHEMA)
+  etait un stub Vague-3. Liquibase desactive jusqu'au Tour 5A : aucun changeset
+  applique, remplacement sans risque (pas de DATABASECHANGELOG.MD5SUM).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 004-r.1 : creation du schema 'restaurant'
+         ==================================================================== -->
+    <changeSet id="004-r-1-create-schema" author="cityprojects">
+        <comment>Creation du schema SQL 'restaurant' (catalogue + futur POS Tour 24+).</comment>
+        <sql>CREATE SCHEMA IF NOT EXISTS restaurant</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS restaurant CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 004-r.2 : table restaurant.categories_menus
+         ==================================================================== -->
+    <changeSet id="004-r-2-create-table-categories-menus" author="cityprojects">
+        <comment>
+            Categories de menu (Entrees, Plats, Boissons, Desserts, ...). Isolation
+            tenant via hotel_id + Hibernate @TenantId. ordre permet d'imposer un
+            ordre d'affichage dans le POS.
+        </comment>
+
+        <createTable tableName="categories_menus" schemaName="restaurant">
+            <column name="categorie_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_categories_menus" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="icone_url" type="VARCHAR(200)"/>
+            <column name="ordre" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="categories_menus" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_categories_menus_hotel"/>
+
+        <sql>
+            ALTER TABLE restaurant.categories_menus
+            ADD CONSTRAINT chk_categories_menus_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="categories_menus" schemaName="restaurant" indexName="ix_categories_menus_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="categories_menus" schemaName="restaurant" indexName="ix_categories_menus_hotel_ordre">
+            <column name="hotel_id"/>
+            <column name="ordre"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="categories_menus" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 004-r.3 : table restaurant.articles_menus
+         ==================================================================== -->
+    <changeSet id="004-r-3-create-table-articles-menus" author="cityprojects">
+        <comment>
+            Articles de menu (plats, boissons, ...). code_article unique par hotel
+            (UNIQUE (hotel_id, code_article)). prix &gt;= 0. statut : ACTIF / RUPTURE
+            / INACTIF. La FK categorie_id reste un Long cote entite (pattern projet :
+            evite les proxies LAZY) ; la coherence cross-tenant categorie/article
+            sera assuree par les triggers PL/pgSQL Tour 24+ si besoin.
+        </comment>
+
+        <createTable tableName="articles_menus" schemaName="restaurant">
+            <column name="article_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_articles_menus" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code_article" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="categorie_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix" type="DECIMAL(10,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="image_url" type="VARCHAR(200)"/>
+            <column name="disponible" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="ACTIF">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="articles_menus" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_articles_menus_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="articles_menus" baseTableSchemaName="restaurant"
+            baseColumnNames="categorie_id"
+            referencedTableName="categories_menus" referencedTableSchemaName="restaurant"
+            referencedColumnNames="categorie_id"
+            constraintName="fk_articles_menus_categorie"/>
+
+        <addUniqueConstraint
+            tableName="articles_menus" schemaName="restaurant"
+            columnNames="hotel_id, code_article"
+            constraintName="uk_articles_menus_hotel_code"/>
+
+        <sql>
+            ALTER TABLE restaurant.articles_menus
+            ADD CONSTRAINT chk_articles_menus_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE restaurant.articles_menus
+            ADD CONSTRAINT chk_articles_menus_prix_positive CHECK (prix &gt;= 0)
+        </sql>
+
+        <createIndex tableName="articles_menus" schemaName="restaurant" indexName="ix_articles_menus_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="articles_menus" schemaName="restaurant" indexName="ix_articles_menus_hotel_categorie">
+            <column name="hotel_id"/>
+            <column name="categorie_id"/>
+        </createIndex>
+
+        <createIndex tableName="articles_menus" schemaName="restaurant" indexName="ix_articles_menus_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="articles_menus" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

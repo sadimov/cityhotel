@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 25 - Schema 'restaurant' : table recettes_articles.
+
+  Recette (1-N) d'un article de menu vers les produits d'inventaire consommes
+  par 1 unite vendue. Sert a generer automatiquement un BS (Bon de Sortie)
+  inventory a la transition PRETE -> SERVIE d'une commande POS.
+
+  Source de reference (structure uniquement) :
+    PROMPTS/prompt_restaurant_pos.txt (consommations stock)
+    Tour 25 — Cleanup hebergement+POS, decision Option 2B (recette dediee).
+
+  Conventions Tour 9bis appliquees :
+    - Schema 'restaurant' (deja cree par 004-create-restaurant-schema.xml).
+    - PK technique BIGSERIAL (recette_id).
+    - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0.
+    - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA UTC).
+    - created_by NOT NULL avec defaultValue="system".
+    - updated_by VARCHAR(80) nullable.
+    - UNIQUE (article_id, produit_id) : 1 produit max par article.
+    - CHECK quantite_par_unite > 0.
+
+  FK :
+    - article_id -> restaurant.articles_menus(article_id) ON DELETE CASCADE
+      (si l'article est supprime, sa recette part avec).
+    - produit_id -> inventory.produits(produit_id) ON DELETE RESTRICT
+      (refuse de supprimer un produit utilise dans une recette - on doit
+      d'abord nettoyer la recette).
+
+  Index :
+    - (hotel_id, article_id) : lookup rapide des recettes actives d'un article
+      a la transition PRETE -> SERVIE.
+    - (produit_id) : lookup inverse (quels articles utilisent ce produit ?).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="025-1-create-table-recettes-articles" author="cityprojects">
+        <comment>
+            Recettes d'articles : association article -&gt; produit avec quantite
+            consommee par unite vendue. Generation automatique d'un BS inventory
+            a la transition PRETE -&gt; SERVIE d'une commande POS (Tour 25).
+        </comment>
+
+        <createTable tableName="recettes_articles" schemaName="restaurant">
+            <column name="recette_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_recettes_articles" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="article_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="produit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite_par_unite" type="DECIMAL(10,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unite" type="VARCHAR(20)"/>
+            <column name="note" type="TEXT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="recettes_articles" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_recettes_articles_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="recettes_articles" baseTableSchemaName="restaurant"
+            baseColumnNames="article_id"
+            referencedTableName="articles_menus" referencedTableSchemaName="restaurant"
+            referencedColumnNames="article_id"
+            constraintName="fk_recettes_articles_article"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="recettes_articles" baseTableSchemaName="restaurant"
+            baseColumnNames="produit_id"
+            referencedTableName="produits" referencedTableSchemaName="inventory"
+            referencedColumnNames="produit_id"
+            constraintName="fk_recettes_articles_produit"
+            onDelete="RESTRICT"/>
+
+        <addUniqueConstraint
+            tableName="recettes_articles" schemaName="restaurant"
+            columnNames="article_id, produit_id"
+            constraintName="uk_recettes_articles_article_produit"/>
+
+        <sql>
+            ALTER TABLE restaurant.recettes_articles
+            ADD CONSTRAINT chk_recettes_articles_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE restaurant.recettes_articles
+            ADD CONSTRAINT chk_recettes_articles_quantite_positive CHECK (quantite_par_unite &gt; 0)
+        </sql>
+
+        <createIndex tableName="recettes_articles" schemaName="restaurant"
+                     indexName="ix_recettes_articles_hotel_article">
+            <column name="hotel_id"/>
+            <column name="article_id"/>
+        </createIndex>
+
+        <createIndex tableName="recettes_articles" schemaName="restaurant"
+                     indexName="ix_recettes_articles_produit">
+            <column name="produit_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="recettes_articles" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

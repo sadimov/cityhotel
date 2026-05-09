@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 25bis - Coherence cross-tenant des pivots du module restaurant
+  (Postgres-only) + CHECK montants positifs et bornes.
+
+  Defense en profondeur : meme si Hibernate @TenantId garantit que le tenant
+  courant est coherent au moment de l'INSERT cote app (services F4/F5/F6/F8/F9
+  ajoutent par ailleurs des findById tenant-aware), des INSERTs manuels (DBA,
+  scripts de migration, batchs futurs, replication) pourraient creer :
+   - une commande dont client_id / reservation_id / facture_id pointent vers
+     un autre tenant ;
+   - une ligne de commande dont commande_id ou article_id pointent vers un
+     autre tenant ;
+   - un ticket dont commande_id pointe vers un autre tenant ;
+   - une recette dont article_id et produit_id pointent vers deux tenants.
+
+  Ces triggers refusent ces cas. Format identique au Tour 12bis
+  (005-hebergement-pivot-tenant-coherence.xml) et Tour finance-1bis
+  (024-finance-pivot-tenant-coherence.xml) : 4 fonctions PL/pgSQL +
+  4 triggers BEFORE INSERT/UPDATE.
+
+  Postgres-only : H2 ne supporte pas les triggers PL/pgSQL. Sur H2 la garde
+  reste celle de Hibernate (@TenantId) + service-side.
+
+  Tables visees :
+   - 026-1 : restaurant.commandes (hotel_id propre, verifie client_id,
+             reservation_id, facture_id quand renseignes)
+   - 026-2 : restaurant.lignes_commande (hotel_id propre, verifie
+             commande_id et article_id du meme hotel)
+   - 026-3 : restaurant.tickets (hotel_id propre, verifie commande_id du
+             meme hotel)
+   - 026-4 : restaurant.recettes_articles (hotel_id propre, verifie
+             article_id et produit_id du meme hotel)
+
+  Changesets additionnels :
+   - 026-5 : CHECK montants >= 0 sur commandes et lignes_commande
+   - 026-6 : CHECK montant_paye <= montant_ttc + 0.01 sur commandes
+             (tolerance arrondi BigDecimal, coherent finance.factures Tour 19)
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 026-1 : trigger sur restaurant.commandes
+         La commande a hotel_id propre. Verifie que client_id, reservation_id
+         et facture_id (quand renseignes) appartiennent au meme hotel.
+         ==================================================================== -->
+    <changeSet id="026-1-create-commandes-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que restaurant.commandes.client_id, reservation_id et
+            facture_id (quand renseignes) sont du meme hotel que la commande.
+            Defense en profondeur du tenant cross-tables (Tour 25bis F1).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION restaurant.check_pivot_tenant_coherence_commandes()
+RETURNS TRIGGER AS $$
+DECLARE
+    client_hotel      BIGINT;
+    reservation_hotel BIGINT;
+    facture_hotel     BIGINT;
+BEGIN
+    IF NEW.client_id IS NOT NULL THEN
+        SELECT hotel_id INTO client_hotel FROM client.clients
+            WHERE client_id = NEW.client_id;
+        IF NEW.hotel_id IS DISTINCT FROM client_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant commande rejected: commande.hotel_id=% client.hotel_id=%',
+                NEW.hotel_id, client_hotel;
+        END IF;
+    END IF;
+
+    IF NEW.reservation_id IS NOT NULL THEN
+        SELECT hotel_id INTO reservation_hotel FROM hebergement.reservations
+            WHERE reservation_id = NEW.reservation_id;
+        IF NEW.hotel_id IS DISTINCT FROM reservation_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant commande rejected: commande.hotel_id=% reservation.hotel_id=%',
+                NEW.hotel_id, reservation_hotel;
+        END IF;
+    END IF;
+
+    IF NEW.facture_id IS NOT NULL THEN
+        SELECT hotel_id INTO facture_hotel FROM finance.factures
+            WHERE facture_id = NEW.facture_id;
+        IF NEW.hotel_id IS DISTINCT FROM facture_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant commande rejected: commande.hotel_id=% facture.hotel_id=%',
+                NEW.hotel_id, facture_hotel;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_commandes
+            BEFORE INSERT OR UPDATE ON restaurant.commandes
+            FOR EACH ROW EXECUTE FUNCTION restaurant.check_pivot_tenant_coherence_commandes()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_commandes ON restaurant.commandes</sql>
+            <sql>DROP FUNCTION IF EXISTS restaurant.check_pivot_tenant_coherence_commandes()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 026-2 : trigger sur restaurant.lignes_commande
+         La ligne a hotel_id propre. Verifie que commande_id et article_id
+         appartiennent au meme hotel.
+         ==================================================================== -->
+    <changeSet id="026-2-create-lignes-commande-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que restaurant.lignes_commande.commande_id et article_id
+            sont du meme hotel que la ligne. Defense en profondeur cross-tables.
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION restaurant.check_pivot_tenant_coherence_lignes_commande()
+RETURNS TRIGGER AS $$
+DECLARE
+    commande_hotel BIGINT;
+    article_hotel  BIGINT;
+BEGIN
+    SELECT hotel_id INTO commande_hotel FROM restaurant.commandes
+        WHERE commande_id = NEW.commande_id;
+    IF commande_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant ligne_commande rejected: commande_id=% not found',
+            NEW.commande_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM commande_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant ligne_commande rejected: ligne.hotel_id=% commande.hotel_id=%',
+            NEW.hotel_id, commande_hotel;
+    END IF;
+
+    SELECT hotel_id INTO article_hotel FROM restaurant.articles_menus
+        WHERE article_id = NEW.article_id;
+    IF article_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant ligne_commande rejected: article_id=% not found',
+            NEW.article_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM article_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant ligne_commande rejected: ligne.hotel_id=% article.hotel_id=%',
+            NEW.hotel_id, article_hotel;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_lignes_commande
+            BEFORE INSERT OR UPDATE ON restaurant.lignes_commande
+            FOR EACH ROW EXECUTE FUNCTION restaurant.check_pivot_tenant_coherence_lignes_commande()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_lignes_commande ON restaurant.lignes_commande</sql>
+            <sql>DROP FUNCTION IF EXISTS restaurant.check_pivot_tenant_coherence_lignes_commande()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 026-3 : trigger sur restaurant.tickets
+         Le ticket a hotel_id propre. Verifie que commande_id appartient au
+         meme hotel.
+         ==================================================================== -->
+    <changeSet id="026-3-create-tickets-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que restaurant.tickets.commande_id est du meme hotel que
+            le ticket. Defense en profondeur cross-tables.
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION restaurant.check_pivot_tenant_coherence_tickets()
+RETURNS TRIGGER AS $$
+DECLARE
+    commande_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO commande_hotel FROM restaurant.commandes
+        WHERE commande_id = NEW.commande_id;
+    IF commande_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant ticket rejected: commande_id=% not found',
+            NEW.commande_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM commande_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant ticket rejected: ticket.hotel_id=% commande.hotel_id=%',
+            NEW.hotel_id, commande_hotel;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_tickets
+            BEFORE INSERT OR UPDATE ON restaurant.tickets
+            FOR EACH ROW EXECUTE FUNCTION restaurant.check_pivot_tenant_coherence_tickets()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_tickets ON restaurant.tickets</sql>
+            <sql>DROP FUNCTION IF EXISTS restaurant.check_pivot_tenant_coherence_tickets()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 026-4 : trigger sur restaurant.recettes_articles
+         La recette a hotel_id propre. Verifie que article_id et produit_id
+         appartiennent au meme hotel.
+         ==================================================================== -->
+    <changeSet id="026-4-create-recettes-articles-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que restaurant.recettes_articles.article_id et produit_id
+            sont du meme hotel que la recette. Defense en profondeur
+            cross-modules (restaurant + inventory).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION restaurant.check_pivot_tenant_coherence_recettes_articles()
+RETURNS TRIGGER AS $$
+DECLARE
+    article_hotel BIGINT;
+    produit_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO article_hotel FROM restaurant.articles_menus
+        WHERE article_id = NEW.article_id;
+    IF article_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant recette rejected: article_id=% not found',
+            NEW.article_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM article_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant recette rejected: recette.hotel_id=% article.hotel_id=%',
+            NEW.hotel_id, article_hotel;
+    END IF;
+
+    SELECT hotel_id INTO produit_hotel FROM inventory.produits
+        WHERE produit_id = NEW.produit_id;
+    IF produit_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant recette rejected: produit_id=% not found',
+            NEW.produit_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM produit_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant recette rejected: recette.hotel_id=% produit.hotel_id=%',
+            NEW.hotel_id, produit_hotel;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_recettes_articles
+            BEFORE INSERT OR UPDATE ON restaurant.recettes_articles
+            FOR EACH ROW EXECUTE FUNCTION restaurant.check_pivot_tenant_coherence_recettes_articles()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_recettes_articles ON restaurant.recettes_articles</sql>
+            <sql>DROP FUNCTION IF EXISTS restaurant.check_pivot_tenant_coherence_recettes_articles()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 026-5 (F2) : CHECK montants >= 0
+         Postgres + H2 : la syntaxe ALTER TABLE ... ADD CONSTRAINT CHECK est
+         compatible. On garde un changeset commun (pas de dbms="postgresql").
+         ==================================================================== -->
+    <changeSet id="026-5-checks-montants-positifs" author="cityprojects">
+        <comment>
+            Garantit que tous les montants comptables des commandes POS et de
+            leurs lignes sont >= 0 (defense en profondeur cote SGBD, en plus
+            des @DecimalMin cote DTO et des recalculs services).
+        </comment>
+        <sql>
+            ALTER TABLE restaurant.commandes
+            ADD CONSTRAINT chk_commandes_montant_ht_positif CHECK (montant_ht &gt;= 0)
+        </sql>
+        <sql>
+            ALTER TABLE restaurant.commandes
+            ADD CONSTRAINT chk_commandes_montant_ttc_positif CHECK (montant_ttc &gt;= 0)
+        </sql>
+        <sql>
+            ALTER TABLE restaurant.commandes
+            ADD CONSTRAINT chk_commandes_montant_paye_positif CHECK (montant_paye &gt;= 0)
+        </sql>
+        <sql>
+            ALTER TABLE restaurant.lignes_commande
+            ADD CONSTRAINT chk_lignes_commande_montant_positif CHECK (montant &gt;= 0)
+        </sql>
+        <rollback>
+            <sql>ALTER TABLE restaurant.commandes DROP CONSTRAINT chk_commandes_montant_ht_positif</sql>
+            <sql>ALTER TABLE restaurant.commandes DROP CONSTRAINT chk_commandes_montant_ttc_positif</sql>
+            <sql>ALTER TABLE restaurant.commandes DROP CONSTRAINT chk_commandes_montant_paye_positif</sql>
+            <sql>ALTER TABLE restaurant.lignes_commande DROP CONSTRAINT chk_lignes_commande_montant_positif</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 026-6 (F3) : CHECK montant_paye <= montant_ttc + 0.01
+         Tolerance 0.01 coherente avec finance.factures Tour 19 (arrondi
+         BigDecimal HALF_UP a 2 decimales).
+         ==================================================================== -->
+    <changeSet id="026-6-check-montant-paye-borne" author="cityprojects">
+        <comment>
+            Garantit qu'on ne peut pas encaisser plus que le montant TTC d'une
+            commande (tolerance 0.01 pour arrondis BigDecimal). Defense en
+            profondeur en plus des verifs services (encaisserComptant).
+        </comment>
+        <sql>
+            ALTER TABLE restaurant.commandes
+            ADD CONSTRAINT chk_commandes_montant_paye_borne CHECK (montant_paye &lt;= montant_ttc + 0.01)
+        </sql>
+        <rollback>
+            <sql>ALTER TABLE restaurant.commandes DROP CONSTRAINT chk_commandes_montant_paye_borne</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

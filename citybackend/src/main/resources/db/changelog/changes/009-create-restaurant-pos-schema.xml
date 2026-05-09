@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 24 - Schema 'restaurant' POS (commandes, lignes_commande, tickets).
+
+  Source de reference (structure uniquement, NON copiee) :
+    RESTAURANT/resultat_chatgpt/restaurant-backend-module/src/main/java/.../entity/restaurant/{Commande, LigneCommande}.java
+    PROMPTS/prompt_restaurant_pos.txt (spec metier)
+
+  Note de numerotation :
+    Le master inclut deja un changeset 005-create-inventory-schema.xml (Tour 16).
+    Le prochain numero libre dans la sequence "schemas/links" est 009 (le 008
+    etant deja pris par 008-link-inventory-finance.xml). On l'utilise donc ici.
+
+  Conventions Tour 9bis appliquees DIRECTEMENT (pas de dette technique) :
+    - Schema 'restaurant' (deja cree par 004-create-restaurant-schema.xml).
+    - PK technique BIGSERIAL (commande_id, ligne_id, ticket_id).
+    - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0.
+    - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA UTC).
+    - created_by NOT NULL avec defaultValue="system".
+    - updated_by VARCHAR(80) nullable.
+    - UNIQUE (hotel_id, numero_commande) sur commandes.
+
+  ⛔ HORS PERIMETRE TOUR 24 (differé) :
+    - BS inventory consommations a la livraison (Tour 25 ou ulterieur).
+    - Integration check-out hebergement -> facture sejour avec commandes
+      reportees (TODO[tour-checkout-integration]).
+    - Triggers PL/pgSQL de coherence cross-tenant (Postgres-only, on s'appuie
+      sur Hibernate @TenantId pour ce tour).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 009.1 : table restaurant.commandes
+         ==================================================================== -->
+    <changeSet id="009-1-create-table-commandes" author="cityprojects">
+        <comment>
+            Commande POS du restaurant. mode_reglement (COMPTANT, REPORTE_CHAMBRE)
+            decrit la nature du reglement, statut_commande (BROUILLON, VALIDEE,
+            EN_PREPARATION, PRETE, SERVIE, ANNULEE) decrit l'etat de preparation.
+            Numero genere par NumerotationService (TypeNumerotation.COMM).
+            Pas de TVA dans la version POS (cf. prompt_restaurant_pos.txt).
+        </comment>
+
+        <createTable tableName="commandes" schemaName="restaurant">
+            <column name="commande_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_commandes" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_commande" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="BIGINT"/>
+            <column name="reservation_id" type="BIGINT"/>
+            <column name="facture_id" type="BIGINT"/>
+            <column name="mode_reglement" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut_commande" type="VARCHAR(30)" defaultValue="BROUILLON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_ht" type="DECIMAL(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_ttc" type="DECIMAL(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_paye" type="DECIMAL(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="devise" type="VARCHAR(3)" defaultValue="MRU">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_commande" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="motif_annulation" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="commandes" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_commandes_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="commandes" baseTableSchemaName="restaurant"
+            baseColumnNames="client_id"
+            referencedTableName="clients" referencedTableSchemaName="client"
+            referencedColumnNames="client_id"
+            constraintName="fk_commandes_client"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="commandes" baseTableSchemaName="restaurant"
+            baseColumnNames="reservation_id"
+            referencedTableName="reservations" referencedTableSchemaName="hebergement"
+            referencedColumnNames="reservation_id"
+            constraintName="fk_commandes_reservation"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="commandes" baseTableSchemaName="restaurant"
+            baseColumnNames="facture_id"
+            referencedTableName="factures" referencedTableSchemaName="finance"
+            referencedColumnNames="facture_id"
+            constraintName="fk_commandes_facture"
+            onDelete="SET NULL"/>
+
+        <addUniqueConstraint
+            tableName="commandes" schemaName="restaurant"
+            columnNames="hotel_id, numero_commande"
+            constraintName="uk_commandes_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE restaurant.commandes
+            ADD CONSTRAINT chk_commandes_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="commandes" schemaName="restaurant" indexName="ix_commandes_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut_commande"/>
+        </createIndex>
+
+        <createIndex tableName="commandes" schemaName="restaurant" indexName="ix_commandes_hotel_date">
+            <column name="hotel_id"/>
+            <column name="date_commande"/>
+        </createIndex>
+
+        <createIndex tableName="commandes" schemaName="restaurant" indexName="ix_commandes_reservation">
+            <column name="reservation_id"/>
+        </createIndex>
+
+        <createIndex tableName="commandes" schemaName="restaurant" indexName="ix_commandes_client">
+            <column name="client_id"/>
+        </createIndex>
+
+        <createIndex tableName="commandes" schemaName="restaurant" indexName="ix_commandes_facture">
+            <column name="facture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="commandes" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 009.2 : table restaurant.lignes_commande
+         ==================================================================== -->
+    <changeSet id="009-2-create-table-lignes-commande" author="cityprojects">
+        <comment>
+            Lignes detaillees d'une commande POS. libelle et prix_unitaire sont
+            snapshotes au moment de la prise de commande (cohesion historique
+            si l'article evolue ensuite). montant = quantite * prix_unitaire,
+            recalcule par Hibernate via @PrePersist/@PreUpdate.
+        </comment>
+
+        <createTable tableName="lignes_commande" schemaName="restaurant">
+            <column name="ligne_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_lignes_commande" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commande_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="article_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite" type="DECIMAL(8,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_unitaire" type="DECIMAL(15,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant" type="DECIMAL(15,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="notes_cuisine" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_commande" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_lignes_commande_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_commande" baseTableSchemaName="restaurant"
+            baseColumnNames="commande_id"
+            referencedTableName="commandes" referencedTableSchemaName="restaurant"
+            referencedColumnNames="commande_id"
+            constraintName="fk_lignes_commande_commande"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_commande" baseTableSchemaName="restaurant"
+            baseColumnNames="article_id"
+            referencedTableName="articles_menus" referencedTableSchemaName="restaurant"
+            referencedColumnNames="article_id"
+            constraintName="fk_lignes_commande_article"/>
+
+        <sql>
+            ALTER TABLE restaurant.lignes_commande
+            ADD CONSTRAINT chk_lignes_commande_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE restaurant.lignes_commande
+            ADD CONSTRAINT chk_lignes_commande_quantite_positive CHECK (quantite &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE restaurant.lignes_commande
+            ADD CONSTRAINT chk_lignes_commande_prix_positive CHECK (prix_unitaire &gt;= 0)
+        </sql>
+
+        <createIndex tableName="lignes_commande" schemaName="restaurant" indexName="ix_lignes_commande_commande">
+            <column name="commande_id"/>
+        </createIndex>
+
+        <createIndex tableName="lignes_commande" schemaName="restaurant" indexName="ix_lignes_commande_article">
+            <column name="article_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="lignes_commande" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 009.3 : table restaurant.tickets
+         ==================================================================== -->
+    <changeSet id="009-3-create-table-tickets" author="cityprojects">
+        <comment>
+            Trace d'impression des tickets POS : caisse (avec prix), cuisine
+            (sans prix) et reimpression (avec motif obligatoire). Le rendu
+            (PDF/PNG) est delegue au front, la base ne stocke que la trace.
+        </comment>
+
+        <createTable tableName="tickets" schemaName="restaurant">
+            <column name="ticket_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_tickets" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commande_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_ticket" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_impression" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="imprime_par_user_id" type="BIGINT"/>
+            <column name="motif_reimpression" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="tickets" baseTableSchemaName="restaurant"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_tickets_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="tickets" baseTableSchemaName="restaurant"
+            baseColumnNames="commande_id"
+            referencedTableName="commandes" referencedTableSchemaName="restaurant"
+            referencedColumnNames="commande_id"
+            constraintName="fk_tickets_commande"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="tickets" baseTableSchemaName="restaurant"
+            baseColumnNames="imprime_par_user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_tickets_user"
+            onDelete="SET NULL"/>
+
+        <sql>
+            ALTER TABLE restaurant.tickets
+            ADD CONSTRAINT chk_tickets_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="tickets" schemaName="restaurant" indexName="ix_tickets_commande">
+            <column name="commande_id"/>
+        </createIndex>
+
+        <createIndex tableName="tickets" schemaName="restaurant" indexName="ix_tickets_hotel_type">
+            <column name="hotel_id"/>
+            <column name="type_ticket"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="tickets" schemaName="restaurant"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

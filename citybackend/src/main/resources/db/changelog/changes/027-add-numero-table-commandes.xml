@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 26.1 - Schema 'restaurant' : ajout colonne numero_table sur commandes.
+
+  Champ optionnel VARCHAR(20) decrivant la table physique sur laquelle est
+  prise la commande POS (ex. "T12", "Salon-3"). Decision arbitree (1=A) :
+  pas d'entite Table dediee, simple chaine pour le palier 1. Permet :
+   - de regrouper plusieurs commandes successives sur la meme table
+     (split bill, second tour de service),
+   - de filtrer les commandes en cours par table sur l'ecran serveur,
+   - d'imprimer le numero de table sur le ticket caisse/cuisine.
+
+  Conventions appliquees :
+    - Schema 'restaurant' (deja cree par 004-create-restaurant-schema.xml).
+    - Table commandes deja creee par 009-create-restaurant-pos-schema.xml.
+    - Index (hotel_id, numero_table) pour accelerer le lookup serveur.
+    - Champ NULLABLE : commandes a emporter / livraison / sans table assignee.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="027-1-add-numero-table-commandes" author="cityprojects">
+        <comment>
+            Ajoute commandes.numero_table (VARCHAR(20) nullable) + index
+            (hotel_id, numero_table) pour la recherche par table physique
+            (Tour 26.1, decision 1=A : pas d'entite Table, simple chaine).
+        </comment>
+
+        <addColumn tableName="commandes" schemaName="restaurant">
+            <column name="numero_table" type="VARCHAR(20)"/>
+        </addColumn>
+
+        <createIndex indexName="ix_commandes_hotel_table"
+                     tableName="commandes" schemaName="restaurant">
+            <column name="hotel_id"/>
+            <column name="numero_table"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="ix_commandes_hotel_table"
+                       tableName="commandes" schemaName="restaurant"/>
+            <dropColumn tableName="commandes" schemaName="restaurant"
+                        columnName="numero_table"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
