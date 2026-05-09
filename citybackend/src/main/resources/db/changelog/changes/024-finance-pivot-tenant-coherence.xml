@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour finance-1bis - Coherence cross-tenant des pivots/FK du module finance
+  (Postgres-only)
+
+  Defense en profondeur (finding ELEVEE multitenant-guardian, 2026-05-08) :
+  meme si Hibernate @TenantId garantit que le tenant courant est coherent
+  au moment de l'INSERT cote app, des INSERTs manuels (DBA, scripts de
+  migration, batchs futurs, replication) pourraient creer :
+   - une ligne_facture pointant vers une facture d'un autre tenant que la
+     nuitee/produit reference ;
+   - une affectation_paiement pointant vers un paiement et une facture de
+     deux tenants distincts ;
+   - une operation_compte pointant vers un compte/facture/paiement d'un
+     autre tenant que celui de l'operation.
+
+  Ces triggers refusent ces cas. Le comptable demande extra-vigilance
+  (cf. CLAUDE.md racine §6.2) : numerotation par hotel + pas de trou =
+  toute corruption cross-tenant doit etre rejetee niveau base.
+
+  Cote service, la defense in-app est posee par les services
+  FactureServiceImpl.{create,creerLigne}, PaiementServiceImpl.create,
+  AffectationPaiementServiceImpl.* et OperationCompteServiceImpl.* via
+  des findById tenant-aware (Hibernate @TenantId).
+
+  Postgres-only : H2 ne supporte pas les triggers PL/pgSQL. Sur H2 la
+  garde reste celle de Hibernate (@TenantId) + service-side.
+
+  Tables visees :
+   - 024-1 : finance.lignes_factures (pas de hotel_id propre, scope par
+             facture parent ; verifie aussi nuitee_id et produit_id)
+   - 024-2 : finance.affectations_paiements (pas de hotel_id propre,
+             verifie paiement_id et facture_id du meme hotel)
+   - 024-3 : finance.operations_comptes (hotel_id propre, verifie
+             compte_id, facture_id et paiement_id du meme hotel)
+   - 024-4 : finance.paiements (hotel_id propre, verifie compte_id du
+             meme hotel quand renseigne)
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 024-1 : trigger sur finance.lignes_factures
+         Verifie que la ligne reference une facture, et le cas echeant une
+         nuitee et un produit, du meme hotel. La table n'a pas de hotel_id
+         propre : on derive le tenant attendu via la facture parent.
+         commande_id et service_id : pas encore de FK SQL (modules
+         restaurant/services pas integres) - TODO quand le module sera la.
+         ==================================================================== -->
+    <changeSet id="024-1-create-lignes-factures-tenant-trigger" author="cityteam" dbms="postgresql">
+        <comment>
+            Verifie que finance.lignes_factures.facture_id et les FK metier
+            (nuitee_id, produit_id) appartiennent toutes au meme hotel.
+            Defense en profondeur du tenant cross-tables (finding ELEVEE).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION finance.check_pivot_tenant_coherence_lignes_factures()
+RETURNS TRIGGER AS $$
+DECLARE
+    facture_hotel BIGINT;
+    nuitee_hotel  BIGINT;
+    produit_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO facture_hotel FROM finance.factures
+        WHERE facture_id = NEW.facture_id;
+    IF facture_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant facture line rejected: parent facture_id=% not found',
+            NEW.facture_id;
+    END IF;
+
+    IF NEW.nuitee_id IS NOT NULL THEN
+        SELECT hotel_id INTO nuitee_hotel FROM hebergement.nuitees
+            WHERE nuitee_id = NEW.nuitee_id;
+        IF facture_hotel IS DISTINCT FROM nuitee_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant facture line rejected: facture.hotel_id=% nuitee.hotel_id=%',
+                facture_hotel, nuitee_hotel;
+        END IF;
+    END IF;
+
+    IF NEW.produit_id IS NOT NULL THEN
+        SELECT hotel_id INTO produit_hotel FROM inventory.produits
+            WHERE produit_id = NEW.produit_id;
+        IF facture_hotel IS DISTINCT FROM produit_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant facture line rejected: facture.hotel_id=% produit.hotel_id=%',
+                facture_hotel, produit_hotel;
+        END IF;
+    END IF;
+
+    -- TODO restaurant : valider commande_id/service_id quand le module sera integre.
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_lignes_factures
+            BEFORE INSERT OR UPDATE ON finance.lignes_factures
+            FOR EACH ROW EXECUTE FUNCTION finance.check_pivot_tenant_coherence_lignes_factures()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_lignes_factures ON finance.lignes_factures</sql>
+            <sql>DROP FUNCTION IF EXISTS finance.check_pivot_tenant_coherence_lignes_factures()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 024-2 : trigger sur finance.affectations_paiements
+         La table n'a pas de hotel_id propre : on verifie que le paiement
+         et la facture references appartiennent au meme hotel.
+         ==================================================================== -->
+    <changeSet id="024-2-create-affectations-paiements-tenant-trigger" author="cityteam" dbms="postgresql">
+        <comment>
+            Verifie que finance.affectations_paiements.paiement_id et
+            facture_id pointent vers le meme hotel. Pivot N..N sans
+            hotel_id propre (cf. 006-f-6).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION finance.check_pivot_tenant_coherence_affectations_paiements()
+RETURNS TRIGGER AS $$
+DECLARE
+    paiement_hotel BIGINT;
+    facture_hotel  BIGINT;
+BEGIN
+    SELECT hotel_id INTO paiement_hotel FROM finance.paiements
+        WHERE paiement_id = NEW.paiement_id;
+    SELECT hotel_id INTO facture_hotel FROM finance.factures
+        WHERE facture_id = NEW.facture_id;
+    IF paiement_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant affectation rejected: paiement_id=% not found',
+            NEW.paiement_id;
+    END IF;
+    IF facture_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant affectation rejected: facture_id=% not found',
+            NEW.facture_id;
+    END IF;
+    IF paiement_hotel IS DISTINCT FROM facture_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant affectation rejected: paiement.hotel_id=% facture.hotel_id=%',
+            paiement_hotel, facture_hotel;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_affectations_paiements
+            BEFORE INSERT OR UPDATE ON finance.affectations_paiements
+            FOR EACH ROW EXECUTE FUNCTION finance.check_pivot_tenant_coherence_affectations_paiements()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_affectations_paiements ON finance.affectations_paiements</sql>
+            <sql>DROP FUNCTION IF EXISTS finance.check_pivot_tenant_coherence_affectations_paiements()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 024-3 : trigger sur finance.operations_comptes
+         La table a hotel_id propre (CHECK > 0 deja pose par 006-f-7).
+         On verifie que compte_id, facture_id et paiement_id (quand
+         renseignes) appartiennent au meme hotel que NEW.hotel_id.
+         ==================================================================== -->
+    <changeSet id="024-3-create-operations-comptes-tenant-trigger" author="cityteam" dbms="postgresql">
+        <comment>
+            Verifie que finance.operations_comptes.compte_id (et les FK
+            optionnelles facture_id, paiement_id) sont du meme hotel que
+            l'operation elle-meme. Critique pour l'integrite du journal
+            comptable (extra-vigilance comptable, CLAUDE.md §6.2).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION finance.check_pivot_tenant_coherence_operations_comptes()
+RETURNS TRIGGER AS $$
+DECLARE
+    compte_hotel   BIGINT;
+    facture_hotel  BIGINT;
+    paiement_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO compte_hotel FROM finance.comptes
+        WHERE compte_id = NEW.compte_id;
+    IF compte_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant operation rejected: compte_id=% not found',
+            NEW.compte_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM compte_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant operation rejected: operation.hotel_id=% compte.hotel_id=%',
+            NEW.hotel_id, compte_hotel;
+    END IF;
+
+    IF NEW.facture_id IS NOT NULL THEN
+        SELECT hotel_id INTO facture_hotel FROM finance.factures
+            WHERE facture_id = NEW.facture_id;
+        IF NEW.hotel_id IS DISTINCT FROM facture_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant operation rejected: operation.hotel_id=% facture.hotel_id=%',
+                NEW.hotel_id, facture_hotel;
+        END IF;
+    END IF;
+
+    IF NEW.paiement_id IS NOT NULL THEN
+        SELECT hotel_id INTO paiement_hotel FROM finance.paiements
+            WHERE paiement_id = NEW.paiement_id;
+        IF NEW.hotel_id IS DISTINCT FROM paiement_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant operation rejected: operation.hotel_id=% paiement.hotel_id=%',
+                NEW.hotel_id, paiement_hotel;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_operations_comptes
+            BEFORE INSERT OR UPDATE ON finance.operations_comptes
+            FOR EACH ROW EXECUTE FUNCTION finance.check_pivot_tenant_coherence_operations_comptes()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_operations_comptes ON finance.operations_comptes</sql>
+            <sql>DROP FUNCTION IF EXISTS finance.check_pivot_tenant_coherence_operations_comptes()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 024-4 : trigger sur finance.paiements
+         Le paiement a hotel_id propre. Si compte_id renseigne (encaissement
+         sur compte client/societe), on verifie que le compte est du meme
+         hotel. FK fk_paiements_compte deja posee par 006-f-5.
+         ==================================================================== -->
+    <changeSet id="024-4-create-paiements-tenant-trigger" author="cityteam" dbms="postgresql">
+        <comment>
+            Verifie que finance.paiements.compte_id (quand renseigne) pointe
+            vers un compte du meme hotel que le paiement. Cas encaissement
+            sur compte client / societe.
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION finance.check_pivot_tenant_coherence_paiements()
+RETURNS TRIGGER AS $$
+DECLARE
+    compte_hotel BIGINT;
+BEGIN
+    IF NEW.compte_id IS NOT NULL THEN
+        SELECT hotel_id INTO compte_hotel FROM finance.comptes
+            WHERE compte_id = NEW.compte_id;
+        IF NEW.hotel_id IS DISTINCT FROM compte_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant paiement rejected: paiement.hotel_id=% compte.hotel_id=%',
+                NEW.hotel_id, compte_hotel;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_paiements
+            BEFORE INSERT OR UPDATE ON finance.paiements
+            FOR EACH ROW EXECUTE FUNCTION finance.check_pivot_tenant_coherence_paiements()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_paiements ON finance.paiements</sql>
+            <sql>DROP FUNCTION IF EXISTS finance.check_pivot_tenant_coherence_paiements()</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

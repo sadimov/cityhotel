@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 7D (audit /db-validate) - FK SQL cross-module manquantes sur
+  finance.factures.
+
+  Constat de l'audit Vague 2 :
+  - factures.reservation_id pointe vers hebergement.reservations(reservation_id)
+    : aucune FK SQL, integrite assuree uniquement cote service (FactureService).
+  - factures.fournisseur_id pointe vers inventory.fournisseurs(fournisseur_id)
+    : aucune FK SQL non plus.
+  - Les autres FK metier (compte_id, client_id, societe_id, facture_reference_id,
+    user_id) sont deja posees dans 006-create-finance-schema.xml (changeset
+    006-f-3). Les 2 cross-module ont ete reportees pour eviter une dependance
+    circulaire entre les schemas hebergement / inventory et finance, mais le
+    cycle n'existe plus apres 007-link-hebergement-finance.xml et
+    008-link-inventory-finance.xml (les liens descendants sont deja poses).
+
+  Strategie : changesets ADDITIFS, JAMAIS modifier 006 deja applique.
+
+  ON DELETE SET NULL : coherent avec 007-link-hebergement-finance.xml (la
+  facture ne doit pas etre detruite si la reservation est purgee, et
+  reciproquement). Les colonnes sont deja nullable cote SQL (006-f-3).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 022-1 : FK factures.reservation_id -> hebergement.reservations
+         ==================================================================== -->
+    <changeSet id="022-1-fk-factures-reservation" author="cityteam">
+        <comment>
+            Pose la FK manquante factures.reservation_id -> hebergement.reservations
+            (ON DELETE SET NULL). Garantit l'integrite referentielle au niveau
+            base, en complement du controle cote FactureService.
+        </comment>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="finance" baseTableName="factures" baseColumnNames="reservation_id"
+            referencedTableSchemaName="hebergement" referencedTableName="reservations" referencedColumnNames="reservation_id"
+            constraintName="fk_factures_reservation"
+            onDelete="SET NULL"/>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableSchemaName="finance" baseTableName="factures"
+                constraintName="fk_factures_reservation"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 022-2 : FK factures.fournisseur_id -> inventory.fournisseurs
+         ==================================================================== -->
+    <changeSet id="022-2-fk-factures-fournisseur" author="cityteam">
+        <comment>
+            Pose la FK manquante factures.fournisseur_id -> inventory.fournisseurs
+            (ON DELETE SET NULL). Cas facture fournisseur (mutex client / fournisseur
+            documente cote service).
+        </comment>
+
+        <addForeignKeyConstraint
+            baseTableSchemaName="finance" baseTableName="factures" baseColumnNames="fournisseur_id"
+            referencedTableSchemaName="inventory" referencedTableName="fournisseurs" referencedColumnNames="fournisseur_id"
+            constraintName="fk_factures_fournisseur"
+            onDelete="SET NULL"/>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableSchemaName="finance" baseTableName="factures"
+                constraintName="fk_factures_fournisseur"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

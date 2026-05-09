@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 19 - Link table inventory -> finance.
+
+  Closes le TODO[tour-finance] pose au Tour 16 :
+  - BonCommande.facture_fournisseur_id (entite BonCommande.java ligne 41)
+
+  Strategie : changeset additif (ALTER TABLE ADD COLUMN + FK), JAMAIS modifier
+  005-create-inventory-schema.xml deja applique.
+
+  La colonne est nullable : un BC ENVOYE/CONFIRME n'a pas encore recu de
+  facture fournisseur. Une seule facture fournisseur par BC pour l'instant
+  (cas multi-factures par BC reporte au tour finance-2).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="008-1-add-facture-fournisseur-id-bons-commande" author="cityprojects">
+        <comment>
+            Ajoute bons_commande.facture_fournisseur_id (FK vers finance.factures,
+            nullable). Cloture TODO[tour-finance] de BonCommande.java ligne 41.
+            Une facture fournisseur a fournisseur_id non null (vs reservation_id
+            non null pour facture client) - cf. Facture.java.
+        </comment>
+        <addColumn tableName="bons_commande" schemaName="inventory">
+            <column name="facture_fournisseur_id" type="BIGINT"/>
+        </addColumn>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="facture_fournisseur_id"
+            referencedTableName="factures" referencedTableSchemaName="finance"
+            referencedColumnNames="facture_id"
+            constraintName="fk_bons_commande_facture"
+            onDelete="SET NULL"/>
+
+        <createIndex tableName="bons_commande" schemaName="inventory" indexName="ix_bons_commande_facture">
+            <column name="facture_fournisseur_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableName="bons_commande" baseTableSchemaName="inventory"
+                constraintName="fk_bons_commande_facture"/>
+            <dropColumn tableName="bons_commande" schemaName="inventory" columnName="facture_fournisseur_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

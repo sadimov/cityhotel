@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 7D (audit /db-validate) - Index manquants sur FK secondaires.
+
+  Constat de l'audit :
+  - 13 colonnes referencant une FK n'ont pas d'index dedie. PostgreSQL ne
+    cree PAS automatiquement d'index sur les colonnes FK enfant -> impact
+    perfo reel sur :
+      * DELETE / UPDATE de la table parent (full scan enfant pour CASCADE
+        / SET NULL).
+      * JOIN frequents (controleurs admin, reporting Vague 3).
+  - Les index hotel_id principaux sont deja poses sur les tables maitres
+    (003 / 005 / 006 / 007 / 008). C'est le 2e niveau (FK satellites) qui
+    manque.
+
+  Strategie : un changeSet ADDITIF par index (atomicite max), avec
+  preCondition MARK_RAN sur indexExists pour absorber les cas ou un index
+  homonyme aurait ete cree manuellement (ex. EXPLAIN ANALYZE + CREATE INDEX
+  CONCURRENTLY en prod).
+
+  Convention de nommage : ix_<table_court>_<colonne_court>. Coherent avec les
+  index existants dans 003 / 005 / 006.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ============================================================
+         023-1 : hebergement.reservations.user_id
+         ============================================================ -->
+    <changeSet id="023-1-ix-reservations-user" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="hebergement" indexName="ix_reservations_user"/>
+            </not>
+        </preConditions>
+        <comment>Index FK reservations.user_id (createur reservation).</comment>
+
+        <createIndex tableName="reservations" schemaName="hebergement" indexName="ix_reservations_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="reservations" schemaName="hebergement" indexName="ix_reservations_user"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-2 : hebergement.reservations_clients.client_id
+         ============================================================ -->
+    <changeSet id="023-2-ix-res-clients-client" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="hebergement" indexName="ix_res_clients_client"/>
+            </not>
+        </preConditions>
+        <comment>Index FK reservations_clients.client_id (pivot N..N).</comment>
+
+        <createIndex tableName="reservations_clients" schemaName="hebergement" indexName="ix_res_clients_client">
+            <column name="client_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="reservations_clients" schemaName="hebergement" indexName="ix_res_clients_client"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-3 : hebergement.reservations_clients.chambre_id
+         ============================================================ -->
+    <changeSet id="023-3-ix-res-clients-chambre" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="hebergement" indexName="ix_res_clients_chambre"/>
+            </not>
+        </preConditions>
+        <comment>Index FK reservations_clients.chambre_id (occupant courant).</comment>
+
+        <createIndex tableName="reservations_clients" schemaName="hebergement" indexName="ix_res_clients_chambre">
+            <column name="chambre_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="reservations_clients" schemaName="hebergement" indexName="ix_res_clients_chambre"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-4 : hebergement.nuitees.chambre_id
+         ============================================================ -->
+    <changeSet id="023-4-ix-nuitees-chambre" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="hebergement" indexName="ix_nuitees_chambre"/>
+            </not>
+        </preConditions>
+        <comment>Index FK nuitees.chambre_id (lookup nuitees par chambre).</comment>
+
+        <createIndex tableName="nuitees" schemaName="hebergement" indexName="ix_nuitees_chambre">
+            <column name="chambre_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="nuitees" schemaName="hebergement" indexName="ix_nuitees_chambre"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-5 : finance.factures.fournisseur_id
+         (FK posee en 022-2 - on indexe la FK enfant pour DELETE / JOIN)
+         ============================================================ -->
+    <changeSet id="023-5-ix-factures-fournisseur" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="finance" indexName="ix_factures_fournisseur"/>
+            </not>
+        </preConditions>
+        <comment>Index FK factures.fournisseur_id (factures fournisseur).</comment>
+
+        <createIndex tableName="factures" schemaName="finance" indexName="ix_factures_fournisseur">
+            <column name="fournisseur_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="factures" schemaName="finance" indexName="ix_factures_fournisseur"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-6 : finance.paiements.compte_id
+         ============================================================ -->
+    <changeSet id="023-6-ix-paiements-compte" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="finance" indexName="ix_paiements_compte"/>
+            </not>
+        </preConditions>
+        <comment>Index FK paiements.compte_id (lookup paiements par compte).</comment>
+
+        <createIndex tableName="paiements" schemaName="finance" indexName="ix_paiements_compte">
+            <column name="compte_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="paiements" schemaName="finance" indexName="ix_paiements_compte"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-7 : finance.operations_comptes.facture_id
+         ============================================================ -->
+    <changeSet id="023-7-ix-operations-facture" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="finance" indexName="ix_operations_facture"/>
+            </not>
+        </preConditions>
+        <comment>Index FK operations_comptes.facture_id (audit trail facture).</comment>
+
+        <createIndex tableName="operations_comptes" schemaName="finance" indexName="ix_operations_facture">
+            <column name="facture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="operations_comptes" schemaName="finance" indexName="ix_operations_facture"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-8 : finance.operations_comptes.paiement_id
+         ============================================================ -->
+    <changeSet id="023-8-ix-operations-paiement" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="finance" indexName="ix_operations_paiement"/>
+            </not>
+        </preConditions>
+        <comment>Index FK operations_comptes.paiement_id (audit trail paiement).</comment>
+
+        <createIndex tableName="operations_comptes" schemaName="finance" indexName="ix_operations_paiement">
+            <column name="paiement_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="operations_comptes" schemaName="finance" indexName="ix_operations_paiement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-9 : finance.lignes_factures.produit_id
+         ============================================================ -->
+    <changeSet id="023-9-ix-lignes-factures-produit" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="finance" indexName="ix_lignes_factures_produit"/>
+            </not>
+        </preConditions>
+        <comment>Index FK lignes_factures.produit_id (refacturation inventaire).</comment>
+
+        <createIndex tableName="lignes_factures" schemaName="finance" indexName="ix_lignes_factures_produit">
+            <column name="produit_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="lignes_factures" schemaName="finance" indexName="ix_lignes_factures_produit"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-10 : inventory.produits.fournisseur_principal_id
+         ============================================================ -->
+    <changeSet id="023-10-ix-produits-fournisseur-principal" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="inventory" indexName="ix_produits_fournisseur_principal"/>
+            </not>
+        </preConditions>
+        <comment>Index FK produits.fournisseur_principal_id (catalogue par fournisseur).</comment>
+
+        <createIndex tableName="produits" schemaName="inventory" indexName="ix_produits_fournisseur_principal">
+            <column name="fournisseur_principal_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="produits" schemaName="inventory" indexName="ix_produits_fournisseur_principal"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-11 : inventory.bons_commande.user_id
+         ============================================================ -->
+    <changeSet id="023-11-ix-bons-commande-user" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="inventory" indexName="ix_bons_commande_user"/>
+            </not>
+        </preConditions>
+        <comment>Index FK bons_commande.user_id (createur BC).</comment>
+
+        <createIndex tableName="bons_commande" schemaName="inventory" indexName="ix_bons_commande_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="bons_commande" schemaName="inventory" indexName="ix_bons_commande_user"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-12 : inventory.bons_sortie.user_id
+         ============================================================ -->
+    <changeSet id="023-12-ix-bons-sortie-user" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="inventory" indexName="ix_bons_sortie_user"/>
+            </not>
+        </preConditions>
+        <comment>Index FK bons_sortie.user_id (createur BS).</comment>
+
+        <createIndex tableName="bons_sortie" schemaName="inventory" indexName="ix_bons_sortie_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="bons_sortie" schemaName="inventory" indexName="ix_bons_sortie_user"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ============================================================
+         023-13 : inventory.mouvements_stock.user_id
+         ============================================================ -->
+    <changeSet id="023-13-ix-mouvements-stock-user" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists schemaName="inventory" indexName="ix_mouvements_stock_user"/>
+            </not>
+        </preConditions>
+        <comment>Index FK mouvements_stock.user_id (auteur mouvement).</comment>
+
+        <createIndex tableName="mouvements_stock" schemaName="inventory" indexName="ix_mouvements_stock_user">
+            <column name="user_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="mouvements_stock" schemaName="inventory" indexName="ix_mouvements_stock_user"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
