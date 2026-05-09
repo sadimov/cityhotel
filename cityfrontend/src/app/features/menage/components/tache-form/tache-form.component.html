@@ -1,0 +1,190 @@
+<section class="tache-form">
+  <header class="tache-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'menage.tache.form.titleEdit'
+          : 'menage.tache.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="tache-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.tache.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="chambreId" class="form-label">
+            {{ 'menage.tache.fields.chambre' | translate }}
+          </label>
+          <input
+            id="chambreId"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="chambreId"
+            [class.is-invalid]="form.get('chambreId')?.invalid && form.get('chambreId')?.touched"
+          />
+          @if (form.get('chambreId')?.touched && form.get('chambreId')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.tache.errors.chambreRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="datePlanifiee" class="form-label">
+            {{ 'menage.tache.fields.datePlanifiee' | translate }}
+          </label>
+          <input
+            id="datePlanifiee"
+            type="date"
+            class="form-control"
+            formControlName="datePlanifiee"
+            [class.is-invalid]="form.get('datePlanifiee')?.invalid && form.get('datePlanifiee')?.touched"
+          />
+          @if (form.get('datePlanifiee')?.touched && form.get('datePlanifiee')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.tache.errors.dateRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-5">
+          <label for="personnelId" class="form-label">
+            {{ 'menage.tache.fields.personnel' | translate }}
+            <small class="text-muted">— {{ 'menage.tache.fields.personnelOptional' | translate }}</small>
+          </label>
+          <select
+            id="personnelId"
+            class="form-select"
+            formControlName="personnelId"
+          >
+            <option [ngValue]="null">{{ 'menage.tache.fields.nonAssignee' | translate }}</option>
+            @for (p of personnels; track p.personnelId) {
+              <option [ngValue]="p.personnelId">{{ p.prenom }} {{ p.nom }} ({{ p.numeroEmploye }})</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="typeNettoyage" class="form-label">
+            {{ 'menage.tache.fields.typeNettoyage' | translate }}
+          </label>
+          <select
+            id="typeNettoyage"
+            class="form-select"
+            formControlName="typeNettoyage"
+          >
+            @for (t of typesNettoyage; track t) {
+              <option [value]="t">{{ 'menage.tache.typeNettoyage.' + t | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="priorite" class="form-label">
+            {{ 'menage.tache.fields.priorite' | translate }}
+          </label>
+          <select
+            id="priorite"
+            class="form-select"
+            formControlName="priorite"
+          >
+            @for (p of priorites; track p) {
+              <option [ngValue]="p">{{ 'menage.tache.priorite.' + p | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label for="heureDebutPrevue" class="form-label">
+            {{ 'menage.tache.fields.heureDebutPrevue' | translate }}
+          </label>
+          <input
+            id="heureDebutPrevue"
+            type="time"
+            class="form-control"
+            formControlName="heureDebutPrevue"
+          />
+        </div>
+
+        <div class="col-md-2">
+          <label for="heureFinPrevue" class="form-label">
+            {{ 'menage.tache.fields.heureFinPrevue' | translate }}
+          </label>
+          <input
+            id="heureFinPrevue"
+            type="time"
+            class="form-control"
+            formControlName="heureFinPrevue"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="commentaires" class="form-label">
+            {{ 'menage.tache.fields.commentaires' | translate }}
+          </label>
+          <textarea
+            id="commentaires"
+            class="form-control"
+            rows="2"
+            formControlName="commentaires"
+          ></textarea>
+        </div>
+
+        <div class="col-12">
+          <label for="problemesDetectes" class="form-label">
+            {{ 'menage.tache.fields.problemesDetectes' | translate }}
+          </label>
+          <textarea
+            id="problemesDetectes"
+            class="form-control"
+            rows="2"
+            formControlName="problemesDetectes"
+          ></textarea>
+        </div>
+
+        <div class="col-12">
+          <label for="materielUtilise" class="form-label">
+            {{ 'menage.tache.fields.materielUtilise' | translate }}
+            <small class="text-muted">— {{ 'menage.tache.fields.materielHint' | translate }}</small>
+          </label>
+          <input
+            id="materielUtilise"
+            type="text"
+            class="form-control"
+            formControlName="materielUtilise"
+            [placeholder]="'menage.tache.fields.materielPlaceholder' | translate"
+          />
+        </div>
+      </div>
+
+      <div class="tache-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'menage.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'menage.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

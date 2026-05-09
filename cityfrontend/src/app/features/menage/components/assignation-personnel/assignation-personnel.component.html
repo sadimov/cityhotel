@@ -1,0 +1,108 @@
+@if (open) {
+  <div
+    class="modal-backdrop d-flex align-items-center justify-content-center"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'menage.assignation.title' | translate"
+  >
+    <div class="modal-card bg-white rounded-2xl shadow-lg p-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="h5 mb-0 text-sky-700">
+          {{ 'menage.assignation.title' | translate }}
+        </h3>
+        <button
+          type="button"
+          class="btn-close"
+          [attr.aria-label]="'menage.actions.close' | translate"
+          (click)="onCancel()"
+        ></button>
+      </div>
+
+      <p class="small text-muted mb-3">
+        {{ 'menage.assignation.choose' | translate }}
+      </p>
+
+      @if (currentPersonnelId != null) {
+        <div class="alert alert-light border py-2 mb-3 small">
+          <strong>{{ 'menage.assignation.current' | translate }}:</strong>
+          @for (p of personnels; track p.personnelId) {
+            @if (p.personnelId === currentPersonnelId) {
+              {{ p.prenom }} {{ p.nom }}
+              @if (p.numeroEmploye) {
+                <span class="text-muted">(#{{ p.numeroEmploye }})</span>
+              }
+            }
+          }
+          @if (personnels.length === 0) {
+            <span class="text-muted">#{{ currentPersonnelId }}</span>
+          }
+        </div>
+      }
+
+      @if (personnels.length === 0) {
+        <div class="alert alert-warning small">
+          {{ 'menage.assignation.empty' | translate }}
+        </div>
+      } @else {
+        <!-- Liste radio : meilleure UX que select natif quand peu d'éléments -->
+        <div class="assignation__list mb-3">
+          @for (p of personnels; track p.personnelId) {
+            <label
+              class="assignation__item d-flex align-items-center p-2 border rounded mb-2"
+              [class.assignation__item--current]="isCurrent(p.personnelId)"
+              [class.assignation__item--selected]="selectedPersonnelId === p.personnelId"
+            >
+              <input
+                type="radio"
+                name="assignation-personnel"
+                class="form-check-input me-2"
+                [value]="p.personnelId"
+                [checked]="selectedPersonnelId === p.personnelId"
+                (change)="onSelect(p.personnelId!)"
+                [disabled]="submitting"
+              />
+              <span class="flex-grow-1">
+                <strong>{{ p.prenom }} {{ p.nom }}</strong>
+                @if (p.numeroEmploye) {
+                  <small class="text-muted ms-2">#{{ p.numeroEmploye }}</small>
+                }
+                @if (isCurrent(p.personnelId)) {
+                  <span class="badge text-bg-secondary ms-2">
+                    {{ 'menage.assignation.currentBadge' | translate }}
+                  </span>
+                }
+              </span>
+              @if (p.actif === false) {
+                <span class="badge text-bg-warning ms-2">
+                  {{ 'menage.personnel.statut.inactif' | translate }}
+                </span>
+              }
+            </label>
+          }
+        </div>
+      }
+
+      <div class="d-flex justify-content-end gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          [disabled]="submitting"
+          (click)="onCancel()"
+        >
+          {{ 'menage.assignation.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-info text-white"
+          [disabled]="!canSubmit"
+          (click)="onConfirm()"
+        >
+          @if (submitting) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          }
+          {{ 'menage.assignation.validate' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

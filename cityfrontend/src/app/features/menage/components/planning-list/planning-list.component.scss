@@ -1,0 +1,30 @@
+/* planning-list — premier composant à utiliser DataTables direct.
+   On garde un style minimal : Bootstrap + DataTables-bs5 fournissent
+   l'essentiel (search box, length menu, pagination full_numbers). */
+
+.planning-list {
+  &__header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__toolbar {
+    align-items: center;
+  }
+
+  &__filter {
+    min-width: 12rem;
+    flex: 0 0 auto;
+  }
+
+  &__loading {
+    min-height: 8rem;
+  }
+
+  /* DataTables-bs5 ajoute déjà les classes utilitaires sur la table.
+     On force juste un peu de respiration verticale entre les contrôles
+     DataTables (length / search / pagination) et notre toolbar custom. */
+  &__table {
+    margin-top: 0.5rem;
+  }
+}

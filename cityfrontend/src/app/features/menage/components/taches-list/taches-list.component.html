@@ -1,0 +1,243 @@
+<section class="taches-list">
+  <header class="taches-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'menage.tache.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'menage.tache.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="taches-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control taches-list__search"
+      [placeholder]="'menage.tache.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'menage.tache.list.search' | translate"
+    />
+    <input
+      type="date"
+      class="form-control taches-list__filter"
+      (change)="onDateFilterChange($any($event.target).value)"
+      [attr.aria-label]="'menage.tache.fields.datePlanifiee' | translate"
+    />
+    <select
+      class="form-select taches-list__filter"
+      (change)="onTypeFilterChange($any($event.target).value)"
+      [attr.aria-label]="'menage.tache.fields.typeNettoyage' | translate"
+    >
+      <option value="">{{ 'menage.tache.list.filterType' | translate }}</option>
+      @for (t of typesNettoyage; track t) {
+        <option [value]="t">{{ 'menage.tache.typeNettoyage.' + t | translate }}</option>
+      }
+    </select>
+    <select
+      class="form-select taches-list__filter"
+      (change)="onPrioriteFilterChange($any($event.target).value)"
+      [attr.aria-label]="'menage.tache.fields.priorite' | translate"
+    >
+      <option value="">{{ 'menage.tache.list.filterPriorite' | translate }}</option>
+      @for (p of priorites; track p) {
+        <option [value]="p">{{ 'menage.tache.priorite.' + p | translate }}</option>
+      }
+    </select>
+    <select
+      class="form-select taches-list__filter"
+      (change)="onShortcutChange($any($event.target).value)"
+      [attr.aria-label]="'menage.tache.list.shortcut' | translate"
+    >
+      <option value="">{{ 'menage.tache.list.shortcutAll' | translate }}</option>
+      <option value="enCours">{{ 'menage.tache.list.shortcutEnCours' | translate }}</option>
+      <option value="enRetard">{{ 'menage.tache.list.shortcutEnRetard' | translate }}</option>
+      <option value="nonAssignees">{{ 'menage.tache.list.shortcutNonAssignees' | translate }}</option>
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="taches-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.tache.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'menage.tache.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'menage.tache.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'menage.tache.fields.datePlanifiee' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.chambre' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.typeNettoyage' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.priorite' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.personnel' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.statut' | translate }}</th>
+            <th scope="col">{{ 'menage.tache.fields.duree' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'menage.tache.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (tache of page.content; track tache.tacheId) {
+            <tr [class.table-warning]="tache.enRetard">
+              <td>
+                {{ tache.datePlanifiee }}
+                @if (tache.heureDebutPrevue) {
+                  <small class="text-muted d-block">
+                    {{ tache.heureDebutPrevue }}
+                    @if (tache.heureFinPrevue) {
+                      &rarr; {{ tache.heureFinPrevue }}
+                    }
+                  </small>
+                }
+              </td>
+              <td>{{ tache.numeroChambre || ('#' + tache.chambreId) }}</td>
+              <td>
+                @if (tache.typeNettoyage) {
+                  {{ 'menage.tache.typeNettoyage.' + tache.typeNettoyage | translate }}
+                } @else {
+                  -
+                }
+              </td>
+              <td>
+                @if (tache.priorite) {
+                  <span class="badge" [ngClass]="prioriteBadgeClass(tache.priorite)">
+                    {{ 'menage.tache.priorite.' + tache.priorite | translate }}
+                  </span>
+                } @else {
+                  -
+                }
+              </td>
+              <td>
+                @if (tache.nomPersonnel) {
+                  {{ tache.nomPersonnel }}
+                } @else if (tache.personnelId) {
+                  #{{ tache.personnelId }}
+                } @else {
+                  <span class="text-muted">{{ 'menage.tache.fields.nonAssignee' | translate }}</span>
+                }
+              </td>
+              <td>
+                <span class="badge text-bg-info">
+                  {{ tache.libelleStatut || (tache.codeStatut || '-') }}
+                </span>
+                @if (tache.enRetard) {
+                  <span class="badge text-bg-danger ms-1">
+                    {{ 'menage.tache.list.shortcutEnRetard' | translate }}
+                  </span>
+                }
+              </td>
+              <td>
+                @if (tache.dureeMinutes != null) {
+                  {{ tache.dureeMinutes }} {{ 'menage.tache.fields.minutes' | translate }}
+                } @else {
+                  -
+                }
+              </td>
+              <td class="text-end">
+                @if (canAssigner(tache)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary me-1"
+                    (click)="assigner(tache)"
+                    [disabled]="workingId === tache.tacheId"
+                    [attr.aria-label]="'menage.tache.actions.assigner' | translate"
+                    [title]="'menage.tache.actions.assigner' | translate"
+                  >
+                    <i class="bi bi-person-plus" aria-hidden="true"></i>
+                  </button>
+                }
+                @if (canCommencer(tache)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success me-1"
+                    (click)="commencer(tache)"
+                    [disabled]="workingId === tache.tacheId"
+                    [attr.aria-label]="'menage.tache.actions.commencer' | translate"
+                    [title]="'menage.tache.actions.commencer' | translate"
+                  >
+                    <i class="bi bi-play-fill" aria-hidden="true"></i>
+                  </button>
+                }
+                @if (canTerminer(tache)) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info me-1"
+                    (click)="terminer(tache)"
+                    [disabled]="workingId === tache.tacheId"
+                    [attr.aria-label]="'menage.tache.actions.terminer' | translate"
+                    [title]="'menage.tache.actions.terminer' | translate"
+                  >
+                    <i class="bi bi-check2-square" aria-hidden="true"></i>
+                  </button>
+                }
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(tache)"
+                  [attr.aria-label]="'menage.tache.actions.edit' | translate"
+                  [title]="'menage.tache.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="remove(tache)"
+                  [disabled]="deleting"
+                  [attr.aria-label]="'menage.tache.actions.delete' | translate"
+                  [title]="'menage.tache.actions.delete' | translate"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'menage.tache.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

@@ -1,0 +1,152 @@
+<section class="personnels-list">
+  <header class="personnels-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'menage.personnel.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'menage.personnel.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="personnels-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control personnels-list__search"
+      [placeholder]="'menage.personnel.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'menage.personnel.list.search' | translate"
+    />
+    <select
+      class="form-select personnels-list__filter"
+      (change)="onActifFilterChange($any($event.target).value)"
+      [attr.aria-label]="'menage.personnel.fields.actif' | translate"
+    >
+      <option value="">{{ 'menage.personnel.list.filterStatut' | translate }}</option>
+      <option value="true">{{ 'menage.personnel.statut.actif' | translate }}</option>
+      <option value="false">{{ 'menage.personnel.statut.inactif' | translate }}</option>
+    </select>
+    <select
+      class="form-select personnels-list__filter"
+      (change)="onSpecialiteFilterChange($any($event.target).value)"
+      [attr.aria-label]="'menage.personnel.fields.specialites' | translate"
+    >
+      <option value="">{{ 'menage.personnel.list.filterSpecialite' | translate }}</option>
+      @for (sp of specialites; track sp) {
+        <option [value]="sp">{{ 'menage.personnel.specialite.' + sp | translate }}</option>
+      }
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="personnels-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.personnel.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'menage.personnel.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'menage.personnel.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'menage.personnel.fields.numeroEmploye' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.nomComplet' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.telephone' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.email' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.specialites' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.dateEmbauche' | translate }}</th>
+            <th scope="col">{{ 'menage.personnel.fields.actif' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'menage.personnel.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (personnel of page.content; track personnel.personnelId) {
+            <tr>
+              <td><code>{{ personnel.numeroEmploye }}</code></td>
+              <td>
+                <strong>{{ personnel.prenom }} {{ personnel.nom }}</strong>
+              </td>
+              <td>{{ personnel.telephone || '-' }}</td>
+              <td>{{ personnel.email || '-' }}</td>
+              <td>{{ formatSpecialites(personnel) }}</td>
+              <td>{{ personnel.dateEmbauche || '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="personnel.actif !== false ? 'text-bg-success' : 'text-bg-secondary'">
+                  {{ (personnel.actif !== false ? 'menage.personnel.statut.actif' : 'menage.personnel.statut.inactif') | translate }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(personnel)"
+                  [attr.aria-label]="'menage.personnel.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [ngClass]="personnel.actif !== false ? 'btn-outline-warning' : 'btn-outline-success'"
+                  (click)="toggleActif(personnel)"
+                  [disabled]="togglingId === personnel.personnelId"
+                  [attr.aria-label]="(personnel.actif !== false ? 'menage.personnel.actions.desactiver' : 'menage.personnel.actions.reactiver') | translate"
+                >
+                  @if (togglingId === personnel.personnelId) {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  } @else {
+                    <i [class]="personnel.actif !== false ? 'bi bi-person-x' : 'bi bi-person-check'" aria-hidden="true"></i>
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'menage.personnel.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

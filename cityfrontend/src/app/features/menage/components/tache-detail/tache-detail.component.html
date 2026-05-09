@@ -1,0 +1,237 @@
+<section class="tache-detail">
+  <header class="tache-detail__header d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <button
+        type="button"
+        class="btn btn-sm btn-outline-secondary"
+        (click)="back()"
+        [attr.aria-label]="'menage.tache.detail.back' | translate"
+        [title]="'menage.tache.detail.back' | translate"
+      >
+        <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      </button>
+      <h2 class="h4 m-0">{{ 'menage.tache.detail.title' | translate }}</h2>
+    </div>
+    @if (state === 'ready' && tache) {
+      <div class="d-flex gap-2 flex-wrap">
+        @if (canAssigner()) {
+          <button
+            type="button"
+            class="btn btn-outline-secondary"
+            (click)="openAssignation()"
+            [disabled]="workInProgress"
+          >
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+            {{ 'menage.tache.actions.assigner' | translate }}
+          </button>
+        }
+        @if (canCommencer()) {
+          <button
+            type="button"
+            class="btn btn-outline-success"
+            (click)="commencer()"
+            [disabled]="workInProgress"
+          >
+            <i class="bi bi-play-fill me-1" aria-hidden="true"></i>
+            {{ 'menage.tache.actions.commencer' | translate }}
+          </button>
+        }
+        @if (canTerminer()) {
+          <button
+            type="button"
+            class="btn btn-outline-info"
+            (click)="terminer()"
+            [disabled]="workInProgress"
+          >
+            <i class="bi bi-check2-square me-1" aria-hidden="true"></i>
+            {{ 'menage.tache.actions.terminer' | translate }}
+          </button>
+        }
+        <button type="button" class="btn btn-primary" (click)="edit()">
+          <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+          {{ 'menage.tache.actions.edit' | translate }}
+        </button>
+      </div>
+    }
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error' || !tache) {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.tache.detail.loadError' | translate }}
+    </div>
+  } @else {
+    <div class="row g-3">
+      <!-- Identité de la tâche -->
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-light fw-medium">
+            {{ 'menage.tache.detail.sections.identity' | translate }}
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-5 text-muted">{{ 'menage.tache.detail.fields.tacheId' | translate }}</dt>
+              <dd class="col-7">{{ tache.tacheId ?? '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.chambre' | translate }}</dt>
+              <dd class="col-7">{{ tache.numeroChambre || ('#' + tache.chambreId) }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.typeNettoyage' | translate }}</dt>
+              <dd class="col-7">
+                @if (tache.typeNettoyage) {
+                  {{ 'menage.tache.typeNettoyage.' + tache.typeNettoyage | translate }}
+                } @else {
+                  -
+                }
+              </dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.priorite' | translate }}</dt>
+              <dd class="col-7">
+                @if (tache.priorite) {
+                  <span class="badge" [ngClass]="prioriteBadgeClass(tache.priorite)">
+                    {{ 'menage.tache.priorite.' + tache.priorite | translate }}
+                  </span>
+                } @else {
+                  -
+                }
+              </dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.statut' | translate }}</dt>
+              <dd class="col-7">
+                <span class="badge text-bg-info">
+                  {{ tache.libelleStatut || (tache.codeStatut || '-') }}
+                </span>
+                @if (tache.enRetard) {
+                  <span class="badge text-bg-danger ms-1">
+                    {{ 'menage.tache.list.shortcutEnRetard' | translate }}
+                  </span>
+                }
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Planning -->
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-light fw-medium">
+            {{ 'menage.tache.detail.sections.schedule' | translate }}
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.datePlanifiee' | translate }}</dt>
+              <dd class="col-7">{{ tache.datePlanifiee || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.heureDebutPrevue' | translate }}</dt>
+              <dd class="col-7">{{ tache.heureDebutPrevue || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.heureFinPrevue' | translate }}</dt>
+              <dd class="col-7">{{ tache.heureFinPrevue || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.detail.fields.heureDebutReelle' | translate }}</dt>
+              <dd class="col-7">{{ tache.heureDebutReelle || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.detail.fields.heureFinReelle' | translate }}</dt>
+              <dd class="col-7">{{ tache.heureFinReelle || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.duree' | translate }}</dt>
+              <dd class="col-7">
+                @if (tache.dureeMinutes != null) {
+                  {{ tache.dureeMinutes }} {{ 'menage.tache.fields.minutes' | translate }}
+                } @else {
+                  -
+                }
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personnel assigné -->
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-light fw-medium">
+            {{ 'menage.tache.detail.sections.assignment' | translate }}
+          </div>
+          <div class="card-body">
+            @if (tache.personnelId) {
+              <p class="mb-1">
+                <strong>{{ tache.nomPersonnel || ('#' + tache.personnelId) }}</strong>
+              </p>
+              <p class="small text-muted mb-0">
+                {{ 'menage.tache.detail.assignedSince' | translate }}
+                : {{ tache.dateModification || tache.dateCreation || '-' }}
+              </p>
+            } @else {
+              <p class="text-muted mb-0">
+                {{ 'menage.tache.fields.nonAssignee' | translate }}
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Rapport (si terminée) -->
+      <div class="col-12 col-lg-6">
+        <div class="card h-100">
+          <div class="card-header bg-light fw-medium">
+            {{ 'menage.tache.detail.sections.report' | translate }}
+          </div>
+          <div class="card-body">
+            <dl class="row mb-0">
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.commentaires' | translate }}</dt>
+              <dd class="col-7">{{ tache.commentaires || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.problemesDetectes' | translate }}</dt>
+              <dd class="col-7">{{ tache.problemesDetectes || '-' }}</dd>
+
+              <dt class="col-5 text-muted">{{ 'menage.tache.fields.materielUtilise' | translate }}</dt>
+              <dd class="col-7">
+                @if (parseMateriel(tache.materielUtilise).length > 0) {
+                  <ul class="mb-0 ps-3">
+                    @for (m of parseMateriel(tache.materielUtilise); track m) {
+                      <li>{{ m }}</li>
+                    }
+                  </ul>
+                } @else {
+                  -
+                }
+              </dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historique : intégration différée (cf. TS — TODO HistoriqueService) -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header bg-light fw-medium">
+            {{ 'menage.tache.detail.sections.history' | translate }}
+          </div>
+          <div class="card-body">
+            <p class="text-muted mb-0 small">
+              {{ 'menage.tache.detail.historyDeferred' | translate }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal d'assignation maison -->
+    <app-assignation-personnel
+      [open]="assignationModalOpen"
+      [tacheId]="tache.tacheId ?? null"
+      [currentPersonnelId]="tache.personnelId ?? null"
+      [personnels]="personnels"
+      [submitting]="workInProgress"
+      (close)="closeAssignation()"
+      (assigned)="onPersonnelAssigned($event)"
+    ></app-assignation-personnel>
+  }
+</section>

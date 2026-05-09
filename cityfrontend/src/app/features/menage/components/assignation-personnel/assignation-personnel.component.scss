@@ -1,0 +1,45 @@
+/* assignation-personnel — modal maison.
+   Pattern overlay aligné sur restaurant/pos/payment-modal (Tour 24). */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1080;
+  /* L'overlay doit ÊTRE opaque même quand Bootstrap déclare son propre
+     `.modal-backdrop`. */
+  opacity: 1;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 32rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.assignation {
+  &__list {
+    max-height: 18rem;
+    overflow-y: auto;
+  }
+
+  &__item {
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background-color: rgba(13, 202, 240, 0.06); /* teinte info */
+    }
+
+    &--current {
+      border-color: rgba(108, 117, 125, 0.5); /* secondary */
+      background-color: rgba(108, 117, 125, 0.05);
+    }
+
+    &--selected {
+      border-color: rgba(13, 202, 240, 0.8);
+      background-color: rgba(13, 202, 240, 0.08);
+    }
+  }
+}

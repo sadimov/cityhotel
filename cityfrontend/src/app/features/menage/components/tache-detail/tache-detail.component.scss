@@ -1,0 +1,20 @@
+/* tache-detail — vue lecture seule + actions workflow.
+   On reste sur Bootstrap utilities + cards : pas de styles dédiés
+   nécessaires. Le bloc ci-dessous garde juste un peu d'espacement
+   sur les <dl> imbriquées des cartes. */
+
+.tache-detail {
+  dl.row {
+    margin-bottom: 0;
+
+    dt {
+      font-weight: 500;
+      padding-bottom: 0.35rem;
+    }
+
+    dd {
+      margin-bottom: 0;
+      padding-bottom: 0.35rem;
+    }
+  }
+}

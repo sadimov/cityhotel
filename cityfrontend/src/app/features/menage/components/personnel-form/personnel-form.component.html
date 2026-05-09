@@ -1,0 +1,174 @@
+<section class="personnel-form">
+  <header class="personnel-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'menage.personnel.form.titleEdit'
+          : 'menage.personnel.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="personnel-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.personnel.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="numeroEmploye" class="form-label">
+            {{ 'menage.personnel.fields.numeroEmploye' | translate }}
+          </label>
+          <input
+            id="numeroEmploye"
+            type="text"
+            class="form-control"
+            formControlName="numeroEmploye"
+            [class.is-invalid]="form.get('numeroEmploye')?.invalid && form.get('numeroEmploye')?.touched"
+          />
+          @if (form.get('numeroEmploye')?.touched && form.get('numeroEmploye')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.personnel.errors.numeroEmployeRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="prenom" class="form-label">
+            {{ 'menage.personnel.fields.prenom' | translate }}
+          </label>
+          <input
+            id="prenom"
+            type="text"
+            class="form-control"
+            formControlName="prenom"
+            [class.is-invalid]="form.get('prenom')?.invalid && form.get('prenom')?.touched"
+          />
+          @if (form.get('prenom')?.touched && form.get('prenom')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.personnel.errors.prenomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-5">
+          <label for="nom" class="form-label">
+            {{ 'menage.personnel.fields.nom' | translate }}
+          </label>
+          <input
+            id="nom"
+            type="text"
+            class="form-control"
+            formControlName="nom"
+            [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
+          />
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.personnel.errors.nomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="telephone" class="form-label">
+            {{ 'menage.personnel.fields.telephone' | translate }}
+          </label>
+          <input
+            id="telephone"
+            type="tel"
+            class="form-control"
+            formControlName="telephone"
+          />
+        </div>
+
+        <div class="col-md-5">
+          <label for="email" class="form-label">
+            {{ 'menage.personnel.fields.email' | translate }}
+          </label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+          />
+          @if (form.get('email')?.touched && form.get('email')?.errors?.['email']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.personnel.errors.emailFormat' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="dateEmbauche" class="form-label">
+            {{ 'menage.personnel.fields.dateEmbauche' | translate }}
+          </label>
+          <input
+            id="dateEmbauche"
+            type="date"
+            class="form-control"
+            formControlName="dateEmbauche"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="specialites" class="form-label">
+            {{ 'menage.personnel.fields.specialites' | translate }}
+            <small class="text-muted">— {{ 'menage.personnel.fields.specialitesHint' | translate }}</small>
+          </label>
+          <input
+            id="specialites"
+            type="text"
+            class="form-control"
+            formControlName="specialites"
+            [placeholder]="'menage.personnel.fields.specialitesPlaceholder' | translate"
+            [attr.list]="'specialites-options'"
+          />
+          <datalist id="specialites-options">
+            @for (sp of specialites; track sp) {
+              <option [value]="sp">{{ 'menage.personnel.specialite.' + sp | translate }}</option>
+            }
+          </datalist>
+        </div>
+
+        <div class="col-12 pt-3">
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'menage.personnel.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="personnel-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'menage.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'menage.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

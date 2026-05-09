@@ -1,0 +1,166 @@
+<section class="menage-dashboard">
+  <header class="menage-dashboard__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'menage.dashboard.title' | translate }}</h2>
+    <button type="button" class="btn btn-outline-primary btn-sm" (click)="load()">
+      <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+      {{ 'menage.dashboard.refresh' | translate }}
+    </button>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="menage-dashboard__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.dashboard.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'menage.dashboard.retry' | translate }}
+      </button>
+    </div>
+  } @else {
+    <!-- KPI principaux -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.personnelActif' | translate }}</div>
+            <div class="h3 m-0 text-primary">{{ stats.nombrePersonnelActif ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tachesAujourdhui' | translate }}</div>
+            <div class="h3 m-0 text-info">{{ stats.nombreTachesAujourdhui ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tachesEnCours' | translate }}</div>
+            <div class="h3 m-0 text-success">{{ stats.nombreTachesEnCours ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tachesEnRetard' | translate }}</div>
+            <div class="h3 m-0 text-danger">{{ stats.nombreTachesEnRetard ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tachesTerminees' | translate }}</div>
+            <div class="h3 m-0 text-secondary">{{ stats.nombreTachesTerminees ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tachesUrgentes' | translate }}</div>
+            <div class="h3 m-0 text-warning">{{ stats.nombreTachesUrgentes ?? 0 }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tauxRealisation' | translate }}</div>
+            <div class="h3 m-0">
+              {{ stats.tauxRealisationPourcentage ?? 0 }} <small class="text-muted">%</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3">
+        <div class="card menage-dashboard__kpi shadow-sm">
+          <div class="card-body">
+            <div class="text-muted small">{{ 'menage.dashboard.kpi.tempsMoyen' | translate }}</div>
+            <div class="h3 m-0">
+              {{ (stats.tempsRealisationMoyen ?? 0) | number:'1.0-0' }}
+              <small class="text-muted">{{ 'menage.tache.fields.minutes' | translate }}</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Répartitions -->
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 text-muted">{{ 'menage.dashboard.repartition.parStatut' | translate }}</h3>
+            @if (toEntries(stats.repartitionParStatut).length === 0) {
+              <p class="text-muted m-0">{{ 'menage.dashboard.repartition.empty' | translate }}</p>
+            } @else {
+              <ul class="list-group list-group-flush">
+                @for (entry of toEntries(stats.repartitionParStatut); track entry.key) {
+                  <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    {{ entry.key }}
+                    <span class="badge text-bg-info">{{ entry.value }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 text-muted">{{ 'menage.dashboard.repartition.parType' | translate }}</h3>
+            @if (toEntries(stats.repartitionParType).length === 0) {
+              <p class="text-muted m-0">{{ 'menage.dashboard.repartition.empty' | translate }}</p>
+            } @else {
+              <ul class="list-group list-group-flush">
+                @for (entry of toEntries(stats.repartitionParType); track entry.key) {
+                  <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    {{ ('menage.tache.typeNettoyage.' + entry.key) | translate }}
+                    <span class="badge text-bg-secondary">{{ entry.value }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 text-muted">{{ 'menage.dashboard.repartition.parPriorite' | translate }}</h3>
+            @if (toEntries(stats.repartitionParPriorite).length === 0) {
+              <p class="text-muted m-0">{{ 'menage.dashboard.repartition.empty' | translate }}</p>
+            } @else {
+              <ul class="list-group list-group-flush">
+                @for (entry of toEntries(stats.repartitionParPriorite); track entry.key) {
+                  <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    {{ ('menage.tache.priorite.' + entry.key) | translate }}
+                    <span class="badge text-bg-warning">{{ entry.value }}</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p class="text-muted small mt-4 mb-0">
+      <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+      {{ 'menage.dashboard.chartsDeferred' | translate }}
+    </p>
+  }
+</section>
