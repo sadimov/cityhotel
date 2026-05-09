@@ -165,7 +165,11 @@
       "Bash(set JAVA_HOME=C:\\\\Progra~1\\\\Eclipse~1\\\\jdk-21.0.11.10-hotspot)",
       "Bash(set PATH=%JAVA_HOME%\\\\bin)",
       "Bash(%PATH%)",
-      "Bash(cmd.exe /c \"mvnw.cmd compile -q\")"
+      "Bash(cmd.exe /c \"mvnw.cmd compile -q\")",
+      "Bash(awk -F'/' '{ if \\(NF >= 9\\) print $7\"/\"$8\"/\"$9; else if \\(NF == 8\\) print $7\"/\"$8; else print $7 }')",
+      "Bash(awk -F'/' '{print $4\"/\"$5}')",
+      "Bash(git ls-files *)",
+      "Bash(git reset *)"
     ]
   }
 }
