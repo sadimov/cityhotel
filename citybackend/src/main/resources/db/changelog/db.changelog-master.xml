@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd
+                        http://www.liquibase.org/xml/ns/pro
+                        http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.20.xsd">
+
+    <!--
+    ============================================================================
+    CITY BACKEND - CHANGELOG MASTER
+    Système de gestion hôtelière multi-tenant
+    ============================================================================
+    -->
+
+    <!-- PHASE 1: Création des schémas et tables de base -->
+    <include file="db/changelog/changes/001-create-core-schema.sql"/>
+
+    <!-- PHASE 2: Tables des clients et sociétés (Tour 8 — XML, ex-fichier .sql vide) -->
+    <include file="db/changelog/changes/002-create-client-schema.xml"/>
+
+    <!-- PHASE 3: Tables d'hébergement (chambres, réservations) — Tour 11 (XML, ex-fichier .sql vide) -->
+    <include file="db/changelog/changes/003-create-hebergement-schema.xml"/>
+
+    <!-- PHASE 4: Tables du restaurant - CATALOGUE (Tour 23 - XML, ex-fichier .sql stub).
+         POS (commandes, lignes_commande) reporte au Tour 24+ avec un changeset additif. -->
+    <include file="db/changelog/changes/004-create-restaurant-schema.xml"/>
+
+    <!-- PHASE 5: Tables de gestion des stocks (Tour 16 - XML, ex-fichier .sql vide) -->
+    <include file="db/changelog/changes/005-create-inventory-schema.xml"/>
+
+    <!-- PHASE 6: Tables financières (Tour 19 - XML, ex-fichier .sql vide) -->
+    <include file="db/changelog/changes/006-create-finance-schema.xml"/>
+
+    <!-- PHASE 7: Tables de ménage (Tour 27 - XML, ex-fichier .sql stub remplace) -->
+    <include file="db/changelog/changes/007-create-menage-schema.xml"/>
+
+    <!-- PHASE 8: Tables de reporting -->
+    <include file="db/changelog/changes/008-create-reporting-schema.sql"/>
+
+    <!-- PHASE 11: Données initiales - Rôles système -->
+    <include file="db/changelog/changes/011-insert-initial-roles.sql"/>
+
+    <!-- PHASE 12: Données initiales (placeholder, fichier vide à compléter) -->
+    <include file="db/changelog/changes/012-insert-initial-data.sql"/>
+
+    <!-- PHASE 14: Utilisateur super admin initial -->
+    <include file="db/changelog/changes/014-insert-superadmin-user.sql"/>
+
+    <!-- PHASE 17: Correction de la colonne ip_address (VARCHAR -> inet) -->
+    <include file="db/changelog/changes/017-fix-ip-address-column.sql"/>
+
+    <!-- PHASE 18: Drop colonne salt obsolète sur core.dbusers (BCrypt embarque le salt) -->
+    <include file="db/changelog/changes/018-drop-salt-column-dbusers.sql"/>
+
+    <!-- PHASE 19: Ajout code pays ISO 3166 sur hotels (palier 1 multi-pays, sert au format de numerotation comptable) -->
+    <include file="db/changelog/changes/019-add-code-pays-to-hotels.xml"/>
+
+    <!-- PHASE 20: Table de numerotation comptable sequentielle par hotel/type/exercice (Tour 6A) -->
+    <include file="db/changelog/changes/020-create-numerotation-sequence.xml"/>
+
+    <!-- PHASE 21 (Tour 9bis): Alignement schema client - created_by NOT NULL,
+         TIMESTAMPTZ, FK fk_clients_societe ON DELETE SET NULL.
+         Ne PAS modifier 002-create-client-schema.xml (deja applique : risque
+         checksum mismatch en prod) - changesets additifs. -->
+    <include file="db/changelog/changes/003-fix-client-schema-alignment.xml"/>
+
+    <!-- PHASE 22 (Tour 12bis): defense en profondeur double-booking sur les
+         pivots reservation/chambre via EXCLUDE USING gist (Postgres-only,
+         finding C1). H2 saute le changeset (dbms="postgresql"). -->
+    <include file="db/changelog/changes/004-hebergement-double-booking-prevention.xml"/>
+
+    <!-- PHASE 23 (Tour 12bis): triggers PL/pgSQL de coherence cross-tenant des
+         pivots hebergement (findings DB-2/3/4). Postgres-only - sur H2 la garde
+         reste l'isolation Hibernate @TenantId. -->
+    <include file="db/changelog/changes/005-hebergement-pivot-tenant-coherence.xml"/>
+
+    <!-- PHASE 24 (Tour 12bis): index frequemment utiles + CHECKs date_fin/date_debut
+         sur tarifs_chambres et reservations_chambres (compatible H2). -->
+    <include file="db/changelog/changes/006-hebergement-indexes-and-checks.xml"/>
+
+    <!-- PHASE 25 (Tour 19) : link tables hebergement -> finance (clos TODO[tour-finance]
+         de Reservation.java et Nuitee.java). Doit s'executer APRES 006-create-finance-schema.xml. -->
+    <include file="db/changelog/changes/007-link-hebergement-finance.xml"/>
+
+    <!-- PHASE 26 (Tour 19) : link table inventory -> finance (clos TODO[tour-finance]
+         de BonCommande.java). -->
+    <include file="db/changelog/changes/008-link-inventory-finance.xml"/>
+
+    <!-- ============================================================
+         PHASE 27 : fix audit fields numerotation_sequence (Tour 7D — audit /db-validate)
+         ============================================================ -->
+    <include file="db/changelog/changes/021-fix-numerotation-sequence-audit-types.xml"/>
+
+    <!-- ============================================================
+         PHASE 28 : FK cross-module finance (factures.reservation_id, factures.fournisseur_id)
+         ============================================================ -->
+    <include file="db/changelog/changes/022-add-cross-module-fks-finance.xml"/>
+
+    <!-- ============================================================
+         PHASE 29 : index FK manquants (hebergement reliquat Tour 7C + finance + inventory)
+         ============================================================ -->
+    <include file="db/changelog/changes/023-add-missing-fk-indexes.xml"/>
+
+    <!-- ============================================================
+         PHASE 30 (Tour finance-1bis) : triggers PL/pgSQL de coherence cross-tenant
+         des pivots/FK finance (lignes_factures, affectations_paiements,
+         operations_comptes, paiements). Postgres-only - sur H2 la garde reste
+         Hibernate @TenantId + service-side. Finding ELEVEE multitenant-guardian.
+         ============================================================ -->
+    <include file="db/changelog/changes/024-finance-pivot-tenant-coherence.xml"/>
+
+    <!-- ============================================================
+         PHASE 31 (Tour 24) : tables POS restaurant (commandes, lignes_commande,
+         tickets). Doit s'executer APRES 004-create-restaurant-schema.xml
+         (catalogue Tour 23, articles_menus referencee par lignes_commande)
+         ET 002-create-client-schema.xml + 003-create-hebergement-schema.xml +
+         006-create-finance-schema.xml (FK client_id, reservation_id, facture_id).
+         ============================================================ -->
+    <include file="db/changelog/changes/009-create-restaurant-pos-schema.xml"/>
+
+    <!-- ============================================================
+         PHASE 32 (Tour 24) : link finance.lignes_factures.commande_id ->
+         restaurant.commandes. Doit s'executer APRES 009 (creation table
+         commandes). Clos la TODO Tour 19 sur creerLigne().
+         ============================================================ -->
+    <include file="db/changelog/changes/010-link-restaurant-finance.xml"/>
+
+    <!-- ============================================================
+         PHASE 33 (Tour 25) : table restaurant.recettes_articles. Recette
+         (1-N article -> produits inventory) consommee a la transition
+         PRETE -> SERVIE d'une commande POS pour generer un BS automatique.
+         Doit s'executer APRES 004 (articles_menus) et 005 (inventory.produits).
+         ============================================================ -->
+    <include file="db/changelog/changes/025-create-recettes-articles.xml"/>
+
+    <!-- ============================================================
+         PHASE 34 (Tour 25bis) : hardening restaurant POS
+          - Triggers PL/pgSQL de coherence cross-tenant des pivots
+            (commandes, lignes_commande, tickets, recettes_articles).
+            Postgres-only : sur H2 la garde reste Hibernate @TenantId.
+          - CHECK montants >= 0 (commandes ht/ttc/paye, lignes_commande)
+            et CHECK montant_paye <= montant_ttc + 0.01 (tolerance arrondi).
+          ============================================================ -->
+    <include file="db/changelog/changes/026-restaurant-pivot-tenant-coherence.xml"/>
+
+    <!-- ============================================================
+         PHASE 35 (Tour 26.1) : commandes.numero_table (VARCHAR(20) nullable)
+         + index (hotel_id, numero_table) pour le POS plein flux. Decision
+         arbitree 1=A : pas d'entite Table dediee, simple chaine.
+         ============================================================ -->
+    <include file="db/changelog/changes/027-add-numero-table-commandes.xml"/>
+
+    <!-- ============================================================
+         PHASE 36 (Tour 30) : hardening multi-tenant menage
+          - Triggers PL/pgSQL de coherence cross-tenant des pivots
+            (taches.{chambre_id, personnel_id}, planning.personnel_id,
+            historique.{tache_id, chambre_id, personnel_id, user_id}).
+            Postgres-only : sur H2 la garde reste Hibernate @TenantId.
+          - Colonne version BIGINT NOT NULL DEFAULT 0 sur taches pour
+            optimistic locking (coordonne avec @Version cote JPA Tache).
+          - UNIQUE (hotel_id, personnel_id, date_travail, heure_debut)
+            sur planning pour empecher les doublons de creneau.
+          - CHECK coherence statut/heures reelles sur taches.
+          - ON DELETE SET NULL sur historique.{personnel_id, user_id}
+            (chambre_id non touche - @NotNull cote JPA).
+          ============================================================ -->
+    <include file="db/changelog/changes/028-menage-pivot-tenant-coherence.xml"/>
+
+    <!--
+    TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
+       - db/changelog/data/donnees-referentielles.sql
+       - db/changelog/data/roles.sql
+       - db/changelog/data/statuts-taches.sql
+    Aujourd'hui orphelins : ne PAS les inclure tant que le contenu n'a pas été validé.
+    -->
+
+</databaseChangeLog>

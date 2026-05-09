@@ -1,0 +1,189 @@
+spring:
+  application:
+    name: citybackend
+  
+  # Configuration de la base de données PostgreSQL
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cityprojectdb
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:admin}
+    driver-class-name: org.postgresql.Driver
+    # Configuration HikariCP optimisée pour éviter les fuites mémoire
+    hikari:
+      # Pool de connexions
+      minimum-idle: 5                    # Réduire le minimum
+      maximum-pool-size: 20              # Réduire le maximum pour le dev
+      idle-timeout: 300000               # 5 minutes
+      max-lifetime: 1200000              # 20 minutes
+      connection-timeout: 20000          # 20 secondes
+      leak-detection-threshold: 60000    # 1 minute
+      
+      # Optimisations pour éviter les fuites
+      register-mbeans: false             # Désactiver les MBeans
+      allow-pool-suspension: true        # Permettre la suspension du pool
+      
+      # Configuration de nettoyage
+      housekeeping-period-ms: 30000      # Nettoyage toutes les 30 secondes
+      
+      # Propriétés PostgreSQL spécifiques
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        useLocalSessionState: true
+        rewriteBatchedStatements: true
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        elideSetAutoCommits: true
+        maintainTimeStats: false
+  
+  # Configuration JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        use_sql_comments: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+    open-in-view: false
+  
+  # Configuration Liquibase
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    enabled: true
+  
+  # Configuration de la sécurité
+  security:
+    user:
+      name: postgres
+      password: admin
+  
+  # Configuration du cache
+  cache:
+    type: simple
+  
+  # Configuration des sessions
+  session:
+    store-type: none
+    timeout: 30m
+  
+  # Configuration Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: Africa/Nouakchott
+    default-property-inclusion: NON_NULL
+
+# Configuration du serveur
+server:
+  port: 8080
+  servlet:
+    context-path: /citybackend
+    session:
+      timeout: 30m
+  compression:
+    enabled: true
+  tomcat:
+    max-connections: 200
+    threads:
+      max: 100
+      min-spare: 10
+
+# Configuration de l'application
+app:
+  jwt:
+    secret: ${JWT_SECRET:mySecretKey12345mySecretKey12345mySecretKey12345}
+    expiration: 86400000  # 24 heures en millisecondes
+  
+  cors:
+    allowed-origins: 
+      - http://localhost:3000
+      - http://localhost:4200
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+  
+  security:
+    password:
+      min-length: 8
+      require-uppercase: true
+      require-lowercase: true
+      require-digit: true
+    session:
+      max-sessions-per-user: 3
+      concurrent-sessions: 80  # Support pour 80 sessions simultanées
+
+# Configuration du logging
+logging:
+  level:
+    com.cityprojects: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{hotel_id}] [%X{user_id}] %logger{36} - %msg%n"
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level [%X{hotel_id}] [%X{user_id}] %logger{20} - %msg%n"
+  file:
+    name: logs/citybackend.log
+
+# Configuration de l'actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: WHEN_AUTHORIZED
+  metrics:
+    export:
+      enabled: true
+
+# Configuration pour les profils
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cityprojectdb
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+
+logging:
+  level:
+    root: INFO
+    com.cityprojects: DEBUG
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:cityprojectdb}
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+logging:
+  level:
+    root: WARN
+    com.cityprojects: INFO

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 6A - Ajout d'une colonne code_pays ISO 3166 alpha-2 sur core.hotels.
+
+  Motivation :
+  - La colonne pays existante (VARCHAR(100)) stocke un libelle libre (ex.
+    "Mauritanie", "France"), ce qui n'est pas exploitable pour preformater
+    un numero comptable (FACT-2026-MR-000001).
+  - La devise (devise VARCHAR(3) ISO 4217) ne suffit pas non plus : un
+    hotel peut etre situe dans un pays donne mais facturer dans une autre
+    devise (ex. tourisme transfrontalier).
+  - On introduit donc un champ dedie ISO 3166 alpha-2 (2 lettres
+    majuscules : MR, FR, SN, MA, ...). Default 'MR' pour les hotels deja
+    crees (City Hotel + initial seeds), conforme au marche cible.
+  - Cette colonne sert au pattern de numerotation comptable Tour 6A et a
+    l'evolution multi-pays SaaS (palier 2+).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="019-add-code-pays-to-hotels" author="cityprojects">
+        <comment>
+            Ajout colonne code_pays VARCHAR(2) ISO 3166 alpha-2 sur core.hotels.
+            Defaut 'MR' (Mauritanie) pour respect des donnees existantes.
+        </comment>
+
+        <addColumn tableName="hotels" schemaName="core">
+            <column name="code_pays" type="VARCHAR(2)" defaultValue="MR">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="hotels" schemaName="core" columnName="code_pays"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
