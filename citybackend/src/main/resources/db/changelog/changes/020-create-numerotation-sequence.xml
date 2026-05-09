@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 6A - Table de numerotation comptable sequentielle.
+
+  Cette table sert au NumerotationService (package service.finance) pour
+  generer des numeros sans trou ni doublon, segmentes par :
+    - hotel_id : isolation tenant stricte (cf. CLAUDE.md racine §6.1)
+    - type     : famille metier (FACT, PAY, BC, BS, AVOIR, DEVIS, RECU, COMM)
+    - exercice : annee comptable (reset a 1 chaque 1er janvier)
+
+  Pourquoi cle technique BIGSERIAL + UNIQUE INDEX et non PK composite :
+    - Hibernate 6 INTERDIT @Id + @TenantId sur le meme champ. La PK composite
+      (hotel_id, type, exercice) heurte cette regle puisque hotel_id est aussi
+      le discriminator @TenantId.
+    - On garde donc l'invariant metier "un seul compteur par triplet" via une
+      contrainte UNIQUE INDEX (uk_numerotation_hotel_type_exercice).
+    - La cle primaire est une cle de substitution (id BIGSERIAL).
+
+  Verrou pessimiste applique cote service (PESSIMISTIC_WRITE sur SELECT) :
+    - le 2e thread concurrent attend que le 1er commit avant de lire,
+    - garantit l'unicite de last_value sans recourir a une sequence
+      Postgres dediee (qui se creerait par hotel x type x annee = explosion).
+
+  CHECK (hotel_id > 0) : sentinel ROOT (0L, cf. CityTenantIdentifierResolver)
+  interdit comme hotel_id reel.
+
+  AuditableEntity : created_at / updated_at / created_by / updated_by sont
+  geres par Spring Data JPA Auditing (cf. JpaAuditingConfig).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="020-create-numerotation-sequence" author="cityprojects">
+        <comment>
+            Creation de finance.numerotation_sequence : table de compteurs
+            par hotel/type/exercice, lue/ecrite avec verrou pessimiste.
+            Cle technique id BIGSERIAL + UNIQUE INDEX metier (cf. doc entite).
+        </comment>
+
+        <createTable tableName="numerotation_sequence" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_numerotation_sequence" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="exercice" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_value" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)"/>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addUniqueConstraint
+            tableName="numerotation_sequence"
+            schemaName="finance"
+            columnNames="hotel_id, type, exercice"
+            constraintName="uk_numerotation_hotel_type_exercice"/>
+
+        <addForeignKeyConstraint
+            baseTableName="numerotation_sequence"
+            baseTableSchemaName="finance"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels"
+            referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_numerotation_hotel"/>
+
+        <sql>
+            ALTER TABLE finance.numerotation_sequence
+            ADD CONSTRAINT chk_numerotation_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <rollback>
+            <dropTable tableName="numerotation_sequence" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

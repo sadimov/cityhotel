@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 7D (audit /db-validate) - Alignement des colonnes audit de
+  finance.numerotation_sequence sur la convention AuditableEntity.
+
+  Constat de l'audit :
+  - Le changeset 020 (Tour 6A) a cree la table avec :
+      created_at TIMESTAMP                  -> doit etre TIMESTAMP WITH TIME ZONE
+      updated_at TIMESTAMP                  -> idem
+      created_by VARCHAR(80) (nullable)     -> doit etre NOT NULL DEFAULT 'system'
+  - AuditableEntity expose Instant + @CreatedDate / @LastModifiedDate. La
+    correspondance JPA stricte est TIMESTAMPTZ. Les autres tables 'finance'
+    (006-create-finance-schema.xml) ont deja ce type, 020 est un reliquat.
+  - created_by NOT NULL + DEFAULT 'system' = sentinel quand AuditorAware n'a
+    pas de username Spring Security (cas batch / scheduler / boot).
+
+  Strategie : changesets ADDITIFS (021-1 a 021-4), JAMAIS modifier 020 deja
+  applique (risque checksum mismatch en prod).
+
+  Conversion SQL native (021-2 / 021-3) : Liquibase n'expose pas le 'USING'
+  d'ALTER COLUMN TYPE pour PG. On utilise <sql> + <rollback><sql>. La
+  conversion considere l'ancienne valeur comme UTC (TIMESTAMP sans TZ ->
+  TIMESTAMPTZ via 'AT TIME ZONE UTC').
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 021-1 : backfill created_by pour les lignes existantes.
+         Necessaire avant le SET NOT NULL (021-4). Idempotent (filtre WHERE
+         created_by IS NULL).
+         ==================================================================== -->
+    <changeSet id="021-1-backfill-numerotation-sequence-created-by" author="cityteam">
+        <comment>
+            Backfill created_by = 'system' pour les lignes existantes ou la
+            colonne etait nullable et non renseignee. Pre-requis pour 021-4
+            qui pose la contrainte NOT NULL.
+        </comment>
+
+        <update tableName="numerotation_sequence" schemaName="finance">
+            <column name="created_by" value="system"/>
+            <where>created_by IS NULL</where>
+        </update>
+
+        <rollback>
+            <!-- Backfill irreversible mais sans risque : on ne peut pas
+                 distinguer les valeurs originalement 'system' du backfill. -->
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 021-2 : ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE
+         Conversion via 'AT TIME ZONE UTC' (les valeurs existantes sont
+         considerees UTC, ce qui est coherent avec defaultValueComputed
+         CURRENT_TIMESTAMP cote Postgres si la session etait en UTC).
+         ==================================================================== -->
+    <changeSet id="021-2-alter-numerotation-sequence-created-at-tz" author="cityteam">
+        <comment>
+            Aligne finance.numerotation_sequence.created_at sur TIMESTAMPTZ
+            (matche Instant + AuditableEntity, coherent avec 006-create-finance-schema).
+        </comment>
+
+        <sql>
+            ALTER TABLE finance.numerotation_sequence
+                ALTER COLUMN created_at TYPE TIMESTAMP WITH TIME ZONE USING created_at AT TIME ZONE 'UTC';
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE finance.numerotation_sequence
+                    ALTER COLUMN created_at TYPE TIMESTAMP USING created_at AT TIME ZONE 'UTC';
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 021-3 : ALTER COLUMN updated_at TYPE TIMESTAMP WITH TIME ZONE
+         Meme pattern que 021-2.
+         ==================================================================== -->
+    <changeSet id="021-3-alter-numerotation-sequence-updated-at-tz" author="cityteam">
+        <comment>
+            Aligne finance.numerotation_sequence.updated_at sur TIMESTAMPTZ.
+        </comment>
+
+        <sql>
+            ALTER TABLE finance.numerotation_sequence
+                ALTER COLUMN updated_at TYPE TIMESTAMP WITH TIME ZONE USING updated_at AT TIME ZONE 'UTC';
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE finance.numerotation_sequence
+                    ALTER COLUMN updated_at TYPE TIMESTAMP USING updated_at AT TIME ZONE 'UTC';
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 021-4 : created_by DEFAULT 'system' + NOT NULL.
+         Pre-requis 021-1 deja execute (backfill).
+         ==================================================================== -->
+    <changeSet id="021-4-alter-numerotation-sequence-created-by-not-null" author="cityteam">
+        <comment>
+            Pose DEFAULT 'system' puis NOT NULL sur created_by. Aligne sur la
+            convention AuditableEntity et les autres tables finance.
+        </comment>
+
+        <addDefaultValue
+            tableName="numerotation_sequence" schemaName="finance"
+            columnName="created_by" defaultValue="system"/>
+
+        <addNotNullConstraint
+            tableName="numerotation_sequence" schemaName="finance"
+            columnName="created_by" defaultNullValue="system"
+            columnDataType="VARCHAR(80)"/>
+
+        <rollback>
+            <dropNotNullConstraint
+                tableName="numerotation_sequence" schemaName="finance"
+                columnName="created_by" columnDataType="VARCHAR(80)"/>
+            <dropDefaultValue
+                tableName="numerotation_sequence" schemaName="finance"
+                columnName="created_by"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

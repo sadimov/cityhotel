@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 12bis - Double-booking prevention (defense en profondeur, Postgres-only)
+
+  Couche SQL : contrainte d'exclusion EXCLUDE USING gist sur les pivots
+  reservation/chambre - empeche deux pivots de chevaucher la meme chambre
+  sur des plages de dates qui se croisent. Complementaire au verrou
+  PESSIMISTIC_WRITE pose cote repository (defense applicative, finding C1).
+
+  Pre-requis : extension btree_gist (egalite sur BIGINT + && sur daterange).
+
+  Ce changeset est marque dbms="postgresql" : H2 ne supporte ni
+  EXCLUDE USING gist ni daterange. Sur H2 (profil "test"), Liquibase saute
+  ces changesets - la garde applicative @Lock(PESSIMISTIC_WRITE) reste
+  active.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 004-1 : extension btree_gist (Postgres uniquement)
+         ==================================================================== -->
+    <changeSet id="004-1-create-btree-gist-extension" author="cityprojects" dbms="postgresql">
+        <comment>
+            Active l'extension btree_gist : indispensable pour combiner une
+            egalite (chambre_id BIGINT) et un overlap (daterange &amp;&amp;)
+            dans une contrainte EXCLUDE.
+        </comment>
+        <sql>CREATE EXTENSION IF NOT EXISTS btree_gist</sql>
+        <rollback>
+            <!-- DROP EXTENSION non rollbacke : potentiellement utilise par d'autres modules. -->
+            <sql>SELECT 1</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 004-2 : contrainte EXCLUDE USING gist sur reservations_chambres
+         ==================================================================== -->
+    <changeSet id="004-2-add-double-booking-exclusion" author="cityprojects" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <tableExists schemaName="hebergement" tableName="reservations_chambres"/>
+        </preConditions>
+        <comment>
+            Empeche deux pivots reservation/chambre de chevaucher la meme
+            chambre sur une plage de dates [date_debut, date_fin) qui se
+            croise. Note : la borne inferieure inclusive et superieure
+            exclusive '[)' permet a une nouvelle reservation de commencer
+            le jour de fin d'une precedente sans etre en conflit (cas reel :
+            check-out le matin, check-in l'apres-midi).
+        </comment>
+        <sql>
+            ALTER TABLE hebergement.reservations_chambres
+            ADD CONSTRAINT exc_no_double_booking
+            EXCLUDE USING gist (
+                chambre_id WITH =,
+                daterange(date_debut, date_fin, '[)') WITH &amp;&amp;
+            )
+            WHERE (date_fin &gt; date_debut)
+        </sql>
+        <rollback>
+            <sql>
+                ALTER TABLE hebergement.reservations_chambres
+                DROP CONSTRAINT IF EXISTS exc_no_double_booking
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 12bis - Indexes additionnels + CHECKs metier sur le module hebergement.
+
+  Index : optimisation des requetes de filtrage frequent (par hotel + autre
+  axe metier). Decision Tour 12 finding 'db-index'.
+
+  Checks :
+    - tarifs_chambres : date_fin nullable, mais si presente >= date_debut.
+    - reservations_chambres : date_fin > date_debut (analogue a la contrainte
+      deja appliquee sur reservations).
+
+  Compatible H2 (pas de feature Postgres-only ici - les CHECK SQL standard
+  sont supportees par les deux moteurs).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 006-1 : indexes
+         ==================================================================== -->
+    <changeSet id="006-1-add-indexes" author="cityprojects">
+        <comment>
+            Index frequemment utiles pour le filtrage par hotel + axe metier.
+            Conformes au pattern (hotel_id, ...) deja en place sur les autres
+            tables hebergement.
+        </comment>
+
+        <createIndex tableName="tarifs_chambres" schemaName="hebergement"
+                     indexName="ix_tarifs_hotel_type_actif">
+            <column name="hotel_id"/>
+            <column name="type_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="reservations_chambres" schemaName="hebergement"
+                     indexName="ix_res_chambres_hotel_reservation">
+            <column name="hotel_id"/>
+            <column name="reservation_id"/>
+        </createIndex>
+
+        <createIndex tableName="reservations_clients" schemaName="hebergement"
+                     indexName="ix_res_clients_hotel_reservation">
+            <column name="hotel_id"/>
+            <column name="reservation_id"/>
+        </createIndex>
+
+        <createIndex tableName="nuitees" schemaName="hebergement"
+                     indexName="ix_nuitees_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="tarifs_chambres" schemaName="hebergement"
+                       indexName="ix_tarifs_hotel_type_actif"/>
+            <dropIndex tableName="reservations_chambres" schemaName="hebergement"
+                       indexName="ix_res_chambres_hotel_reservation"/>
+            <dropIndex tableName="reservations_clients" schemaName="hebergement"
+                       indexName="ix_res_clients_hotel_reservation"/>
+            <dropIndex tableName="nuitees" schemaName="hebergement"
+                       indexName="ix_nuitees_hotel_statut"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 006-2 : checks dates
+         ==================================================================== -->
+    <changeSet id="006-2-add-check-dates" author="cityprojects">
+        <comment>
+            Garde-fous SQL : tarifs_chambres.date_fin nullable mais si renseigne
+            doit etre &gt;= date_debut ; reservations_chambres.date_fin doit
+            etre &gt; date_debut (cf. contrainte analogue chk_reservations_dates
+            sur reservations).
+        </comment>
+        <sql>
+            ALTER TABLE hebergement.tarifs_chambres
+            ADD CONSTRAINT chk_tarifs_dates
+            CHECK (date_fin IS NULL OR date_fin &gt;= date_debut)
+        </sql>
+        <sql>
+            ALTER TABLE hebergement.reservations_chambres
+            ADD CONSTRAINT chk_res_chambres_dates
+            CHECK (date_fin &gt; date_debut)
+        </sql>
+        <rollback>
+            <sql>ALTER TABLE hebergement.tarifs_chambres DROP CONSTRAINT chk_tarifs_dates</sql>
+            <sql>ALTER TABLE hebergement.reservations_chambres DROP CONSTRAINT chk_res_chambres_dates</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

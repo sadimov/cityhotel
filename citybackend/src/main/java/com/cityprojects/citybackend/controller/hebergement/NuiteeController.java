@@ -1,0 +1,55 @@
+package com.cityprojects.citybackend.controller.hebergement;
+
+import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
+import com.cityprojects.citybackend.service.hebergement.NuiteeService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+
+/**
+ * REST API en lecture seule des nuitees (Tour 14).
+ *
+ * <p>Endpoints :
+ * <ul>
+ *   <li>{@code GET /api/hebergement/nuitees/reservation/{id}} : nuitees
+ *       d'une reservation, par date croissante.</li>
+ *   <li>{@code GET /api/hebergement/nuitees/chambre/{id}} : nuitees d'une
+ *       chambre, paginees, tri stable {@code dateNuit DESC, nuiteeId ASC}.</li>
+ * </ul>
+ *
+ * <p>Roles : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC/NIGHTAUDIT
+ * (lecture etendue, le night audit doit pouvoir auditer les nuitees).</p>
+ *
+ * <p>Aucun {@code hotelId} dans les payloads : tenant resolu via
+ * {@link com.cityprojects.citybackend.common.tenant.TenantContext}.</p>
+ */
+@RestController
+@RequestMapping("/api/hebergement/nuitees")
+public class NuiteeController {
+
+    private final NuiteeService nuiteeService;
+
+    public NuiteeController(NuiteeService nuiteeService) {
+        this.nuiteeService = nuiteeService;
+    }
+
+    @GetMapping("/reservation/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    public ResponseEntity<List<NuiteeDto>> findByReservation(@PathVariable("id") Long reservationId) {
+        return ResponseEntity.ok(nuiteeService.findByReservation(reservationId));
+    }
+
+    @GetMapping("/chambre/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    public ResponseEntity<Page<NuiteeDto>> findByChambre(@PathVariable("id") Long chambreId,
+                                                          Pageable pageable) {
+        return ResponseEntity.ok(nuiteeService.findByChambre(chambreId, pageable));
+    }
+}

@@ -1,0 +1,704 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 11 - Schema 'hebergement' : types_chambres, chambres, tarifs_chambres,
+  reservations, reservations_chambres, reservations_clients, nuitees.
+
+  Source eclatee depuis HEBERGEMENT/entities_services_module_hebergement.java
+  (mono - cf. CARTOGRAPHIE_MODULES.md ligne 117) + structures_tables_schema_hebergement.sql
+  (spec SQL de reference - cf. ligne 113).
+
+  Conventions appliquees (alignees sur Tour 9bis pour eviter de dupliquer
+  l'erreur du module client) :
+  - Schema 'hebergement'.
+  - PK technique BIGSERIAL (pattern projet, cf. NumerotationSequence).
+  - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0 (sentinel ROOT
+    interdit comme hotel_id reel, cf. CityTenantIdentifierResolver).
+  - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA,
+    UTC neutre - cf. 003-fix-client-schema-alignment.xml).
+  - created_by NOT NULL (sentinel "system" cote app, defense en profondeur SQL).
+  - updated_by VARCHAR(80) nullable (rest. tour 9bis).
+  - Numerotation sequentielle par hotel via NumerotationService :
+    UNIQUE (hotel_id, numero_reservation) sur reservations.
+
+  Cross-module reportes au tour finance :
+  - Aucune FK vers finance.factures / paiements (le tour finance pourra ajouter
+    une colonne facture_id sur reservations / nuitees via changeset additif).
+
+  Le precedent fichier 003-create-hebergement-schema.sql etait VIDE (0 ligne)
+  depuis l'origine. Liquibase desactive jusqu'au Tour 5A : aucun changeset
+  applique, remplacement sans risque (pas de DATABASECHANGELOG.MD5SUM).
+
+  Specificite Postgres laissee de cote :
+  - reservations.nb_nuits GENERATED ALWAYS AS (date_depart - date_arrivee) STORED
+    n'est pas portable H2. nb_nuits est calcule cote service (Java) au save et
+    persiste comme INTEGER classique pour rester portable.
+  - chambres.equipements (JSON Postgres) : remplace par TEXT (serialise JSON
+    cote Java). Faisable car peu utilise. Le tour finance/inventory revisitera
+    si besoin natif jsonb.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 003-h.1 : creation du schema 'hebergement'
+         ==================================================================== -->
+    <changeSet id="003-h-1-create-schema" author="cityprojects">
+        <comment>Creation du schema SQL 'hebergement' (chambres, reservations, nuitees).</comment>
+        <sql>CREATE SCHEMA IF NOT EXISTS hebergement</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS hebergement CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.2 : table hebergement.types_chambres
+         ==================================================================== -->
+    <changeSet id="003-h-2-create-table-types-chambres" author="cityprojects">
+        <comment>
+            Catalogue des types de chambres par hotel (Standard, Deluxe, Suite, ...).
+            Code unique par hotel.
+        </comment>
+
+        <createTable tableName="types_chambres" schemaName="hebergement">
+            <column name="type_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_types_chambres" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_code" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_nom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="superficie" type="DECIMAL(6,2)"/>
+            <column name="nb_lits_max" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nb_personnes_max" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_base" type="DECIMAL(10,2)" defaultValueNumeric="0"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="types_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_types_chambres_hotel"/>
+
+        <addUniqueConstraint
+            tableName="types_chambres" schemaName="hebergement"
+            columnNames="hotel_id, type_code"
+            constraintName="uk_types_chambres_hotel_code"/>
+
+        <sql>
+            ALTER TABLE hebergement.types_chambres
+            ADD CONSTRAINT chk_types_chambres_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="types_chambres" schemaName="hebergement" indexName="ix_types_chambres_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="types_chambres" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.3 : table hebergement.chambres
+         ==================================================================== -->
+    <changeSet id="003-h-3-create-table-chambres" author="cityprojects">
+        <comment>
+            Chambres physiques de l'hotel (1 ligne = 1 chambre identifiee par
+            son numero). FK vers types_chambres pour la categorisation.
+        </comment>
+
+        <createTable tableName="chambres" schemaName="hebergement">
+            <column name="chambre_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_chambres" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_chambre" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="etage" type="INTEGER"/>
+            <column name="statut" type="VARCHAR(20)" defaultValue="DISPONIBLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nb_lits" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nb_personnes_max" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <!-- equipements : JSON serialise en TEXT (cf. note d'en-tete) -->
+            <column name="equipements" type="TEXT"/>
+            <column name="description" type="TEXT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_chambres_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="type_id"
+            referencedTableName="types_chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="type_id"
+            constraintName="fk_chambres_type"/>
+
+        <addUniqueConstraint
+            tableName="chambres" schemaName="hebergement"
+            columnNames="hotel_id, numero_chambre"
+            constraintName="uk_chambres_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE hebergement.chambres
+            ADD CONSTRAINT chk_chambres_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="chambres" schemaName="hebergement" indexName="ix_chambres_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="chambres" schemaName="hebergement" indexName="ix_chambres_hotel_type">
+            <column name="hotel_id"/>
+            <column name="type_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="chambres" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.4 : table hebergement.tarifs_chambres
+         (gestion saisonniere)
+         ==================================================================== -->
+    <changeSet id="003-h-4-create-table-tarifs-chambres" author="cityprojects">
+        <comment>
+            Tarification saisonniere par type de chambre. Permet d'avoir un prix
+            different selon la periode (haute saison / basse saison) et le
+            week-end.
+        </comment>
+
+        <createTable tableName="tarifs_chambres" schemaName="hebergement">
+            <column name="tarif_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_tarifs_chambres" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom_tarif" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_debut" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_fin" type="DATE"/>
+            <column name="prix_nuit" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_weekend" type="DECIMAL(10,2)"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="tarifs_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_tarifs_chambres_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="tarifs_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="type_id"
+            referencedTableName="types_chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="type_id"
+            constraintName="fk_tarifs_chambres_type"/>
+
+        <sql>
+            ALTER TABLE hebergement.tarifs_chambres
+            ADD CONSTRAINT chk_tarifs_chambres_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="tarifs_chambres" schemaName="hebergement" indexName="ix_tarifs_hotel_type_periode">
+            <column name="hotel_id"/>
+            <column name="type_id"/>
+            <column name="date_debut"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="tarifs_chambres" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.5 : table hebergement.reservations
+         ==================================================================== -->
+    <changeSet id="003-h-5-create-table-reservations" author="cityprojects">
+        <comment>
+            Reservation d'un sejour : un client principal, un sejour entre
+            date_arrivee et date_depart, un statut, un montant total.
+            numero_reservation est genere par hotel via NumerotationService
+            (type RES) - format RES-{exercice}-{codePays}-{6 chiffres},
+            unicite par hotel via uk_reservations_hotel_numero.
+
+            nb_nuits : calcule cote service Java (pas GENERATED Postgres pour
+            rester portable H2 en tests).
+
+            FK clients : reference client.clients (deja cree au Tour 8).
+            societe_id : nullable, FK vers client.societes (B2B).
+            user_id : utilisateur ayant cree la reservation (FK core.dbusers).
+
+            facture_id (TODO[tour-finance]) : non present ici. Le tour finance
+            ajoutera la colonne via changeset additif quand factures.factures
+            existera.
+        </comment>
+
+        <createTable tableName="reservations" schemaName="hebergement">
+            <column name="reservation_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_reservations" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_reservation" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_principal_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="societe_id" type="BIGINT"/>
+            <column name="date_arrivee" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_depart" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nb_nuits" type="INTEGER"/>
+            <column name="nb_adultes" type="INTEGER" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nb_enfants" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="CONFIRMEE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="motif_sejour" type="VARCHAR(100)"/>
+            <column name="commentaires" type="TEXT"/>
+            <column name="reduction_pourcentage" type="DECIMAL(5,2)" defaultValueNumeric="0"/>
+            <column name="montant_total" type="DECIMAL(12,2)" defaultValueNumeric="0"/>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_reservations_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations" baseTableSchemaName="hebergement"
+            baseColumnNames="client_principal_id"
+            referencedTableName="clients" referencedTableSchemaName="client"
+            referencedColumnNames="client_id"
+            constraintName="fk_reservations_client_principal"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations" baseTableSchemaName="hebergement"
+            baseColumnNames="societe_id"
+            referencedTableName="societes" referencedTableSchemaName="client"
+            referencedColumnNames="societe_id"
+            constraintName="fk_reservations_societe"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations" baseTableSchemaName="hebergement"
+            baseColumnNames="user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_reservations_user"/>
+
+        <addUniqueConstraint
+            tableName="reservations" schemaName="hebergement"
+            columnNames="hotel_id, numero_reservation"
+            constraintName="uk_reservations_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE hebergement.reservations
+            ADD CONSTRAINT chk_reservations_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+        <sql>
+            ALTER TABLE hebergement.reservations
+            ADD CONSTRAINT chk_reservations_dates CHECK (date_depart &gt; date_arrivee)
+        </sql>
+
+        <createIndex tableName="reservations" schemaName="hebergement" indexName="ix_reservations_hotel_dates">
+            <column name="hotel_id"/>
+            <column name="date_arrivee"/>
+            <column name="date_depart"/>
+        </createIndex>
+
+        <createIndex tableName="reservations" schemaName="hebergement" indexName="ix_reservations_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="reservations" schemaName="hebergement" indexName="ix_reservations_client">
+            <column name="hotel_id"/>
+            <column name="client_principal_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="reservations" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.6 : table hebergement.reservations_chambres (N:N)
+         ==================================================================== -->
+    <changeSet id="003-h-6-create-table-reservations-chambres" author="cityprojects">
+        <comment>
+            Pivot reservation/chambre : une reservation peut comporter plusieurs
+            chambres, eventuellement sur des periodes differentes (sub-segment
+            du sejour total). prix_nuit fige le tarif applique au moment de la
+            reservation.
+        </comment>
+
+        <createTable tableName="reservations_chambres" schemaName="hebergement">
+            <column name="reservation_chambre_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_reservations_chambres" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chambre_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_debut" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_fin" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_nuit" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_res_chambres_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="reservation_id"
+            referencedTableName="reservations" referencedTableSchemaName="hebergement"
+            referencedColumnNames="reservation_id"
+            constraintName="fk_res_chambres_reservation"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_chambres" baseTableSchemaName="hebergement"
+            baseColumnNames="chambre_id"
+            referencedTableName="chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="chambre_id"
+            constraintName="fk_res_chambres_chambre"/>
+
+        <addUniqueConstraint
+            tableName="reservations_chambres" schemaName="hebergement"
+            columnNames="reservation_id, chambre_id, date_debut"
+            constraintName="uk_res_chambres"/>
+
+        <sql>
+            ALTER TABLE hebergement.reservations_chambres
+            ADD CONSTRAINT chk_res_chambres_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="reservations_chambres" schemaName="hebergement" indexName="ix_res_chambres_chambre_periode">
+            <column name="chambre_id"/>
+            <column name="date_debut"/>
+            <column name="date_fin"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="reservations_chambres" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.7 : table hebergement.reservations_clients
+         ==================================================================== -->
+    <changeSet id="003-h-7-create-table-reservations-clients" author="cityprojects">
+        <comment>
+            Clients additionnels d'une reservation (compagnons de voyage).
+            est_payant et pourcentage_charge permettent une repartition fine
+            des couts (ex. groupe / famille).
+        </comment>
+
+        <createTable tableName="reservations_clients" schemaName="hebergement">
+            <column name="reservation_client_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_reservations_clients" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chambre_id" type="BIGINT"/>
+            <column name="est_payant" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="pourcentage_charge" type="DECIMAL(5,2)" defaultValueNumeric="100.00">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_clients" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_res_clients_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_clients" baseTableSchemaName="hebergement"
+            baseColumnNames="reservation_id"
+            referencedTableName="reservations" referencedTableSchemaName="hebergement"
+            referencedColumnNames="reservation_id"
+            constraintName="fk_res_clients_reservation"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_clients" baseTableSchemaName="hebergement"
+            baseColumnNames="client_id"
+            referencedTableName="clients" referencedTableSchemaName="client"
+            referencedColumnNames="client_id"
+            constraintName="fk_res_clients_client"/>
+
+        <addForeignKeyConstraint
+            baseTableName="reservations_clients" baseTableSchemaName="hebergement"
+            baseColumnNames="chambre_id"
+            referencedTableName="chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="chambre_id"
+            constraintName="fk_res_clients_chambre"/>
+
+        <addUniqueConstraint
+            tableName="reservations_clients" schemaName="hebergement"
+            columnNames="reservation_id, client_id"
+            constraintName="uk_res_clients"/>
+
+        <sql>
+            ALTER TABLE hebergement.reservations_clients
+            ADD CONSTRAINT chk_res_clients_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <rollback>
+            <dropTable tableName="reservations_clients" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 003-h.8 : table hebergement.nuitees
+         ==================================================================== -->
+    <changeSet id="003-h-8-create-table-nuitees" author="cityprojects">
+        <comment>
+            Detail jour-par-jour d'une reservation : 1 ligne = 1 nuit consommee
+            par 1 chambre. Permet la facturation au reel et l'audit du night
+            audit (ligne marquee CONSOMMEE puis FACTUREE).
+
+            facture_id / ligne_facture_id (TODO[tour-finance]) : non presents
+            ici. Le tour finance ajoutera ces colonnes via changeset additif.
+        </comment>
+
+        <createTable tableName="nuitees" schemaName="hebergement">
+            <column name="nuitee_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_nuitees" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reservation_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chambre_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_nuit" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_nuit" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="taxe_sejour" type="DECIMAL(10,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="PREVUE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="nuitees" baseTableSchemaName="hebergement"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_nuitees_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="nuitees" baseTableSchemaName="hebergement"
+            baseColumnNames="reservation_id"
+            referencedTableName="reservations" referencedTableSchemaName="hebergement"
+            referencedColumnNames="reservation_id"
+            constraintName="fk_nuitees_reservation"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="nuitees" baseTableSchemaName="hebergement"
+            baseColumnNames="chambre_id"
+            referencedTableName="chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="chambre_id"
+            constraintName="fk_nuitees_chambre"/>
+
+        <addUniqueConstraint
+            tableName="nuitees" schemaName="hebergement"
+            columnNames="reservation_id, chambre_id, date_nuit"
+            constraintName="uk_nuitees"/>
+
+        <sql>
+            ALTER TABLE hebergement.nuitees
+            ADD CONSTRAINT chk_nuitees_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="nuitees" schemaName="hebergement" indexName="ix_nuitees_hotel_date">
+            <column name="hotel_id"/>
+            <column name="date_nuit"/>
+        </createIndex>
+
+        <createIndex tableName="nuitees" schemaName="hebergement" indexName="ix_nuitees_reservation_statut">
+            <column name="reservation_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="nuitees" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

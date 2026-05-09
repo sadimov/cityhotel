@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 12bis - Coherence cross-tenant des pivots (Postgres-only)
+
+  Defense en profondeur : meme si Hibernate @TenantId garantit que le
+  tenant courant est coherent au moment de l'INSERT cote app, des INSERTs
+  manuels (DBA, scripts de migration, replication) pourraient creer des
+  pivots dont le hotel_id ne correspond pas a celui de la reservation,
+  de la chambre ou du client referencee. Ces triggers refusent ces cas.
+
+  Findings DB-2/3/4 (Tour 12).
+
+  Postgres-only : H2 ne supporte pas les triggers PL/pgSQL. Sur H2 la
+  garde reste celle de Hibernate (@TenantId).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 005-1 : trigger sur reservations_chambres
+         pivot.hotel_id == reservation.hotel_id == chambre.hotel_id
+         ==================================================================== -->
+    <changeSet id="005-1-create-resch-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que le pivot reservations_chambres reference une reservation
+            et une chambre du meme hotel que le pivot lui-meme.
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION hebergement.check_pivot_tenant_coherence_resch()
+RETURNS TRIGGER AS $$
+DECLARE
+    res_hotel BIGINT;
+    cha_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO res_hotel FROM hebergement.reservations
+        WHERE reservation_id = NEW.reservation_id;
+    SELECT hotel_id INTO cha_hotel FROM hebergement.chambres
+        WHERE chambre_id = NEW.chambre_id;
+    IF NEW.hotel_id IS DISTINCT FROM res_hotel
+       OR NEW.hotel_id IS DISTINCT FROM cha_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant pivot rejected: pivot.hotel_id=% reservation.hotel_id=% chambre.hotel_id=%',
+            NEW.hotel_id, res_hotel, cha_hotel;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_resch
+            BEFORE INSERT OR UPDATE ON hebergement.reservations_chambres
+            FOR EACH ROW EXECUTE FUNCTION hebergement.check_pivot_tenant_coherence_resch()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_resch ON hebergement.reservations_chambres</sql>
+            <sql>DROP FUNCTION IF EXISTS hebergement.check_pivot_tenant_coherence_resch()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-2 : trigger sur reservations_clients
+         pivot.hotel_id == reservation.hotel_id == client.hotel_id
+                       == chambre.hotel_id (si chambre_id renseigne)
+         ==================================================================== -->
+    <changeSet id="005-2-create-resclients-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que le pivot reservations_clients reference une reservation,
+            un client (et eventuellement une chambre) du meme hotel.
+            Note : la table client.clients porte un hotel_id (verifie a
+            l'integration Tour 8).
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION hebergement.check_pivot_tenant_coherence_resclients()
+RETURNS TRIGGER AS $$
+DECLARE
+    res_hotel BIGINT;
+    cli_hotel BIGINT;
+    cha_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO res_hotel FROM hebergement.reservations
+        WHERE reservation_id = NEW.reservation_id;
+    SELECT hotel_id INTO cli_hotel FROM client.clients
+        WHERE client_id = NEW.client_id;
+    IF NEW.hotel_id IS DISTINCT FROM res_hotel
+       OR NEW.hotel_id IS DISTINCT FROM cli_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant pivot rejected: pivot.hotel_id=% reservation.hotel_id=% client.hotel_id=%',
+            NEW.hotel_id, res_hotel, cli_hotel;
+    END IF;
+    IF NEW.chambre_id IS NOT NULL THEN
+        SELECT hotel_id INTO cha_hotel FROM hebergement.chambres
+            WHERE chambre_id = NEW.chambre_id;
+        IF NEW.hotel_id IS DISTINCT FROM cha_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant pivot rejected: pivot.hotel_id=% chambre.hotel_id=%',
+                NEW.hotel_id, cha_hotel;
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_resclients
+            BEFORE INSERT OR UPDATE ON hebergement.reservations_clients
+            FOR EACH ROW EXECUTE FUNCTION hebergement.check_pivot_tenant_coherence_resclients()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_resclients ON hebergement.reservations_clients</sql>
+            <sql>DROP FUNCTION IF EXISTS hebergement.check_pivot_tenant_coherence_resclients()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-3 : trigger sur nuitees
+         nuitee.hotel_id == reservation.hotel_id == chambre.hotel_id
+         ==================================================================== -->
+    <changeSet id="005-3-create-nuitees-tenant-trigger" author="cityprojects" dbms="postgresql">
+        <comment>
+            Verifie que la nuitee reference une reservation et une chambre du
+            meme hotel.
+        </comment>
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION hebergement.check_pivot_tenant_coherence_nuitees()
+RETURNS TRIGGER AS $$
+DECLARE
+    res_hotel BIGINT;
+    cha_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO res_hotel FROM hebergement.reservations
+        WHERE reservation_id = NEW.reservation_id;
+    SELECT hotel_id INTO cha_hotel FROM hebergement.chambres
+        WHERE chambre_id = NEW.chambre_id;
+    IF NEW.hotel_id IS DISTINCT FROM res_hotel
+       OR NEW.hotel_id IS DISTINCT FROM cha_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant pivot rejected: nuitee.hotel_id=% reservation.hotel_id=% chambre.hotel_id=%',
+            NEW.hotel_id, res_hotel, cha_hotel;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_nuitees
+            BEFORE INSERT OR UPDATE ON hebergement.nuitees
+            FOR EACH ROW EXECUTE FUNCTION hebergement.check_pivot_tenant_coherence_nuitees()
+        </sql>
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_nuitees ON hebergement.nuitees</sql>
+            <sql>DROP FUNCTION IF EXISTS hebergement.check_pivot_tenant_coherence_nuitees()</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
