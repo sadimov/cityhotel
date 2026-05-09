@@ -1,0 +1,436 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 27 - Schema 'menage' :
+    - personnel        : agents de menage de l'hotel
+    - taches           : taches de nettoyage planifiees / executees
+    - planning         : creneaux de travail du personnel
+    - historique       : audit log des actions sur les taches
+
+  Source de reference (structure uniquement, NON copiee comme code Java) :
+    MENAGE/entities_dto_services_backend-menage.java
+
+  Conventions Tour 9bis appliquees DIRECTEMENT (pas de dette technique) :
+    - Schema 'menage'.
+    - PK technique BIGSERIAL.
+    - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0
+      (sentinel ROOT interdit comme hotel_id reel).
+    - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA UTC).
+    - created_by NOT NULL avec defaultValue="system".
+    - updated_by VARCHAR(80) nullable.
+
+  Cross-module (FK Long, pas @ManyToOne JPA) :
+    - taches.chambre_id      -> hebergement.chambres.chambre_id
+    - taches.personnel_id    -> menage.personnel.personnel_id (intra-module mais Long)
+    - planning.personnel_id  -> menage.personnel.personnel_id
+    - historique.tache_id    -> menage.taches.tache_id (nullable, conserve l'historique meme apres delete)
+    - historique.chambre_id  -> hebergement.chambres.chambre_id
+    - historique.personnel_id -> menage.personnel.personnel_id
+    - historique.user_id     -> core.dbusers.user_id (auteur de l'action)
+
+  Statut de tache : ENUM stocke en VARCHAR (cf. enum Java StatutTache,
+  valeurs PLANIFIEE / EN_COURS / TERMINEE / ANNULEE - cycle metier deduit
+  du mono via historiqueService.enregistrerAction("PLANIFIEE", "EN_COURS",
+  "TERMINEE", ...)). Pas de table de reference statuts_taches : enum
+  applicatif suffit (i18n cote front via cles).
+
+  Type de nettoyage : ENUM stocke en VARCHAR (cf. enum Java TypeNettoyage,
+  valeurs QUOTIDIEN / GRAND_MENAGE / MAINTENANCE).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 007-m.1 : creation du schema 'menage'
+         ==================================================================== -->
+    <changeSet id="007-m-1-create-schema" author="cityprojects">
+        <comment>Creation du schema SQL 'menage'.</comment>
+        <sql>CREATE SCHEMA IF NOT EXISTS menage</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS menage CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 007-m.2 : table menage.personnel
+         ==================================================================== -->
+    <changeSet id="007-m-2-create-table-personnel" author="cityprojects">
+        <comment>
+            Personnel de menage. numero_employe libre (pas de NumerotationService),
+            unique par hotel via uk_personnel_hotel_numero. email unique par hotel
+            si renseigne (UNIQUE partial via index applicatif - simple UNIQUE
+            INDEX ici car H2 ne supporte pas les UNIQUE partiels).
+        </comment>
+
+        <createTable tableName="personnel" schemaName="menage">
+            <column name="personnel_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_personnel" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_employe" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prenom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="telephone" type="VARCHAR(20)"/>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="date_embauche" type="DATE"/>
+            <column name="specialites" type="VARCHAR(500)"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="personnel" baseTableSchemaName="menage"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_personnel_hotel"/>
+
+        <sql>
+            ALTER TABLE menage.personnel
+            ADD CONSTRAINT chk_personnel_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <addUniqueConstraint
+            tableName="personnel" schemaName="menage"
+            columnNames="hotel_id, numero_employe"
+            constraintName="uk_personnel_hotel_numero"/>
+
+        <createIndex tableName="personnel" schemaName="menage" indexName="ix_personnel_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="personnel" schemaName="menage"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 007-m.3 : table menage.taches
+         ==================================================================== -->
+    <changeSet id="007-m-3-create-table-taches" author="cityprojects">
+        <comment>
+            Taches de menage. statut ENUM stocke en VARCHAR (PLANIFIEE / EN_COURS
+            / TERMINEE / ANNULEE). type_nettoyage ENUM (QUOTIDIEN / GRAND_MENAGE
+            / MAINTENANCE). priorite 1-3. heures previsionnelles (LocalTime) +
+            heures reelles (Instant timestamps UTC). Cross-module : chambre_id
+            -> hebergement.chambres (FK), personnel_id -> menage.personnel
+            (nullable jusqu'a assignation).
+        </comment>
+
+        <createTable tableName="taches" schemaName="menage">
+            <column name="tache_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_taches" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="chambre_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="personnel_id" type="BIGINT"/>
+            <column name="statut" type="VARCHAR(20)" defaultValue="PLANIFIEE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_nettoyage" type="VARCHAR(20)" defaultValue="QUOTIDIEN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priorite" type="INTEGER" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_planifiee" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="heure_debut_prevue" type="TIME"/>
+            <column name="heure_fin_prevue" type="TIME"/>
+            <column name="heure_debut_reelle" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="heure_fin_reelle" type="TIMESTAMP WITH TIME ZONE"/>
+            <column name="commentaires" type="TEXT"/>
+            <column name="problemes_detectes" type="TEXT"/>
+            <column name="materiel_utilise" type="VARCHAR(500)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="taches" baseTableSchemaName="menage"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_taches_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="taches" baseTableSchemaName="menage"
+            baseColumnNames="chambre_id"
+            referencedTableName="chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="chambre_id"
+            constraintName="fk_taches_chambre"/>
+
+        <addForeignKeyConstraint
+            baseTableName="taches" baseTableSchemaName="menage"
+            baseColumnNames="personnel_id"
+            referencedTableName="personnel" referencedTableSchemaName="menage"
+            referencedColumnNames="personnel_id"
+            constraintName="fk_taches_personnel"/>
+
+        <sql>
+            ALTER TABLE menage.taches
+            ADD CONSTRAINT chk_taches_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE menage.taches
+            ADD CONSTRAINT chk_taches_priorite_range CHECK (priorite BETWEEN 1 AND 3)
+        </sql>
+
+        <createIndex tableName="taches" schemaName="menage" indexName="ix_taches_hotel_date">
+            <column name="hotel_id"/>
+            <column name="date_planifiee"/>
+        </createIndex>
+
+        <createIndex tableName="taches" schemaName="menage" indexName="ix_taches_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="taches" schemaName="menage" indexName="ix_taches_hotel_personnel">
+            <column name="hotel_id"/>
+            <column name="personnel_id"/>
+        </createIndex>
+
+        <createIndex tableName="taches" schemaName="menage" indexName="ix_taches_hotel_chambre">
+            <column name="hotel_id"/>
+            <column name="chambre_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="taches" schemaName="menage"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 007-m.4 : table menage.planning
+         ==================================================================== -->
+    <changeSet id="007-m-4-create-table-planning" author="cityprojects">
+        <comment>
+            Planning du personnel. Un creneau (heure_debut, heure_fin) pour
+            une date_travail. Le service refuse les chevauchements pour un
+            meme personnel (validation applicative). disponible=false marque
+            une indisponibilite (conge, maladie).
+        </comment>
+
+        <createTable tableName="planning" schemaName="menage">
+            <column name="planning_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_planning" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="personnel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_travail" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="heure_debut" type="TIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="heure_fin" type="TIME">
+                <constraints nullable="false"/>
+            </column>
+            <column name="disponible" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commentaires" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="planning" baseTableSchemaName="menage"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_planning_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="planning" baseTableSchemaName="menage"
+            baseColumnNames="personnel_id"
+            referencedTableName="personnel" referencedTableSchemaName="menage"
+            referencedColumnNames="personnel_id"
+            constraintName="fk_planning_personnel"/>
+
+        <sql>
+            ALTER TABLE menage.planning
+            ADD CONSTRAINT chk_planning_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE menage.planning
+            ADD CONSTRAINT chk_planning_heures CHECK (heure_fin &gt; heure_debut)
+        </sql>
+
+        <createIndex tableName="planning" schemaName="menage" indexName="ix_planning_hotel_date">
+            <column name="hotel_id"/>
+            <column name="date_travail"/>
+        </createIndex>
+
+        <createIndex tableName="planning" schemaName="menage" indexName="ix_planning_personnel_date">
+            <column name="personnel_id"/>
+            <column name="date_travail"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="planning" schemaName="menage"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 007-m.5 : table menage.historique
+         ==================================================================== -->
+    <changeSet id="007-m-5-create-table-historique" author="cityprojects">
+        <comment>
+            Audit log des actions sur les taches : creation, assignation, debut,
+            fin, modification, suppression. tache_id nullable pour preserver
+            l'historique apres suppression d'une tache. user_id reference
+            l'utilisateur qui a effectue l'action (peut etre null pour les
+            actions systeme/scheduler).
+        </comment>
+
+        <createTable tableName="historique" schemaName="menage">
+            <column name="historique_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_historique" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tache_id" type="BIGINT"/>
+            <column name="chambre_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="personnel_id" type="BIGINT"/>
+            <column name="action" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ancien_statut" type="VARCHAR(50)"/>
+            <column name="nouveau_statut" type="VARCHAR(50)"/>
+            <column name="commentaire" type="TEXT"/>
+            <column name="user_id" type="BIGINT"/>
+            <column name="timestamp_action" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="historique" baseTableSchemaName="menage"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_historique_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="historique" baseTableSchemaName="menage"
+            baseColumnNames="tache_id"
+            referencedTableName="taches" referencedTableSchemaName="menage"
+            referencedColumnNames="tache_id"
+            constraintName="fk_historique_tache"
+            onDelete="SET NULL"/>
+
+        <addForeignKeyConstraint
+            baseTableName="historique" baseTableSchemaName="menage"
+            baseColumnNames="chambre_id"
+            referencedTableName="chambres" referencedTableSchemaName="hebergement"
+            referencedColumnNames="chambre_id"
+            constraintName="fk_historique_chambre"/>
+
+        <addForeignKeyConstraint
+            baseTableName="historique" baseTableSchemaName="menage"
+            baseColumnNames="personnel_id"
+            referencedTableName="personnel" referencedTableSchemaName="menage"
+            referencedColumnNames="personnel_id"
+            constraintName="fk_historique_personnel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="historique" baseTableSchemaName="menage"
+            baseColumnNames="user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_historique_user"/>
+
+        <sql>
+            ALTER TABLE menage.historique
+            ADD CONSTRAINT chk_historique_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="historique" schemaName="menage" indexName="ix_historique_hotel_timestamp">
+            <column name="hotel_id"/>
+            <column name="timestamp_action"/>
+        </createIndex>
+
+        <createIndex tableName="historique" schemaName="menage" indexName="ix_historique_tache">
+            <column name="tache_id"/>
+        </createIndex>
+
+        <createIndex tableName="historique" schemaName="menage" indexName="ix_historique_chambre">
+            <column name="chambre_id"/>
+        </createIndex>
+
+        <createIndex tableName="historique" schemaName="menage" indexName="ix_historique_personnel">
+            <column name="personnel_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="historique" schemaName="menage"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

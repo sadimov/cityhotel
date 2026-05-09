@@ -1,0 +1,400 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 30 - Hardening multi-tenant et coherence metier du module menage.
+
+  Suite de l'audit Tour 29 (db-postgres : 0 critique, 15 eleves). Ce changeset
+  applique les correctifs DB qui ne dependent pas du code Java (les ajouts JPA
+  comme @Version sont coordonnes en parallele avec backend-spring).
+
+  Defense en profondeur : meme si Hibernate @TenantId garantit que le tenant
+  courant est coherent au moment de l'INSERT cote app (services menage F1-F8
+  utilisent par ailleurs des findById tenant-aware), des INSERTs manuels (DBA,
+  scripts de migration, batchs futurs, replication) pourraient creer :
+   - une tache dont chambre_id pointe vers un autre tenant ;
+   - une tache dont personnel_id (quand assigne) pointe vers un autre tenant ;
+   - un planning dont personnel_id pointe vers un autre tenant ;
+   - un historique dont tache_id / chambre_id / personnel_id / user_id
+     pointent vers un autre tenant.
+
+  Ces triggers refusent ces cas. Format identique au Tour 12bis
+  (005-hebergement-pivot-tenant-coherence.xml), Tour finance-1bis
+  (024-finance-pivot-tenant-coherence.xml) et Tour 25bis
+  (026-restaurant-pivot-tenant-coherence.xml) : N fonctions PL/pgSQL +
+  N triggers BEFORE INSERT/UPDATE.
+
+  Postgres-only : H2 ne supporte pas les triggers PL/pgSQL. Sur H2 la garde
+  reste celle de Hibernate (@TenantId) + service-side. dbms="postgresql"
+  applique sur tous les changesets a base de PL/pgSQL.
+
+  Tables visees :
+   - 028-1 : triggers cross-tenant sur menage.taches, menage.planning,
+             menage.historique (4 fonctions + 4 triggers).
+   - 028-2 : colonne version BIGINT NOT NULL DEFAULT 0 sur menage.taches
+             pour optimistic locking (coordonne avec @Version cote JPA).
+   - 028-3 : UNIQUE (hotel_id, personnel_id, date_travail, heure_debut) sur
+             menage.planning pour materialiser la regle "pas de chevauchement"
+             a l'identique du creneau (start commun).
+   - 028-4 : CHECK coherence statut/heures reelles sur menage.taches
+             (TERMINEE => debut+fin reels, EN_COURS => debut reel sans fin,
+             PLANIFIEE/ANNULEE => sans contrainte).
+   - 028-5 : ON DELETE SET NULL sur menage.historique.{personnel_id, user_id}
+             pour ne plus bloquer la suppression du personnel ou de l'user
+             par l'audit log. chambre_id NON modifie (NOT NULL cote JPA
+             Historique.chambreId @NotNull - voir note coordination en fin
+             de changeset).
+
+  Coordination Java (backend-spring, parallele) :
+   - 028-2 : ajout @Version private Long version = 0L; sur entity/menage/Tache.java.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 028-1 : 4 triggers PL/pgSQL de coherence cross-tenant
+         (taches.chambre_id, taches.personnel_id, planning.personnel_id,
+         historique.{tache_id, chambre_id, personnel_id, user_id}).
+
+         Pattern : SELECT hotel_id INTO v_xxx ... ; IF v_xxx IS NOT NULL AND
+         v_xxx <> NEW.hotel_id THEN RAISE EXCEPTION. Le "IS NOT NULL"
+         couvre deux cas :
+          - FK nullable cote application : si NEW.xxx_id est NULL, le SELECT
+            ne retourne pas de ligne, v_xxx reste NULL, on skip.
+          - Reference vers une table dont le hotel_id pourrait etre NULL :
+            on skip plutot que de lever (defense graduelle).
+
+         core.dbusers a hotel_id NOT NULL (verifie 001-create-core-schema.sql
+         ligne 70), donc le check sur historique.user_id est strict mais
+         tolere user_id NULL (action systeme/scheduler) via le IS NOT NULL.
+         ==================================================================== -->
+    <changeSet id="028-1-create-menage-tenant-triggers" author="cityprojects" dbms="postgresql">
+        <comment>
+            Defense en profondeur cross-tenant sur les pivots du module menage.
+            4 fonctions PL/pgSQL + 4 triggers BEFORE INSERT/UPDATE qui levent
+            une exception si la FK pointe vers une entite d'un autre hotel.
+            Postgres-only : H2 saute ce changeset.
+        </comment>
+
+        <!-- ============================================================
+             Fonction + trigger : menage.taches
+             Verifie chambre_id (NOT NULL) et personnel_id (nullable).
+             ============================================================ -->
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION menage.check_pivot_tenant_coherence_taches()
+RETURNS TRIGGER AS $$
+DECLARE
+    chambre_hotel   BIGINT;
+    personnel_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO chambre_hotel FROM hebergement.chambres
+        WHERE chambre_id = NEW.chambre_id;
+    IF chambre_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant tache rejected: chambre_id=% not found',
+            NEW.chambre_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM chambre_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant tache rejected: tache.hotel_id=% chambre.hotel_id=%',
+            NEW.hotel_id, chambre_hotel;
+    END IF;
+
+    IF NEW.personnel_id IS NOT NULL THEN
+        SELECT hotel_id INTO personnel_hotel FROM menage.personnel
+            WHERE personnel_id = NEW.personnel_id;
+        IF personnel_hotel IS NULL THEN
+            RAISE EXCEPTION 'Cross-tenant tache rejected: personnel_id=% not found',
+                NEW.personnel_id;
+        END IF;
+        IF NEW.hotel_id IS DISTINCT FROM personnel_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant tache rejected: tache.hotel_id=% personnel.hotel_id=%',
+                NEW.hotel_id, personnel_hotel;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_taches
+            BEFORE INSERT OR UPDATE ON menage.taches
+            FOR EACH ROW EXECUTE FUNCTION menage.check_pivot_tenant_coherence_taches()
+        </sql>
+
+        <!-- ============================================================
+             Fonction + trigger : menage.planning
+             Verifie personnel_id (NOT NULL).
+             ============================================================ -->
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION menage.check_pivot_tenant_coherence_planning()
+RETURNS TRIGGER AS $$
+DECLARE
+    personnel_hotel BIGINT;
+BEGIN
+    SELECT hotel_id INTO personnel_hotel FROM menage.personnel
+        WHERE personnel_id = NEW.personnel_id;
+    IF personnel_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant planning rejected: personnel_id=% not found',
+            NEW.personnel_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM personnel_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant planning rejected: planning.hotel_id=% personnel.hotel_id=%',
+            NEW.hotel_id, personnel_hotel;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_planning
+            BEFORE INSERT OR UPDATE ON menage.planning
+            FOR EACH ROW EXECUTE FUNCTION menage.check_pivot_tenant_coherence_planning()
+        </sql>
+
+        <!-- ============================================================
+             Fonction + trigger : menage.historique
+             Verifie tache_id (nullable), chambre_id (NOT NULL),
+             personnel_id (nullable), user_id (nullable).
+             ============================================================ -->
+        <sql splitStatements="false" endDelimiter="\nGO">
+CREATE OR REPLACE FUNCTION menage.check_pivot_tenant_coherence_historique()
+RETURNS TRIGGER AS $$
+DECLARE
+    tache_hotel     BIGINT;
+    chambre_hotel   BIGINT;
+    personnel_hotel BIGINT;
+    user_hotel      BIGINT;
+BEGIN
+    IF NEW.tache_id IS NOT NULL THEN
+        SELECT hotel_id INTO tache_hotel FROM menage.taches
+            WHERE tache_id = NEW.tache_id;
+        IF tache_hotel IS NOT NULL AND NEW.hotel_id IS DISTINCT FROM tache_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant historique rejected: historique.hotel_id=% tache.hotel_id=%',
+                NEW.hotel_id, tache_hotel;
+        END IF;
+    END IF;
+
+    SELECT hotel_id INTO chambre_hotel FROM hebergement.chambres
+        WHERE chambre_id = NEW.chambre_id;
+    IF chambre_hotel IS NULL THEN
+        RAISE EXCEPTION 'Cross-tenant historique rejected: chambre_id=% not found',
+            NEW.chambre_id;
+    END IF;
+    IF NEW.hotel_id IS DISTINCT FROM chambre_hotel THEN
+        RAISE EXCEPTION 'Cross-tenant historique rejected: historique.hotel_id=% chambre.hotel_id=%',
+            NEW.hotel_id, chambre_hotel;
+    END IF;
+
+    IF NEW.personnel_id IS NOT NULL THEN
+        SELECT hotel_id INTO personnel_hotel FROM menage.personnel
+            WHERE personnel_id = NEW.personnel_id;
+        IF personnel_hotel IS NOT NULL AND NEW.hotel_id IS DISTINCT FROM personnel_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant historique rejected: historique.hotel_id=% personnel.hotel_id=%',
+                NEW.hotel_id, personnel_hotel;
+        END IF;
+    END IF;
+
+    IF NEW.user_id IS NOT NULL THEN
+        SELECT hotel_id INTO user_hotel FROM core.dbusers
+            WHERE user_id = NEW.user_id;
+        IF user_hotel IS NOT NULL AND NEW.hotel_id IS DISTINCT FROM user_hotel THEN
+            RAISE EXCEPTION 'Cross-tenant historique rejected: historique.hotel_id=% user.hotel_id=%',
+                NEW.hotel_id, user_hotel;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql
+        </sql>
+        <sql>
+            CREATE TRIGGER trg_check_pivot_tenant_historique
+            BEFORE INSERT OR UPDATE ON menage.historique
+            FOR EACH ROW EXECUTE FUNCTION menage.check_pivot_tenant_coherence_historique()
+        </sql>
+
+        <rollback>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_historique ON menage.historique</sql>
+            <sql>DROP FUNCTION IF EXISTS menage.check_pivot_tenant_coherence_historique()</sql>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_planning ON menage.planning</sql>
+            <sql>DROP FUNCTION IF EXISTS menage.check_pivot_tenant_coherence_planning()</sql>
+            <sql>DROP TRIGGER IF EXISTS trg_check_pivot_tenant_taches ON menage.taches</sql>
+            <sql>DROP FUNCTION IF EXISTS menage.check_pivot_tenant_coherence_taches()</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 028-2 : version BIGINT pour optimistic locking sur Tache
+         Coordonne avec backend-spring qui ajoute @Version private Long version
+         = 0L; sur entity/menage/Tache.java. defaultValueNumeric="0" garantit
+         que les lignes existantes ne sont pas en NULL au moment de l'INSERT
+         futur (les lignes deja en base recoivent 0).
+         Compatible H2 + Postgres : pas de dbms restriction.
+         ==================================================================== -->
+    <changeSet id="028-2-add-version-to-taches" author="cityprojects">
+        <comment>
+            Ajoute la colonne version (BIGINT NOT NULL DEFAULT 0) sur
+            menage.taches pour activer l'optimistic locking JPA cote
+            entity/menage/Tache.java (@Version coordonne avec backend-spring).
+            Evite les ecrasements concurrents lors des transitions de statut
+            (commencer / terminer / assigner / annuler).
+        </comment>
+        <addColumn schemaName="menage" tableName="taches">
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        <rollback>
+            <dropColumn schemaName="menage" tableName="taches" columnName="version"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 028-3 : UNIQUE (hotel_id, personnel_id, date_travail,
+         heure_debut) sur menage.planning.
+         Materialise la regle metier "pas de chevauchement exact" pour un
+         meme creneau de debut. Note : ne couvre PAS les chevauchements
+         partiels (ex: 08:00-12:00 vs 09:00-13:00) - cela reste a la charge
+         du service applicatif (PlanningServiceImpl). C'est neanmoins un
+         garde-fou utile contre les double-insertions du meme creneau.
+         Compatible H2 + Postgres.
+
+         Risque migration prod : si des doublons (hotel_id, personnel_id,
+         date_travail, heure_debut) preexistent dans une base de prod, ce
+         changeset echouera. En local Tour 27 (creation initiale) il n'y
+         a aucune donnee = pas de risque. En prod future, il faudra :
+            SELECT hotel_id, personnel_id, date_travail, heure_debut, COUNT(*)
+            FROM menage.planning GROUP BY 1,2,3,4 HAVING COUNT(*) > 1;
+         et purger les doublons avant deploiement.
+         ==================================================================== -->
+    <changeSet id="028-3-add-unique-planning-creneau" author="cityprojects">
+        <comment>
+            UNIQUE (hotel_id, personnel_id, date_travail, heure_debut) sur
+            menage.planning pour materialiser la regle "pas de chevauchement
+            exact" cote SGBD. Defense en profondeur en complement de la
+            verification applicative dans PlanningServiceImpl.
+            Risque prod : doublons preexistants - voir commentaire changeset.
+        </comment>
+        <addUniqueConstraint
+            schemaName="menage" tableName="planning"
+            columnNames="hotel_id, personnel_id, date_travail, heure_debut"
+            constraintName="uk_planning_personnel_creneau"/>
+        <rollback>
+            <dropUniqueConstraint
+                schemaName="menage" tableName="planning"
+                constraintName="uk_planning_personnel_creneau"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 028-4 : CHECK coherence statut/heures reelles sur taches.
+          - TERMINEE  => heure_debut_reelle IS NOT NULL AND heure_fin_reelle IS NOT NULL
+          - EN_COURS  => heure_debut_reelle IS NOT NULL AND heure_fin_reelle IS NULL
+          - PLANIFIEE / ANNULEE => sans contrainte (mais une tache annulee
+            peut conserver les heures si elle a ete commencee puis annulee
+            apres - on reste permissif).
+         Compatible H2 + Postgres (syntaxe ALTER TABLE ADD CONSTRAINT CHECK
+         standard, pas de PL/pgSQL).
+
+         Note : ce CHECK est plus strict que la coherence garantie par les
+         services Java (TacheServiceImpl.commencer / terminer). Il bloque
+         egalement les imports / migrations / scripts manuels qui creeraient
+         une tache TERMINEE sans heures reelles.
+         ==================================================================== -->
+    <changeSet id="028-4-check-statut-heures-coherence-taches" author="cityprojects">
+        <comment>
+            CHECK coherence statut/heures reelles sur menage.taches :
+            TERMINEE -> debut+fin reels, EN_COURS -> debut reel sans fin,
+            PLANIFIEE/ANNULEE -> sans contrainte. Defense en profondeur en
+            complement des services Java (TacheServiceImpl).
+        </comment>
+        <sql>
+            ALTER TABLE menage.taches ADD CONSTRAINT chk_taches_statut_heures CHECK (
+              (statut = 'TERMINEE'  AND heure_debut_reelle IS NOT NULL AND heure_fin_reelle IS NOT NULL)
+              OR (statut = 'EN_COURS'  AND heure_debut_reelle IS NOT NULL AND heure_fin_reelle IS NULL)
+              OR (statut IN ('PLANIFIEE', 'ANNULEE'))
+            )
+        </sql>
+        <rollback>
+            <sql>ALTER TABLE menage.taches DROP CONSTRAINT chk_taches_statut_heures</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 028-5 : ON DELETE SET NULL sur historique.{personnel_id,
+         user_id} pour ne plus bloquer la suppression de personnel/users par
+         les FK de l'audit log. Asymmetrie corrigee : tache_id etait deja
+         SET NULL (007-m-5), mais personnel_id et user_id restaient en
+         RESTRICT par defaut.
+
+         IMPORTANT : chambre_id N'EST PAS modifie ici car Historique.chambreId
+         est annote @NotNull / nullable=false en JPA (cf.
+         entity/menage/Historique.java ligne 54-56). Mettre la FK en SET NULL
+         creerait une violation @NotNull si une chambre etait supprimee.
+         Si l'audit Tour 29 considere qu'il faut autoriser la suppression
+         d'une chambre referencee dans l'historique, il faudra coordonner
+         avec backend-spring pour relacher le @NotNull sur chambreId AVANT
+         d'ajouter ON DELETE SET NULL sur la FK. Ce point est volontairement
+         laisse hors de ce changeset (signalement utilisateur).
+
+         Compatible H2 + Postgres (drop + recreate FK standard).
+         ==================================================================== -->
+    <changeSet id="028-5-historique-fk-on-delete-set-null" author="cityprojects">
+        <comment>
+            Passe historique.personnel_id et historique.user_id en
+            ON DELETE SET NULL pour ne plus bloquer la suppression d'un
+            personnel ou d'un utilisateur par l'audit log. chambre_id reste
+            en RESTRICT car Historique.chambreId est @NotNull cote JPA - voir
+            commentaire changeset.
+        </comment>
+
+        <!-- personnel_id : drop + recreate avec onDelete="SET NULL" -->
+        <dropForeignKeyConstraint
+            baseTableSchemaName="menage" baseTableName="historique"
+            constraintName="fk_historique_personnel"/>
+        <addForeignKeyConstraint
+            baseTableSchemaName="menage" baseTableName="historique"
+            baseColumnNames="personnel_id"
+            referencedTableSchemaName="menage" referencedTableName="personnel"
+            referencedColumnNames="personnel_id"
+            constraintName="fk_historique_personnel"
+            onDelete="SET NULL"/>
+
+        <!-- user_id : drop + recreate avec onDelete="SET NULL" -->
+        <dropForeignKeyConstraint
+            baseTableSchemaName="menage" baseTableName="historique"
+            constraintName="fk_historique_user"/>
+        <addForeignKeyConstraint
+            baseTableSchemaName="menage" baseTableName="historique"
+            baseColumnNames="user_id"
+            referencedTableSchemaName="core" referencedTableName="dbusers"
+            referencedColumnNames="user_id"
+            constraintName="fk_historique_user"
+            onDelete="SET NULL"/>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableSchemaName="menage" baseTableName="historique"
+                constraintName="fk_historique_user"/>
+            <addForeignKeyConstraint
+                baseTableSchemaName="menage" baseTableName="historique"
+                baseColumnNames="user_id"
+                referencedTableSchemaName="core" referencedTableName="dbusers"
+                referencedColumnNames="user_id"
+                constraintName="fk_historique_user"/>
+            <dropForeignKeyConstraint
+                baseTableSchemaName="menage" baseTableName="historique"
+                constraintName="fk_historique_personnel"/>
+            <addForeignKeyConstraint
+                baseTableSchemaName="menage" baseTableName="historique"
+                baseColumnNames="personnel_id"
+                referencedTableSchemaName="menage" referencedTableName="personnel"
+                referencedColumnNames="personnel_id"
+                constraintName="fk_historique_personnel"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
