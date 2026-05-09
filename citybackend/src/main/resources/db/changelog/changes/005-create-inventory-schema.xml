@@ -1,0 +1,683 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 16 - Schema 'inventory' : fournisseurs, categories_produits, produits,
+  mouvements_stock, bons_commande + lignes_bons_commande, bons_sortie + lignes_bons_sortie.
+
+  Source eclatee depuis INVENTORY/entities_services_module_inventory.java
+  (mono - cf. CARTOGRAPHIE_MODULES.md ligne 159) + INVENTORY/controleurs_module_inventory.java
+  (mono - cf. ligne 160).
+
+  Conventions appliquees DIRECTEMENT (patterns Tour 9bis pour eviter la dette
+  technique du module client) :
+  - Schema 'inventory'.
+  - PK technique BIGSERIAL nommees metier (produit_id, categorie_id, ...).
+  - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0 (sentinel ROOT
+    interdit comme hotel_id reel, cf. CityTenantIdentifierResolver).
+  - created_at, updated_at en TIMESTAMP WITH TIME ZONE (matche Instant JPA, UTC neutre).
+  - created_by NOT NULL avec defaultValue="system" (sentinel cote app).
+  - updated_by VARCHAR(80) nullable.
+  - Numerotation sequentielle par hotel via NumerotationService :
+    * UNIQUE (hotel_id, numero_bc) sur bons_commande
+    * UNIQUE (hotel_id, numero_bs) sur bons_sortie
+    * UNIQUE (hotel_id, code_produit) sur produits
+    * UNIQUE (hotel_id, code_categorie) sur categories_produits
+  - user_id (createur) reference core.dbusers via FK.
+
+  Cross-module reportes :
+  - facture_fournisseur_id : TODO[tour-finance], pas de FK pour l'instant
+    (le tour finance pourra ajouter via changeset additif).
+
+  Le precedent fichier 005-create-inventory-schema.sql etait VIDE (0 ligne)
+  depuis l'origine du projet. Liquibase desactive jusqu'au Tour 5A : aucun
+  changeset applique, remplacement sans risque (pas de DATABASECHANGELOG.MD5SUM).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 005-i.1 : creation du schema 'inventory'
+         ==================================================================== -->
+    <changeSet id="005-i-1-create-schema" author="cityprojects">
+        <comment>Creation du schema SQL 'inventory' (stock, fournisseurs, BC, BS).</comment>
+        <sql>CREATE SCHEMA IF NOT EXISTS inventory</sql>
+        <rollback>
+            <sql>DROP SCHEMA IF EXISTS inventory CASCADE</sql>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.2 : table inventory.fournisseurs
+         ==================================================================== -->
+    <changeSet id="005-i-2-create-table-fournisseurs" author="cityprojects">
+        <comment>
+            Fournisseurs de l'hotel (matieres premieres, F&amp;B, materiel...).
+            Isolation tenant via hotel_id + @TenantId Hibernate.
+        </comment>
+
+        <createTable tableName="fournisseurs" schemaName="inventory">
+            <column name="fournisseur_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_fournisseurs" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom_fournisseur" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contact_principal" type="VARCHAR(200)"/>
+            <column name="telephone" type="VARCHAR(20)"/>
+            <column name="email" type="VARCHAR(100)"/>
+            <column name="adresse" type="TEXT"/>
+            <column name="ville" type="VARCHAR(100)"/>
+            <column name="pays" type="VARCHAR(100)"/>
+            <column name="conditions_paiement" type="TEXT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="fournisseurs" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_fournisseurs_hotel"/>
+
+        <sql>
+            ALTER TABLE inventory.fournisseurs
+            ADD CONSTRAINT chk_fournisseurs_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="fournisseurs" schemaName="inventory" indexName="ix_fournisseurs_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="fournisseurs" schemaName="inventory" indexName="ix_fournisseurs_hotel_nom">
+            <column name="hotel_id"/>
+            <column name="nom_fournisseur"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="fournisseurs" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.3 : table inventory.categories_produits
+         ==================================================================== -->
+    <changeSet id="005-i-3-create-table-categories-produits" author="cityprojects">
+        <comment>
+            Categories de produits (F&amp;B, fournitures, etc.). code_categorie
+            unique par hotel.
+        </comment>
+
+        <createTable tableName="categories_produits" schemaName="inventory">
+            <column name="categorie_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_categories_produits" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code_categorie" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom_categorie" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="categories_produits" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_categories_produits_hotel"/>
+
+        <addUniqueConstraint
+            tableName="categories_produits" schemaName="inventory"
+            columnNames="hotel_id, code_categorie"
+            constraintName="uk_categories_produits_hotel_code"/>
+
+        <sql>
+            ALTER TABLE inventory.categories_produits
+            ADD CONSTRAINT chk_categories_produits_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="categories_produits" schemaName="inventory" indexName="ix_categories_produits_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="categories_produits" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.4 : table inventory.produits
+         ==================================================================== -->
+    <changeSet id="005-i-4-create-table-produits" author="cityprojects">
+        <comment>
+            Produits manipules (achetes/consommes/vendus). stock_actuel est la
+            source de verite du stock courant ; mouvements_stock fournit l'audit
+            trail. code_produit unique par hotel.
+        </comment>
+
+        <createTable tableName="produits" schemaName="inventory">
+            <column name="produit_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_produits" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code_produit" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom_produit" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="categorie_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unite_mesure" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_unitaire" type="DECIMAL(10,2)" defaultValueNumeric="0"/>
+            <column name="seuil_alerte" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="seuil_critique" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_actuel" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fournisseur_principal_id" type="BIGINT"/>
+            <column name="est_facturable" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="produits" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_produits_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="produits" baseTableSchemaName="inventory"
+            baseColumnNames="categorie_id"
+            referencedTableName="categories_produits" referencedTableSchemaName="inventory"
+            referencedColumnNames="categorie_id"
+            constraintName="fk_produits_categorie"/>
+
+        <addForeignKeyConstraint
+            baseTableName="produits" baseTableSchemaName="inventory"
+            baseColumnNames="fournisseur_principal_id"
+            referencedTableName="fournisseurs" referencedTableSchemaName="inventory"
+            referencedColumnNames="fournisseur_id"
+            constraintName="fk_produits_fournisseur_principal"/>
+
+        <addUniqueConstraint
+            tableName="produits" schemaName="inventory"
+            columnNames="hotel_id, code_produit"
+            constraintName="uk_produits_hotel_code"/>
+
+        <sql>
+            ALTER TABLE inventory.produits
+            ADD CONSTRAINT chk_produits_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE inventory.produits
+            ADD CONSTRAINT chk_produits_stock_actuel_positive CHECK (stock_actuel &gt;= 0)
+        </sql>
+
+        <createIndex tableName="produits" schemaName="inventory" indexName="ix_produits_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="produits" schemaName="inventory" indexName="ix_produits_hotel_categorie">
+            <column name="hotel_id"/>
+            <column name="categorie_id"/>
+        </createIndex>
+
+        <createIndex tableName="produits" schemaName="inventory" indexName="ix_produits_hotel_nom">
+            <column name="hotel_id"/>
+            <column name="nom_produit"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="produits" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.5 : table inventory.mouvements_stock
+         ==================================================================== -->
+    <changeSet id="005-i-5-create-table-mouvements-stock" author="cityprojects">
+        <comment>
+            Audit trail des mouvements de stock (entree, sortie, ajustement, perte).
+            Cree a chaque modification de produits.stock_actuel.
+        </comment>
+
+        <createTable tableName="mouvements_stock" schemaName="inventory">
+            <column name="mouvement_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_mouvements_stock" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="produit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_mouvement" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_unitaire" type="DECIMAL(10,2)"/>
+            <column name="stock_avant" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="stock_apres" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reference_document" type="VARCHAR(50)"/>
+            <column name="commentaire" type="TEXT"/>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="mouvements_stock" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_mouvements_stock_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="mouvements_stock" baseTableSchemaName="inventory"
+            baseColumnNames="produit_id"
+            referencedTableName="produits" referencedTableSchemaName="inventory"
+            referencedColumnNames="produit_id"
+            constraintName="fk_mouvements_stock_produit"/>
+
+        <addForeignKeyConstraint
+            baseTableName="mouvements_stock" baseTableSchemaName="inventory"
+            baseColumnNames="user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_mouvements_stock_user"/>
+
+        <sql>
+            ALTER TABLE inventory.mouvements_stock
+            ADD CONSTRAINT chk_mouvements_stock_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="mouvements_stock" schemaName="inventory" indexName="ix_mouvements_stock_hotel_produit">
+            <column name="hotel_id"/>
+            <column name="produit_id"/>
+        </createIndex>
+
+        <createIndex tableName="mouvements_stock" schemaName="inventory" indexName="ix_mouvements_stock_hotel_type">
+            <column name="hotel_id"/>
+            <column name="type_mouvement"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="mouvements_stock" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.6 : table inventory.bons_commande
+         ==================================================================== -->
+    <changeSet id="005-i-6-create-table-bons-commande" author="cityprojects">
+        <comment>
+            Bons de commande fournisseur. numero_bc unique par hotel
+            (UNIQUE (hotel_id, numero_bc)) - genere par NumerotationService (BC).
+            facture_fournisseur_id : TODO[tour-finance], non present pour l'instant.
+        </comment>
+
+        <createTable tableName="bons_commande" schemaName="inventory">
+            <column name="bon_commande_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_bons_commande" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_bc" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fournisseur_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="BROUILLON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_commande" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_livraison_prevue" type="DATE"/>
+            <column name="date_livraison_reelle" type="DATE"/>
+            <column name="montant_total" type="DECIMAL(12,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_tva" type="DECIMAL(12,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commentaires" type="TEXT"/>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_bons_commande_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="fournisseur_id"
+            referencedTableName="fournisseurs" referencedTableSchemaName="inventory"
+            referencedColumnNames="fournisseur_id"
+            constraintName="fk_bons_commande_fournisseur"/>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_bons_commande_user"/>
+
+        <addUniqueConstraint
+            tableName="bons_commande" schemaName="inventory"
+            columnNames="hotel_id, numero_bc"
+            constraintName="uk_bons_commande_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE inventory.bons_commande
+            ADD CONSTRAINT chk_bons_commande_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="bons_commande" schemaName="inventory" indexName="ix_bons_commande_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="bons_commande" schemaName="inventory" indexName="ix_bons_commande_hotel_fournisseur">
+            <column name="hotel_id"/>
+            <column name="fournisseur_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="bons_commande" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.7 : table inventory.lignes_bons_commande
+         ==================================================================== -->
+    <changeSet id="005-i-7-create-table-lignes-bons-commande" author="cityprojects">
+        <comment>
+            Lignes detaillees d'un bon de commande. Pas de hotel_id sur la ligne :
+            l'isolation tenant est portee par le bon parent, et la coherence FK
+            entre bons_commande.hotel_id et le bon de commande de la ligne est
+            implicitement garantie via la FK bon_commande_id.
+        </comment>
+
+        <createTable tableName="lignes_bons_commande" schemaName="inventory">
+            <column name="ligne_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_lignes_bons_commande" nullable="false"/>
+            </column>
+            <column name="bon_commande_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="produit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite_commandee" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite_recue" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="prix_unitaire" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_reception" type="DATE"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="bon_commande_id"
+            referencedTableName="bons_commande" referencedTableSchemaName="inventory"
+            referencedColumnNames="bon_commande_id"
+            constraintName="fk_lignes_bc_bon"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_bons_commande" baseTableSchemaName="inventory"
+            baseColumnNames="produit_id"
+            referencedTableName="produits" referencedTableSchemaName="inventory"
+            referencedColumnNames="produit_id"
+            constraintName="fk_lignes_bc_produit"/>
+
+        <createIndex tableName="lignes_bons_commande" schemaName="inventory" indexName="ix_lignes_bc_bon">
+            <column name="bon_commande_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="lignes_bons_commande" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.8 : table inventory.bons_sortie
+         ==================================================================== -->
+    <changeSet id="005-i-8-create-table-bons-sortie" author="cityprojects">
+        <comment>
+            Bons de sortie (sortie de stock vers Restaurant, Bar, Menage, etc.).
+            numero_bs unique par hotel - genere par NumerotationService (BS).
+            Le stock est decremente a la livraison (statut LIVRE).
+        </comment>
+
+        <createTable tableName="bons_sortie" schemaName="inventory">
+            <column name="bon_sortie_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_bons_sortie" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero_bs" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="destination" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="BROUILLON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_sortie" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commentaires" type="TEXT"/>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_sortie" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_bons_sortie_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="bons_sortie" baseTableSchemaName="inventory"
+            baseColumnNames="user_id"
+            referencedTableName="dbusers" referencedTableSchemaName="core"
+            referencedColumnNames="user_id"
+            constraintName="fk_bons_sortie_user"/>
+
+        <addUniqueConstraint
+            tableName="bons_sortie" schemaName="inventory"
+            columnNames="hotel_id, numero_bs"
+            constraintName="uk_bons_sortie_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE inventory.bons_sortie
+            ADD CONSTRAINT chk_bons_sortie_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="bons_sortie" schemaName="inventory" indexName="ix_bons_sortie_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="bons_sortie" schemaName="inventory" indexName="ix_bons_sortie_hotel_destination">
+            <column name="hotel_id"/>
+            <column name="destination"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="bons_sortie" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 005-i.9 : table inventory.lignes_bons_sortie
+         ==================================================================== -->
+    <changeSet id="005-i-9-create-table-lignes-bons-sortie" author="cityprojects">
+        <comment>
+            Lignes detaillees d'un bon de sortie. Idem ligne BC : pas de hotel_id
+            (porte par le parent).
+        </comment>
+
+        <createTable tableName="lignes_bons_sortie" schemaName="inventory">
+            <column name="ligne_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_lignes_bons_sortie" nullable="false"/>
+            </column>
+            <column name="bon_sortie_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="produit_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite_demandee" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantite_servie" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="commentaires" type="TEXT"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_bons_sortie" baseTableSchemaName="inventory"
+            baseColumnNames="bon_sortie_id"
+            referencedTableName="bons_sortie" referencedTableSchemaName="inventory"
+            referencedColumnNames="bon_sortie_id"
+            constraintName="fk_lignes_bs_bon"
+            onDelete="CASCADE"/>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_bons_sortie" baseTableSchemaName="inventory"
+            baseColumnNames="produit_id"
+            referencedTableName="produits" referencedTableSchemaName="inventory"
+            referencedColumnNames="produit_id"
+            constraintName="fk_lignes_bs_produit"/>
+
+        <createIndex tableName="lignes_bons_sortie" schemaName="inventory" indexName="ix_lignes_bs_bon">
+            <column name="bon_sortie_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="lignes_bons_sortie" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
