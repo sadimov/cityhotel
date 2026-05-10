@@ -75,10 +75,15 @@ export function mapLoginResponseToUser(response: LoginResponse): AuthUser {
 export function mapLoginResponseToHotel(response: LoginResponse): AuthHotel {
   // Tour 7C : `hotelId` n'est plus exposé par le DTO serveur — on le dérive
   // du claim JWT signé. `?? 0` = sentinel ROOT pour les SUPERADMIN sans
-  // hôtel (cohérent avec `Hotel.ROOT = 0L` côté backend). Le mapper reste
-  // pur (parsing JSON pur, pas de side-effect) et donc compatible avec les
-  // runtimeChecks NgRx.
-  const hotelId = decodeJwt<CityJwtPayload>(response.token).hotelId ?? 0;
+  // hôtel (cohérent avec `Hotel.ROOT = 0L` côté backend).
+  // Fix runtime post-v1.0.0 : `/auth/me` retourne LoginResponse SANS token
+  // (le token reste celui du header Authorization). Fallback localStorage
+  // si response.token absent. Sans ce fallback, `decodeJwt(undefined)`
+  // throw → bloque l'effect NgRx loadCurrentUser → UI figée.
+  const tokenToDecode = response.token ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('city_hotel_token') : null);
+  const hotelId = tokenToDecode
+    ? (decodeJwt<CityJwtPayload>(tokenToDecode).hotelId ?? 0)
+    : 0;
   return {
     hotelId,
     hotelCode: response.hotelCode,
