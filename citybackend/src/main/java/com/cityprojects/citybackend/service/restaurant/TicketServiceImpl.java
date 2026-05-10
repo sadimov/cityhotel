@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.service.restaurant;
 
+import com.cityprojects.citybackend.common.security.SecurityUtils;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.restaurant.TicketDto;
 import com.cityprojects.citybackend.entity.restaurant.Ticket;
@@ -9,11 +10,8 @@ import com.cityprojects.citybackend.exception.ResourceNotFoundException;
 import com.cityprojects.citybackend.mapper.restaurant.TicketMapper;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.TicketRepository;
-import com.cityprojects.citybackend.security.UserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,7 +90,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setCommandeId(commandeId);
         ticket.setTypeTicket(type);
         ticket.setDateImpression(Instant.now());
-        ticket.setImprimeParUserId(currentUserIdOrNull());
+        ticket.setImprimeParUserId(SecurityUtils.currentUserIdOrNull());
         ticket.setMotifReimpression(motif);
         // PAS de setHotelId : Hibernate via @TenantId resolver.
 
@@ -102,16 +100,4 @@ public class TicketServiceImpl implements TicketService {
         return mapper.toDto(saved);
     }
 
-    /**
-     * Retourne l'userId courant, ou null si l'appel ne provient pas d'un
-     * SecurityContext peuple (pas d'echec : un ticket peut etre emis depuis
-     * un job futur).
-     */
-    private Long currentUserIdOrNull() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
-            return principal.getUserId();
-        }
-        return null;
-    }
 }

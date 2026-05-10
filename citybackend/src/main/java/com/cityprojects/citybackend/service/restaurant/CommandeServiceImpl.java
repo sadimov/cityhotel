@@ -272,28 +272,7 @@ public class CommandeServiceImpl implements CommandeService {
      * la transition. Documente.</p>
      */
     private void onTransitionToServie(Commande commande) {
-        List<LigneCommande> lignes = ligneCommandeRepository
-                .findByCommandeIdOrderByLigneIdAsc(commande.getCommandeId());
-
-        // Agregation : produitId -> quantite totale (BigDecimal)
-        Map<Long, BigDecimal> sortiesParProduit = new LinkedHashMap<>();
-        for (LigneCommande lc : lignes) {
-            List<RecetteArticle> recettes = recetteArticleRepository
-                    .findByArticleIdAndActifTrue(lc.getArticleId());
-            if (recettes.isEmpty()) {
-                // F6 : trace explicite par ligne sans recette - le serveur sait que
-                // ce plat ne consomme pas de stock auto. Le log INFO global ci-dessous
-                // gere le cas ou TOUTES les lignes sont sans recette (skip silencieux).
-                logger.warn("Commande {} - article {} (ligne {}) sans recette : "
-                        + "pas de BS auto pour cette ligne",
-                        commande.getNumeroCommande(), lc.getArticleId(), lc.getLigneId());
-                continue;
-            }
-            for (RecetteArticle r : recettes) {
-                BigDecimal qte = r.getQuantiteParUnite().multiply(lc.getQuantite());
-                sortiesParProduit.merge(r.getProduitId(), qte, BigDecimal::add);
-            }
-        }
+        Map<Long, BigDecimal> sortiesParProduit = aggregateProductSorties(commande);
 
         if (sortiesParProduit.isEmpty()) {
             logger.info("Commande {} servie sans BS auto (aucune recette definie pour les articles)",
@@ -301,15 +280,7 @@ public class CommandeServiceImpl implements CommandeService {
             return;
         }
 
-        // Conversion BigDecimal -> Integer (CEILING) pour LigneBonSortieCreateDto.
-        List<LigneBonSortieCreateDto> lignesBs = new ArrayList<>(sortiesParProduit.size());
-        for (Map.Entry<Long, BigDecimal> e : sortiesParProduit.entrySet()) {
-            int qte = e.getValue().setScale(0, RoundingMode.CEILING).intValueExact();
-            if (qte < 1) {
-                qte = 1; // garde defensive : DecimalMin(0.0001) cote recette
-            }
-            lignesBs.add(new LigneBonSortieCreateDto(e.getKey(), qte, null));
-        }
+        List<LigneBonSortieCreateDto> lignesBs = convertToBsLines(sortiesParProduit);
 
         BonSortieCreateDto bsDto = new BonSortieCreateDto(
                 "Restaurant - Commande " + commande.getNumeroCommande(),
@@ -323,6 +294,64 @@ public class CommandeServiceImpl implements CommandeService {
 
         logger.info("Commande {} servie : BS {} cree avec {} lignes",
                 commande.getNumeroCommande(), bs.numeroBs(), lignesBs.size());
+    }
+
+    /**
+     * Agregation : pour chaque ligne de commande, lookup de la recette active
+     * de l'article et accumulation des quantites par produit dans une
+     * {@link LinkedHashMap} (ordre deterministe pour le BS resultant).
+     *
+     * <p>Tour 40bis (refactor C3). Lignes sans recette : log WARN puis skip
+     * (cf. F6).</p>
+     *
+     * @return Map produitId -&gt; quantite totale (BigDecimal). Vide si aucune
+     *         recette n'est definie pour aucun des articles.
+     */
+    private Map<Long, BigDecimal> aggregateProductSorties(Commande commande) {
+        List<LigneCommande> lignes = ligneCommandeRepository
+                .findByCommandeIdOrderByLigneIdAsc(commande.getCommandeId());
+
+        Map<Long, BigDecimal> sortiesParProduit = new LinkedHashMap<>();
+        for (LigneCommande lc : lignes) {
+            List<RecetteArticle> recettes = recetteArticleRepository
+                    .findByArticleIdAndActifTrue(lc.getArticleId());
+            if (recettes.isEmpty()) {
+                // F6 : trace explicite par ligne sans recette - le serveur sait que
+                // ce plat ne consomme pas de stock auto. Le log INFO global cote
+                // appelant gere le cas ou TOUTES les lignes sont sans recette
+                // (skip silencieux).
+                logger.warn("Commande {} - article {} (ligne {}) sans recette : "
+                        + "pas de BS auto pour cette ligne",
+                        commande.getNumeroCommande(), lc.getArticleId(), lc.getLigneId());
+                continue;
+            }
+            for (RecetteArticle r : recettes) {
+                BigDecimal qte = r.getQuantiteParUnite().multiply(lc.getQuantite());
+                sortiesParProduit.merge(r.getProduitId(), qte, BigDecimal::add);
+            }
+        }
+        return sortiesParProduit;
+    }
+
+    /**
+     * Conversion {@link BigDecimal} -&gt; {@link Integer} (RoundingMode.CEILING)
+     * pour produire la liste de lignes BS attendue par {@link BonSortieService}.
+     *
+     * <p>Garde defensive : si une quantite ressort a 0 apres arrondi (ne devrait
+     * pas arriver vu {@code DecimalMin(0.0001)} cote recette), force a 1.</p>
+     *
+     * <p>Tour 40bis (refactor C3).</p>
+     */
+    private List<LigneBonSortieCreateDto> convertToBsLines(Map<Long, BigDecimal> sortiesParProduit) {
+        List<LigneBonSortieCreateDto> lignesBs = new ArrayList<>(sortiesParProduit.size());
+        for (Map.Entry<Long, BigDecimal> e : sortiesParProduit.entrySet()) {
+            int qte = e.getValue().setScale(0, RoundingMode.CEILING).intValueExact();
+            if (qte < 1) {
+                qte = 1; // garde defensive : DecimalMin(0.0001) cote recette
+            }
+            lignesBs.add(new LigneBonSortieCreateDto(e.getKey(), qte, null));
+        }
+        return lignesBs;
     }
 
     @Override

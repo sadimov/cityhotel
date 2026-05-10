@@ -134,23 +134,10 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
         articleRepository.findById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.articleMenu.notFound"));
 
-        // F5 : refus des doublons sur produitId dans la liste fournie - on
-        // ne peut pas avoir 2 lignes pour le meme produit dans une recette.
-        if (lignes != null) {
-            Set<Long> produitIds = new HashSet<>();
-            for (LigneRecetteDto l : lignes) {
-                if (!produitIds.add(l.produitId())) {
-                    throw new BusinessException("error.recetteArticle.produit.duplique");
-                }
-            }
-        }
+        validateNoDuplicateProduits(lignes);
 
         // 1) Soft-delete : desactive toutes les lignes existantes
-        List<RecetteArticle> existantes = recetteRepository.findByArticleId(articleId);
-        for (RecetteArticle r : existantes) {
-            r.setActif(Boolean.FALSE);
-            recetteRepository.save(r);
-        }
+        List<RecetteArticle> existantes = deactivateExistingRecettes(articleId);
 
         // 2) Cree (ou re-active) les nouvelles lignes fournies
         List<RecetteArticleDto> resultat = new ArrayList<>();
@@ -158,31 +145,76 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
             return resultat;
         }
         for (LigneRecetteDto l : lignes) {
-            // Verifie que le produit existe (tenant courant)
-            produitRepository.findById(l.produitId())
-                    .orElseThrow(() -> new ResourceNotFoundException("error.produit.notFound"));
-
-            // Si une ligne existe deja pour ce couple article/produit (desactivee
-            // a l'etape 1), on la reactive et met a jour la quantite, sinon insert.
-            RecetteArticle entity = existantes.stream()
-                    .filter(r -> r.getProduitId().equals(l.produitId()))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        RecetteArticle r = new RecetteArticle();
-                        r.setArticleId(articleId);
-                        r.setProduitId(l.produitId());
-                        return r;
-                    });
-            entity.setQuantiteParUnite(l.quantiteParUnite());
-            entity.setUnite(l.unite());
-            entity.setNote(l.note());
-            entity.setActif(Boolean.TRUE);
-            RecetteArticle saved = recetteRepository.save(entity);
+            RecetteArticle saved = upsertLigne(articleId, existantes, l);
             resultat.add(mapper.toDto(saved));
         }
 
         logger.info("Recette d'article {} remplacee : {} lignes actives", articleId, resultat.size());
         return resultat;
+    }
+
+    /**
+     * F5 : refus des doublons sur produitId dans la liste fournie - on ne
+     * peut pas avoir 2 lignes pour le meme produit dans une recette.
+     *
+     * <p>Tour 40bis (refactor H10).</p>
+     */
+    private void validateNoDuplicateProduits(List<LigneRecetteDto> lignes) {
+        if (lignes == null) {
+            return;
+        }
+        Set<Long> produitIds = new HashSet<>();
+        for (LigneRecetteDto l : lignes) {
+            if (!produitIds.add(l.produitId())) {
+                throw new BusinessException("error.recetteArticle.produit.duplique");
+            }
+        }
+    }
+
+    /**
+     * Desactive toutes les recettes existantes pour cet article (soft delete).
+     * Retourne la liste des entites avant desactivation pour permettre la
+     * reactivation eventuelle a l'etape suivante.
+     *
+     * <p>Tour 40bis (refactor H10).</p>
+     */
+    private List<RecetteArticle> deactivateExistingRecettes(Long articleId) {
+        List<RecetteArticle> existantes = recetteRepository.findByArticleId(articleId);
+        for (RecetteArticle r : existantes) {
+            r.setActif(Boolean.FALSE);
+            recetteRepository.save(r);
+        }
+        return existantes;
+    }
+
+    /**
+     * Upsert d'une ligne de recette : si une entite existe deja pour ce couple
+     * article/produit (desactivee a l'etape precedente), on la reactive et met
+     * a jour la quantite ; sinon insert. Verifie aussi que le produit existe
+     * dans le tenant courant.
+     *
+     * <p>Tour 40bis (refactor H10).</p>
+     */
+    private RecetteArticle upsertLigne(Long articleId, List<RecetteArticle> existantes,
+                                       LigneRecetteDto dto) {
+        // Verifie que le produit existe (tenant courant)
+        produitRepository.findById(dto.produitId())
+                .orElseThrow(() -> new ResourceNotFoundException("error.produit.notFound"));
+
+        RecetteArticle entity = existantes.stream()
+                .filter(r -> r.getProduitId().equals(dto.produitId()))
+                .findFirst()
+                .orElseGet(() -> {
+                    RecetteArticle r = new RecetteArticle();
+                    r.setArticleId(articleId);
+                    r.setProduitId(dto.produitId());
+                    return r;
+                });
+        entity.setQuantiteParUnite(dto.quantiteParUnite());
+        entity.setUnite(dto.unite());
+        entity.setNote(dto.note());
+        entity.setActif(Boolean.TRUE);
+        return recetteRepository.save(entity);
     }
 
     /**

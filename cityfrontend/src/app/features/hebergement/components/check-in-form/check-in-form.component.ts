@@ -7,7 +7,11 @@ import { of } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
-import { Reservation, StatutReservation } from '../../models/reservation.model';
+import {
+  Reservation,
+  StatutReservation,
+  statutReservationKey,
+} from '../../models/reservation.model';
 import { ReservationsService } from '../../services/reservations.service';
 
 type CheckInState = 'idle' | 'searching' | 'submitting' | 'error';
@@ -87,8 +91,7 @@ export class CheckInFormComponent implements OnInit, OnDestroy {
 
   /** Clé i18n du libellé statut. */
   statutKey(reservation: Reservation): string {
-    const s = reservation.statut ?? StatutReservation.EN_ATTENTE;
-    return 'hebergement.statut.' + s.toLowerCase();
+    return statutReservationKey(reservation.statut);
   }
 
   isSelectable(reservation: Reservation): boolean {

@@ -17,7 +17,11 @@ import { Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { of } from 'rxjs';
 
-import { Reservation, StatutReservation } from '../../models/reservation.model';
+import {
+  Reservation,
+  STATUT_RESERVATION_CHIP_MAP,
+  StatutReservation,
+} from '../../models/reservation.model';
 import { ReservationsService } from '../../services/reservations.service';
 
 type CalendarState = 'loading' | 'ready' | 'error';
@@ -116,19 +120,7 @@ export class ReservationsCalendarComponent implements OnInit, OnDestroy {
 
   /** Classe CSS pour color-coder le statut de réservation. */
   statutClass(statut: StatutReservation | undefined): string {
-    switch (statut) {
-      case StatutReservation.CONFIRMEE:
-        return 'reservations-calendar__chip--confirmee';
-      case StatutReservation.ARRIVEE:
-        return 'reservations-calendar__chip--arrivee';
-      case StatutReservation.PARTIE:
-        return 'reservations-calendar__chip--partie';
-      case StatutReservation.ANNULEE:
-        return 'reservations-calendar__chip--annulee';
-      case StatutReservation.EN_ATTENTE:
-      default:
-        return 'reservations-calendar__chip--en-attente';
-    }
+    return STATUT_RESERVATION_CHIP_MAP[statut ?? StatutReservation.EN_ATTENTE];
   }
 
   // ────────────────────────────────────────────────────────────────────────

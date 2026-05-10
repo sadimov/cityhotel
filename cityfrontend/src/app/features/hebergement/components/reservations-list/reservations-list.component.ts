@@ -10,7 +10,9 @@ import { PageResponse } from '../../models/api.model';
 import {
   FiltresReservations,
   Reservation,
+  STATUT_RESERVATION_BADGE_MAP,
   StatutReservation,
+  statutReservationKey,
 } from '../../models/reservation.model';
 import { ReservationsService } from '../../services/reservations.service';
 
@@ -204,26 +206,11 @@ export class ReservationsListComponent implements OnInit, OnDestroy {
 
   /** Classe Bootstrap badge pour color-coder le statut. */
   badgeClass(statut: StatutReservation | undefined): string {
-    switch (statut) {
-      case StatutReservation.CONFIRMEE:
-        return 'text-bg-info';
-      case StatutReservation.ARRIVEE:
-        return 'text-bg-success';
-      case StatutReservation.PARTIE:
-        return 'text-bg-secondary';
-      case StatutReservation.ANNULEE:
-        return 'text-bg-danger';
-      case StatutReservation.EN_ATTENTE:
-      default:
-        return 'text-bg-warning';
-    }
+    return STATUT_RESERVATION_BADGE_MAP[statut ?? StatutReservation.EN_ATTENTE];
   }
 
   /** Clé i18n du libellé statut. */
   statutKey(statut: StatutReservation | undefined): string {
-    if (!statut) {
-      return 'hebergement.statut.en_attente';
-    }
-    return 'hebergement.statut.' + statut.toLowerCase();
+    return statutReservationKey(statut);
   }
 }

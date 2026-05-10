@@ -21,8 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +40,41 @@ import java.util.stream.Collectors;
 public class ChambreServiceImpl implements ChambreService {
 
     private static final Logger logger = LoggerFactory.getLogger(ChambreServiceImpl.class);
+
+    /**
+     * Matrice des transitions autorisees pour {@link #checkTransition} (Tour
+     * 40bis - refactor H6). Issue d'une analyse exhaustive du switch precedent
+     * pour preserver strictement le comportement (5 enum values * 5 cibles).
+     *
+     * <p>Source de verite : le switch precedent. Voir {@link StatutChambre}
+     * pour la documentation produit (qui peut differer legerement, en
+     * particulier la transition OCCUPEE -&gt; DISPONIBLE n'est PAS bloquee
+     * par le code actuel meme si la doctrine encourage le passage par
+     * NETTOYAGE).</p>
+     */
+    private static final Map<StatutChambre, Set<StatutChambre>> TRANSITIONS_AUTORISEES = Map.of(
+            StatutChambre.DISPONIBLE,
+                    EnumSet.of(StatutChambre.OCCUPEE, StatutChambre.NETTOYAGE, StatutChambre.MAINTENANCE),
+            StatutChambre.OCCUPEE,
+                    EnumSet.of(StatutChambre.DISPONIBLE, StatutChambre.NETTOYAGE),
+            StatutChambre.NETTOYAGE,
+                    EnumSet.of(StatutChambre.DISPONIBLE, StatutChambre.MAINTENANCE),
+            StatutChambre.MAINTENANCE,
+                    EnumSet.of(StatutChambre.DISPONIBLE, StatutChambre.HORS_SERVICE),
+            StatutChambre.HORS_SERVICE,
+                    EnumSet.of(StatutChambre.MAINTENANCE));
+
+    /**
+     * Cles d'erreur i18n par cible. Permet de preserver les memes cles que
+     * l'ancien switch pour ne pas casser les tests qui assertent sur le
+     * message (cf. {@code ReservationServiceTests#T4}).
+     */
+    private static final Map<StatutChambre, String> CLES_ERREUR_PAR_CIBLE = Map.of(
+            StatutChambre.OCCUPEE,      "error.chambre.transition.toOccupied",
+            StatutChambre.DISPONIBLE,   "error.chambre.transition.fromOutOfService",
+            StatutChambre.MAINTENANCE,  "error.chambre.transition.maintenanceFromOccupied",
+            StatutChambre.NETTOYAGE,    "error.chambre.transition.invalidToCleaning",
+            StatutChambre.HORS_SERVICE, "error.chambre.transition.outOfServiceRequiresMaintenance");
 
     private final ChambreRepository chambreRepository;
     private final TypeChambreRepository typeChambreRepository;
@@ -210,44 +247,23 @@ public class ChambreServiceImpl implements ChambreService {
     }
 
     /**
-     * Valide les transitions de statut. Voir {@link StatutChambre} pour la matrice.
+     * Valide les transitions de statut. Voir {@link StatutChambre} pour la matrice
+     * documentaire et {@link #TRANSITIONS_AUTORISEES} pour la matrice effective.
+     *
+     * <p>Tour 40bis (refactor H6) : remplace le switch verbeux par un lookup
+     * dans {@link #TRANSITIONS_AUTORISEES}. La cle d'erreur i18n levee est
+     * resolue via {@link #CLES_ERREUR_PAR_CIBLE} pour preserver strictement
+     * les messages historiques (assertion par les tests).</p>
      */
     private void checkTransition(StatutChambre actuel, StatutChambre nouveau) {
         if (actuel == nouveau) {
             return;
         }
-        switch (nouveau) {
-            case OCCUPEE:
-                if (actuel != StatutChambre.DISPONIBLE) {
-                    throw new BusinessException("error.chambre.transition.toOccupied");
-                }
-                break;
-            case DISPONIBLE:
-                if (actuel == StatutChambre.HORS_SERVICE) {
-                    throw new BusinessException("error.chambre.transition.fromOutOfService");
-                }
-                break;
-            case MAINTENANCE:
-                if (actuel == StatutChambre.OCCUPEE) {
-                    throw new BusinessException("error.chambre.transition.maintenanceFromOccupied");
-                }
-                break;
-            case NETTOYAGE:
-                // libre depuis OCCUPEE (post check-out) ou DISPONIBLE (cleaning preventif)
-                if (actuel == StatutChambre.HORS_SERVICE || actuel == StatutChambre.MAINTENANCE) {
-                    throw new BusinessException("error.chambre.transition.invalidToCleaning");
-                }
-                break;
-            case HORS_SERVICE:
-                // accessible uniquement depuis MAINTENANCE
-                if (actuel != StatutChambre.MAINTENANCE) {
-                    throw new BusinessException("error.chambre.transition.outOfServiceRequiresMaintenance");
-                }
-                break;
-            default:
-                // exhaustivite : si on ajoute un statut, le compilateur ne nous aide pas
-                // (enum classique), donc fallback explicite
-                throw new BusinessException("error.chambre.transition.unknown");
+        Set<StatutChambre> autorisees = TRANSITIONS_AUTORISEES.get(actuel);
+        if (autorisees == null || !autorisees.contains(nouveau)) {
+            String cle = CLES_ERREUR_PAR_CIBLE.getOrDefault(
+                    nouveau, "error.chambre.transition.unknown");
+            throw new BusinessException(cle);
         }
     }
 }

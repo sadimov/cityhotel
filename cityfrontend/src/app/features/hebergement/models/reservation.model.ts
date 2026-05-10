@@ -176,3 +176,46 @@ export interface FiltresReservations {
   montantMax?: number;
   motifSejour?: string;
 }
+
+// ============= Helpers UI statut (Tour 40ter — H11) =============
+
+/**
+ * Classe Bootstrap badge associée à chaque statut de réservation.
+ * Utilisé par `reservations-list` (liste tableau, badges arrondis Bootstrap 5).
+ *
+ * Centralisé ici (Tour 40ter, 2026-05-09) pour éviter la duplication du
+ * `switch` entre `reservations-list.component.ts` et tout autre composant
+ * futur affichant un badge statut (détail, filtres, dashboard).
+ */
+export const STATUT_RESERVATION_BADGE_MAP: Record<StatutReservation, string> = {
+  [StatutReservation.EN_ATTENTE]: 'text-bg-warning',
+  [StatutReservation.CONFIRMEE]: 'text-bg-info',
+  [StatutReservation.ARRIVEE]: 'text-bg-success',
+  [StatutReservation.PARTIE]: 'text-bg-secondary',
+  [StatutReservation.ANNULEE]: 'text-bg-danger',
+};
+
+/**
+ * Classe CSS BEM `reservations-calendar__chip--<statut>` pour les chips du
+ * composant `reservations-calendar`. Conservée distincte de la map badges
+ * Bootstrap car le SCSS du calendrier définit ses propres palettes.
+ */
+export const STATUT_RESERVATION_CHIP_MAP: Record<StatutReservation, string> = {
+  [StatutReservation.EN_ATTENTE]: 'reservations-calendar__chip--en-attente',
+  [StatutReservation.CONFIRMEE]: 'reservations-calendar__chip--confirmee',
+  [StatutReservation.ARRIVEE]: 'reservations-calendar__chip--arrivee',
+  [StatutReservation.PARTIE]: 'reservations-calendar__chip--partie',
+  [StatutReservation.ANNULEE]: 'reservations-calendar__chip--annulee',
+};
+
+/**
+ * Renvoie la clé i18n du libellé statut (`hebergement.statut.<statut>` en
+ * minuscules). Fallback sur `EN_ATTENTE` si le statut est indéterminé.
+ *
+ * Centralise la convention partagée par `reservations-list`,
+ * `reservations-calendar` et `check-in-form`.
+ */
+export function statutReservationKey(statut: StatutReservation | undefined): string {
+  const s = statut ?? StatutReservation.EN_ATTENTE;
+  return 'hebergement.statut.' + s.toLowerCase();
+}

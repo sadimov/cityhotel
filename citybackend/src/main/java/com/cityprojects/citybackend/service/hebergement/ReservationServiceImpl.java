@@ -2,6 +2,7 @@ package com.cityprojects.citybackend.service.hebergement;
 
 import com.cityprojects.citybackend.common.event.ReservationCheckedOutEvent;
 import com.cityprojects.citybackend.common.paging.PageableUtils;
+import com.cityprojects.citybackend.common.security.SecurityUtils;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.hebergement.ChambreDto;
@@ -32,7 +33,6 @@ import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationClientRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.security.UserPrincipal;
 import com.cityprojects.citybackend.service.finance.NumerotationService;
 import com.cityprojects.citybackend.service.finance.TypeNumerotation;
 import org.slf4j.Logger;
@@ -41,8 +41,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +77,14 @@ import java.util.stream.Collectors;
  * facturation est geree par {@code FactureService.fromReservation(reservationId)}
  * (Tour 19) qui lit cette reservation, cree une facture EMISE avec 1 ligne par
  * nuitee CONSOMMEE et met a jour {@code Reservation.factureId}.</p>
+ *
+ * <h3>Tour 40bis (refactor C1, H5, H8)</h3>
+ * <p>{@link #create(ReservationCreateDto)} decoupe en helpers prives :
+ * {@link #validate}, {@link #buildReservationEntity}, {@link #createPivotsAndNuitees},
+ * {@link #attachAdditionalClients}, {@link #applyDiscount}. {@link #mapToDto}
+ * factorise la conversion {@code List<Reservation>} -&gt; {@code List<ReservationDto>}.
+ * {@link #markNuiteesConsommees} factorise la transition PREVUE -&gt; CONSOMMEE
+ * appelee par checkIn / checkOut / cancel.</p>
  */
 @Service
 @RequireTenant
@@ -146,7 +152,31 @@ public class ReservationServiceImpl implements ReservationService {
         logger.info("Creation reservation : client={}, du {} au {}",
                 dto.clientPrincipalId(), dto.dateArrivee(), dto.dateDepart());
 
-        // 1. Validations metier
+        validate(dto);
+
+        Reservation saved = reservationRepository.save(buildReservationEntity(dto, currentUserId()));
+
+        BigDecimal montantBrut = createPivotsAndNuitees(saved, dto);
+        attachAdditionalClients(saved, dto);
+
+        BigDecimal montantNet = applyDiscount(montantBrut, saved.getReductionPourcentage());
+        saved.setMontantTotal(montantNet);
+        reservationRepository.save(saved);
+
+        logger.info("Reservation creee : id={}, numero={}, montant={}",
+                saved.getReservationId(), saved.getNumeroReservation(), montantNet);
+        return reservationMapper.toDto(saved);
+    }
+
+    /**
+     * Validations metier prealables a la creation : coherence des dates,
+     * existence et activite du client principal, de la societe et de chaque
+     * chambre, absence de conflit de reservation sur les chambres demandees.
+     *
+     * <p>Levee de {@link BusinessException} ou {@link ResourceNotFoundException}
+     * - aucune ecriture ne doit avoir eu lieu en amont.</p>
+     */
+    private void validate(ReservationCreateDto dto) {
         if (!dto.dateDepart().isAfter(dto.dateArrivee())) {
             throw new BusinessException("error.reservation.dates.invalid");
         }
@@ -183,8 +213,18 @@ public class ReservationServiceImpl implements ReservationService {
                 throw new BusinessException("error.reservation.chambre.conflict");
             }
         }
+    }
 
-        // 2. Construction entite reservation
+    /**
+     * Construit l'entite {@link Reservation} a partir du DTO + de l'identifiant
+     * de l'utilisateur courant. {@code montantTotal} est initialise a 0 - il
+     * sera recalcule a partir des nuitees apres {@link #createPivotsAndNuitees}.
+     * {@code numeroReservation} genere via {@link NumerotationService} (RES).
+     *
+     * <p><b>Pas de {@code setHotelId}</b> : Hibernate populate via le
+     * {@code @TenantId} resolver a l'INSERT.</p>
+     */
+    private Reservation buildReservationEntity(ReservationCreateDto dto, Long userId) {
         Reservation reservation = new Reservation();
         reservation.setClientPrincipalId(dto.clientPrincipalId());
         reservation.setSocieteId(dto.societeId());
@@ -200,14 +240,22 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setReductionPourcentage(
                 dto.reductionPourcentage() != null ? dto.reductionPourcentage() : BigDecimal.ZERO);
         reservation.setMontantTotal(BigDecimal.ZERO);
-        reservation.setUserId(currentUserId());
+        reservation.setUserId(userId);
         // Numero genere par hotel/exercice (RES-2026-MR-000123)
         reservation.setNumeroReservation(numerotationService.next(TypeNumerotation.RES));
-        // PAS de setHotelId : Hibernate s'en charge via @TenantId resolver.
+        return reservation;
+    }
 
-        Reservation saved = reservationRepository.save(reservation);
-
-        // 3. Pivots reservation/chambre + generation des nuitees
+    /**
+     * Cree les pivots {@link ReservationChambre} et genere les nuitees
+     * correspondantes (1 par couple chambre/nuit dans [debut, fin)). Idempotent
+     * sur les nuitees deja presentes (Tour 12bis, finding C2).
+     *
+     * @return montant brut accumule = somme des {@code prixNuit} des nuitees
+     *         nouvellement creees (les nuitees deja presentes contribuent deja
+     *         via leur propre prix - on ne double-compte pas).
+     */
+    private BigDecimal createPivotsAndNuitees(Reservation saved, ReservationCreateDto dto) {
         BigDecimal montantBrut = BigDecimal.ZERO;
         for (ReservationChambreCreateDto rc : dto.chambres()) {
             ReservationChambre pivot = new ReservationChambre();
@@ -243,34 +291,45 @@ public class ReservationServiceImpl implements ReservationService {
                 jour = jour.plusDays(1);
             }
         }
+        return montantBrut;
+    }
 
-        // 4. Clients additionnels
-        if (dto.clientsAdditionnels() != null) {
-            for (ReservationClientCreateDto rcc : dto.clientsAdditionnels()) {
-                ReservationClient pivot = new ReservationClient();
-                pivot.setReservationId(saved.getReservationId());
-                pivot.setClientId(rcc.clientId());
-                pivot.setChambreId(rcc.chambreId());
-                pivot.setEstPayant(rcc.estPayant() != null ? rcc.estPayant() : Boolean.TRUE);
-                pivot.setPourcentageCharge(
-                        rcc.pourcentageCharge() != null
-                                ? rcc.pourcentageCharge() : BigDecimal.valueOf(100.00));
-                reservationClientRepository.save(pivot);
-            }
+    /**
+     * Persiste les eventuels {@link ReservationClient} additionnels du DTO
+     * (clients secondaires d'une chambre, ex. enfants, accompagnants).
+     * No-op si {@code dto.clientsAdditionnels()} est {@code null}.
+     */
+    private void attachAdditionalClients(Reservation saved, ReservationCreateDto dto) {
+        if (dto.clientsAdditionnels() == null) {
+            return;
         }
+        for (ReservationClientCreateDto rcc : dto.clientsAdditionnels()) {
+            ReservationClient pivot = new ReservationClient();
+            pivot.setReservationId(saved.getReservationId());
+            pivot.setClientId(rcc.clientId());
+            pivot.setChambreId(rcc.chambreId());
+            pivot.setEstPayant(rcc.estPayant() != null ? rcc.estPayant() : Boolean.TRUE);
+            pivot.setPourcentageCharge(
+                    rcc.pourcentageCharge() != null
+                            ? rcc.pourcentageCharge() : BigDecimal.valueOf(100.00));
+            reservationClientRepository.save(pivot);
+        }
+    }
 
-        // 5. Recalcul montant total avec reduction
-        BigDecimal reduction = saved.getReductionPourcentage();
-        BigDecimal montantNet = (reduction != null && reduction.compareTo(BigDecimal.ZERO) > 0)
-                ? montantBrut.subtract(montantBrut.multiply(reduction)
-                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP))
-                : montantBrut;
-        saved.setMontantTotal(montantNet);
-        reservationRepository.save(saved);
-
-        logger.info("Reservation creee : id={}, numero={}, montant={}",
-                saved.getReservationId(), saved.getNumeroReservation(), montantNet);
-        return reservationMapper.toDto(saved);
+    /**
+     * Applique une reduction en pourcentage au montant brut. Retourne le
+     * {@code montantBrut} tel quel si {@code reduction} est nul ou nul-positif.
+     *
+     * <p>Calcul : {@code montantBrut - (montantBrut * reduction / 100)}, arrondi
+     * HALF_UP a 2 decimales.</p>
+     */
+    private BigDecimal applyDiscount(BigDecimal montantBrut, BigDecimal reduction) {
+        if (reduction == null || reduction.compareTo(BigDecimal.ZERO) <= 0) {
+            return montantBrut;
+        }
+        BigDecimal abattement = montantBrut.multiply(reduction)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        return montantBrut.subtract(abattement);
     }
 
     @Override
@@ -316,41 +375,30 @@ public class ReservationServiceImpl implements ReservationService {
     public List<ReservationDto> findArriveesToday() {
         LocalDate today = LocalDate.now(NOUAKCHOTT);
         // Check-in du jour : statut encore CONFIRMEE (non encore traite).
-        return reservationRepository
-                .findByDateArriveeAndStatutOrderByDateArriveeAsc(today, StatutReservation.CONFIRMEE)
-                .stream()
-                .map(reservationMapper::toDto)
-                .collect(Collectors.toList());
+        return mapToDto(reservationRepository
+                .findByDateArriveeAndStatutOrderByDateArriveeAsc(today, StatutReservation.CONFIRMEE));
     }
 
     @Override
     public List<ReservationDto> findDepartsToday() {
         LocalDate today = LocalDate.now(NOUAKCHOTT);
         // Check-out du jour : statut ARRIVEE (sejour en cours).
-        return reservationRepository
-                .findByDateDepartAndStatutOrderByDateDepartAsc(today, StatutReservation.ARRIVEE)
-                .stream()
-                .map(reservationMapper::toDto)
-                .collect(Collectors.toList());
+        return mapToDto(reservationRepository
+                .findByDateDepartAndStatutOrderByDateDepartAsc(today, StatutReservation.ARRIVEE));
     }
 
     @Override
     public List<ReservationDto> findEnCours() {
         // Sejours en cours : check-in fait (ARRIVEE), check-out non fait.
-        return reservationRepository.findByStatut(StatutReservation.ARRIVEE).stream()
-                .map(reservationMapper::toDto)
-                .collect(Collectors.toList());
+        return mapToDto(reservationRepository.findByStatut(StatutReservation.ARRIVEE));
     }
 
     @Override
     public List<ReservationDto> findCheckInsRetard() {
         LocalDate today = LocalDate.now(NOUAKCHOTT);
         // CONFIRMEE et dateArrivee < today : no-show pas encore traite par le night audit.
-        return reservationRepository
-                .findByStatutAndDateArriveeBeforeOrderByDateArriveeAsc(StatutReservation.CONFIRMEE, today)
-                .stream()
-                .map(reservationMapper::toDto)
-                .collect(Collectors.toList());
+        return mapToDto(reservationRepository
+                .findByStatutAndDateArriveeBeforeOrderByDateArriveeAsc(StatutReservation.CONFIRMEE, today));
     }
 
     @Override
@@ -412,14 +460,8 @@ public class ReservationServiceImpl implements ReservationService {
                 reservationChambreRepository.findByReservationIdOrderByDateDebutAsc(reservationId)) {
             chambreService.changerStatut(rc.getChambreId(), StatutChambre.OCCUPEE);
         }
-        // Marquer les nuitees du jour CONSOMMEES
-        for (Nuitee n : nuiteeRepository.findByReservationIdAndStatutOrderByDateNuitAsc(
-                reservationId, StatutNuitee.PREVUE)) {
-            if (!n.getDateNuit().isAfter(LocalDate.now())) {
-                n.setStatut(StatutNuitee.CONSOMMEE);
-                nuiteeRepository.save(n);
-            }
-        }
+        // Marquer les nuitees du jour CONSOMMEES (maxDate = today : pas plus loin)
+        markNuiteesConsommees(reservationId, LocalDate.now());
         return reservationMapper.toDto(reservation);
     }
 
@@ -443,12 +485,8 @@ public class ReservationServiceImpl implements ReservationService {
             chambreService.changerStatut(rc.getChambreId(), StatutChambre.NETTOYAGE);
             chambreIds.add(rc.getChambreId());
         }
-        // Toutes les nuitees PREVUEs encore non consommees deviennent CONSOMMEES
-        for (Nuitee n : nuiteeRepository.findByReservationIdAndStatutOrderByDateNuitAsc(
-                reservationId, StatutNuitee.PREVUE)) {
-            n.setStatut(StatutNuitee.CONSOMMEE);
-            nuiteeRepository.save(n);
-        }
+        // Toutes les nuitees PREVUEs encore non consommees deviennent CONSOMMEES (maxDate = null)
+        markNuiteesConsommees(reservationId, null);
 
         // Tour 30 - Workflow A : publish event AFTER toutes les mutations d'etat.
         // Le listener {@code MenagePlanningEventListener} (AFTER_COMMIT, REQUIRES_NEW)
@@ -525,18 +563,56 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
+     * Helper i/o : convertit une liste d'entites Reservation en liste de DTO.
+     * Tour 40bis (refactor H5).
+     */
+    private List<ReservationDto> mapToDto(List<Reservation> entities) {
+        return entities.stream().map(reservationMapper::toDto).collect(Collectors.toList());
+    }
+
+    /**
+     * Marque les nuitees PREVUEs d'une reservation comme CONSOMMEEs.
+     *
+     * <p>Si {@code maxDate} est non null, seules les nuitees dont
+     * {@code dateNuit <= maxDate} sont marquees (cas check-in : on ne consomme
+     * que jusqu'a aujourd'hui inclus). Si {@code maxDate} est null, toutes
+     * les PREVUEs sont consommees (cas check-out / cancel).</p>
+     *
+     * <p>Tour 40bis (refactor H8) : factorise la boucle dupliquee dans
+     * checkIn / checkOut / cancel.</p>
+     *
+     * @return nombre de nuitees marquees CONSOMMEEs.
+     */
+    private int markNuiteesConsommees(Long reservationId, LocalDate maxDate) {
+        int count = 0;
+        for (Nuitee n : nuiteeRepository.findByReservationIdAndStatutOrderByDateNuitAsc(
+                reservationId, StatutNuitee.PREVUE)) {
+            if (maxDate != null && n.getDateNuit().isAfter(maxDate)) {
+                continue;
+            }
+            n.setStatut(StatutNuitee.CONSOMMEE);
+            nuiteeRepository.save(n);
+            count++;
+        }
+        return count;
+    }
+
+    /**
      * Recupere l'identifiant utilisateur courant depuis le SecurityContext.
-     * <p>Si l'authentification n'est pas un {@link UserPrincipal} (cas d'un
+     * <p>Si l'authentification n'est pas un {@code UserPrincipal} (cas d'un
      * test sans setup security), leve une {@link BusinessException} (cle
      * i18n {@code error.reservation.user.unknown}) plutot que de masquer
      * l'incident avec une valeur par defaut (la regle metier exige le createur).
      * Le {@code GlobalExceptionHandler} traduit en HTTP 4xx propre.</p>
+     *
+     * <p>Tour 40bis : utilise {@link SecurityUtils#currentUserIdOrNull()} pour
+     * la lecture brute, mais conserve la cle i18n metier specifique reservation.</p>
      */
     private Long currentUserId() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth != null && auth.getPrincipal() instanceof UserPrincipal principal) {
-            return principal.getUserId();
+        Long userId = SecurityUtils.currentUserIdOrNull();
+        if (userId == null) {
+            throw new BusinessException("error.reservation.user.unknown");
         }
-        throw new BusinessException("error.reservation.user.unknown");
+        return userId;
     }
 }
