@@ -30,277 +30,169 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   menuItems: MenuItem[] = [
     {
-      id: 'products',
-      label: 'menu.products',
-      icon: 'fas fa-shopping-cart',
-      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'products-list',
-          label: 'submenu.products.products',
-          icon: 'fas fa-box',
-          route: '/products/list',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'products-categories',
-          label: 'submenu.products.categories',
-          icon: 'fas fa-tags',
-          route: '/products/categories',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
-      id: 'orders',
-      label: 'menu.orders',
-      icon: 'fas fa-clipboard-list',
-      roles: ['MAGASIN', 'GERANT', 'RESTAURANT', 'RESREC', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'purchase-orders',
-          label: 'submenu.orders.purchase_orders',
-          icon: 'fas fa-shopping-bag',
-          route: '/orders/purchase',
-          roles: ['MAGASIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'delivery-orders',
-          label: 'submenu.orders.delivery_orders',
-          icon: 'fas fa-truck',
-          route: '/orders/delivery',
-          roles: ['MAGASIN', 'GERANT', 'RESTAURANT', 'RESREC', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
-      id: 'reservations',
-      label: 'menu.reservations',
-      icon: 'fas fa-calendar-alt',
-      roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'reservations-list',
-          label: 'submenu.reservations.reservations',
-          icon: 'fas fa-bed',
-          route: '/reservations/list',
-          roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
-        },
-        {
-          id: 'night-audit',
-          label: 'submenu.reservations.night_audit',
-          icon: 'fas fa-moon',
-          route: '/reservations/night-audit',
-          roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
-      id: 'payments',
-      label: 'menu.payments',
-      icon: 'fas fa-credit-card',
-      roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'account-statement',
-          label: 'Relevé de compte',
-          icon: 'fas fa-file-invoice',
-          route: '/payments/account-statement',
-          roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
-      id: 'hotels',
-      label: 'menu.hotels',
-      icon: 'fas fa-hotel',
-      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'add-hotel',
-          label: 'Ajout hôtel',
-          icon: 'fas fa-plus-circle',
-          route: '/hotels/add',
-          roles: ['ADMIN', 'SUPERADMIN']
-        },
-        {
-          id: 'hotels-list',
-          label: 'Hôtels',
-          icon: 'fas fa-building',
-          route: '/hotels/list',
-          roles: ['ADMIN', 'SUPERADMIN']
-        },
-        {
-          id: 'add-room',
-          label: 'Ajout chambre',
-          icon: 'fas fa-plus',
-          route: '/hotels/rooms/add',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'rooms-list',
-          label: 'Chambres',
-          icon: 'fas fa-door-open',
-          route: '/hotels/rooms',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'room-types',
-          label: 'Types chambre',
-          icon: 'fas fa-th-large',
-          route: '/hotels/room-types',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'room-prices',
-          label: 'Prix chambre',
-          icon: 'fas fa-euro-sign',
-          route: '/hotels/room-prices',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
       id: 'clients',
-      label: 'menu.clients',
+      label: 'Clients & Sociétés',
       icon: 'fas fa-users',
-      roles: ['GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN'],
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN'],
       children: [
-        {
-          id: 'add-client',
-          label: 'Ajout client',
-          icon: 'fas fa-user-plus',
-          route: '/clients/add',
-          roles: ['GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
-        },
         {
           id: 'clients-list',
           label: 'Clients',
           icon: 'fas fa-user-friends',
-          route: '/clients/list',
-          roles: ['GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+          route: '/clients',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
         },
         {
-          id: 'add-company',
-          label: 'Ajout société',
-          icon: 'fas fa-building',
-          route: '/clients/companies/add',
-          roles: ['GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+          id: 'clients-add',
+          label: 'Nouveau client',
+          icon: 'fas fa-user-plus',
+          route: '/clients/new',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'SUPERADMIN']
+        }
+      ]
+    },
+    {
+      id: 'hebergement',
+      label: 'Hébergement',
+      icon: 'fas fa-bed',
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN'],
+      children: [
+        {
+          id: 'reservations',
+          label: 'Réservations',
+          icon: 'fas fa-calendar-alt',
+          route: '/hebergement/reservations',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
         },
         {
-          id: 'companies-list',
-          label: 'Sociétés',
-          icon: 'fas fa-industry',
-          route: '/clients/companies',
-          roles: ['GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+          id: 'reservation-new',
+          label: 'Nouvelle réservation',
+          icon: 'fas fa-calendar-plus',
+          route: '/hebergement/reservations/new',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'SUPERADMIN']
+        },
+        {
+          id: 'check-in',
+          label: 'Check-in / Check-out',
+          icon: 'fas fa-key',
+          route: '/hebergement/check-in',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+        }
+      ]
+    },
+    {
+      id: 'inventory',
+      label: 'Stocks & Magasin',
+      icon: 'fas fa-boxes',
+      roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN'],
+      children: [
+        {
+          id: 'produits',
+          label: 'Produits',
+          icon: 'fas fa-box',
+          route: '/inventory/produits',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'bons-commande',
+          label: 'Bons de commande',
+          icon: 'fas fa-shopping-bag',
+          route: '/inventory/bons-commande',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'stocks',
+          label: 'Niveaux de stock',
+          icon: 'fas fa-layer-group',
+          route: '/inventory/stocks',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        }
+      ]
+    },
+    {
+      id: 'finance',
+      label: 'Finance',
+      icon: 'fas fa-credit-card',
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN'],
+      children: [
+        {
+          id: 'factures',
+          label: 'Factures',
+          icon: 'fas fa-file-invoice',
+          route: '/finance/factures',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+        },
+        {
+          id: 'paiements',
+          label: 'Paiements',
+          icon: 'fas fa-money-bill-wave',
+          route: '/finance/paiements',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
         }
       ]
     },
     {
       id: 'restaurant',
-      label: 'menu.restaurant',
+      label: 'Restaurant',
       icon: 'fas fa-utensils',
-      roles: ['RESTAURANT', 'RESREC', 'SUPERADMIN'],
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'RESTAURANT', 'SUPERADMIN'],
       children: [
         {
-          id: 'menus',
-          label: 'Menus',
-          icon: 'fas fa-list-alt',
-          route: '/restaurant/menus',
-          roles: ['RESTAURANT', 'RESREC', 'SUPERADMIN']
-        },
-        {
           id: 'pos',
-          label: 'Point vente',
+          label: 'Point de vente',
           icon: 'fas fa-cash-register',
           route: '/restaurant/pos',
-          roles: ['RESTAURANT', 'RESREC', 'SUPERADMIN']
+          roles: ['ADMIN', 'GERANT', 'RESREC', 'RESTAURANT', 'SUPERADMIN']
+        },
+        {
+          id: 'articles-menu',
+          label: 'Articles menu',
+          icon: 'fas fa-list-alt',
+          route: '/restaurant/articles',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'RESTAURANT', 'SUPERADMIN']
+        },
+        {
+          id: 'categories-menu',
+          label: 'Catégories menu',
+          icon: 'fas fa-tags',
+          route: '/restaurant/categories',
+          roles: ['ADMIN', 'GERANT', 'RESTAURANT', 'SUPERADMIN']
         }
       ]
     },
     {
-      id: 'housekeeping',
-      label: 'menu.housekeeping',
+      id: 'menage',
+      label: 'Ménage',
       icon: 'fas fa-broom',
-      roles: ['MENAGE', 'GERANT', 'SUPERADMIN'],
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'MENAGE', 'SUPERADMIN'],
       children: [
         {
-          id: 'housekeeping-dashboard',
+          id: 'menage-dashboard',
           label: 'Dashboard',
           icon: 'fas fa-tachometer-alt',
-          route: '/housekeeping/dashboard',
-          roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
+          route: '/menage/dashboard',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'MENAGE', 'SUPERADMIN']
         },
         {
-          id: 'tasks',
+          id: 'taches',
           label: 'Tâches',
           icon: 'fas fa-tasks',
-          route: '/housekeeping/tasks',
-          roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
+          route: '/menage/taches',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'MENAGE', 'SUPERADMIN']
         },
         {
-          id: 'staff',
-          label: 'Personnel ménage',
+          id: 'personnel',
+          label: 'Personnel',
           icon: 'fas fa-user-cog',
-          route: '/housekeeping/staff',
-          roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
+          route: '/menage/personnel',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
         },
         {
           id: 'planning',
-          label: 'Planning & historique',
+          label: 'Planning',
           icon: 'fas fa-calendar-check',
-          route: '/housekeeping/planning',
-          roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'history',
-          label: 'Historique',
-          icon: 'fas fa-history',
-          route: '/housekeeping/history',
-          roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
-        }
-      ]
-    },
-    {
-      id: 'reporting',
-      label: 'menu.reporting',
-      icon: 'fas fa-chart-bar',
-      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
-      children: [
-        {
-          id: 'reporting-dashboard',
-          label: 'Dashboard',
-          icon: 'fas fa-tachometer-alt',
-          route: '/reporting/dashboard',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'finances',
-          label: 'Finances',
-          icon: 'fas fa-chart-line',
-          route: '/reporting/finances',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'reservations-reports',
-          label: 'Rapports Réservations',
-          icon: 'fas fa-bed',
-          route: '/reporting/reservations',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'clients-reports',
-          label: 'Rapports Clients',
-          icon: 'fas fa-users',
-          route: '/reporting/clients',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
-        },
-        {
-          id: 'stock-alerts',
-          label: 'Alerts des Stocks',
-          icon: 'fas fa-exclamation-triangle',
-          route: '/reporting/stock-alerts',
-          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+          route: '/menage/planning',
+          roles: ['ADMIN', 'GERANT', 'MENAGE', 'SUPERADMIN']
         }
       ]
     },
