@@ -2,8 +2,14 @@
 # A copier dans .github/workflows/build-and-deploy.yml du dépôt city.
 #
 # Secrets requis (Settings → Secrets and variables → Actions) :
-#   GHCR_PAT       (Personal Access Token avec write:packages)
-#   K8S_KUBECONFIG (kubeconfig prod base64-encoded)
+#   GHCR_PAT         (Personal Access Token avec write:packages)
+#   K8S_KUBECONFIG   (kubeconfig prod base64-encoded)
+#   SONAR_TOKEN      (facultatif — requis seulement si le job sonar est activé)
+#   SONAR_HOST_URL   (variable, pas secret — ex. https://sonar.example.mr)
+#
+# Secrets Tour 38 — application.yml ne fournit plus de defaults pour ces vars,
+# elles doivent être injectées dans les jobs qui exécutent les tests d'intégration :
+#   JWT_SECRET, DB_USERNAME, DB_PASSWORD, MAIL_PASSWORD
 
 name: build-and-deploy
 
@@ -37,8 +43,16 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Maven verify
+      - name: Maven verify (Surefire 147 unit + Failsafe 62 IT)
         working-directory: citybackend
+        # Tour 38 : application.yml ne fournit plus de defaults pour ces secrets.
+        # On les injecte ici afin que les tests d'intégration puissent démarrer
+        # le contexte Spring sans NPE / ValidationException sur les @ConfigurationProperties.
+        env:
+          JWT_SECRET:    ${{ secrets.JWT_SECRET }}
+          DB_USERNAME:   ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD:   ${{ secrets.DB_PASSWORD }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
         run: ./mvnw -B -ntp verify
       - name: Upload test reports
         if: always()
@@ -48,6 +62,46 @@ jobs:
           path: |
             citybackend/target/surefire-reports/
             citybackend/target/failsafe-reports/
+
+  sonar-backend:
+    # Optionnel : tourne uniquement sur push/merge vers main.
+    # Le step "Sonar analysis" se skip de lui-même si SONAR_TOKEN n'est pas défini
+    # (les secrets ne peuvent pas être référencés dans une condition `if:` de job/step,
+    # on passe donc par une variable d'env intermédiaire).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    needs: [test-backend]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Sonar a besoin de l'historique pour le blame
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Check Sonar token presence
+        id: sonar_check
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          if [ -n "$SONAR_TOKEN" ]; then
+            echo "enabled=true" >> $GITHUB_OUTPUT
+          else
+            echo "enabled=false" >> $GITHUB_OUTPUT
+            echo "::warning::SONAR_TOKEN non défini — analyse Sonar skippée."
+          fi
+      - name: Sonar analysis
+        if: steps.sonar_check.outputs.enabled == 'true'
+        working-directory: citybackend
+        env:
+          SONAR_TOKEN:    ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+        run: |
+          ./mvnw -B -ntp sonar:sonar \
+            -Dsonar.host.url=${SONAR_HOST_URL:-https://sonar.example.mr} \
+            -Dsonar.token=${SONAR_TOKEN} \
+            -Dsonar.projectKey=city-backend
 
   test-frontend:
     runs-on: ubuntu-24.04

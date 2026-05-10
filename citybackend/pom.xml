@@ -298,6 +298,45 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Tour 39 voie A : Jib 3.4.4 — build d'image OCI sans demon Docker.
+                 Doctrine palier 1 (cf. citybackend/CLAUDE.md §1) : base image eclipse-temurin:21-jre-alpine.
+                 Usage : ./mvnw compile jib:build (push registre)
+                         ./mvnw compile jib:dockerBuild (build local via Docker daemon)
+                 Variables : DOCKER_REGISTRY (default docker.io/sadimov). -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.4</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:21-jre-alpine</image>
+                    </from>
+                    <to>
+                        <image>${env.DOCKER_REGISTRY:-docker.io/sadimov}/citybackend:${project.version}</image>
+                        <tags>
+                            <tag>latest</tag>
+                            <tag>${project.version}</tag>
+                        </tags>
+                    </to>
+                    <container>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                        <jvmFlags>
+                            <jvmFlag>-Xms512m</jvmFlag>
+                            <jvmFlag>-Xmx1024m</jvmFlag>
+                            <jvmFlag>-Duser.timezone=Africa/Nouakchott</jvmFlag>
+                        </jvmFlags>
+                        <environment>
+                            <SPRING_PROFILES_ACTIVE>prod</SPRING_PROFILES_ACTIVE>
+                        </environment>
+                        <user>nonroot:nonroot</user>
+                        <creationTime>USE_CURRENT_TIMESTAMP</creationTime>
+                        <format>OCI</format>
+                    </container>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

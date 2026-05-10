@@ -169,7 +169,25 @@
       "Bash(awk -F'/' '{ if \\(NF >= 9\\) print $7\"/\"$8\"/\"$9; else if \\(NF == 8\\) print $7\"/\"$8; else print $7 }')",
       "Bash(awk -F'/' '{print $4\"/\"$5}')",
       "Bash(git ls-files *)",
-      "Bash(git reset *)"
+      "Bash(git reset *)",
+      "Bash(git switch *)",
+      "Bash(git fsck *)",
+      "Bash(git rev-list *)",
+      "Bash(git ls-tree *)",
+      "Bash(rm -rf citybackend/src/main/java/com/cityprojects/citybackend/dolibarr citybackend/src/test/java/com/cityprojects/citybackend/dolibarr citybackend/src/test/resources/wiremock)",
+      "Bash(rm -f citybackend/src/main/resources/logback-spring.xml citybackend/src/test/resources/application-test.yml citybackend/src/test/resources/logback-test.xml)",
+      "Bash(./citybackend/mvnw -f citybackend/pom.xml -fae compile)",
+      "Bash(bash /tmp/recreate_dolibarr.sh)",
+      "Bash(git update-ref *)",
+      "Bash(rm -rf .git/refs/heads/feature)",
+      "Bash(git symbolic-ref *)",
+      "Bash(rm -f citybackend/src/main/java/com/cityprojects/citybackend/common/event/ClientCreatedEvent.java citybackend/src/main/java/com/cityprojects/citybackend/common/event/FactureValideeEvent.java citybackend/src/main/java/com/cityprojects/citybackend/common/event/PaiementEnregistreEvent.java citybackend/src/main/java/com/cityprojects/citybackend/common/event/SocieteCreatedEvent.java citybackend/src/main/resources/db/changelog/changes/030-create-hotel-dolibarr-config.xml citybackend/src/main/resources/db/changelog/changes/031-add-dolibarr-refs-finance-clients.xml citybackend/src/main/resources/logback-spring.xml citybackend/src/test/resources/application-test.yml citybackend/src/test/resources/logback-test.xml)",
+      "Bash(rm -rf citybackend/src/main/java/com/cityprojects/citybackend/dolibarr citybackend/src/test/java/com/cityprojects/citybackend/config citybackend/src/test/java/com/cityprojects/citybackend/dolibarr citybackend/src/test/resources/wiremock deploiement/dolibarr)",
+      "Bash(awk '{ s+=$3 } END { print s }')",
+      "Bash(unzip -l /c/Users/BK/.m2/repository/org/springframework/security/spring-security-config/6.4.5/spring-security-config-6.4.5.jar)",
+      "Bash(unzip -l /c/Users/BK/.m2/repository/org/springframework/security/spring-security-web/6.4.5/spring-security-web-6.4.5.jar)",
+      "Bash(awk '/public LoginResponse login/,/^    }/' C:/Users/BK/Documents/devops/claude_projects/cityhotel/citybackend/src/main/java/com/cityprojects/citybackend/service/auth/AuthService.java)",
+      "Bash(awk '/public LoginResponse login/,/^    \\\\/\\\\*\\\\*/' C:/Users/BK/Documents/devops/claude_projects/cityhotel/citybackend/src/main/java/com/cityprojects/citybackend/service/restaurant/CommandeServiceImpl.java)"
     ]
   }
 }

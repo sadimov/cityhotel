@@ -1,14 +1,20 @@
 // Jenkinsfile — pipeline CI/CD city
 // Hypothèses :
 //   - Jenkins LTS avec agents Linux ayant Docker, Maven, Node 24, kubectl, kustomize.
+//   - JDK 21 (Temurin) installé via "Manage Jenkins → Tools → JDK" sous le nom 'jdk-21'.
 //   - Credentials configurées (id Jenkins) :
-//       ghcr-pat        : Personal Access Token GitHub (write:packages)
-//       gpg-signing-key : clé GPG pour signer les tags
-//       k8s-prod        : kubeconfig du cluster prod
+//       ghcr-pat            : Personal Access Token GitHub (write:packages)
+//       gpg-signing-key     : clé GPG pour signer les tags
+//       k8s-prod            : kubeconfig du cluster prod
+//       sonar-token         : token Sonar (Secret text) — facultatif si RUN_SONAR=true
+//       city-app-secrets    : Secret text(s) — JWT_SECRET, DB_USERNAME, DB_PASSWORD,
+//                             MAIL_PASSWORD (injectés pour les tests d'intégration depuis
+//                             Tour 38 : plus de defaults dans application.yml).
 //   - Webhook git → Jenkins sur push tag v*
 //
 // Étapes :
-//   checkout → audit → tests → build → push → (deploy staging) → manual gate → deploy prod
+//   checkout → audit → tests → (sonar optionnel) → build → push → deploy staging
+//   → manual gate → deploy prod → smoke
 
 pipeline {
   agent {
@@ -22,12 +28,39 @@ pipeline {
     buildDiscarder(logRotator(numToKeepStr: '20'))
   }
 
+  parameters {
+    booleanParam(
+      name: 'RUN_SONAR',
+      defaultValue: false,
+      description: 'Lance l’analyse SonarQube après les tests (sinon stage skipped).'
+    )
+    string(
+      name: 'DOCKER_REGISTRY',
+      defaultValue: 'ghcr.io',
+      description: 'Registry Docker cible (ghcr.io, docker.io/<org>, etc.).'
+    )
+    string(
+      name: 'REGISTRY_OWNER',
+      defaultValue: 'your-org',
+      description: 'Org/namespace pour les images (sera concaténé : <REGISTRY>/<OWNER>/city-*).'
+    )
+  }
+
+  tools {
+    // Nécessite JDK 21 enregistré dans "Manage Jenkins → Tools" sous l'id 'jdk-21'.
+    jdk 'jdk-21'
+  }
+
   environment {
-    REGISTRY    = 'ghcr.io'
-    REGISTRY_OWNER = 'your-org'                     // à remplacer
+    REGISTRY    = "${params.DOCKER_REGISTRY}"
+    REGISTRY_OWNER = "${params.REGISTRY_OWNER}"
     BACK_IMG    = "${REGISTRY}/${REGISTRY_OWNER}/city-backend"
     FRONT_IMG   = "${REGISTRY}/${REGISTRY_OWNER}/city-frontend"
     TZ          = 'Africa/Nouakchott'
+    // Sécurité : ces vars sont remplacées par withCredentials dans la stage Tests,
+    // mais on initialise pour éviter NPE dans des steps script éventuels.
+    JAVA_HOME   = "${tool 'jdk-21'}"
+    PATH        = "${env.JAVA_HOME}/bin:${env.PATH}"
   }
 
   stages {
@@ -41,6 +74,8 @@ pipeline {
           env.APP_TAG    = env.IS_TAG == "true" ? env.GIT_TAG : "edge-${env.GIT_SHA}"
           echo "Building APP_TAG=${env.APP_TAG} (IS_TAG=${env.IS_TAG})"
         }
+        sh 'java -version'
+        sh 'cd citybackend && ./mvnw -v'
       }
     }
 
@@ -68,21 +103,56 @@ pipeline {
       parallel {
         stage('Backend tests') {
           steps {
-            dir('citybackend') {
-              sh './mvnw -B -ntp verify'
+            // Tour 38 : application.yml ne fournit plus de defaults pour ces secrets.
+            // On injecte des credentials Jenkins (Secret text) pour que les tests
+            // d'intégration (147 unit + 62 IT) démarrent correctement.
+            withCredentials([
+              string(credentialsId: 'city-jwt-secret',  variable: 'JWT_SECRET'),
+              string(credentialsId: 'city-db-username', variable: 'DB_USERNAME'),
+              string(credentialsId: 'city-db-password', variable: 'DB_PASSWORD'),
+              string(credentialsId: 'city-mail-password', variable: 'MAIL_PASSWORD')
+            ]) {
+              dir('citybackend') {
+                sh './mvnw -B -ntp verify'
+              }
             }
           }
           post {
             always {
-              junit allowEmptyResults: true, testResults: 'citybackend/target/*-reports/*.xml'
+              // Capture Surefire (unit tests *Test/*Tests) ET Failsafe (IT *IT)
+              junit allowEmptyResults: true,
+                    testResults: 'citybackend/target/surefire-reports/*.xml,citybackend/target/failsafe-reports/*.xml'
             }
           }
         }
         stage('Frontend tests') {
           steps {
             dir('cityfrontend') {
+              // Karma + Jasmine (palier 1 — voir CLAUDE.md §3 Frontend).
+              // Non bloquant tant que la base de tests n'a pas atteint la maturité requise.
               sh 'npx ng test --watch=false --browsers=ChromeHeadless --code-coverage || true'
             }
+          }
+        }
+      }
+    }
+
+    stage('Sonar') {
+      // Optionnel : déclenché manuellement via le paramètre RUN_SONAR (build with parameters).
+      // Activer aussi automatiquement sur la branche main en décommentant la ligne ci-dessous.
+      when {
+        expression { return params.RUN_SONAR }
+        // anyOf { branch 'main' ; expression { return params.RUN_SONAR } }
+      }
+      steps {
+        withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+          dir('citybackend') {
+            sh '''
+              ./mvnw -B -ntp sonar:sonar \
+                -Dsonar.host.url=${SONAR_URL:-https://sonar.example.mr} \
+                -Dsonar.token=${SONAR_TOKEN} \
+                -Dsonar.projectKey=city-backend
+            '''
           }
         }
       }
