@@ -73,6 +73,7 @@ CREATE TABLE core.dbusers (
     derniere_connexion TIMESTAMP,
     tentatives_connexion INTEGER DEFAULT 0,
     compte_verrouille BOOLEAN DEFAULT false,
+    mot_passe_temporaire BOOLEAN NOT NULL DEFAULT false,
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
