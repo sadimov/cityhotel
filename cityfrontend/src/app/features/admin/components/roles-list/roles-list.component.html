@@ -1,0 +1,85 @@
+<section class="admin-roles-list">
+  <header class="admin-roles-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'admin.roles.list.title' | translate }}</h2>
+    <small class="text-muted">{{ 'admin.roles.list.readonly' | translate }}</small>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="admin-roles-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.roles.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'admin.roles.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'admin.roles.list.empty' | translate }}
+    </div>
+  } @else {
+    <div class="admin-roles-list__items">
+      @for (role of roles; track role.roleId) {
+        <article class="admin-roles-list__item card shadow-sm mb-2">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <code class="me-2">{{ role.code }}</code>
+                <strong>{{ role.nom }}</strong>
+                @if (role.description) {
+                  <p class="text-muted small m-0 mt-1">{{ role.description }}</p>
+                }
+              </div>
+              @if (hasPermissions(role)) {
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="toggle(role)"
+                  [attr.aria-expanded]="role.expanded"
+                  [attr.aria-label]="
+                    (role.expanded
+                      ? 'admin.roles.actions.hidePermissions'
+                      : 'admin.roles.actions.showPermissions'
+                    ) | translate
+                  "
+                >
+                  <i
+                    [class]="role.expanded ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"
+                    aria-hidden="true"
+                  ></i>
+                  <span class="ms-1">
+                    {{
+                      (role.expanded
+                        ? 'admin.roles.actions.hidePermissions'
+                        : 'admin.roles.actions.showPermissions'
+                      ) | translate
+                    }}
+                  </span>
+                </button>
+              }
+            </div>
+
+            @if (role.expanded && hasPermissions(role)) {
+              <div class="admin-roles-list__permissions mt-3">
+                <small class="text-muted d-block mb-2">
+                  {{ 'admin.roles.fields.permissions' | translate }}
+                </small>
+                <ul class="list-unstyled m-0 d-flex flex-wrap gap-2">
+                  @for (perm of role.permissions; track perm) {
+                    <li>
+                      <span class="badge text-bg-light border">{{ perm }}</span>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

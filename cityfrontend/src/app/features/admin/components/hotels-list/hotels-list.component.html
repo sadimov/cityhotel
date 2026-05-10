@@ -1,0 +1,174 @@
+<section class="admin-hotels-list">
+  <header class="admin-hotels-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'admin.hotels.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'admin.hotels.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="admin-hotels-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control admin-hotels-list__search"
+      [placeholder]="'admin.hotels.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'admin.hotels.list.search' | translate"
+    />
+    <select
+      class="form-select admin-hotels-list__filter"
+      (change)="onActifFilterChange($any($event.target).value)"
+      [attr.aria-label]="'admin.hotels.fields.actif' | translate"
+    >
+      <option value="">{{ 'admin.hotels.list.filterStatut' | translate }}</option>
+      <option value="true">{{ 'admin.hotels.statut.actif' | translate }}</option>
+      <option value="false">{{ 'admin.hotels.statut.inactif' | translate }}</option>
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="admin-hotels-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.hotels.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'admin.hotels.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'admin.hotels.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'admin.hotels.fields.code' | translate }}</th>
+            <th scope="col">{{ 'admin.hotels.fields.nom' | translate }}</th>
+            <th scope="col">{{ 'admin.hotels.fields.ville' | translate }}</th>
+            <th scope="col">{{ 'admin.hotels.fields.telephone' | translate }}</th>
+            <th scope="col">{{ 'admin.hotels.fields.email' | translate }}</th>
+            <th scope="col">{{ 'admin.hotels.fields.actif' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'admin.hotels.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (hotel of page.content; track hotel.hotelId) {
+            <tr>
+              <td><code>{{ hotel.code }}</code></td>
+              <td><strong>{{ hotel.nom }}</strong></td>
+              <td>{{ hotel.ville || '-' }}</td>
+              <td>{{ hotel.telephone || '-' }}</td>
+              <td>{{ hotel.email || '-' }}</td>
+              <td>
+                <span
+                  class="badge"
+                  [ngClass]="hotel.actif !== false ? 'text-bg-success' : 'text-bg-secondary'"
+                >
+                  {{
+                    (hotel.actif !== false
+                      ? 'admin.hotels.statut.actif'
+                      : 'admin.hotels.statut.inactif'
+                    ) | translate
+                  }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info me-1"
+                  (click)="viewUsers(hotel)"
+                  [attr.aria-label]="'admin.hotels.actions.viewUsers' | translate"
+                  [title]="'admin.hotels.actions.viewUsers' | translate"
+                >
+                  <i class="bi bi-people" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(hotel)"
+                  [attr.aria-label]="'admin.hotels.actions.edit' | translate"
+                  [title]="'admin.hotels.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm"
+                  [ngClass]="hotel.actif !== false ? 'btn-outline-warning' : 'btn-outline-success'"
+                  (click)="toggleActif(hotel)"
+                  [disabled]="togglingId === hotel.hotelId"
+                  [attr.aria-label]="
+                    (hotel.actif !== false
+                      ? 'admin.hotels.actions.desactiver'
+                      : 'admin.hotels.actions.reactiver'
+                    ) | translate
+                  "
+                  [title]="
+                    (hotel.actif !== false
+                      ? 'admin.hotels.actions.desactiver'
+                      : 'admin.hotels.actions.reactiver'
+                    ) | translate
+                  "
+                >
+                  @if (togglingId === hotel.hotelId) {
+                    <span
+                      class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                  } @else {
+                    <i
+                      [class]="hotel.actif !== false ? 'bi bi-x-circle' : 'bi bi-check-circle'"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'admin.hotels.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

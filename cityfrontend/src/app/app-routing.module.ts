@@ -101,6 +101,18 @@ const routes: Routes = [
         data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'MENAGE'] }
       },
 
+      // Module Administration (hôtels, utilisateurs, rôles, paramètres) —
+      // feature lazy SUPERADMIN-only from-scratch (Tour 31, 2026-05-09).
+      // Single source of truth d'accès : `SuperAdminGuard` câblé À L'INTÉRIEUR
+      // du module via `canActivate` + `canActivateChild` sur la route racine
+      // du layout admin (cf. `admin-routing.module.ts`). Volontairement PAS
+      // de `RoleGuard` cumulé ici pour éviter une double vérification redondante.
+      {
+        path: 'admin',
+        loadChildren: () =>
+          import('./features/admin/admin.module').then(m => m.AdminModule),
+      },
+
       // Module Produits & Catégories (ADMIN, GERANT, SUPERADMIN)
       /*{
         path: 'products',

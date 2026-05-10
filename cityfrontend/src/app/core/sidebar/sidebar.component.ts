@@ -310,6 +310,46 @@ export class SidebarComponent implements OnInit, OnDestroy {
       icon: 'fas fa-user-circle',
       route: '/profile',
       roles: ['ADMIN', 'GERANT', 'SUPERADMIN', 'RECEPTION', 'RESTAURANT', 'RESREC', 'MENAGE', 'MAGASIN']
+    },
+    // Administration cross-tenant (SUPERADMIN uniquement) — Tour 31.
+    // Le SuperAdminGuard interne au module admin double cette restriction
+    // côté routing ; ici la liste `roles` filtre uniquement l'affichage
+    // dans le sidebar via `filterMenuByRole`.
+    {
+      id: 'admin',
+      label: 'menu.admin',
+      icon: 'fas fa-gear',
+      roles: ['SUPERADMIN'],
+      children: [
+        {
+          id: 'admin-hotels',
+          label: 'submenu.admin.hotels',
+          icon: 'fas fa-building',
+          route: '/admin/hotels',
+          roles: ['SUPERADMIN']
+        },
+        {
+          id: 'admin-users',
+          label: 'submenu.admin.users',
+          icon: 'fas fa-users-cog',
+          route: '/admin/users',
+          roles: ['SUPERADMIN']
+        },
+        {
+          id: 'admin-roles',
+          label: 'submenu.admin.roles',
+          icon: 'fas fa-user-shield',
+          route: '/admin/roles',
+          roles: ['SUPERADMIN']
+        },
+        {
+          id: 'admin-parametres',
+          label: 'submenu.admin.parametres',
+          icon: 'fas fa-sliders-h',
+          route: '/admin/parametres',
+          roles: ['SUPERADMIN']
+        }
+      ]
     }
   ];
 

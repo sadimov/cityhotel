@@ -1,0 +1,212 @@
+<section class="admin-user-form">
+  <header class="admin-user-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'admin.users.form.titleEdit'
+          : 'admin.users.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="admin-user-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.users.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="username" class="form-label">
+            {{ 'admin.users.fields.username' | translate }}
+            @if (isEditing) {
+              <small class="text-muted">— {{ 'admin.users.fields.usernameImmutable' | translate }}</small>
+            }
+          </label>
+          <input
+            id="username"
+            type="text"
+            class="form-control"
+            formControlName="username"
+            [class.is-invalid]="form.get('username')?.invalid && form.get('username')?.touched"
+          />
+          @if (form.get('username')?.touched && form.get('username')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.usernameRequired' | translate }}
+            </div>
+          }
+          @if (form.get('username')?.touched && form.get('username')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.usernamePattern' | translate }}
+            </div>
+          }
+        </div>
+
+        @if (!isEditing) {
+          <div class="col-md-6">
+            <label for="password" class="form-label">
+              {{ 'admin.users.fields.password' | translate }}
+            </label>
+            <input
+              id="password"
+              type="password"
+              class="form-control"
+              formControlName="password"
+              autocomplete="new-password"
+              [class.is-invalid]="form.get('password')?.invalid && form.get('password')?.touched"
+            />
+            @if (form.get('password')?.touched && form.get('password')?.errors?.['required']) {
+              <div class="invalid-feedback d-block">
+                {{ 'admin.users.errors.passwordRequired' | translate }}
+              </div>
+            }
+            @if (form.get('password')?.touched && form.get('password')?.errors?.['minlength']) {
+              <div class="invalid-feedback d-block">
+                {{ 'admin.users.errors.passwordMinLength' | translate }}
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="col-md-6">
+            <label class="form-label">
+              {{ 'admin.users.fields.password' | translate }}
+            </label>
+            <div class="form-text">
+              {{ 'admin.users.form.passwordEditHint' | translate }}
+            </div>
+          </div>
+        }
+
+        <div class="col-md-4">
+          <label for="prenom" class="form-label">
+            {{ 'admin.users.fields.prenom' | translate }}
+          </label>
+          <input
+            id="prenom"
+            type="text"
+            class="form-control"
+            formControlName="prenom"
+            [class.is-invalid]="form.get('prenom')?.invalid && form.get('prenom')?.touched"
+          />
+          @if (form.get('prenom')?.touched && form.get('prenom')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.prenomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="nom" class="form-label">
+            {{ 'admin.users.fields.nom' | translate }}
+          </label>
+          <input
+            id="nom"
+            type="text"
+            class="form-control"
+            formControlName="nom"
+            [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
+          />
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.nomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="telephone" class="form-label">
+            {{ 'admin.users.fields.telephone' | translate }}
+          </label>
+          <input
+            id="telephone"
+            type="tel"
+            class="form-control"
+            formControlName="telephone"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="email" class="form-label">
+            {{ 'admin.users.fields.email' | translate }}
+          </label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+          />
+          @if (form.get('email')?.touched && form.get('email')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.emailRequired' | translate }}
+            </div>
+          }
+          @if (form.get('email')?.touched && form.get('email')?.errors?.['email']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.emailFormat' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="roleCode" class="form-label">
+            {{ 'admin.users.fields.role' | translate }}
+          </label>
+          <select
+            id="roleCode"
+            class="form-select"
+            formControlName="roleCode"
+            [class.is-invalid]="form.get('roleCode')?.invalid && form.get('roleCode')?.touched"
+          >
+            <option value="">{{ 'admin.users.form.selectRole' | translate }}</option>
+            @for (r of roles; track r.roleId) {
+              <option [value]="r.code">{{ r.nom }}</option>
+            }
+          </select>
+          @if (form.get('roleCode')?.touched && form.get('roleCode')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.users.errors.roleRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-12 pt-3">
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'admin.users.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-user-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'admin.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'admin.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

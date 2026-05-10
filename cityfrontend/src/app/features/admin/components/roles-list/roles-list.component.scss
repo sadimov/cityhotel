@@ -1,0 +1,21 @@
+:host {
+  display: block;
+}
+
+.admin-roles-list {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__permissions {
+    border-top: 1px solid var(--bs-border-color, #dee2e6);
+    padding-top: 0.75rem;
+  }
+}

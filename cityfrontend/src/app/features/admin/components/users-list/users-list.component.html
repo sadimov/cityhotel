@@ -1,0 +1,220 @@
+<section class="admin-users-list">
+  <header class="admin-users-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'admin.users.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'admin.users.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="admin-users-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control admin-users-list__search"
+      [placeholder]="'admin.users.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'admin.users.list.search' | translate"
+    />
+    <select
+      class="form-select admin-users-list__filter"
+      (change)="onHotelFilterChange($any($event.target).value)"
+      [attr.aria-label]="'admin.users.fields.hotel' | translate"
+    >
+      <option value="">{{ 'admin.users.list.filterHotelAll' | translate }}</option>
+      @for (h of hotels; track h.hotelId) {
+        <option
+          [value]="h.hotelId"
+          [selected]="request.filtres.hotelId === h.hotelId"
+        >
+          {{ h.nom }}
+        </option>
+      }
+    </select>
+    <select
+      class="form-select admin-users-list__filter"
+      (change)="onRoleFilterChange($any($event.target).value)"
+      [attr.aria-label]="'admin.users.fields.role' | translate"
+    >
+      <option value="">{{ 'admin.users.list.filterRoleAll' | translate }}</option>
+      @for (r of roles; track r.roleId) {
+        <option [value]="r.code">{{ r.nom }}</option>
+      }
+    </select>
+    <select
+      class="form-select admin-users-list__filter"
+      (change)="onActifFilterChange($any($event.target).value)"
+      [attr.aria-label]="'admin.users.fields.actif' | translate"
+    >
+      <option value="">{{ 'admin.users.list.filterStatut' | translate }}</option>
+      <option value="true">{{ 'admin.users.statut.actif' | translate }}</option>
+      <option value="false">{{ 'admin.users.statut.inactif' | translate }}</option>
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="admin-users-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.users.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'admin.users.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'admin.users.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'admin.users.fields.username' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.nomComplet' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.email' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.hotel' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.role' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.derniereConnexion' | translate }}</th>
+            <th scope="col">{{ 'admin.users.fields.statut' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'admin.users.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of page.content; track user.userId) {
+            <tr>
+              <td><code>{{ user.username }}</code></td>
+              <td>
+                <strong>{{ user.prenom }} {{ user.nom }}</strong>
+              </td>
+              <td>{{ user.email || '-' }}</td>
+              <td>{{ user.hotelNom || user.hotelCode || '-' }}</td>
+              <td>{{ user.roleNom || user.roleCode || '-' }}</td>
+              <td>{{ user.derniereConnexion || '-' }}</td>
+              <td>
+                @if (user.verrouille) {
+                  <span class="badge text-bg-danger me-1">
+                    <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>
+                    {{ 'admin.users.statut.verrouille' | translate }}
+                  </span>
+                }
+                <span
+                  class="badge"
+                  [ngClass]="user.actif !== false ? 'text-bg-success' : 'text-bg-secondary'"
+                >
+                  {{
+                    (user.actif !== false
+                      ? 'admin.users.statut.actif'
+                      : 'admin.users.statut.inactif'
+                    ) | translate
+                  }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary me-1"
+                  (click)="edit(user)"
+                  [attr.aria-label]="'admin.users.actions.edit' | translate"
+                  [title]="'admin.users.actions.edit' | translate"
+                >
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm me-1"
+                  [ngClass]="user.verrouille ? 'btn-outline-success' : 'btn-outline-warning'"
+                  (click)="toggleVerrou(user)"
+                  [disabled]="busyId === user.userId"
+                  [attr.aria-label]="
+                    (user.verrouille
+                      ? 'admin.users.actions.deverrouiller'
+                      : 'admin.users.actions.verrouiller'
+                    ) | translate
+                  "
+                  [title]="
+                    (user.verrouille
+                      ? 'admin.users.actions.deverrouiller'
+                      : 'admin.users.actions.verrouiller'
+                    ) | translate
+                  "
+                >
+                  <i
+                    [class]="user.verrouille ? 'bi bi-unlock' : 'bi bi-lock'"
+                    aria-hidden="true"
+                  ></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary me-1"
+                  (click)="resetPassword(user)"
+                  [disabled]="busyId === user.userId"
+                  [attr.aria-label]="'admin.users.actions.resetPassword' | translate"
+                  [title]="'admin.users.actions.resetPassword' | translate"
+                >
+                  <i class="bi bi-key" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="desactiver(user)"
+                  [disabled]="busyId === user.userId || user.actif === false"
+                  [attr.aria-label]="'admin.users.actions.desactiver' | translate"
+                  [title]="'admin.users.actions.desactiver' | translate"
+                >
+                  @if (busyId === user.userId) {
+                    <span
+                      class="spinner-border spinner-border-sm"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
+                  } @else {
+                    <i class="bi bi-person-x" aria-hidden="true"></i>
+                  }
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'admin.users.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

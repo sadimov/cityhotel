@@ -24,7 +24,8 @@
     "restaurant": "المطعم",
     "housekeeping": "التنظيف",
     "reporting": "التقارير",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "admin": "الإدارة"
   },
   "submenu": {
     "products": {
@@ -38,6 +39,12 @@
     "reservations": {
       "reservations": "الحجوزات",
       "night_audit": "مراجعة ليلية"
+    },
+    "admin": {
+      "hotels": "الفنادق",
+      "users": "المستخدمون",
+      "roles": "الأدوار",
+      "parametres": "الإعدادات"
     }
   },
   "common": {
@@ -1000,6 +1007,237 @@
       "validate": "إسناد",
       "cancel": "إلغاء",
       "empty": "لا يوجد موظف نشط متاح."
+    }
+  },
+  "admin": {
+    "title": "الإدارة",
+    "subtitle": "إدارة مركزية للفنادق والمستخدمين والأدوار والإعدادات",
+    "tabs": {
+      "hotels": "الفنادق",
+      "users": "المستخدمون",
+      "roles": "الأدوار",
+      "parametres": "الإعدادات"
+    },
+    "actions": {
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "close": "إغلاق",
+      "confirm": "تأكيد"
+    },
+    "hotels": {
+      "list": {
+        "title": "قائمة الفنادق",
+        "search": "ابحث عن فندق",
+        "empty": "لم يتم العثور على فندق",
+        "error": "تعذر تحميل قائمة الفنادق.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات الفنادق",
+        "filterStatut": "كل الحالات"
+      },
+      "form": {
+        "titleCreate": "فندق جديد",
+        "titleEdit": "تعديل الفندق",
+        "loadError": "تعذر تحميل هذا الفندق."
+      },
+      "actions": {
+        "create": "فندق جديد",
+        "edit": "تعديل",
+        "desactiver": "تعطيل",
+        "reactiver": "إعادة تفعيل",
+        "viewUsers": "عرض المستخدمين"
+      },
+      "fields": {
+        "code": "الرمز",
+        "codeImmutable": "غير قابل للتعديل",
+        "nom": "الاسم",
+        "adresse": "العنوان",
+        "ville": "المدينة",
+        "pays": "البلد",
+        "telephone": "الهاتف",
+        "email": "البريد الإلكتروني",
+        "siteWeb": "الموقع الإلكتروني",
+        "actif": "نشط"
+      },
+      "statut": {
+        "actif": "نشط",
+        "inactif": "غير نشط"
+      },
+      "errors": {
+        "codeRequired": "الرمز مطلوب.",
+        "codePattern": "يجب أن يكون الرمز أبجديًا رقميًا (حروف، أرقام، _ أو -).",
+        "nomRequired": "الاسم مطلوب.",
+        "emailFormat": "عنوان البريد الإلكتروني غير صالح."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الفندق بنجاح",
+        "updateSuccess": "تم تعديل الفندق بنجاح",
+        "saveError": "تعذر حفظ الفندق.",
+        "desactiverConfirm": "هل تريد تعطيل هذا الفندق؟",
+        "desactiverSuccess": "تم تعطيل الفندق",
+        "desactiverError": "تعذر تعطيل الفندق.",
+        "reactiverConfirm": "هل تريد إعادة تفعيل هذا الفندق؟",
+        "reactiverSuccess": "تم إعادة تفعيل الفندق",
+        "reactiverError": "تعذر إعادة تفعيل الفندق."
+      }
+    },
+    "users": {
+      "list": {
+        "title": "المستخدمون (كل الفنادق)",
+        "search": "ابحث (المستخدم، البريد...)",
+        "empty": "لم يتم العثور على مستخدم",
+        "error": "تعذر تحميل قائمة المستخدمين.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات المستخدمين",
+        "filterHotelAll": "كل الفنادق",
+        "filterRoleAll": "كل الأدوار",
+        "filterStatut": "كل الحالات"
+      },
+      "form": {
+        "titleCreate": "مستخدم جديد",
+        "titleEdit": "تعديل المستخدم",
+        "loadError": "تعذر تحميل هذا المستخدم.",
+        "selectRole": "اختر دورًا",
+        "passwordEditHint": "لإعادة تعيين كلمة المرور، استخدم إجراء «إعادة التعيين» من القائمة."
+      },
+      "actions": {
+        "create": "مستخدم جديد",
+        "edit": "تعديل",
+        "verrouiller": "قفل",
+        "deverrouiller": "فتح",
+        "resetPassword": "إعادة تعيين كلمة المرور",
+        "desactiver": "تعطيل"
+      },
+      "fields": {
+        "username": "اسم المستخدم",
+        "usernameImmutable": "غير قابل للتعديل",
+        "password": "كلمة المرور",
+        "email": "البريد الإلكتروني",
+        "prenom": "الاسم الأول",
+        "nom": "اللقب",
+        "nomComplet": "الاسم الكامل",
+        "telephone": "الهاتف",
+        "hotel": "الفندق",
+        "role": "الدور",
+        "derniereConnexion": "آخر اتصال",
+        "statut": "الحالة",
+        "actif": "نشط"
+      },
+      "statut": {
+        "actif": "نشط",
+        "inactif": "غير نشط",
+        "verrouille": "مقفل"
+      },
+      "errors": {
+        "usernameRequired": "اسم المستخدم مطلوب.",
+        "usernamePattern": "لا يمكن أن يحتوي اسم المستخدم إلا على حروف وأرقام ونقطة وشرطة وشرطة سفلية.",
+        "passwordRequired": "كلمة المرور مطلوبة.",
+        "passwordMinLength": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.",
+        "emailRequired": "البريد الإلكتروني مطلوب.",
+        "emailFormat": "عنوان البريد الإلكتروني غير صالح.",
+        "prenomRequired": "الاسم الأول مطلوب.",
+        "nomRequired": "اللقب مطلوب.",
+        "roleRequired": "الدور مطلوب."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء المستخدم بنجاح",
+        "updateSuccess": "تم تعديل المستخدم بنجاح",
+        "saveError": "تعذر حفظ المستخدم.",
+        "selectHotelFirst": "اختر فندقًا أولاً عبر الفلتر لإنشاء مستخدم.",
+        "verrouillerConfirm": "هل تريد قفل هذا المستخدم؟",
+        "verrouillerSuccess": "تم قفل المستخدم",
+        "verrouillerError": "تعذر قفل المستخدم.",
+        "deverrouillerConfirm": "هل تريد فتح هذا المستخدم؟",
+        "deverrouillerSuccess": "تم فتح المستخدم",
+        "deverrouillerError": "تعذر فتح المستخدم.",
+        "resetPasswordConfirm": "هل تريد إعادة تعيين كلمة مرور هذا المستخدم؟",
+        "resetPasswordError": "تعذرت إعادة تعيين كلمة المرور.",
+        "desactiverConfirm": "هل تريد تعطيل هذا المستخدم؟",
+        "desactiverSuccess": "تم تعطيل المستخدم",
+        "desactiverError": "تعذر تعطيل المستخدم."
+      },
+      "resetPasswordModal": {
+        "title": "تمت إعادة تعيين كلمة المرور",
+        "username": "المستخدم",
+        "newPassword": "كلمة المرور الجديدة",
+        "hint": "احفظ كلمة المرور — لن تظهر بعد الإغلاق.",
+        "copy": "نسخ",
+        "copied": "تم النسخ!"
+      }
+    },
+    "roles": {
+      "list": {
+        "title": "الأدوار المتاحة",
+        "readonly": "للقراءة فقط",
+        "empty": "لا توجد أدوار محددة.",
+        "error": "تعذر تحميل قائمة الأدوار.",
+        "retry": "إعادة المحاولة"
+      },
+      "actions": {
+        "showPermissions": "عرض الصلاحيات",
+        "hidePermissions": "إخفاء الصلاحيات"
+      },
+      "fields": {
+        "code": "الرمز",
+        "nom": "الاسم",
+        "description": "الوصف",
+        "permissions": "الصلاحيات"
+      }
+    },
+    "parametres": {
+      "list": {
+        "title": "الإعدادات العامة",
+        "search": "ابحث (المفتاح، القيمة، الوصف...)",
+        "empty": "لم يتم العثور على إعداد",
+        "error": "تعذر تحميل قائمة الإعدادات.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم صفحات الإعدادات",
+        "filterModifiableAll": "الكل (قابل للتعديل ومقفل)",
+        "filterModifiableYes": "القابل للتعديل فقط",
+        "filterModifiableNo": "المقفل فقط",
+        "uncategorized": "بدون فئة"
+      },
+      "form": {
+        "titleCreate": "إعداد جديد",
+        "titleEdit": "تعديل الإعداد",
+        "loadError": "تعذر تحميل هذا الإعداد.",
+        "lockedNotice": "هذا الإعداد مقفل (modifiable=false). لا يمكن إجراء أي تعديل.",
+        "selectType": "اختر نوعًا"
+      },
+      "actions": {
+        "create": "إعداد جديد",
+        "edit": "تعديل",
+        "editLocked": "مقفل — غير قابل للتعديل",
+        "delete": "حذف"
+      },
+      "fields": {
+        "cle": "المفتاح",
+        "valeur": "القيمة",
+        "description": "الوصف",
+        "categorie": "الفئة",
+        "type": "النوع",
+        "modifiable": "قابل للتعديل",
+        "modifiableHint": "ألغِ التحديد لقفل الإعداد"
+      },
+      "statut": {
+        "editable": "قابل للتعديل",
+        "locked": "مقفل"
+      },
+      "errors": {
+        "cleRequired": "المفتاح مطلوب.",
+        "clePattern": "لا يمكن أن يحتوي المفتاح إلا على حروف وأرقام ونقطة وشرطة وشرطة سفلية.",
+        "valeurRequired": "القيمة مطلوبة."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الإعداد بنجاح",
+        "updateSuccess": "تم تعديل الإعداد بنجاح",
+        "saveError": "تعذر حفظ الإعداد.",
+        "deleteConfirm": "هل تريد حذف هذا الإعداد؟",
+        "deleteSuccess": "تم حذف الإعداد",
+        "deleteError": "تعذر حذف الإعداد."
+      }
     }
   },
   "error": {

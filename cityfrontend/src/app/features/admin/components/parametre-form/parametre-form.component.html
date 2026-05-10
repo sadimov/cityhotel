@@ -1,0 +1,146 @@
+<section class="admin-parametre-form">
+  <header class="admin-parametre-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'admin.parametres.form.titleEdit'
+          : 'admin.parametres.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="admin-parametre-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.parametres.form.loadError' | translate }}
+    </div>
+  } @else {
+    @if (isLocked) {
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-lock-fill me-2" aria-hidden="true"></i>
+        {{ 'admin.parametres.form.lockedNotice' | translate }}
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="cle" class="form-label">
+            {{ 'admin.parametres.fields.cle' | translate }}
+          </label>
+          <input
+            id="cle"
+            type="text"
+            class="form-control"
+            formControlName="cle"
+            [class.is-invalid]="form.get('cle')?.invalid && form.get('cle')?.touched"
+          />
+          @if (form.get('cle')?.touched && form.get('cle')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.parametres.errors.cleRequired' | translate }}
+            </div>
+          }
+          @if (form.get('cle')?.touched && form.get('cle')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.parametres.errors.clePattern' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-3">
+          <label for="categorie" class="form-label">
+            {{ 'admin.parametres.fields.categorie' | translate }}
+          </label>
+          <input
+            id="categorie"
+            type="text"
+            class="form-control"
+            formControlName="categorie"
+          />
+        </div>
+
+        <div class="col-md-3">
+          <label for="type" class="form-label">
+            {{ 'admin.parametres.fields.type' | translate }}
+          </label>
+          <select id="type" class="form-select" formControlName="type">
+            <option value="">{{ 'admin.parametres.form.selectType' | translate }}</option>
+            <option value="STRING">STRING</option>
+            <option value="NUMBER">NUMBER</option>
+            <option value="BOOLEAN">BOOLEAN</option>
+            <option value="JSON">JSON</option>
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label for="valeur" class="form-label">
+            {{ 'admin.parametres.fields.valeur' | translate }}
+          </label>
+          <textarea
+            id="valeur"
+            rows="4"
+            class="form-control"
+            formControlName="valeur"
+            [class.is-invalid]="form.get('valeur')?.invalid && form.get('valeur')?.touched"
+          ></textarea>
+          @if (form.get('valeur')?.touched && form.get('valeur')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.parametres.errors.valeurRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">
+            {{ 'admin.parametres.fields.description' | translate }}
+          </label>
+          <input
+            id="description"
+            type="text"
+            class="form-control"
+            formControlName="description"
+          />
+        </div>
+
+        <div class="col-12 pt-3">
+          <div class="form-check">
+            <input
+              id="modifiable"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="modifiable"
+            />
+            <label for="modifiable" class="form-check-label">
+              {{ 'admin.parametres.fields.modifiable' | translate }}
+              <small class="text-muted ms-2">
+                — {{ 'admin.parametres.fields.modifiableHint' | translate }}
+              </small>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-parametre-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'admin.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting' || isLocked"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'admin.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

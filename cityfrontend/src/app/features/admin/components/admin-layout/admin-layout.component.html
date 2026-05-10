@@ -1,0 +1,32 @@
+<section class="admin-layout">
+  <header class="admin-layout__header mb-3">
+    <h1 class="h3 m-0">
+      <i class="bi bi-gear-fill me-2" aria-hidden="true"></i>
+      {{ 'admin.title' | translate }}
+    </h1>
+    <p class="text-muted m-0">{{ 'admin.subtitle' | translate }}</p>
+  </header>
+
+  <div class="admin-layout__body">
+    <nav class="admin-layout__tabs" [attr.aria-label]="'admin.title' | translate">
+      <ul class="nav nav-pills flex-column">
+        @for (tab of tabs; track tab.id) {
+          <li class="nav-item">
+            <a
+              class="nav-link admin-layout__tab"
+              routerLinkActive="active"
+              [routerLink]="tab.route"
+            >
+              <i [class]="tab.icon + ' me-2'" aria-hidden="true"></i>
+              <span class="admin-layout__tab-label">{{ tab.label | translate }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+
+    <main class="admin-layout__content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</section>

@@ -24,7 +24,8 @@
     "restaurant": "Restaurant",
     "housekeeping": "Housekeeping",
     "reporting": "Reporting",
-    "profile": "Profile"
+    "profile": "Profile",
+    "admin": "Administration"
   },
   "submenu": {
     "products": {
@@ -38,6 +39,12 @@
     "reservations": {
       "reservations": "Reservations",
       "night_audit": "Night Audit"
+    },
+    "admin": {
+      "hotels": "Hotels",
+      "users": "Users",
+      "roles": "Roles",
+      "parametres": "Settings"
     }
   },
   "common": {
@@ -1000,6 +1007,237 @@
       "validate": "Assign",
       "cancel": "Cancel",
       "empty": "No active staff available."
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "subtitle": "Centralized management of hotels, users, roles and settings",
+    "tabs": {
+      "hotels": "Hotels",
+      "users": "Users",
+      "roles": "Roles",
+      "parametres": "Settings"
+    },
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "close": "Close",
+      "confirm": "Confirm"
+    },
+    "hotels": {
+      "list": {
+        "title": "Hotels",
+        "search": "Search a hotel",
+        "empty": "No hotel found",
+        "error": "Unable to load the hotels list.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Hotels pagination",
+        "filterStatut": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New hotel",
+        "titleEdit": "Edit hotel",
+        "loadError": "Unable to load this hotel."
+      },
+      "actions": {
+        "create": "New hotel",
+        "edit": "Edit",
+        "desactiver": "Deactivate",
+        "reactiver": "Reactivate",
+        "viewUsers": "View users"
+      },
+      "fields": {
+        "code": "Code",
+        "codeImmutable": "not editable",
+        "nom": "Name",
+        "adresse": "Address",
+        "ville": "City",
+        "pays": "Country",
+        "telephone": "Phone",
+        "email": "Email",
+        "siteWeb": "Website",
+        "actif": "Active"
+      },
+      "statut": {
+        "actif": "Active",
+        "inactif": "Inactive"
+      },
+      "errors": {
+        "codeRequired": "Code is required.",
+        "codePattern": "Code must be alphanumeric (letters, digits, _ or -).",
+        "nomRequired": "Name is required.",
+        "emailFormat": "Email address is invalid."
+      },
+      "messages": {
+        "createSuccess": "Hotel created successfully",
+        "updateSuccess": "Hotel updated successfully",
+        "saveError": "Unable to save the hotel.",
+        "desactiverConfirm": "Deactivate this hotel?",
+        "desactiverSuccess": "Hotel deactivated",
+        "desactiverError": "Unable to deactivate the hotel.",
+        "reactiverConfirm": "Reactivate this hotel?",
+        "reactiverSuccess": "Hotel reactivated",
+        "reactiverError": "Unable to reactivate the hotel."
+      }
+    },
+    "users": {
+      "list": {
+        "title": "Users (all hotels)",
+        "search": "Search (username, email...)",
+        "empty": "No user found",
+        "error": "Unable to load the users list.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Users pagination",
+        "filterHotelAll": "All hotels",
+        "filterRoleAll": "All roles",
+        "filterStatut": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New user",
+        "titleEdit": "Edit user",
+        "loadError": "Unable to load this user.",
+        "selectRole": "Select a role",
+        "passwordEditHint": "To reset the password, use the \"reset\" action from the list."
+      },
+      "actions": {
+        "create": "New user",
+        "edit": "Edit",
+        "verrouiller": "Lock",
+        "deverrouiller": "Unlock",
+        "resetPassword": "Reset password",
+        "desactiver": "Deactivate"
+      },
+      "fields": {
+        "username": "Username",
+        "usernameImmutable": "not editable",
+        "password": "Password",
+        "email": "Email",
+        "prenom": "First name",
+        "nom": "Last name",
+        "nomComplet": "Full name",
+        "telephone": "Phone",
+        "hotel": "Hotel",
+        "role": "Role",
+        "derniereConnexion": "Last login",
+        "statut": "Status",
+        "actif": "Active"
+      },
+      "statut": {
+        "actif": "Active",
+        "inactif": "Inactive",
+        "verrouille": "Locked"
+      },
+      "errors": {
+        "usernameRequired": "Username is required.",
+        "usernamePattern": "Username may only contain letters, digits, dot, dash or underscore.",
+        "passwordRequired": "Password is required.",
+        "passwordMinLength": "Password must be at least 8 characters.",
+        "emailRequired": "Email is required.",
+        "emailFormat": "Email address is invalid.",
+        "prenomRequired": "First name is required.",
+        "nomRequired": "Last name is required.",
+        "roleRequired": "Role is required."
+      },
+      "messages": {
+        "createSuccess": "User created successfully",
+        "updateSuccess": "User updated successfully",
+        "saveError": "Unable to save the user.",
+        "selectHotelFirst": "Select a hotel first via the filter to create a user.",
+        "verrouillerConfirm": "Lock this user?",
+        "verrouillerSuccess": "User locked",
+        "verrouillerError": "Unable to lock the user.",
+        "deverrouillerConfirm": "Unlock this user?",
+        "deverrouillerSuccess": "User unlocked",
+        "deverrouillerError": "Unable to unlock the user.",
+        "resetPasswordConfirm": "Reset this user's password?",
+        "resetPasswordError": "Unable to reset the password.",
+        "desactiverConfirm": "Deactivate this user?",
+        "desactiverSuccess": "User deactivated",
+        "desactiverError": "Unable to deactivate the user."
+      },
+      "resetPasswordModal": {
+        "title": "Password reset",
+        "username": "Username",
+        "newPassword": "New password",
+        "hint": "Save this password — it will not be shown again after closing.",
+        "copy": "Copy",
+        "copied": "Copied!"
+      }
+    },
+    "roles": {
+      "list": {
+        "title": "Available roles",
+        "readonly": "Read-only",
+        "empty": "No role defined.",
+        "error": "Unable to load the roles list.",
+        "retry": "Retry"
+      },
+      "actions": {
+        "showPermissions": "Show permissions",
+        "hidePermissions": "Hide permissions"
+      },
+      "fields": {
+        "code": "Code",
+        "nom": "Name",
+        "description": "Description",
+        "permissions": "Permissions"
+      }
+    },
+    "parametres": {
+      "list": {
+        "title": "Global settings",
+        "search": "Search (key, value, description...)",
+        "empty": "No setting found",
+        "error": "Unable to load the settings list.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Settings pagination",
+        "filterModifiableAll": "All (editable and locked)",
+        "filterModifiableYes": "Editable only",
+        "filterModifiableNo": "Locked only",
+        "uncategorized": "No category"
+      },
+      "form": {
+        "titleCreate": "New setting",
+        "titleEdit": "Edit setting",
+        "loadError": "Unable to load this setting.",
+        "lockedNotice": "This setting is locked (modifiable=false). No change possible.",
+        "selectType": "Select a type"
+      },
+      "actions": {
+        "create": "New setting",
+        "edit": "Edit",
+        "editLocked": "Locked — not editable",
+        "delete": "Delete"
+      },
+      "fields": {
+        "cle": "Key",
+        "valeur": "Value",
+        "description": "Description",
+        "categorie": "Category",
+        "type": "Type",
+        "modifiable": "Editable",
+        "modifiableHint": "uncheck to lock the setting"
+      },
+      "statut": {
+        "editable": "Editable",
+        "locked": "Locked"
+      },
+      "errors": {
+        "cleRequired": "Key is required.",
+        "clePattern": "Key may only contain letters, digits, dot, dash or underscore.",
+        "valeurRequired": "Value is required."
+      },
+      "messages": {
+        "createSuccess": "Setting created successfully",
+        "updateSuccess": "Setting updated successfully",
+        "saveError": "Unable to save the setting.",
+        "deleteConfirm": "Delete this setting?",
+        "deleteSuccess": "Setting deleted",
+        "deleteError": "Unable to delete the setting."
+      }
     }
   },
   "error": {

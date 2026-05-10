@@ -1,0 +1,180 @@
+<section class="admin-hotel-form">
+  <header class="admin-hotel-form__header mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'admin.hotels.form.titleEdit'
+          : 'admin.hotels.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="admin-hotel-form__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.hotels.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="code" class="form-label">
+            {{ 'admin.hotels.fields.code' | translate }}
+            @if (isEditing) {
+              <small class="text-muted">— {{ 'admin.hotels.fields.codeImmutable' | translate }}</small>
+            }
+          </label>
+          <input
+            id="code"
+            type="text"
+            class="form-control"
+            formControlName="code"
+            [class.is-invalid]="form.get('code')?.invalid && form.get('code')?.touched"
+          />
+          @if (form.get('code')?.touched && form.get('code')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.hotels.errors.codeRequired' | translate }}
+            </div>
+          }
+          @if (form.get('code')?.touched && form.get('code')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.hotels.errors.codePattern' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-8">
+          <label for="nom" class="form-label">
+            {{ 'admin.hotels.fields.nom' | translate }}
+          </label>
+          <input
+            id="nom"
+            type="text"
+            class="form-control"
+            formControlName="nom"
+            [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
+          />
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.hotels.errors.nomRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="adresse" class="form-label">
+            {{ 'admin.hotels.fields.adresse' | translate }}
+          </label>
+          <input
+            id="adresse"
+            type="text"
+            class="form-control"
+            formControlName="adresse"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="ville" class="form-label">
+            {{ 'admin.hotels.fields.ville' | translate }}
+          </label>
+          <input
+            id="ville"
+            type="text"
+            class="form-control"
+            formControlName="ville"
+          />
+        </div>
+
+        <div class="col-md-6">
+          <label for="pays" class="form-label">
+            {{ 'admin.hotels.fields.pays' | translate }}
+          </label>
+          <input
+            id="pays"
+            type="text"
+            class="form-control"
+            formControlName="pays"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="telephone" class="form-label">
+            {{ 'admin.hotels.fields.telephone' | translate }}
+          </label>
+          <input
+            id="telephone"
+            type="tel"
+            class="form-control"
+            formControlName="telephone"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="email" class="form-label">
+            {{ 'admin.hotels.fields.email' | translate }}
+          </label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+          />
+          @if (form.get('email')?.touched && form.get('email')?.errors?.['email']) {
+            <div class="invalid-feedback d-block">
+              {{ 'admin.hotels.errors.emailFormat' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="siteWeb" class="form-label">
+            {{ 'admin.hotels.fields.siteWeb' | translate }}
+          </label>
+          <input
+            id="siteWeb"
+            type="url"
+            class="form-control"
+            formControlName="siteWeb"
+          />
+        </div>
+
+        <div class="col-12 pt-3">
+          <div class="form-check">
+            <input
+              id="actif"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="actif"
+            />
+            <label for="actif" class="form-check-label">
+              {{ 'admin.hotels.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-hotel-form__actions d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+          {{ 'admin.actions.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'admin.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -24,7 +24,8 @@
     "restaurant": "Restaurant",
     "housekeeping": "Ménage",
     "reporting": "Reporting",
-    "profile": "Profil"
+    "profile": "Profil",
+    "admin": "Administration"
   },
   "submenu": {
     "products": {
@@ -38,6 +39,12 @@
     "reservations": {
       "reservations": "Réservations",
       "night_audit": "Night Audit"
+    },
+    "admin": {
+      "hotels": "Hôtels",
+      "users": "Utilisateurs",
+      "roles": "Rôles",
+      "parametres": "Paramètres"
     }
   },
   "common": {
@@ -1000,6 +1007,237 @@
       "validate": "Assigner",
       "cancel": "Annuler",
       "empty": "Aucun personnel actif disponible."
+    }
+  },
+  "admin": {
+    "title": "Administration",
+    "subtitle": "Gestion centralisée des hôtels, utilisateurs, rôles et paramètres",
+    "tabs": {
+      "hotels": "Hôtels",
+      "users": "Utilisateurs",
+      "roles": "Rôles",
+      "parametres": "Paramètres"
+    },
+    "actions": {
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "close": "Fermer",
+      "confirm": "Confirmer"
+    },
+    "hotels": {
+      "list": {
+        "title": "Liste des hôtels",
+        "search": "Rechercher un hôtel",
+        "empty": "Aucun hôtel trouvé",
+        "error": "Impossible de charger la liste des hôtels.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des hôtels",
+        "filterStatut": "Tous les statuts"
+      },
+      "form": {
+        "titleCreate": "Nouvel hôtel",
+        "titleEdit": "Modifier l'hôtel",
+        "loadError": "Impossible de charger cet hôtel."
+      },
+      "actions": {
+        "create": "Nouvel hôtel",
+        "edit": "Modifier",
+        "desactiver": "Désactiver",
+        "reactiver": "Réactiver",
+        "viewUsers": "Voir les utilisateurs"
+      },
+      "fields": {
+        "code": "Code",
+        "codeImmutable": "non modifiable",
+        "nom": "Nom",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "pays": "Pays",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "siteWeb": "Site web",
+        "actif": "Actif"
+      },
+      "statut": {
+        "actif": "Actif",
+        "inactif": "Inactif"
+      },
+      "errors": {
+        "codeRequired": "Le code est obligatoire.",
+        "codePattern": "Le code doit être alphanumérique (lettres, chiffres, _ ou -).",
+        "nomRequired": "Le nom est obligatoire.",
+        "emailFormat": "L'adresse email est invalide."
+      },
+      "messages": {
+        "createSuccess": "Hôtel créé avec succès",
+        "updateSuccess": "Hôtel modifié avec succès",
+        "saveError": "Impossible d'enregistrer l'hôtel.",
+        "desactiverConfirm": "Désactiver cet hôtel ?",
+        "desactiverSuccess": "Hôtel désactivé",
+        "desactiverError": "Impossible de désactiver l'hôtel.",
+        "reactiverConfirm": "Réactiver cet hôtel ?",
+        "reactiverSuccess": "Hôtel réactivé",
+        "reactiverError": "Impossible de réactiver l'hôtel."
+      }
+    },
+    "users": {
+      "list": {
+        "title": "Utilisateurs (tous hôtels)",
+        "search": "Rechercher (utilisateur, email...)",
+        "empty": "Aucun utilisateur trouvé",
+        "error": "Impossible de charger la liste des utilisateurs.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des utilisateurs",
+        "filterHotelAll": "Tous les hôtels",
+        "filterRoleAll": "Tous les rôles",
+        "filterStatut": "Tous les statuts"
+      },
+      "form": {
+        "titleCreate": "Nouvel utilisateur",
+        "titleEdit": "Modifier l'utilisateur",
+        "loadError": "Impossible de charger cet utilisateur.",
+        "selectRole": "Sélectionner un rôle",
+        "passwordEditHint": "Pour réinitialiser le mot de passe, utilisez l'action « réinitialiser » depuis la liste."
+      },
+      "actions": {
+        "create": "Nouvel utilisateur",
+        "edit": "Modifier",
+        "verrouiller": "Verrouiller",
+        "deverrouiller": "Déverrouiller",
+        "resetPassword": "Réinitialiser le mot de passe",
+        "desactiver": "Désactiver"
+      },
+      "fields": {
+        "username": "Nom d'utilisateur",
+        "usernameImmutable": "non modifiable",
+        "password": "Mot de passe",
+        "email": "Email",
+        "prenom": "Prénom",
+        "nom": "Nom",
+        "nomComplet": "Nom complet",
+        "telephone": "Téléphone",
+        "hotel": "Hôtel",
+        "role": "Rôle",
+        "derniereConnexion": "Dernière connexion",
+        "statut": "Statut",
+        "actif": "Actif"
+      },
+      "statut": {
+        "actif": "Actif",
+        "inactif": "Inactif",
+        "verrouille": "Verrouillé"
+      },
+      "errors": {
+        "usernameRequired": "Le nom d'utilisateur est obligatoire.",
+        "usernamePattern": "Le nom d'utilisateur ne peut contenir que des lettres, chiffres, point, tiret ou underscore.",
+        "passwordRequired": "Le mot de passe est obligatoire.",
+        "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
+        "emailRequired": "L'email est obligatoire.",
+        "emailFormat": "L'adresse email est invalide.",
+        "prenomRequired": "Le prénom est obligatoire.",
+        "nomRequired": "Le nom est obligatoire.",
+        "roleRequired": "Le rôle est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Utilisateur créé avec succès",
+        "updateSuccess": "Utilisateur modifié avec succès",
+        "saveError": "Impossible d'enregistrer l'utilisateur.",
+        "selectHotelFirst": "Sélectionnez d'abord un hôtel via le filtre pour créer un utilisateur.",
+        "verrouillerConfirm": "Verrouiller cet utilisateur ?",
+        "verrouillerSuccess": "Utilisateur verrouillé",
+        "verrouillerError": "Impossible de verrouiller l'utilisateur.",
+        "deverrouillerConfirm": "Déverrouiller cet utilisateur ?",
+        "deverrouillerSuccess": "Utilisateur déverrouillé",
+        "deverrouillerError": "Impossible de déverrouiller l'utilisateur.",
+        "resetPasswordConfirm": "Réinitialiser le mot de passe de cet utilisateur ?",
+        "resetPasswordError": "Impossible de réinitialiser le mot de passe.",
+        "desactiverConfirm": "Désactiver cet utilisateur ?",
+        "desactiverSuccess": "Utilisateur désactivé",
+        "desactiverError": "Impossible de désactiver l'utilisateur."
+      },
+      "resetPasswordModal": {
+        "title": "Mot de passe réinitialisé",
+        "username": "Utilisateur",
+        "newPassword": "Nouveau mot de passe",
+        "hint": "Notez ce mot de passe — il ne sera plus affiché après fermeture.",
+        "copy": "Copier",
+        "copied": "Copié !"
+      }
+    },
+    "roles": {
+      "list": {
+        "title": "Rôles disponibles",
+        "readonly": "Lecture seule",
+        "empty": "Aucun rôle défini.",
+        "error": "Impossible de charger la liste des rôles.",
+        "retry": "Réessayer"
+      },
+      "actions": {
+        "showPermissions": "Voir les permissions",
+        "hidePermissions": "Masquer les permissions"
+      },
+      "fields": {
+        "code": "Code",
+        "nom": "Nom",
+        "description": "Description",
+        "permissions": "Permissions"
+      }
+    },
+    "parametres": {
+      "list": {
+        "title": "Paramètres globaux",
+        "search": "Rechercher (clé, valeur, description...)",
+        "empty": "Aucun paramètre trouvé",
+        "error": "Impossible de charger la liste des paramètres.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des paramètres",
+        "filterModifiableAll": "Tous (modifiables et verrouillés)",
+        "filterModifiableYes": "Modifiables uniquement",
+        "filterModifiableNo": "Verrouillés uniquement",
+        "uncategorized": "Sans catégorie"
+      },
+      "form": {
+        "titleCreate": "Nouveau paramètre",
+        "titleEdit": "Modifier le paramètre",
+        "loadError": "Impossible de charger ce paramètre.",
+        "lockedNotice": "Ce paramètre est verrouillé (modifiable=false). Aucune modification possible.",
+        "selectType": "Sélectionner un type"
+      },
+      "actions": {
+        "create": "Nouveau paramètre",
+        "edit": "Modifier",
+        "editLocked": "Verrouillé — non modifiable",
+        "delete": "Supprimer"
+      },
+      "fields": {
+        "cle": "Clé",
+        "valeur": "Valeur",
+        "description": "Description",
+        "categorie": "Catégorie",
+        "type": "Type",
+        "modifiable": "Modifiable",
+        "modifiableHint": "décochez pour verrouiller le paramètre"
+      },
+      "statut": {
+        "editable": "Modifiable",
+        "locked": "Verrouillé"
+      },
+      "errors": {
+        "cleRequired": "La clé est obligatoire.",
+        "clePattern": "La clé ne peut contenir que des lettres, chiffres, point, tiret ou underscore.",
+        "valeurRequired": "La valeur est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Paramètre créé avec succès",
+        "updateSuccess": "Paramètre modifié avec succès",
+        "saveError": "Impossible d'enregistrer le paramètre.",
+        "deleteConfirm": "Supprimer ce paramètre ?",
+        "deleteSuccess": "Paramètre supprimé",
+        "deleteError": "Impossible de supprimer le paramètre."
+      }
     }
   },
   "error": {

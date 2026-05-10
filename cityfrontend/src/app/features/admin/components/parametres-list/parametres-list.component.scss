@@ -1,0 +1,32 @@
+:host {
+  display: block;
+}
+
+.admin-parametres-list {
+  &__header h2 {
+    color: var(--bs-primary, #0dcaf0);
+  }
+
+  &__search {
+    max-width: 320px;
+    flex: 1 1 240px;
+  }
+
+  &__filter {
+    max-width: 240px;
+    flex: 0 1 auto;
+  }
+
+  &__loading {
+    min-height: 240px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__group {
+    h3 {
+      letter-spacing: 0.04em;
+    }
+  }
+}

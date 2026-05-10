@@ -1,0 +1,181 @@
+<section class="admin-parametres-list">
+  <header class="admin-parametres-list__header d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'admin.parametres.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'admin.parametres.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="admin-parametres-list__toolbar mb-3 d-flex flex-wrap gap-2">
+    <input
+      type="search"
+      class="form-control admin-parametres-list__search"
+      [placeholder]="'admin.parametres.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'admin.parametres.list.search' | translate"
+    />
+    <select
+      class="form-select admin-parametres-list__filter"
+      (change)="onModifiableFilterChange($any($event.target).value)"
+      [attr.aria-label]="'admin.parametres.fields.modifiable' | translate"
+    >
+      <option value="">{{ 'admin.parametres.list.filterModifiableAll' | translate }}</option>
+      <option value="true">{{ 'admin.parametres.list.filterModifiableYes' | translate }}</option>
+      <option value="false">{{ 'admin.parametres.list.filterModifiableNo' | translate }}</option>
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="admin-parametres-list__loading text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'admin.parametres.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'admin.parametres.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'admin.parametres.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    @for (group of groupedByCategorie; track group.categorie) {
+      <div class="admin-parametres-list__group mb-4">
+        <h3 class="h6 text-uppercase text-muted mb-2">
+          <i class="bi bi-folder me-2" aria-hidden="true"></i>
+          {{ group.categorie === '_uncategorized'
+              ? ('admin.parametres.list.uncategorized' | translate)
+              : group.categorie }}
+        </h3>
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">{{ 'admin.parametres.fields.cle' | translate }}</th>
+                <th scope="col">{{ 'admin.parametres.fields.valeur' | translate }}</th>
+                <th scope="col">{{ 'admin.parametres.fields.type' | translate }}</th>
+                <th scope="col">{{ 'admin.parametres.fields.description' | translate }}</th>
+                <th scope="col">{{ 'admin.parametres.fields.modifiable' | translate }}</th>
+                <th scope="col" class="text-end">
+                  {{ 'admin.parametres.list.actions' | translate }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of group.items; track p.parametreId) {
+                <tr>
+                  <td><code>{{ p.cle }}</code></td>
+                  <td>{{ p.valeur }}</td>
+                  <td>
+                    @if (p.type) {
+                      <span class="badge text-bg-light border">{{ p.type }}</span>
+                    } @else {
+                      -
+                    }
+                  </td>
+                  <td>
+                    @if (p.description) {
+                      <span class="text-muted small">{{ p.description }}</span>
+                    } @else {
+                      -
+                    }
+                  </td>
+                  <td>
+                    @if (p.modifiable === false) {
+                      <span class="badge text-bg-secondary">
+                        <i class="bi bi-lock-fill me-1" aria-hidden="true"></i>
+                        {{ 'admin.parametres.statut.locked' | translate }}
+                      </span>
+                    } @else {
+                      <span class="badge text-bg-success">
+                        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+                        {{ 'admin.parametres.statut.editable' | translate }}
+                      </span>
+                    }
+                  </td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary me-1"
+                      (click)="edit(p)"
+                      [disabled]="p.modifiable === false"
+                      [attr.aria-label]="'admin.parametres.actions.edit' | translate"
+                      [title]="
+                        (p.modifiable === false
+                          ? 'admin.parametres.actions.editLocked'
+                          : 'admin.parametres.actions.edit'
+                        ) | translate
+                      "
+                    >
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </button>
+                    @if (p.modifiable !== false) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="delete(p)"
+                        [disabled]="busyId === p.parametreId"
+                        [attr.aria-label]="'admin.parametres.actions.delete' | translate"
+                        [title]="'admin.parametres.actions.delete' | translate"
+                      >
+                        @if (busyId === p.parametreId) {
+                          <span
+                            class="spinner-border spinner-border-sm"
+                            role="status"
+                            aria-hidden="true"
+                          ></span>
+                        } @else {
+                          <i class="bi bi-trash" aria-hidden="true"></i>
+                        }
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'admin.parametres.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number - 1)"
+              [disabled]="page.first"
+            >
+              &laquo;
+            </button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button
+              type="button"
+              class="page-link"
+              (click)="goToPage(page.number + 1)"
+              [disabled]="page.last"
+            >
+              &raquo;
+            </button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

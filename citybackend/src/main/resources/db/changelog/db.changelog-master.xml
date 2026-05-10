@@ -169,6 +169,15 @@
           ============================================================ -->
     <include file="db/changelog/changes/028-menage-pivot-tenant-coherence.xml"/>
 
+    <!-- ============================================================
+         PHASE 37 (Tour 31) : module admin SUPERADMIN
+          - Table core.parametres (configuration applicative globale,
+            pas de hotel_id, pas de @TenantId).
+          - Seed paramètres système initiaux (timezone, devise, email,
+            retention, maintenance message).
+          ============================================================ -->
+    <include file="db/changelog/changes/029-create-admin-parametres-schema.xml"/>
+
     <!--
     TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql

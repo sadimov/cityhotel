@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 31 - Module admin SUPERADMIN : table core.parametres.
+
+  Configuration applicative globale (NON tenant-scoped) : pas de hotel_id,
+  pas de @TenantId. Les parametres portes sont communs a tous les hotels
+  (timezone serveur, devise par defaut, message de maintenance, ...).
+
+  Parametres systeme proteges (modifiable=false) : non modifiables via API,
+  uniquement via un nouveau changeset Liquibase (cf. JavaDoc Parametre).
+
+  Conventions appliquees :
+  - PK technique BIGSERIAL (pattern projet, cf. NumerotationSequence,
+    Hotel, Client).
+  - Colonnes audit Spring Data JPA : created_at, updated_at, created_by,
+    updated_by (gerees par AuditingEntityListener via AuditableEntity).
+  - cle UNIQUE + NOT NULL (cle metier referencee dans le code applicatif).
+  - modifiable BOOLEAN NOT NULL DEFAULT true (parametres user-creables
+    sont par defaut modifiables ; les parametres systeme inserees ici
+    par le seed forcent modifiable=false).
+  - Pas de FK cross-schema (table autonome).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 029.1 : creation de la table core.parametres
+         ==================================================================== -->
+    <changeSet id="029-create-table-parametres" author="cityprojects">
+        <comment>
+            Table core.parametres : configuration applicative globale
+            (timezone, devise, retention, notification, maintenance...).
+            NON tenant-scoped : pas de hotel_id, pas de @TenantId.
+        </comment>
+
+        <createTable tableName="parametres" schemaName="core">
+            <column name="parametre_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_parametres" nullable="false"/>
+            </column>
+            <column name="cle" type="VARCHAR(80)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_parametres_cle"/>
+            </column>
+            <column name="valeur" type="TEXT"/>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="modifiable" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="categorie" type="VARCHAR(50)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <createIndex tableName="parametres" schemaName="core" indexName="idx_parametres_categorie">
+            <column name="categorie"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="parametres" schemaName="core"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 029.2 : seed des parametres systeme initiaux
+         (modifiable=false : non modifiables via API)
+         ==================================================================== -->
+    <changeSet id="029-seed-parametres-systeme" author="cityprojects">
+        <comment>
+            Seed des parametres systeme proteges (modifiable=false) :
+              - app.timezone : fuseau horaire serveur (Africa/Nouakchott)
+              - app.devise : devise par defaut (MRU)
+            Ces parametres sont references par le code applicatif et ne
+            doivent pas pouvoir etre modifies a chaud.
+        </comment>
+
+        <insert tableName="parametres" schemaName="core">
+            <column name="cle" value="app.timezone"/>
+            <column name="valeur" value="Africa/Nouakchott"/>
+            <column name="description" value="Fuseau horaire serveur (defaut Africa/Nouakchott)"/>
+            <column name="modifiable" valueBoolean="false"/>
+            <column name="categorie" value="system"/>
+            <column name="created_by" value="system"/>
+        </insert>
+
+        <insert tableName="parametres" schemaName="core">
+            <column name="cle" value="app.devise"/>
+            <column name="valeur" value="MRU"/>
+            <column name="description" value="Devise par defaut de l'application (MRU - ouguiya mauritanienne)"/>
+            <column name="modifiable" valueBoolean="false"/>
+            <column name="categorie" value="system"/>
+            <column name="created_by" value="system"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="parametres" schemaName="core">
+                <where>cle IN ('app.timezone', 'app.devise')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 029.3 : seed des parametres modifiables (defauts)
+         ==================================================================== -->
+    <changeSet id="029-seed-parametres-modifiables" author="cityprojects">
+        <comment>
+            Seed des parametres modifiables (defauts ajustables par admin) :
+              - notification.email.from : adresse expediteur des notifications
+              - audit.retention.days : duree de conservation de l'audit
+              - app.maintenance.message : message de maintenance global (vide par defaut)
+        </comment>
+
+        <insert tableName="parametres" schemaName="core">
+            <column name="cle" value="notification.email.from"/>
+            <column name="valeur" value="noreply@city-hotel.local"/>
+            <column name="description" value="Adresse email expediteur des notifications systeme"/>
+            <column name="modifiable" valueBoolean="true"/>
+            <column name="categorie" value="notification"/>
+            <column name="created_by" value="system"/>
+        </insert>
+
+        <insert tableName="parametres" schemaName="core">
+            <column name="cle" value="audit.retention.days"/>
+            <column name="valeur" value="365"/>
+            <column name="description" value="Duree de conservation de l'audit applicatif (jours)"/>
+            <column name="modifiable" valueBoolean="true"/>
+            <column name="categorie" value="audit"/>
+            <column name="created_by" value="system"/>
+        </insert>
+
+        <insert tableName="parametres" schemaName="core">
+            <column name="cle" value="app.maintenance.message"/>
+            <column name="valeur" value=""/>
+            <column name="description" value="Message de maintenance affiche en banniere globale (vide = pas de banniere)"/>
+            <column name="modifiable" valueBoolean="true"/>
+            <column name="categorie" value="maintenance"/>
+            <column name="created_by" value="system"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="parametres" schemaName="core">
+                <where>cle IN ('notification.email.from', 'audit.retention.days', 'app.maintenance.message')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
