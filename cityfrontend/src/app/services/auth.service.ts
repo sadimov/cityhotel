@@ -423,7 +423,15 @@ export class AuthService {
   private toUserInfo(response: LoginResponse): UserInfo {
     // Tour 7C : `hotelId` n'est plus dans le DTO serveur — on le dérive du
     // claim JWT signé. `?? 0` = sentinel ROOT pour les SUPERADMIN sans hôtel.
-    const hotelId = decodeJwt<CityJwtPayload>(response.token).hotelId ?? 0;
+    // Fix runtime post-v1.0.0 : `/auth/me` retourne LoginResponse SANS token
+    // (le token reste celui du header Authorization). Fallback sur le token
+    // stocké en localStorage pour décoder hotelId. Sans ce fallback,
+    // `decodeJwt(undefined).split('.')` throw → bloque tout l'effect NgRx
+    // → UI figée (waiter infini, déconnexion KO, navigation cassée).
+    const tokenToDecode = response.token ?? getStoredToken();
+    const hotelId = tokenToDecode
+      ? (decodeJwt<CityJwtPayload>(tokenToDecode).hotelId ?? 0)
+      : 0;
     return {
       userId: response.userId,
       username: response.username,
