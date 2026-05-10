@@ -221,6 +221,53 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 };
 ```
 
+ ### 4.6 Models partagés (`shared/models/`, Tour 40ter)
+
+  `shared/models/api.model.ts` centralise les interfaces communes (superset des 5 variantes historiques par feature) :
+
+  ```ts
+  import { ApiResponse, PageResponse, PageRequest } from '../../shared/models/api.model';
+  ```
+
+  Les 5 `features/<module>/models/api.model.ts` font désormais des `re-exports` (compat sans casser les imports). Migration progressive : à terme, supprimer les locaux +
+  corriger les imports.
+
+  ### 4.7 Lookup maps statuts (Tour 40ter)
+
+  Au lieu d'un `switch` dupliqué entre composants, exporter les maps lookup depuis le model :
+
+  ```ts
+  // features/hebergement/models/reservation.model.ts
+  export const STATUT_RESERVATION_BADGE_MAP: Record<StatutReservation, string> = {
+    EN_ATTENTE: 'text-bg-warning',
+    CONFIRMEE: 'text-bg-info',
+    ARRIVEE: 'text-bg-success',
+    PARTIE: 'text-bg-secondary',
+    ANNULEE: 'text-bg-danger',
+  };
+  export function statutReservationKey(s: StatutReservation): string {
+    return `hebergement.statut.${s.toLowerCase()}`;
+  }
+  ```
+
+  Composants utilisent : `STATUT_RESERVATION_BADGE_MAP[statut]` (lookup O(1) au lieu de switch).
+  Composants utilisent : `STATUT_RESERVATION_BADGE_MAP[statut]` (lookup O(1) au lieu de switch).
+
+  ### 4.8 SuperAdminGuard (Tour 31)
+
+  `guards/super-admin.guard.ts` — guard `canActivate` + `canActivateChild` qui :
+  - Lit le JWT via `AuthService.getCurrentUser()`
+  - Redirect `/login` si non auth, `/dashboard` si auth non-SUPERADMIN
+  - Combiné avec `AuthGuard` parent dans `app-routing.module.ts` pour defense-in-depth
+
+  ```ts
+  {
+    path: 'admin',
+    canActivate: [AuthGuard, SuperAdminGuard],
+    loadChildren: () => import('./features/admin/admin.module').then(m => m.AdminModule)
+  }
+  ```
+  
 ## 5. Identité graphique
 
 Source : `consignes_design_interface_graphique.txt`.

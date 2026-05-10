@@ -209,6 +209,62 @@ public interface BonCommandeMapper {
 }
 ```
 
+### 3.6 Patterns transverses (Tours 30-40)
+
+  **`SecurityUtils`** (`common/security/SecurityUtils.java`, Tour 40bis) :
+  ```java
+  Long userId = SecurityUtils.currentUserIdOrNull();           // null si anonyme
+  Long userId = SecurityUtils.currentUserIdOrThrow();          // throw error.user.unknown
+  ```
+  Remplace les blocs `SecurityContextHolder.getContext().getAuthentication() ... UserPrincipal.getUserId()` dupliqués dans plusieurs services. À utiliser dans tout service
+  métier qui a besoin du userId courant.
+
+  **`TenantScope`** (`common/tenant/TenantScope.java`, Tour 31) :
+  ```java
+  TenantScope.runAs(hotelId, () -> { /* opération scopée */ });   // services admin SUPERADMIN
+  TenantScope.runAsRoot(() -> { /* opération cross-hotel */ });   // listings cross-tenant
+  ```
+  Snapshot/restore du `TenantContext` précédent (indispensable en contextes imbriqués). Utilisé par les services admin (mode ROOT cross-tenant).
+
+  **AOP `@AuditAction`** (`common/audit/AuditAction.java` + `AuditActionAspect.java`, Tour 30 hardening) :
+  ```java
+  @AuditAction("CREATION")
+  public TacheDto create(TacheCreateDto dto) { ... }
+  ```
+  Aspect `@Around` qui pose automatiquement une entrée dans `Historique` (action + ancienStatut + nouveauStatut + userId depuis SecurityContext). Ordonné
+  `@Order(LOWEST_PRECEDENCE - 5)` pour rester dans la TX Spring (audit + mutation atomiques). À étendre aux autres modules métier qui ont un audit trail.
+
+  **`@TransactionalEventListener` + snapshot/restore TenantContext** (Tour 30 events) :
+  ```java
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+  @Transactional(propagation = REQUIRES_NEW)
+  public void onReservationCheckedOut(ReservationCheckedOutEvent event) {
+      Long previousTenant = TenantContext.getOrNull();
+      TenantContext.set(event.hotelId());
+      try {
+          // ... appel service tenant-scoped
+      } finally {
+          if (previousTenant == null) TenantContext.clear();
+          else TenantContext.set(previousTenant);
+      }
+  }
+  ```
+  - `AFTER_COMMIT` : déclenche QUE si TX d'origine commit (résilience rollback)
+  - `REQUIRES_NEW` : ouvre sa propre TX (le commit d'origine est déjà fait)
+  - **Snapshot/restore obligatoire** : listeners synchrones tournent sur le MEME thread, un `clear()` final écrase le contexte de l'appelant et casse les flows suivants
+  - Différent de `@Scheduled` qui tourne dans un thread séparé (clear final sans danger)
+
+  ### 3.7 Refresh token rotation (Tour 38 hardening)
+
+  `entity/core/RefreshToken` + `service/auth/RefreshTokenService` :
+  - Génération : 256 bits SecureRandom + hash SHA-256 stocké en BDD
+  - Expiration : access JWT 1h (`app.jwt.expiration: 3600000`), refresh 7j (`app.jwt.refresh-expiration: 604800000`)
+  - **Rotation à chaque usage** : `rotate(oldToken)` valide → marque `revoked=true` + `replaced_by_id` → issue nouveau
+  - **Détection réutilisation cross-device** : si un token déjà `revoked` est présenté → `revokeAllForUser(userId)` en `REQUIRES_NEW` (vol détecté) → throw
+  `AuthenticationException`
+  - Purge nocturne : `RefreshTokenPurgeScheduler` cron 03:00 supprime les expirés
+  - `AuthService.logout(token)` revoke tous les refresh du user (cross-device logout)
+  
 ## 4. Sécurité
 
 - **JWT** stateless (`Authorization: Bearer ...`).

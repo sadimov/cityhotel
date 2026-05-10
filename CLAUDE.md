@@ -127,29 +127,46 @@ Claude Code charge automatiquement le `CLAUDE.md` du répertoire courant + paren
 > - **"Code source disponible"** = des fichiers existent dans `/CLIENTS/`, `/FINANCE/`, etc. à la racine. Cela ne signifie **pas** que le module est implémenté (cf. §2bis : ces dossiers contiennent du code mélangé).
 > - **"Implémenté"** = le code est intégré dans `citybackend/` et `cityfrontend/` selon les conventions, après cartographie et aiguillage.
 
-État réel observé au démarrage du projet (2026-05-05) — **mis à jour Tour 6 (cartographie produite, 2026-05-06)** :
+État réel — **mis à jour Tour 41 (documentation finale, 2026-05-10)**. Tableau initial (démarrage 2026-05-05) conservé dans l'historique git pour référence ; ci-dessous =
+   état post-Vague 1 et Vague 2 livrées.
 
-| Module        | Backend implémenté | Frontend implémenté | Source réelle (post-cartographie Tour 6) | Action |
-|---------------|---------------------|----------------------|------------------------------|--------|
-| auth / users  | ✅ fait             | ✅ fait              | —                            | maintenu |
-| clients       | ❌ (packages vides) | ❌                   | **`/HEBERGEMENT/files_back/Services_module_clients.java`** (mono back) + 4× `models_services_clients_frontend.ts` à dédupliquer | ⚠️ intégrer Vague 2 — Tour 8 |
-| inventory     | ❌                  | ❌                   | `/INVENTORY/entities_services_module_inventory.java` + `controleurs_module_inventory.java` + 1 mono front | ⚠️ intégrer Vague 2 |
-| finance       | ❌                  | ❌                   | **`/HEBERGEMENT/files_back/Services_module_finance.java`** (mono back) + 3× `models_services_finance_frontend.ts` à dédupliquer | ⚠️ intégrer Vague 2 + Dolibarr (extra-vigilance comptable + sentinel ROOT) |
-| hebergement   | ❌                  | ❌                   | `/HEBERGEMENT/entities_services_module_hebergement.java` + Calendar + 4× front à dédupliquer | ⚠️ intégrer Vague 2 |
-| restaurant    | ❌                  | ❌                   | **`/RESTAURANT/resultat_chatgpt/`** — seul module avec arborescence éclatée propre (16 .java + 17 .ts + POS avancé retenu) | ⚠️ intégrer Vague 2 |
-| menage        | ❌                  | ❌                   | `/MENAGE/entities_dto_services_backend-menage.java` (mono back) — **front à créer from-scratch** | ⚠️ intégrer Vague 2 + créer front |
-| reporting     | ❌                  | ❌                   | **aucune source — from-scratch** | à concevoir Vague 3 |
-| profile       | ❌                  | 🟡 composant front seul | **back from-scratch** | à compléter Vague 3 |
-| admin         | ❌ (dossier vide)   | ❌                   | **aucune source — from-scratch** | à concevoir Vague 3 |
-| notification  | ❌                  | ❌                   | **aucune source — from-scratch** (Mail + Kafka) | à concevoir Vague 3 |
-| dolibarr      | ❌                  | —                    | **aucune source — scaffolder via skill `dolibarr`** (Feign) | à concevoir Vague 3 |
+  | Module       | Backend | Frontend | Tour intégration | État | Notes |
+  |--------------|---------|----------|------------------|------|-------|
+  | core / auth  | ✅      | ✅       | Tours 1-7        | livré | JWT jjwt 0.12.6, refresh token rotation (Tour 38), `RateLimitFilter` Resilience4j, multi-tenant Hibernate
+   `@TenantId` |
+  | clients      | ✅      | ✅       | Tour 8 + 9bis    | livré | Client + Societe, NIF unique, audit Tour 9 |
+  | hebergement  | ✅      | ✅       | Tours 11/12bis/12ter/13/15 | livré | Chambres + Reservations + Nuitees + `NumerotationService` (lock pessimiste) +
+  `NightAuditScheduler` cron midi + triggers PL/pgSQL pivot tenant |
+  | inventory    | ✅      | ✅       | Tours 16/18      | livré | Produits + Stock + BC + BS + Fournisseurs + alertes seuil |
+  | finance      | ✅      | ✅       | Tours 19/20/22   | livré | Facture + Paiement + Compte auxiliaire client + 12 modes paiement (Bankily/MASRIVI/SEDAD/etc.).
+  **Doctrine Tour 20** : auxiliaire client uniquement, comptabilité générale externalisée Dolibarr (TODO bridge Feign) |
+  | restaurant   | ✅      | ✅       | Tours 23/24/25/25bis/26 | livré | Catalogue + POS NgRx Component Store + Recettes auto-décrément stock + 4 triggers PL/pgSQL
+  coherence cross-tenant |
+  | menage       | ✅      | ✅       | Tours 27/28/29/30/30events/31 | livré | Personnel + Tache (workflow PLANIFIEE→EN_COURS→TERMINEE/ANNULEE + `@Version` optimistic
+  locking) + Planning + Historique + AOP `@AuditAction` (Tour 30 hardening) + workflows event-driven Spring Events (Tour 30 events) + `MenagePlanningScheduler` cron 12:05 |
+  | admin        | ✅      | ✅       | Tour 31          | livré | SUPERADMIN-only. CRUD Hotel + DBUser (mode ROOT via `TenantScope.runAs`) + Role read-only + Parametre
+  globaux. Endpoint exception : `POST /api/admin/hotels/{hotelId}/users` (hotelId path-positioned, seule exception au principe §10) |
+  | reporting    | ❌      | ❌       | —                | Vague 3 | from-scratch — Chart.js + JasperReports + KPIs métier |
+  | profile      | ❌      | 🟡 composant front seul | — | Vague 3 | back from-scratch (changement mdp + photo + préférences) |
+  | notification | ❌      | ❌       | —                | Vague 3 | from-scratch — Mail Thymeleaf + Kafka mode dégradé Spring Events |
+  | dolibarr     | ❌      | —        | —                | Vague 3 | scaffolder via skill `dolibarr` — Feign + Resilience4j (déjà au pom) + bridge Facture/Paiement →
+  Dolibarr |
 
-> **Cartographie produite** : `CARTOGRAPHIE_MODULES.md` à la racine est la **source de vérité unique** pour `/integrate-module <X>`. Découverte clé : le code de `clients` et `finance` est dans `/HEBERGEMENT/files_back/`, pas dans leurs dossiers nominaux.
+  **Tests** : 147 Surefire + 62 Failsafe verts (BUILD SUCCESS) — couvre 8 modules + multi-tenant + sécurité Tour 38.
 
-> **Avant de coder un module**, dans cet ordre :
-> 1. ✅ ~~Si `CARTOGRAPHIE_MODULES.md` n'existe pas encore → exécuter le Tour 7.5~~ — **fait au Tour 6 (2026-05-06)**.
-> 2. Lancer `/integrate-module <nom>` qui s'appuie sur la cartographie pour intégrer **uniquement** les fichiers dont `Domaine réel = <nom>`.
-> 3. Auditer (`/audit-module`, `/multitenant-check`, `/db-validate`) avant tout commit.
+  **Refactor Tour 40bis** : `ReservationServiceImpl.create` 130→17 lignes (5 helpers private), `ChambreServiceImpl.checkTransition` switch→Map<>,
+  `CommandeServiceImpl.onTransitionToServie` 53→20 lignes, helpers `SecurityUtils.currentUserId*` partagés.
+
+  **Centralisation Tour 40ter** : `cityfrontend/src/app/shared/models/api.model.ts` (superset ApiResponse/PageResponse/PageRequest), `STATUT_RESERVATION_BADGE_MAP` +
+  `_CHIP_MAP` lookup au lieu de switch.
+
+  > **Cartographie historique** : `CARTOGRAPHIE_MODULES.md` à la racine — référence pour comprendre quel code source brut a alimenté quel module. Plus utile maintenant que
+  tous les modules sont intégrés.
+
+  > **Pour ajouter un nouveau module** :
+  > 1. Lancer `/new-entity <nom> <module>` (scaffold) ou `/integrate-module <nom>` si stock brut.
+  > 2. Auditer (`/audit-module`, `/multitenant-check`, `/db-validate`) avant tout commit.
+  > 3. Tests Surefire + Failsafe doivent rester verts.
 
 ## 5. Schémas PostgreSQL
 
