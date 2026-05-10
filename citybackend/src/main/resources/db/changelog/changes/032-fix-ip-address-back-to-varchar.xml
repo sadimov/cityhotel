@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 42 post-release : revert ip_address inet → VARCHAR(45)
+
+    Le changeset 017-fix-ip-address-column.sql avait converti la colonne
+    core.user_sessions.ip_address de VARCHAR vers le type natif PostgreSQL
+    'inet'. Bonne intention (validation IPv4/IPv6 native) mais incompatible
+    avec l'entité Java UserSession.ipAddress typée String : Hibernate envoie
+    un text/varchar au INSERT, PostgreSQL refuse sans cast explicite ::inet.
+    Conséquence : tout login échoue après v1.0.0 avec :
+      "ERREUR: la colonne ip_address est de type inet mais l'expression
+       est de type character varying"
+
+    Fix : retour à VARCHAR(45) (longueur max IPv6 = 39 + buffer). Soluble
+    aussi via @Column(columnDefinition="inet") + JdbcTypeCode mais nécessite
+    un converter Hibernate custom. VARCHAR est plus simple et portable.
+
+    Postgres-only car inet est PG-spécifique. Sur H2 le changeset 017 ne
+    s'exécute déjà pas (dbms="postgresql" dans 017), donc cette restauration
+    est tout aussi conditionnelle.
+    ============================================================================
+    -->
+
+    <changeSet id="032-fix-ip-address-back-to-varchar" author="cityprojects" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <columnExists schemaName="core" tableName="user_sessions" columnName="ip_address"/>
+        </preConditions>
+
+        <sql>
+            DROP INDEX IF EXISTS core.idx_user_sessions_ip_address;
+            ALTER TABLE core.user_sessions ALTER COLUMN ip_address TYPE VARCHAR(45) USING ip_address::text;
+            CREATE INDEX idx_user_sessions_ip_address ON core.user_sessions (ip_address);
+        </sql>
+
+        <rollback>
+            DROP INDEX IF EXISTS core.idx_user_sessions_ip_address;
+            ALTER TABLE core.user_sessions ALTER COLUMN ip_address TYPE inet USING ip_address::inet;
+            CREATE INDEX idx_user_sessions_ip_address ON core.user_sessions USING gist (ip_address inet_ops);
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
