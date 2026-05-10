@@ -2,6 +2,7 @@ package com.cityprojects.citybackend.config;
 
 import com.cityprojects.citybackend.security.JwtAuthenticationEntryPoint;
 import com.cityprojects.citybackend.security.JwtAuthenticationFilter;
+import com.cityprojects.citybackend.security.RateLimitFilter;
 import com.cityprojects.citybackend.security.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,6 +15,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -28,8 +30,16 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Configuration de sécurité pour l'application
- * Version corrigée avec valeurs par défaut
+ * Configuration de securite pour l'application.
+ *
+ * <p>Tour 38 hardening :
+ * <ul>
+ *   <li>C4 : actuator/health public, reste actuator reserve SUPERADMIN.</li>
+ *   <li>C5 : tout admin sous /api/admin/** (single source of truth).</li>
+ *   <li>C10 : RateLimitFilter avant JwtAuthenticationFilter pour /auth/login + /auth/refresh.</li>
+ *   <li>H1 : HSTS + CSP minimal + Referrer-Policy.</li>
+ *   <li>H2 : whitelist headers explicite, fallback CORS '*' supprime.</li>
+ * </ul>
  */
 @Configuration
 @EnableWebSecurity
@@ -45,15 +55,15 @@ public class SecurityConfig {
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    // Configuration CORS avec valeurs par défaut
+    @Autowired
+    private RateLimitFilter rateLimitFilter;
+
+    // Configuration CORS avec valeurs par defaut
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
     private List<String> allowedOrigins;
 
     @Value("${app.cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}")
     private List<String> allowedMethods;
-
-    @Value("${app.cors.allowed-headers:*}")
-    private List<String> allowedHeaders;
 
     @Value("${app.cors.allow-credentials:true}")
     private boolean allowCredentials;
@@ -62,12 +72,24 @@ public class SecurityConfig {
     private long maxAge;
 
     /**
-     * Configuration du filtre de sécurité principal
+     * Configuration du filtre de securite principal.
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
+            // Tour 38 H1 : headers de securite minimaux (HSTS, CSP, Referrer-Policy).
+            // Pas de XContentTypeOptions ni X-Frame-Options ici : Spring Security les
+            // ajoute par defaut.
+            .headers(h -> h
+                .httpStrictTransportSecurity(hsts -> hsts
+                        .includeSubDomains(true)
+                        .maxAgeInSeconds(31536000))
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives("default-src 'none'; frame-ancestors 'none'"))
+                .referrerPolicy(r -> r
+                        .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+            )
             .exceptionHandling(handling -> handling.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(management -> management.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(requests -> requests
@@ -78,118 +100,111 @@ public class SecurityConfig {
                 .requestMatchers("/auth/sessions/stats").hasRole("SUPERADMIN")
                 .requestMatchers("/auth/**").authenticated()
 
-                .requestMatchers("/actuator/**").permitAll()
+                // Tour 38 C4 : seul /actuator/health est public (probe Kubernetes).
+                // Tout le reste de l'actuator est reserve SUPERADMIN.
+                .requestMatchers("/actuator/health").permitAll()
+                .requestMatchers("/actuator/**").hasRole("SUPERADMIN")
+
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                 // /error est public mais NE doit JAMAIS embarquer le MDC dans le payload
-                // reponse (ni hotelId, ni user_id). Verifier JwtAuthenticationEntryPoint
-                // et GlobalExceptionHandler ne fuitent rien (audit Tour 7B I3 : OK au
-                // 2026-05-05, aucun MDC.getCopyOfContextMap() ni hotelId/userId n'est
-                // remonte dans les bodies d'erreur).
+                // reponse (ni hotelId, ni user_id). Verifie dans JwtAuthenticationEntryPoint
+                // et GlobalExceptionHandler (audit Tour 7B I3 : OK au 2026-05-05).
                 .requestMatchers("/error").permitAll()
-                
-                // Endpoints d'administration - SUPERADMIN uniquement
-                .requestMatchers("/admin/hotels/**").hasRole("SUPERADMIN")
-                .requestMatchers("/admin/users/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                .requestMatchers("/admin/roles/**").hasRole("SUPERADMIN")
-                
-                // Endpoints de gestion des hôtels - ADMIN et GERANT
+
+                // Tour 38 C5 : tout admin sous /api/admin/** (single source of truth).
+                // Les anciennes regles dispersees /admin/hotels, /admin/users, /admin/roles
+                // ne matchaient rien (tous les controllers exposent /api/admin/...).
+                .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
+
+                // Endpoints de gestion des hotels - ADMIN et GERANT
                 .requestMatchers("/hotels/**").hasAnyRole("SUPERADMIN", "ADMIN", "GERANT")
-                
-                // Endpoints de réservation - Rôles métier
+
+                // Endpoints de reservation - Roles metier
                 .requestMatchers("/reservations/**").hasAnyRole("ADMIN", "GERANT", "RECEPTION", "RESREC")
-                
-                // Endpoints clients et sociétés
+
+                // Endpoints clients et societes
                 .requestMatchers("/clients/**").hasAnyRole("ADMIN", "GERANT", "RECEPTION", "RESREC")
                 .requestMatchers("/societes/**").hasAnyRole("ADMIN", "GERANT", "RECEPTION")
-                
+
                 // Endpoints restaurant
                 .requestMatchers("/restaurant/**").hasAnyRole("ADMIN", "GERANT", "RESTAURANT", "RESREC")
-                
+
                 // Endpoints stocks/inventory
                 .requestMatchers("/inventory/**").hasAnyRole("ADMIN", "GERANT")
-                
-                // Endpoints ménage
+
+                // Endpoints menage
                 .requestMatchers("/menage/**").hasAnyRole("ADMIN", "GERANT")
-                
+
                 // Endpoints finance
                 .requestMatchers("/finance/**").hasAnyRole("ADMIN", "GERANT")
-                
+
                 // Endpoints reporting
                 .requestMatchers("/reporting/**").hasAnyRole("ADMIN", "GERANT")
-                
-                // Profile accessible à tous les utilisateurs authentifiés
+
+                // Profile accessible a tous les utilisateurs authentifies
                 .requestMatchers("/profile/**").authenticated()
-                
-                // Toutes les autres requêtes nécessitent une authentification
+
+                // Toutes les autres requetes necessitent une authentification
                 .anyRequest().authenticated()
             );
 
         http.authenticationProvider(daoAuthenticationProvider());
+        // Tour 38 C10 : RateLimitFilter AVANT le JwtAuthenticationFilter ; les rejets
+        // 429 doivent court-circuiter avant la validation JWT (sinon DoS via JWT parse).
+        http.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-        
+
         return http.build();
     }
 
     /**
-     * Configuration CORS avec gestion des erreurs
+     * Configuration CORS - Tour 38 H2 : whitelist headers explicite, plus de fallback '*'.
      */
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
-        try {
-            // Configuration des origines autorisées
-            if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-                configuration.setAllowedOrigins(allowedOrigins);
-            } else {
-                // Valeurs par défaut si la configuration échoue
-                configuration.setAllowedOrigins(Arrays.asList(
-                    "http://localhost:3000", 
-                    "http://localhost:4200"
-                ));
-            }
-            
-            // Configuration des méthodes
-            if (allowedMethods != null && !allowedMethods.isEmpty()) {
-                configuration.setAllowedMethods(allowedMethods);
-            } else {
-                configuration.setAllowedMethods(Arrays.asList(
-                    "GET", "POST", "PUT", "DELETE", "OPTIONS"
-                ));
-            }
-            
-            // Configuration des headers
-            if (allowedHeaders != null && !allowedHeaders.isEmpty()) {
-                configuration.setAllowedHeaders(allowedHeaders);
-            } else {
-                configuration.setAllowedHeaders(Arrays.asList("*"));
-            }
-            
-            // Headers exposés
-            configuration.setExposedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "X-Total-Count"
+
+        // Origines : doivent etre fournies, sinon default explicite (pas de '*').
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            configuration.setAllowedOrigins(allowedOrigins);
+        } else {
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:4200"
             ));
-            
-            configuration.setAllowCredentials(allowCredentials);
-            configuration.setMaxAge(maxAge);
-            
-        } catch (Exception e) {
-            // Configuration de secours en cas d'erreur
-            configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
-            configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-            configuration.setAllowedHeaders(Arrays.asList("*"));
-            configuration.setAllowCredentials(true);
-            configuration.setMaxAge(3600L);
         }
-        
+
+        if (allowedMethods != null && !allowedMethods.isEmpty()) {
+            configuration.setAllowedMethods(allowedMethods);
+        } else {
+            configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+            ));
+        }
+
+        // Tour 38 H2 : whitelist explicite, plus de '*'. Refuser tout header
+        // non liste (Origin, Authorization, Content-Type, X-Requested-With,
+        // Accept-Language pour i18n).
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", "Content-Type", "X-Requested-With", "Accept-Language"
+        ));
+
+        // Headers exposes au front (lecture cote JS).
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization", "Content-Type", "X-Total-Count"
+        ));
+
+        configuration.setAllowCredentials(allowCredentials);
+        configuration.setMaxAge(maxAge);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
     /**
-     * Encodeur de mots de passe BCrypt
+     * Encodeur de mots de passe BCrypt (cost 12).
      */
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -197,7 +212,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Gestionnaire d'authentification
+     * Gestionnaire d'authentification.
      */
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -205,7 +220,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Provider d'authentification DAO
+     * Provider d'authentification DAO.
      */
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
@@ -216,7 +231,7 @@ public class SecurityConfig {
     }
 
     /**
-     * Registre de sessions pour gérer les sessions concurrentes
+     * Registre de sessions pour gerer les sessions concurrentes.
      */
     @Bean
     public SessionRegistry sessionRegistry() {

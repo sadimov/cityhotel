@@ -6,6 +6,7 @@ import com.cityprojects.citybackend.dto.menage.TacheDto;
 import com.cityprojects.citybackend.dto.menage.TerminerTacheDto;
 import com.cityprojects.citybackend.service.menage.TacheService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -136,7 +137,7 @@ public class TacheController {
     @PostMapping("/{tacheId}/annuler")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
     public ResponseEntity<TacheDto> annuler(@PathVariable("tacheId") Long tacheId,
-                                            @RequestBody(required = false) AnnulerTacheDto dto) {
+                                            @Valid @RequestBody(required = false) AnnulerTacheDto dto) {
         String motif = (dto != null) ? dto.motif() : null;
         return ResponseEntity.ok(service.annuler(tacheId, motif));
     }
@@ -146,8 +147,11 @@ public class TacheController {
      * (et non dans {@code dto/menage/}) car uniquement consomme par cet endpoint
      * et tres simple ; si d'autres champs metier s'ajoutent, le promouvoir en
      * fichier propre.
+     *
+     * <p>Tour 38 H8 : motif limite a 500 caracteres pour eviter le DoS via body
+     * geant et l'inflation de la table audit.</p>
      */
-    public record AnnulerTacheDto(String motif) {
+    public record AnnulerTacheDto(@Size(max = 500, message = "Le motif ne doit pas exceder 500 caracteres") String motif) {
     }
 
     @GetMapping("/rechercher")

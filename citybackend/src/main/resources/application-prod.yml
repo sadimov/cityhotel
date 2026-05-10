@@ -3,10 +3,11 @@ spring:
     name: citybackend
   
   # Configuration de la base de données PostgreSQL
+  # Tour 38 C1 : pas de defaults sur secrets en PROD — boot fail-fast si absents.
   datasource:
     url: jdbc:postgresql://localhost:5432/cityprojectdb
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:admin}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     # Configuration HikariCP optimisée pour éviter les fuites mémoire
     hikari:
@@ -60,12 +61,6 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     enabled: true
   
-  # Configuration de la sécurité
-  security:
-    user:
-      name: postgres
-      password: admin
-  
   # Configuration du cache
   cache:
     type: simple
@@ -100,9 +95,12 @@ server:
 # Configuration de l'application
 app:
   jwt:
-    secret: ${JWT_SECRET:mySecretKey12345mySecretKey12345mySecretKey12345}
-    expiration: 86400000  # 24 heures en millisecondes
-  
+    # Tour 38 C1 : pas de default — boot fail-fast si JWT_SECRET absent en PROD.
+    # JwtTokenProvider valide longueur >= 64 et rejette les tokens hardcoded.
+    secret: ${JWT_SECRET}
+    expiration: 3600000  # 1 heure en millisecondes (Tour 38 C6)
+    refresh-expiration: 604800000  # 7 jours en millisecondes (Tour 38 C7)
+
   cors:
     allowed-origins: 
       - http://localhost:3000
@@ -183,7 +181,12 @@ spring:
     hibernate:
       ddl-auto: validate
 
+# Tour 38 C3 : durcissement logging prod — pas de DEBUG/TRACE qui fuiterait
+# tokens JWT, parametres SQL avec mots de passe BCrypt, ou claims tenant.
 logging:
   level:
     root: WARN
     com.cityprojects: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.security: WARN

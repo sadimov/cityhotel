@@ -178,6 +178,18 @@
           ============================================================ -->
     <include file="db/changelog/changes/029-create-admin-parametres-schema.xml"/>
 
+    <!-- ============================================================
+         PHASE 38 (Tour 38 C8) : flag mot_passe_temporaire sur core.dbusers.
+         Le superadmin (014) bascule a true ; rotation au premier login.
+         ============================================================ -->
+    <include file="db/changelog/changes/030-add-mot-passe-temporaire-dbusers.xml"/>
+
+    <!-- ============================================================
+         PHASE 39 (Tour 38 C6/C7) : table core.refresh_tokens (rotation
+         + detection de reutilisation + revocation cross-device).
+         ============================================================ -->
+    <include file="db/changelog/changes/031-create-refresh-tokens.xml"/>
+
     <!--
     TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql

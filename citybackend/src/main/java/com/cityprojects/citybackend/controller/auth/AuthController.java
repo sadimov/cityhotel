@@ -107,14 +107,18 @@ public class AuthController {
      * Validation du token — exige authentification : un anonyme n'a aucune raison
      * de demander si un JWT est valide (et exposer cette capacite ouvre un canal
      * d'oracle pour brute-forcer des tokens).
+     *
+     * <p>Tour 38 H5 : token transmis via body {@link RefreshTokenRequest} (et non
+     * @RequestParam) — un query parameter finit dans les access logs serveur,
+     * proxies, navigateur (history). Body POST = pas de fuite.</p>
      */
     @PostMapping("/validate")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Boolean>> validateToken(
-            @RequestParam String token) {
+            @Valid @RequestBody RefreshTokenRequest req) {
 
         try {
-            boolean isValid = authService.validateToken(token);
+            boolean isValid = authService.validateToken(req.getToken());
 
             return ResponseEntity.ok(ApiResponse.success(isValid,
                 isValid ? "Token valide" : "Token invalide"));

@@ -9,6 +9,7 @@ import { ProfileComponent } from './profile/profile/profile.component';
 
 import { AuthGuard } from './guards/auth-guard.guard';
 import { RoleGuard } from './guards/role-guard.guard';
+import { SuperAdminGuard } from './guards/super-admin.guard';
 
 const routes: Routes = [
   // Routes publiques (sans authentification)
@@ -103,12 +104,17 @@ const routes: Routes = [
 
       // Module Administration (hôtels, utilisateurs, rôles, paramètres) —
       // feature lazy SUPERADMIN-only from-scratch (Tour 31, 2026-05-09).
-      // Single source of truth d'accès : `SuperAdminGuard` câblé À L'INTÉRIEUR
-      // du module via `canActivate` + `canActivateChild` sur la route racine
-      // du layout admin (cf. `admin-routing.module.ts`). Volontairement PAS
-      // de `RoleGuard` cumulé ici pour éviter une double vérification redondante.
+      // Tour 38 (H7) — defense-in-depth : `AuthGuard` + `SuperAdminGuard` sont
+      // désormais appliqués AUSSI au niveau parent du chargement lazy, EN PLUS
+      // du `SuperAdminGuard` interne au module (`canActivate` + `canActivateChild`
+      // sur la route racine du layout admin, cf. `admin-routing.module.ts`).
+      // Cela bloque tout accès non-SUPERADMIN avant même le téléchargement du
+      // chunk lazy (et garantit qu'une régression interne au module ne suffirait
+      // pas à exposer la surface admin). La double vérification est volontairement
+      // assumée comme ceinture + bretelles sur ce périmètre sensible.
       {
         path: 'admin',
+        canActivate: [AuthGuard, SuperAdminGuard],
         loadChildren: () =>
           import('./features/admin/admin.module').then(m => m.AdminModule),
       },

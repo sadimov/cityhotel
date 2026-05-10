@@ -61,7 +61,15 @@ public class DBUser {
     
     @Column(name = "compte_verrouille")
     private Boolean compteVerrouille = false;
-    
+
+    /**
+     * Tour 38 C8 : indique que le mot de passe est temporaire (genere au seed
+     * 014 ou suite a un reset admin) et doit etre rotate au premier login.
+     * Le flow change-password (Tour suivant) consomme et bascule ce flag.
+     */
+    @Column(name = "mot_passe_temporaire", nullable = false)
+    private Boolean motPasseTemporaire = false;
+
     @CreatedDate
     @Column(name = "date_creation", updatable = false)
     private LocalDateTime dateCreation;
@@ -129,7 +137,10 @@ public class DBUser {
     
     public Boolean getCompteVerrouille() { return compteVerrouille; }
     public void setCompteVerrouille(Boolean compteVerrouille) { this.compteVerrouille = compteVerrouille; }
-    
+
+    public Boolean getMotPasseTemporaire() { return motPasseTemporaire; }
+    public void setMotPasseTemporaire(Boolean motPasseTemporaire) { this.motPasseTemporaire = motPasseTemporaire; }
+
     public LocalDateTime getDateCreation() { return dateCreation; }
     public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }
     

@@ -60,12 +60,6 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     enabled: true
   
-  # Configuration de la sécurité
-  security:
-    user:
-      name: postgres
-      password: admin
-  
   # Configuration du cache
   cache:
     type: simple
@@ -100,9 +94,12 @@ server:
 # Configuration de l'application
 app:
   jwt:
-    secret: ${JWT_SECRET:mySecretKey12345mySecretKey12345mySecretKey12345}
-    expiration: 86400000  # 24 heures en millisecondes
-  
+    # Tour 38 C1 : default DEV-ONLY bien identifie pour grep / scan secret.
+    # PROD utilise application-prod.yml ou la variable doit etre fournie sans fallback.
+    secret: ${JWT_SECRET:dev-only-do-not-use-in-prod-please-rotate-immediately-32+chars-min}
+    expiration: 3600000  # 1 heure en millisecondes (Tour 38 C6)
+    refresh-expiration: 604800000  # 7 jours en millisecondes (Tour 38 C7)
+
   cors:
     allowed-origins: 
       - http://localhost:3000

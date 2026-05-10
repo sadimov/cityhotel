@@ -58,8 +58,15 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // Tour 38 C6/C7 : refresh token rotation + revocation.
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
     @Value("${app.security.session.max-sessions-per-user:3}")
     private int maxSessionsPerUser;
+
+    @Value("${app.jwt.expiration:3600000}")
+    private long jwtExpirationMs;
 
     /**
      * Authentification d'un utilisateur
@@ -118,8 +125,16 @@ public class AuthService {
         // Mettre à jour la dernière connexion et réinitialiser les tentatives
         userRepository.updateDerniereConnexion(user.getUserId(), LocalDateTime.now());
 
+        // Tour 38 C6/C7 : emission d'un refresh token persiste (rotation + revocation).
+        // hotelId nullable pour SUPERADMIN ROOT (mais ici on a toujours user.getHotel()
+        // — meme le superadmin systeme est rattache a l'hotel SYSTEM via 014).
+        Long refreshHotelId = user.getHotel() != null ? user.getHotel().getHotelId() : null;
+        RefreshTokenService.IssuedToken refreshIssued =
+                refreshTokenService.issue(user.getUserId(), refreshHotelId, userAgent, clientIp);
+
         // Construire la réponse
         LoginResponse response = buildLoginResponse(jwt, userPrincipal, sessionId);
+        response.setRefreshToken(refreshIssued.clearToken());
 
         logger.info("🎉 Connexion réussie pour l'utilisateur {} (Hotel: {})", 
                    user.getUsername(), user.getHotel().getHotelCode());
@@ -128,53 +143,72 @@ public class AuthService {
     }
 
     /**
-     * Déconnexion d'un utilisateur
+     * Deconnexion d'un utilisateur (Tour 38 C6/C7 : revoque aussi les refresh tokens).
      */
     public void logout(String token) {
         try {
             if (tokenProvider.validateToken(token)) {
                 Long userId = tokenProvider.getUserIdFromJWT(token);
-                
-                // Désactiver toutes les sessions de l'utilisateur
+
+                // Desactiver toutes les sessions de l'utilisateur
                 sessionRepository.deactivateUserSessions(userId);
-                
-                // Effacer le contexte de sécurité
+
+                // Tour 38 C6/C7 : revoque tous les refresh tokens cross-device.
+                // Sans cela, un attaquant ayant un refresh token vole pourrait
+                // reprendre une session apres logout.
+                refreshTokenService.revokeAllForUser(userId);
+
+                // Effacer le contexte de securite
                 SecurityContextHolder.clearContext();
-                
-                logger.info("🚪 Déconnexion réussie pour l'utilisateur ID: {}", userId);
+
+                logger.info("Deconnexion reussie pour l'utilisateur ID: {}", userId);
             }
-        } catch (Exception e) {
-            logger.error("❌ Erreur lors de la déconnexion", e);
+        } catch (RuntimeException e) {
+            // Garde non-silencieuse : on log mais on ne propage pas pour ne pas
+            // bloquer le client qui veut juste invalider sa session locale.
+            logger.warn("Erreur lors de la deconnexion (token possiblement deja expire)", e);
         }
     }
 
     /**
-     * Rafraîchissement du token
+     * Rafraichissement du token via rotation du refresh token (Tour 38 C6/C7).
+     *
+     * <p>Le parametre {@code refreshTokenStr} est un REFRESH TOKEN (chaine
+     * Base64 URL-safe persistee), pas un access JWT. La rotation :
+     * <ol>
+     *   <li>valide / detecte la reutilisation,</li>
+     *   <li>marque l'ancien revoked,</li>
+     *   <li>emet un nouveau refresh,</li>
+     *   <li>genere un nouvel access JWT.</li>
+     * </ol>
      */
-    public LoginResponse refreshToken(String token) {
-        if (!tokenProvider.validateToken(token)) {
-            throw new AuthenticationException("Token invalide ou expiré");
-        }
+    public LoginResponse refreshToken(String refreshTokenStr) {
+        // Etape 1 : rotation (peut lever AuthenticationException pour invalid/expired/reused).
+        RefreshTokenService.IssuedToken rotated = refreshTokenService.rotate(refreshTokenStr, null, null);
 
-        Long userId = tokenProvider.getUserIdFromJWT(token);
+        // Etape 2 : recharger l'utilisateur (peut avoir ete verrouille / desactive entre-temps).
+        Long userId = rotated.entity().getUserId();
         DBUser user = userRepository.findById(userId)
-                .orElseThrow(() -> new AuthenticationException("Utilisateur non trouvé"));
+                .orElseThrow(() -> new AuthenticationException("error.auth.user.notFound"));
 
         if (!user.getActif() || user.getCompteVerrouille()) {
-            throw new AuthenticationException("Compte inactif ou verrouillé");
+            // Securite : on revoque tous les refresh de ce user pour qu'il ne puisse
+            // pas en re-utiliser un autre depuis un autre device.
+            refreshTokenService.revokeAllForUser(userId);
+            throw new AuthenticationException("error.auth.account.disabled");
         }
 
-        // Créer un nouveau UserPrincipal
-        UserPrincipal userPrincipal = UserPrincipal.create(user, 
+        // Etape 3 : nouveau access JWT (court, 1h).
+        UserPrincipal userPrincipal = UserPrincipal.create(user,
                 java.util.Collections.singletonList(
                         new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + user.getRole().getRoleCode())
                 ));
-
-        // Générer un nouveau token
         String newJwt = tokenProvider.generateTokenForUser(userPrincipal);
 
-        // Construire la réponse
-        return buildLoginResponse(newJwt, userPrincipal, null);
+        // Etape 4 : reponse complete (nouveau refresh + nouveau access).
+        LoginResponse response = buildLoginResponse(newJwt, userPrincipal, null);
+        response.setRefreshToken(rotated.clearToken());
+        return response;
     }
 
     /**
@@ -348,7 +382,9 @@ public class AuthService {
     }
 
     /**
-     * Construction de la réponse de connexion
+     * Construction de la reponse de connexion.
+     *
+     * <p>Tour 38 C6 : ajout de {@code expiresIn} (secondes) pour aligner sur OAuth2.</p>
      */
     private LoginResponse buildLoginResponse(String jwt, UserPrincipal userPrincipal, String sessionId) {
         LoginResponse response = new LoginResponse();
@@ -357,6 +393,7 @@ public class AuthService {
                 tokenProvider.getExpirationDateFromJWT(jwt).toInstant(),
                 ZoneId.systemDefault()
         ));
+        response.setExpiresIn(jwtExpirationMs / 1000L);
         response.setUserId(userPrincipal.getUserId());
         response.setUsername(userPrincipal.getUsername());
         response.setEmail(userPrincipal.getEmail());

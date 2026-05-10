@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 38 C6/C7 : table core.refresh_tokens (rotation + revocation + detection
+    de reutilisation). Entite TECHNIQUE non tenant-aware (geree par user_id ;
+    SUPERADMIN sans tenant a hotel_id NULL).
+
+    Securite :
+      - tokenHash = SHA-256 du token clair (jamais stocke en clair).
+      - replacedById permet de tracer la chaine de rotation.
+      - revoked + replacedById permettent de detecter la reutilisation
+        (si un client renvoie un refresh deja revoked -> vol probable).
+    ============================================================================
+    -->
+
+    <changeSet id="031-create-refresh-tokens" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="core" tableName="refresh_tokens"/>
+            </not>
+        </preConditions>
+
+        <createTable schemaName="core" tableName="refresh_tokens">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="token_hash" type="VARCHAR(128)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <!-- hotel_id nullable : SUPERADMIN ROOT n'a pas de tenant. Aucune
+                 contrainte CHECK > 0 ici, contrairement aux entites tenant. -->
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="revoked" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="replaced_by_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_agent" type="VARCHAR(200)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(45)">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex schemaName="core" tableName="refresh_tokens" indexName="idx_refresh_tokens_user_id">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex schemaName="core" tableName="refresh_tokens" indexName="idx_refresh_tokens_expires_at">
+            <column name="expires_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

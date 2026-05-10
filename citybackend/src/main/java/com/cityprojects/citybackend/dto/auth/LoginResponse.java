@@ -10,7 +10,11 @@ public class LoginResponse {
     private String token;
     private String tokenType = "Bearer";
     private LocalDateTime expiryDate;
-    
+
+    // Tour 38 C6/C7 : refresh token rotation + expiresIn standard OAuth2.
+    private String refreshToken;
+    private Long expiresIn; // duree en secondes de validite de l'access token
+
     // Informations utilisateur
     private Long userId;
     private String username;
@@ -62,6 +66,12 @@ public class LoginResponse {
 
     public LocalDateTime getExpiryDate() { return expiryDate; }
     public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
+
+    public String getRefreshToken() { return refreshToken; }
+    public void setRefreshToken(String refreshToken) { this.refreshToken = refreshToken; }
+
+    public Long getExpiresIn() { return expiresIn; }
+    public void setExpiresIn(Long expiresIn) { this.expiresIn = expiresIn; }
 
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }

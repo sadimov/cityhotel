@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 38 C8 : flag "mot de passe temporaire" sur core.dbusers.
+    Le superadmin amorce (changeset 014) est cree avec mot_passe_temporaire=true.
+    Le flow change-password (Tour suivant) bascule a false a la premiere rotation.
+    Colonne nullable a la creation, default false, NOT NULL apres backfill.
+    ============================================================================
+    -->
+
+    <changeSet id="030-add-mot-passe-temporaire-dbusers" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="core" tableName="dbusers" columnName="mot_passe_temporaire"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="core" tableName="dbusers">
+            <column name="mot_passe_temporaire" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Backfill explicite des lignes existantes a false. -->
+        <update schemaName="core" tableName="dbusers">
+            <column name="mot_passe_temporaire" valueBoolean="false"/>
+            <where>mot_passe_temporaire IS NULL</where>
+        </update>
+
+        <addNotNullConstraint
+                schemaName="core"
+                tableName="dbusers"
+                columnName="mot_passe_temporaire"
+                defaultNullValue="false"
+                columnDataType="BOOLEAN"/>
+    </changeSet>
+
+</databaseChangeLog>

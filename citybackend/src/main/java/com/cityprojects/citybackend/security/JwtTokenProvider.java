@@ -2,6 +2,7 @@ package com.cityprojects.citybackend.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,16 +10,27 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 /**
- * Utilitaire pour la gestion des tokens JWT
- * Version compatible avec JJWT 0.12.x
+ * Utilitaire pour la gestion des tokens JWT.
+ * Compatible JJWT 0.12.x.
+ *
+ * <p>Tour 38 H4 : durcissement charset (UTF-8 explicite) + validation
+ * post-construction (longueur >= 64, refus du secret hardcoded historique).</p>
  */
 @Component
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
+
+    /** Longueur minimale du secret JWT en caracteres (HS256 exige >= 256 bits = 32 octets ASCII).
+     *  On pousse a 64 pour reserver une marge sur HS512 et resister a la cryptanalyse. */
+    private static final int MIN_SECRET_LENGTH = 64;
+
+    /** Prefixe du secret hardcoded historique dans application.yml pre-Tour 38. Refuse au boot. */
+    private static final String LEGACY_DEFAULT_PREFIX = "mySecretKey";
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
@@ -27,10 +39,34 @@ public class JwtTokenProvider {
     private int jwtExpirationInMs;
 
     /**
-     * Génère la clé de signature sécurisée
+     * Tour 38 H4 : validation des le boot que le secret JWT est conforme.
+     * Empeche un demarrage en prod avec un secret faible / hardcoded.
+     */
+    @PostConstruct
+    void validate() {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT secret is null or blank — set JWT_SECRET environment variable.");
+        }
+        if (jwtSecret.startsWith(LEGACY_DEFAULT_PREFIX)) {
+            throw new IllegalStateException(
+                    "JWT secret uses the legacy hardcoded default — refuse to start. "
+                  + "Generate a cryptographically random 64+ character secret and set JWT_SECRET.");
+        }
+        if (jwtSecret.length() < MIN_SECRET_LENGTH) {
+            throw new IllegalStateException(
+                    "JWT secret is too short (" + jwtSecret.length() + " chars) — minimum "
+                  + MIN_SECRET_LENGTH + " required. Generate a stronger secret.");
+        }
+        logger.info("JWT secret validated (length={} chars)", jwtSecret.length());
+    }
+
+    /**
+     * Genere la cle de signature securisee.
+     * Tour 38 H4 : charset UTF-8 explicite (sinon dependance a la locale JVM).
      */
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

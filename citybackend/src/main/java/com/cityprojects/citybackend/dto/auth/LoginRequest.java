@@ -12,8 +12,11 @@ public class LoginRequest {
     @Size(min = 3, max = 100, message = "Le nom d'utilisateur doit contenir entre 3 et 100 caractères")
     private String username;
     
+    // Tour 38 H3 : aligne sur app.security.password.min-length=8 (PasswordUtil).
+    // Refus precoce des passwords trop courts cote API (sans expose la raison
+    // detaillee aux attaquants — message neutre).
     @NotBlank(message = "Le mot de passe est obligatoire")
-    @Size(min = 6, message = "Le mot de passe doit contenir au moins 6 caractères")
+    @Size(min = 8, max = 128, message = "Le mot de passe doit contenir entre 8 et 128 caractères")
     private String password;
     
     private boolean rememberMe = false;

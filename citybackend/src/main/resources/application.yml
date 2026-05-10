@@ -60,12 +60,6 @@ spring:
     change-log: classpath:db/changelog/db.changelog-master.xml
     enabled: true
   
-  # Configuration de la sécurité
-  security:
-    user:
-      name: postgres
-      password: admin
-  
   # Configuration du cache
   cache:
     type: simple
@@ -100,9 +94,13 @@ server:
 # Configuration de l'application
 app:
   jwt:
-    secret: ${JWT_SECRET:mySecretKey12345mySecretKey12345mySecretKey12345}
-    expiration: 86400000  # 24 heures en millisecondes
-  
+    # Tour 38 C1 : pas de default — boot fail-fast si JWT_SECRET absent.
+    # Doit faire >= 64 caracteres (validation @PostConstruct dans JwtTokenProvider).
+    secret: ${JWT_SECRET}
+    # Tour 38 C6/C7 : access token court (1h). Refresh token = 7j (refresh-expiration).
+    expiration: 3600000  # 1 heure en millisecondes
+    refresh-expiration: 604800000  # 7 jours en millisecondes
+
   cors:
     allowed-origins: 
       - http://localhost:3000
@@ -152,6 +150,18 @@ management:
   metrics:
     export:
       enabled: true
+
+# Tour 38 C10 : rate limiting Resilience4j sur /auth/login + /auth/refresh.
+# Le RateLimitFilter cree une instance par IP (cf. RateLimitFilter.java).
+# limit-for-period=10 / 60s : 10 tentatives autorisees par fenetre de 60s.
+# timeout-duration=0 : aucun blocage cote serveur (rejet immediat 429).
+resilience4j:
+  ratelimiter:
+    instances:
+      auth-endpoints:
+        limit-for-period: 10
+        limit-refresh-period: 60s
+        timeout-duration: 0
 
 # Configuration pour les profils
 ---
