@@ -50,10 +50,6 @@
               "jspdf-autotable",
               "sweetalert2",
               "date-fns"
-            ],
-            "externalDependencies": [
-              "chart.js",
-              "sweetalert2"
             ]
           },
           "configurations": {
