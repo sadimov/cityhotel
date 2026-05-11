@@ -128,9 +128,149 @@ $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot"
 
 ---
 
+## 8️⃣ Comptabilité — qu'est-ce qui marche sans Dolibarr ?
+
+city hotel sépare deux niveaux de comptabilité :
+
+### ✅ Comptabilité **auxiliaire client** — fonctionnelle nativement (v1.0.0)
+
+Tout ce qui touche au **suivi par client / par hôtel** marche en standalone :
+
+| Fonctionnalité | Statut v1.0.0 | Module |
+|---|---|---|
+| Factures (BROUILLON → EMISE → PAYEE / ANNULEE) | ✅ | finance |
+| Numérotation séquentielle par hôtel + exercice (zéro trou) | ✅ | finance (`NumerotationService` lock pessimiste) |
+| Lignes facture (NUITEE / PRODUIT / COMMANDE / SERVICE / DIVERS) | ✅ | finance |
+| Paiements 12 modes (Espèces, Bankily, Carte, MASRIVI, SEDAD, etc.) | ✅ | finance |
+| Affectation paiement → ligne facture | ✅ | finance |
+| Comptes auxiliaires CLIENT/SOCIETE (`CPT-CLI-{id}`, `CPT-SOC-{id}`) | ✅ | finance |
+| Soldes débit/crédit par client | ✅ | finance |
+| Audit trail mouvements compte (`OperationCompte`) | ✅ | finance |
+| Relevé de compte client / société | ✅ | finance |
+| Devise MRU (ouguiya) | ✅ | hardcoded |
+
+### ❌ Comptabilité **générale SYSCOHADA** — nécessite Dolibarr (Vague 3)
+
+Tout ce qui relève du **plan comptable général** est **EXTERNALISÉ vers Dolibarr** par doctrine (cf. CLAUDE.md racine §6.2 / Tour 20). Le bridge Feign n'est **pas livré en v1.0.0** :
+
+| Fonctionnalité | Statut v1.0.0 | Cible |
+|---|---|---|
+| Plan Comptable Général SYSCOHADA classes 1-9 | ❌ | Dolibarr |
+| Écritures partie double (Débit X / Crédit Y) | ❌ | Dolibarr |
+| Journaux (caisse, banque, ventes, achats) | ❌ | Dolibarr |
+| Balance générale | ❌ | Dolibarr |
+| Compte de résultat | ❌ | Dolibarr |
+| Bilan | ❌ | Dolibarr |
+| Grand livre | ❌ | Dolibarr |
+| FEC (Fichier des Écritures Comptables) | ❌ | Dolibarr |
+| Exercices clôturés (Article 14 OHADA) | ❌ | Dolibarr |
+| Mapping `TypeLigneFacture → 70x`, `ModePaiement → 51x/53x` | ❌ | bridge à câbler |
+
+### Pour la démo / phase pilote
+
+Vous pouvez utiliser city hotel **sans Dolibarr** tant que :
+- Vous restez sur des fonctions opérationnelles (réservations, check-in/out, POS restaurant, stocks, ménage, facturation client)
+- Vous n'avez **pas** de besoin légal immédiat de produire balance / bilan / FEC
+
+L'export comptable vers Dolibarr (manuel ou auto via bridge) sera implémenté en **Vague 3**. En attendant, vous pouvez :
+- Exporter les factures + paiements en CSV/Excel (à câbler par export JasperReports — TODO Vague 3)
+- Saisir manuellement les écritures dans un Dolibarr séparé (workflow temporaire, non scalable)
+
+---
+
+## 9️⃣ Installer Dolibarr en local (préparation Vague 3)
+
+Vous pouvez installer Dolibarr dès maintenant pour tester l'intégration future. Le bridge Feign de city → Dolibarr arrive en **Vague 3** ; le service tournera ainsi côte à côte.
+
+### Option A — DoliWamp (Windows tout-en-un, recommandé pour test rapide)
+
+```powershell
+winget install Dolibarr.DoliWamp
+```
+
+DoliWamp embarque Apache + MySQL + PHP + Dolibarr. Lance le **DoliWamp Server Manager** depuis le menu Démarrer, démarre les services, puis ouvre **http://localhost** dans un navigateur. L'assistant d'installation Dolibarr se lance.
+
+Configuration :
+- Login admin Dolibarr : `admin` (mot de passe à choisir)
+- Activer le module **Comptabilité** (Configuration → Modules → Comptabilité-finance → Comptabilité)
+- Activer le module **Entrepôts/Stocks** si vous voulez aussi sync stocks
+- Configurer le **Plan Comptable** : **SYSCOHADA** (Configuration → Modules → Comptabilité → Plan comptable → SYSCOHADA — disponible nativement Dolibarr 19+)
+- Devise : **MRU** (Configuration → Société → Devise principale)
+
+### Option B — Docker (Linux / macOS / Windows + Docker Desktop)
+
+```powershell
+docker run -d --name dolibarr `
+  -e DOLI_DB_HOST=host.docker.internal `
+  -e DOLI_DB_NAME=dolibarr `
+  -e DOLI_DB_USER=postgres `
+  -e DOLI_DB_PASSWORD=admin `
+  -e DOLI_INSTALL_AUTO=1 `
+  -e DOLI_ADMIN_LOGIN=admin `
+  -e DOLI_ADMIN_PASSWORD="<choix-admin-password>" `
+  -p 8081:80 `
+  dolibarr/dolibarr:21
+```
+
+Dolibarr accessible sur **http://localhost:8081**. À noter : Dolibarr préfère MySQL/MariaDB ; pour PostgreSQL, ajustez `DOLI_DB_TYPE=pgsql`. Plus simple : laisser Dolibarr créer sa propre BDD MySQL via l'image officielle.
+
+### Option C — Container managé MySQL + Dolibarr (le plus propre)
+
+```powershell
+docker network create dolibarr-net
+docker run -d --name dolibarr-mysql --network dolibarr-net `
+  -e MYSQL_ROOT_PASSWORD=root `
+  -e MYSQL_DATABASE=dolibarr `
+  -e MYSQL_USER=dolibarr `
+  -e MYSQL_PASSWORD=dolibarr `
+  mariadb:11
+
+docker run -d --name dolibarr --network dolibarr-net `
+  -e DOLI_DB_HOST=dolibarr-mysql `
+  -e DOLI_DB_NAME=dolibarr `
+  -e DOLI_DB_USER=dolibarr `
+  -e DOLI_DB_PASSWORD=dolibarr `
+  -e DOLI_INSTALL_AUTO=1 `
+  -e DOLI_ADMIN_LOGIN=admin `
+  -e DOLI_ADMIN_PASSWORD="<choix-admin-password>" `
+  -p 8081:80 `
+  dolibarr/dolibarr:21
+```
+
+### Configurer l'API REST Dolibarr (préparation bridge city)
+
+Dans Dolibarr admin :
+1. **Configuration → Modules → Outils interface → Web services API REST** : activer le module
+2. **Outils admin → API REST → Générer une clé pour un utilisateur** : générer la clé pour le compte admin (cette clé sera consommée par city via `DOLAPIKEY` header)
+3. Tester via **http://localhost:8081/api/index.php/explorer/** (Swagger UI Dolibarr)
+4. Documenter la clé dans `.env` city :
+   ```env
+   # Pour le bridge city → Dolibarr (Vague 3)
+   DOLIBARR_API_URL=http://localhost:8081/api/index.php
+   DOLIBARR_API_KEY=<clé générée>
+   ```
+
+⚠️ **La clé Dolibarr est sensible** — ne la commitez JAMAIS. Le bridge city la chiffrera en BDD via Jasypt en Vague 3.
+
+### Multi-tenant Dolibarr
+
+À arbitrer en Vague 3 (cf. CLAUDE.md §6.2 TODO bridge) :
+- **Option 1** : 1 instance Dolibarr **par hôtel client** (isolation forte, coûteux)
+- **Option 2** : 1 instance Dolibarr **partagée** + ventilation analytique par hôtel (économique, requiert mapping `analytic_account` city ↔ Dolibarr)
+
+### Quand activer le bridge
+
+Le bridge `DolibarrFeignClient` + `DolibarrSyncService` + `ParametrageComptable` (mapping `TypeLigneFacture → compte 70x`, `ModePaiement → compte 51x/53x`) sera livré en **Vague 3** ; voir `CLAUDE.md` §6.2 TODO bridge Dolibarr.
+
+Tant que le bridge n'est pas livré, ne tentez pas de configurer une URL Dolibarr dans city — l'application l'ignorera (pas de code consommateur).
+
+---
+
 ## 🛑 Arrêter
 
 Dans chaque terminal : **Ctrl+C**.
+
+Pour Dolibarr Docker : `docker stop dolibarr dolibarr-mysql`.
 
 ---
 
