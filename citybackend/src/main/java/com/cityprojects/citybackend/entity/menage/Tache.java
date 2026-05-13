@@ -116,6 +116,21 @@ public class Tache extends AuditableEntity implements TenantAware {
     private String materielUtilise;
 
     /**
+     * Note de qualite [1..5] attribuee au moment du terminer() d'une tache
+     * (sous-tour menage A1). Nullable : non rempli tant que la tache n'est
+     * pas terminee, et meme apres la terminaison la note reste optionnelle
+     * (le rapport peut etre cloture sans evaluation chiffree).
+     *
+     * <p>Borne SQL : CHECK (note_qualite IS NULL OR note_qualite BETWEEN 1 AND 5)
+     * via changeset Liquibase {@code 038-add-note-qualite-taches.xml}
+     * (defense en profondeur en plus des @Min/@Max applicatifs).</p>
+     */
+    @Min(1)
+    @Max(5)
+    @Column(name = "note_qualite")
+    private Integer noteQualite;
+
+    /**
      * Optimistic lock (Tour 30 etape 3) pour proteger les transitions
      * concurrentes (assigner / commencer / terminer / annuler). En cas de
      * conflit, Hibernate leve {@link jakarta.persistence.OptimisticLockException}
@@ -253,6 +268,14 @@ public class Tache extends AuditableEntity implements TenantAware {
 
     public void setMaterielUtilise(String materielUtilise) {
         this.materielUtilise = materielUtilise;
+    }
+
+    public Integer getNoteQualite() {
+        return noteQualite;
+    }
+
+    public void setNoteQualite(Integer noteQualite) {
+        this.noteQualite = noteQualite;
     }
 
     public Long getVersion() {

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Sous-tour A1 (module menage) : ajout colonne note_qualite sur menage.taches.
+
+    Contexte :
+      - L'endpoint PUT /api/menage/taches/{id}/terminer attend (cf.
+        endpoints_module_menage.txt §Workflow.Exemple1.5) un payload qui
+        inclut "noteQualite": 4 (note de qualite 1-5 attribuee par
+        l'agent/le manager apres execution de la tache).
+      - Aujourd'hui TerminerTacheDto ne porte pas ce champ et l'entite
+        Tache n'a pas de colonne note_qualite : le frontend envoie la note,
+        Jackson l'ignore silencieusement.
+
+    Choix :
+      - Colonne INTEGER nullable (le champ n'est rempli qu'au moment de
+        terminer() ; jamais a la creation/assignation).
+      - CHECK SQL pour borner 1..5 cote DB (defense en profondeur en plus
+        de @Min/@Max cote DTO et entite).
+      - Pas d'index : ce champ est exclusivement lu sur la fiche detail
+        d'une tache, jamais filtre.
+
+    Multi-tenant :
+      - Pas d'impact : la colonne ne porte pas hotel_id, elle est sur la
+        meme ligne que les autres champs de la tache deja tenant-scopee
+        via @TenantId.
+    ============================================================================
+    -->
+    <changeSet id="038-1-add-note-qualite-taches" author="cityteam">
+        <comment>
+            Ajoute la colonne note_qualite (INTEGER, 1..5, nullable) sur
+            menage.taches pour stocker la note de qualite saisie au moment
+            du terminer() d'une tache (cf. endpoints_module_menage.txt).
+        </comment>
+
+        <addColumn schemaName="menage" tableName="taches">
+            <column name="note_qualite" type="INTEGER">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Garde-fou SQL : 1..5 inclus. NULL accepte (cas d'une tache
+             encore PLANIFIEE/EN_COURS, ou cloturee sans note saisie). -->
+        <sql>
+            ALTER TABLE menage.taches
+                ADD CONSTRAINT chk_taches_note_qualite_range
+                CHECK (note_qualite IS NULL OR (note_qualite BETWEEN 1 AND 5));
+        </sql>
+
+        <rollback>
+            <sql>ALTER TABLE menage.taches DROP CONSTRAINT IF EXISTS chk_taches_note_qualite_range;</sql>
+            <dropColumn schemaName="menage" tableName="taches" columnName="note_qualite"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

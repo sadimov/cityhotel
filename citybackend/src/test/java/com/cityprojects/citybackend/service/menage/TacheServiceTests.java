@@ -259,7 +259,7 @@ class TacheServiceTests {
 
         // Terminer
         TacheDto done = transactionTemplate.execute(s -> tacheService.terminer(created.tacheId(),
-                new TerminerTacheDto("Tout OK", null, "aspirateur,detergent")));
+                new TerminerTacheDto("Tout OK", null, "aspirateur,detergent", 4)));
         assertEquals(StatutTache.TERMINEE, done.statut());
         assertNotNull(done.heureFinReelle());
 
@@ -366,7 +366,7 @@ class TacheServiceTests {
                         LocalDate.now(), null, null, null, null)));
         transactionTemplate.execute(s -> tacheService.commencer(created.tacheId()));
         transactionTemplate.execute(s -> tacheService.terminer(created.tacheId(),
-                new TerminerTacheDto(null, null, null)));
+                new TerminerTacheDto(null, null, null, null)));
 
         Long taskId = created.tacheId();
         BusinessException ex = assertThrows(BusinessException.class,
@@ -411,7 +411,7 @@ class TacheServiceTests {
                         LocalDate.now(), null, null, null, null)));
         transactionTemplate.execute(s -> tacheService.commencer(created.tacheId()));
         transactionTemplate.execute(s -> tacheService.terminer(created.tacheId(),
-                new TerminerTacheDto(null, null, null)));
+                new TerminerTacheDto(null, null, null, null)));
 
         Long taskId = created.tacheId();
         BusinessException ex = assertThrows(BusinessException.class,
