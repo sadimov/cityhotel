@@ -17,6 +17,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -40,13 +42,16 @@ public class PersonnelServiceImpl implements PersonnelService {
     private final PersonnelRepository personnelRepository;
     private final TacheRepository tacheRepository;
     private final PersonnelMapper mapper;
+    private final Clock clock;
 
     public PersonnelServiceImpl(PersonnelRepository personnelRepository,
                                 TacheRepository tacheRepository,
-                                PersonnelMapper mapper) {
+                                PersonnelMapper mapper,
+                                Clock clock) {
         this.personnelRepository = personnelRepository;
         this.tacheRepository = tacheRepository;
         this.mapper = mapper;
+        this.clock = clock;
     }
 
     @Override
@@ -197,5 +202,15 @@ public class PersonnelServiceImpl implements PersonnelService {
                 .orElseThrow(() -> new ResourceNotFoundException("error.personnel.notFound"));
         entity.setActif(Boolean.TRUE);
         personnelRepository.save(entity);
+    }
+
+    @Override
+    public List<PersonnelDto> findDisponibles(LocalDate date) {
+        LocalDate effective = (date != null) ? date : LocalDate.now(clock);
+        logger.debug("Recherche personnel disponible pour date={}", effective);
+        return personnelRepository.findDisponiblesAtDate(effective)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
     }
 }

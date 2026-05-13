@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,4 +69,23 @@ public interface PersonnelRepository
             + "LOWER(p.specialites) LIKE LOWER(CONCAT('%', :specialite, '%')) "
             + "ORDER BY p.prenom ASC")
     List<Personnel> findBySpecialite(@Param("specialite") String specialite);
+
+    /**
+     * Personnel actif ET planifie disponible pour une date donnee
+     * (sous-tour menage B1).
+     *
+     * <p>Croisement {@code Personnel} (actif=true) avec {@code Planning}
+     * (dateTravail = :date AND disponible = true). Si un personnel a
+     * plusieurs creneaux ce jour-la, il n'apparait qu'une fois (DISTINCT).</p>
+     *
+     * <p>Multi-tenant : les deux entites sont annotees {@code @TenantId},
+     * Hibernate ajoute automatiquement {@code AND p.hotel_id = ? AND pl.hotel_id = ?}.</p>
+     */
+    @Query("SELECT DISTINCT p FROM Personnel p, Planning pl "
+            + "WHERE p.personnelId = pl.personnelId "
+            + "AND p.actif = true "
+            + "AND pl.dateTravail = :date "
+            + "AND pl.disponible = true "
+            + "ORDER BY p.prenom ASC, p.nom ASC")
+    List<Personnel> findDisponiblesAtDate(@Param("date") LocalDate date);
 }

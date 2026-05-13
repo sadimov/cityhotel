@@ -6,6 +6,7 @@ import com.cityprojects.citybackend.service.menage.PersonnelService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -103,5 +105,24 @@ public class PersonnelController {
     public ResponseEntity<Void> reactivate(@PathVariable("personnelId") Long personnelId) {
         service.reactivate(personnelId);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Personnel actif ET planifie disponible pour une date donnee
+     * (sous-tour menage B1, cf. {@code endpoints_module_menage.txt} ligne 41).
+     *
+     * <p>Param {@code date} : optionnel, format ISO {@code yyyy-MM-dd}.
+     * Si absent, defaut = aujourd'hui (TZ serveur Africa/Nouakchott via
+     * {@link java.time.Clock} injecte).</p>
+     *
+     * <p>Reponse : liste des {@link PersonnelDto} (sans pagination — la
+     * cardinalite typique est faible, < 50 agents par hotel).</p>
+     */
+    @GetMapping("/disponibles")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MENAGE')")
+    public ResponseEntity<List<PersonnelDto>> findDisponibles(
+            @RequestParam(name = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return ResponseEntity.ok(service.findDisponibles(date));
     }
 }
