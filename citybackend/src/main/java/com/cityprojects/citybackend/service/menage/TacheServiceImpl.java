@@ -311,6 +311,13 @@ public class TacheServiceImpl implements TacheService {
             if (dto.materielUtilise() != null) {
                 tache.setMaterielUtilise(dto.materielUtilise());
             }
+            // Sous-tour A3 (fix menage) : stockage de la note de qualite.
+            // La validation @Min(1) @Max(5) cote DTO + CHECK SQL borne
+            // 1..5 (changeset 038-add-note-qualite-taches). Null = pas de
+            // note saisie (le cas le plus frequent ; la note est optionnelle).
+            if (dto.noteQualite() != null) {
+                tache.setNoteQualite(dto.noteQualite());
+            }
         }
         try {
             Tache saved = tacheRepository.saveAndFlush(tache);
