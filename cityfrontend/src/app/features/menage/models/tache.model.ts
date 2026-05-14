@@ -52,12 +52,25 @@ export type CodeStatutTache =
   | 'TERMINEE'
   | 'ANNULEE';
 
+/**
+ * <b>Sous-tour menage D1 + D3 (fix alignement backend) :</b>
+ *  - Retrait de `hotelId` (violation §6.1).
+ *  - Retrait de `statutId` (concept mono-source ; le backend expose
+ *    désormais `statut` = nom enum + `codeStatut`).
+ *  - `dateCreation`/`dateModification` renommées en `createdAt`/`updatedAt`
+ *    (alignement strict `TacheDto.createdAt` / `updatedAt` Instant).
+ *  - Ajout `noteQualite` (1..5) + `version` (optimistic lock) côté contrat
+ *    persisté (cf. enrichissement `TacheDto` côté backend A1+A2).
+ *  - `materielUtilise` reste `string` (CSV ou JSON sérialisé — cf.
+ *    `TerminerTacheRequest.materielUtilise: string[]` qui doit être
+ *    sérialisé via `join(',')` avant POST par le composant terminer).
+ */
 export interface Tache {
   tacheId?: number;
-  hotelId?: number;
   chambreId: number;
   personnelId?: number;
-  statutId?: number;
+  /** Code enum aligné backend (`StatutTache.name()`). Remplace `statutId`. */
+  statut?: CodeStatutTache;
   typeNettoyage?: TypeNettoyage;
   priorite?: PrioriteTache;
   /** Format ISO `YYYY-MM-DD`. */
@@ -70,19 +83,28 @@ export interface Tache {
   heureDebutReelle?: string;
   /** Format ISO `YYYY-MM-DDTHH:mm:ss`. */
   heureFinReelle?: string;
-  /** Calculé en base, lecture seule. */
+  /** Calculé côté backend (mapper), lecture seule. */
   dureeMinutes?: number;
   commentaires?: string;
   problemesDetectes?: string;
-  /** JSON string : ex. `'["aspirateur","detergent"]'`. */
+  /** CSV ou JSON string : ex. `"aspirateur,detergent"` ou `'["aspirateur","detergent"]'`. */
   materielUtilise?: string;
-  dateCreation?: string;
-  dateModification?: string;
-  // Champs dénormalisés (lecture seule)
+  /** Note de qualité 1..5 (renseignée au moment du terminer, bornée backend). */
+  noteQualite?: number;
+  /** Optimistic lock JPA — backend l'incrémente à chaque save. */
+  version?: number;
+  /** Format ISO `YYYY-MM-DDTHH:mm:ss` (Instant côté backend). */
+  createdAt?: string;
+  /** Format ISO `YYYY-MM-DDTHH:mm:ss` (Instant côté backend). */
+  updatedAt?: string;
+  // Champs dénormalisés (lecture seule, renseignés par TacheMapper A2)
   numeroChambre?: string;
   nomPersonnel?: string;
-  libelleStatut?: string;
+  /** Code enum (PLANIFIEE/EN_COURS/TERMINEE/ANNULEE). */
   codeStatut?: CodeStatutTache | string;
+  /** Libellé FR (« Planifiée », « En cours », ...). */
+  libelleStatut?: string;
+  /** Libellé FR (« Normale » / « Urgente » / « Critique »). */
   libellePriorite?: string;
   enRetard?: boolean;
   enCours?: boolean;
@@ -121,13 +143,21 @@ export interface AssignerTacheRequest {
 }
 
 /**
- * DTO pour `PUT /menage/taches/{id}/terminer` (cf. TerminerTacheRequest.java).
+ * DTO pour `PUT /menage/taches/{id}/terminer` (cf. `TerminerTacheDto.java`
+ * côté backend — sous-tour menage A1).
  *
- * `noteQualite` est borné [1..5] côté backend (`@Min(1) @Max(5)`).
+ * <b>Sous-tour menage D3 (fix alignement backend) :</b>
+ *  - `materielUtilise` côté backend est `String` (colonne `VARCHAR(500)`).
+ *    Le formulaire frontend collecte un tableau, le composant terminer
+ *    DOIT le sérialiser via `join(',')` (CSV) AVANT de POST. La signature
+ *    est donc passée à `string` pour refléter le payload réel envoyé sur
+ *    le wire — le composant peut conserver un tableau en interne.
+ *  - `noteQualite` borné [1..5] côté backend (`@Min(1) @Max(5)` + CHECK SQL).
  */
 export interface TerminerTacheRequest {
   commentaires?: string;
   problemesDetectes?: string;
-  materielUtilise?: string[];
+  /** CSV ou JSON sérialisé. Le composant sérialise `string[]` -> `string` avant POST. */
+  materielUtilise?: string;
   noteQualite?: number;
 }

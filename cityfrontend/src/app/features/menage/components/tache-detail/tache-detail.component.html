@@ -166,7 +166,7 @@
               </p>
               <p class="small text-muted mb-0">
                 {{ 'menage.tache.detail.assignedSince' | translate }}
-                : {{ tache.dateModification || tache.dateCreation || '-' }}
+                : {{ tache.updatedAt || tache.createdAt || '-' }}
               </p>
             } @else {
               <p class="text-muted mb-0">

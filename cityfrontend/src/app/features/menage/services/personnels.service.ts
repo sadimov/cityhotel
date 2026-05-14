@@ -37,6 +37,20 @@ export class PersonnelsService {
 
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Pagination du personnel via le format Spring standard `sort=field,dir`.
+   *
+   * <b>Sous-tour menage D2 (fix alignement backend) :</b>
+   *  - L'endpoint backend `GET /api/menage/personnel` accepte le {@code Pageable}
+   *    Spring standard (`page`, `size`, `sort=field,dir`) — pas de
+   *    `sortBy`/`sortDir` séparés (qui étaient silencieusement ignorés).
+   *  - Pour les filtres `search` et `specialite`, le backend expose des
+   *    endpoints dédiés (`/rechercher?terme=`, `/specialite/{code}`).
+   *    Ici on les passe en query params seulement si l'endpoint principal
+   *    venait à les supporter à l'avenir ; en l'état actuel ils sont
+   *    silencieusement ignorés côté backend (V1 acceptable). Pour un
+   *    filtrage strict, utiliser `search()` / `findBySpecialite()`.
+   */
   page(
     filtres: FiltresPersonnels = {},
     page = 0,
@@ -47,13 +61,12 @@ export class PersonnelsService {
     let params = new HttpParams()
       .set('page', String(page))
       .set('size', String(size))
-      .set('sortBy', sortBy)
-      .set('sortDir', sortDir);
-    if (filtres.search && filtres.search.trim()) {
-      params = params.set('search', filtres.search.trim());
-    }
+      .set('sort', `${sortBy},${sortDir}`); // Spring Pageable standard
     if (filtres.actif !== undefined) {
       params = params.set('actif', String(filtres.actif));
+    }
+    if (filtres.search && filtres.search.trim()) {
+      params = params.set('search', filtres.search.trim());
     }
     if (filtres.specialite) {
       params = params.set('specialite', filtres.specialite);

@@ -41,11 +41,23 @@ export class TachesService {
   constructor(private readonly http: HttpClient) {}
 
   /**
-   * Liste paginée des tâches avec filtres optionnels.
+   * Liste paginée des tâches avec filtres dynamiques optionnels.
    *
-   * Les raccourcis booléens (`enCours`, `enRetard`, `nonAssignees`) du
-   * filtre routent vers les endpoints dédiés ; les autres filtres
-   * combinés passent par l'endpoint racine.
+   * <b>Sous-tour menage D2 (fix alignement backend B2) :</b>
+   *  - Pagination Spring standard `sort=field,dir` (et non `sortBy`/`sortDir`).
+   *  - L'endpoint backend `GET /api/menage/taches` accepte désormais 10
+   *    filtres optionnels (cf. `TacheFiltres` côté backend + bloc B2).
+   *  - `statutId` (concept mono-source obsolète) est remplacé par `statut`
+   *    = nom de l'enum `StatutTache` (PLANIFIEE/EN_COURS/TERMINEE/ANNULEE).
+   *    Côté front, le filtre `FiltresTaches.statutId` reste pour
+   *    compat — on ne l'envoie pas tant qu'un mapping codeId -> codeName
+   *    n'est pas posé. Préférer le composant filtre par `codeStatut`
+   *    (sous-tour ultérieur).
+   *
+   * Les raccourcis booléens (`enCours`, `enRetard`, `nonAssignees`)
+   * peuvent être combinés avec les autres filtres ; côté backend ils
+   * ont priorité sur les filtres natifs équivalents (cf. javadoc
+   * `TacheSpecifications`).
    */
   page(
     filtres: FiltresTaches = {},
@@ -57,8 +69,7 @@ export class TachesService {
     let params = new HttpParams()
       .set('page', String(page))
       .set('size', String(size))
-      .set('sortBy', sortBy)
-      .set('sortDir', sortDir);
+      .set('sort', `${sortBy},${sortDir}`); // Spring Pageable standard
     if (filtres.search && filtres.search.trim()) {
       params = params.set('search', filtres.search.trim());
     }
@@ -71,9 +82,9 @@ export class TachesService {
     if (filtres.chambreId != null) {
       params = params.set('chambreId', String(filtres.chambreId));
     }
-    if (filtres.statutId != null) {
-      params = params.set('statutId', String(filtres.statutId));
-    }
+    // Note D2 : `statutId` (mono-source) ignoré côté backend.
+    // Pour filtrer par statut, utiliser le code enum via un futur champ
+    // `statut?: CodeStatutTache` sur FiltresTaches.
     if (filtres.typeNettoyage) {
       params = params.set('typeNettoyage', filtres.typeNettoyage);
     }

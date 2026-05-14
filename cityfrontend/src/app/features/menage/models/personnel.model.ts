@@ -13,10 +13,15 @@
  * Le composant frontend gère la sérialisation `["chambres","salles"]`
  * <-> saisie texte « chambres, salles » (même approche qu'`allergenes`
  * dans `restaurant/article-form`).
+ *
+ * <b>Sous-tour menage D1 (fix alignement backend) :</b>
+ *  - Retrait de `hotelId` (violation §6.1 : jamais exposé au client).
+ *  - `dateCreation` renommée en `createdAt` + ajout `updatedAt` (alignement
+ *    strict avec `PersonnelDto` côté backend qui expose les deux Instant
+ *    de `AuditableEntity`).
  */
 export interface Personnel {
   personnelId?: number;
-  hotelId?: number;
   numeroEmploye: string;
   prenom: string;
   nom: string;
@@ -27,10 +32,12 @@ export interface Personnel {
   /** JSON string : ex. `'["chambres","salles"]'`. */
   specialites?: string;
   actif?: boolean;
-  /** Format ISO `YYYY-MM-DDTHH:mm:ss`. */
-  dateCreation?: string;
   /** Champ dérivé renvoyé par le backend (lecture seule). */
   nomComplet?: string;
+  /** Format ISO `YYYY-MM-DDTHH:mm:ss` (Instant côté backend). */
+  createdAt?: string;
+  /** Format ISO `YYYY-MM-DDTHH:mm:ss` (Instant côté backend). */
+  updatedAt?: string;
 }
 
 /**
