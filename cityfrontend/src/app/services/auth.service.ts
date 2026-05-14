@@ -384,16 +384,16 @@ export class AuthService {
         break;
       case 'RECEPTION':
       case 'RESREC':
-        this.router.navigate(['/reservations']);
+        this.router.navigate(['/hebergement']);
         break;
       case 'RESTAURANT':
         this.router.navigate(['/restaurant']);
         break;
       case 'MENAGE':
-        this.router.navigate(['/housekeeping']);
+        this.router.navigate(['/menage']);
         break;
       case 'MAGASIN':
-        this.router.navigate(['/orders']);
+        this.router.navigate(['/inventory']);
         break;
       default:
         this.router.navigate(['/profile']);

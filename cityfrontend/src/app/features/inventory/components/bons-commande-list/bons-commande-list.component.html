@@ -76,6 +76,14 @@
               <td class="text-end">
                 <button
                   type="button"
+                  class="btn btn-sm btn-outline-info me-1"
+                  (click)="view(bon)"
+                  [attr.aria-label]="'inventory.actions.view' | translate"
+                >
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+                <button
+                  type="button"
                   class="btn btn-sm btn-outline-primary"
                   (click)="edit(bon)"
                   [attr.aria-label]="'inventory.bonCommande.actions.edit' | translate"

@@ -1,0 +1,1 @@
+vérifie et corrige les liens de tous les dashboards des utilisateurs et modules: Les liens actuels ramène toujours au dashboard lui même

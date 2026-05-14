@@ -95,10 +95,7 @@ export class CheckInFormComponent implements OnInit, OnDestroy {
   }
 
   isSelectable(reservation: Reservation): boolean {
-    return (
-      reservation.statut === StatutReservation.CONFIRMEE ||
-      reservation.statut === StatutReservation.EN_ATTENTE
-    );
+    return reservation.statut === StatutReservation.CONFIRMEE;
   }
 
   confirm(): void {

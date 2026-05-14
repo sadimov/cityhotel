@@ -28,6 +28,7 @@ public interface BonSortieMapper {
                 dto.statut(),
                 dto.dateSortie(),
                 dto.commentaires(),
+                dto.motifAnnulation(),
                 dto.userId(),
                 lignes,
                 dto.createdAt(),

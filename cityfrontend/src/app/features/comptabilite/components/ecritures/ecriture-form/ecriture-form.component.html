@@ -1,0 +1,142 @@
+<section class="ecriture-form">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.ecriture.form.title' | translate }}</h2>
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+      {{ 'common.cancel' | translate }}
+    </button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <label for="dateComptable" class="form-label">
+          {{ 'comptabilite.ecriture.fields.dateComptable' | translate }}
+        </label>
+        <input id="dateComptable" type="date" class="form-control" formControlName="dateComptable" />
+      </div>
+      <div class="col-md-3">
+        <label for="datePiece" class="form-label">
+          {{ 'comptabilite.ecriture.fields.datePiece' | translate }}
+        </label>
+        <input id="datePiece" type="date" class="form-control" formControlName="datePiece" />
+      </div>
+      <div class="col-md-3">
+        <label for="journalCode" class="form-label">
+          {{ 'comptabilite.ecriture.fields.journal' | translate }}
+        </label>
+        <select id="journalCode" class="form-select" formControlName="journalCode" [disabled]="loadingJournaux">
+          <option value="">{{ 'common.select' | translate }}...</option>
+          @for (j of journauxActifs; track j.id) {
+            <option [value]="j.code">{{ j.code }} — {{ j.libelle }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label for="reference" class="form-label">
+          {{ 'comptabilite.ecriture.fields.reference' | translate }}
+        </label>
+        <input id="reference" type="text" class="form-control" formControlName="reference" maxlength="50" />
+      </div>
+      <div class="col-12">
+        <label for="libelle" class="form-label">
+          {{ 'comptabilite.ecriture.fields.libelle' | translate }}
+        </label>
+        <input id="libelle" type="text" class="form-control" formControlName="libelle" maxlength="500" />
+      </div>
+    </div>
+
+    <h3 class="h6 mt-4 mb-2 d-flex justify-content-between align-items-center">
+      {{ 'comptabilite.ecriture.lignes.title' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-primary" (click)="addLigne()">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        {{ 'comptabilite.ecriture.lignes.add' | translate }}
+      </button>
+    </h3>
+
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.compteCode' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.libelle' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.sens' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.ecriture.lignes.montant' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.auxiliaire' | translate }}</th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody formArrayName="lignes">
+          @for (lc of lignes.controls; track $index; let i = $index) {
+            <tr [formGroupName]="i">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <input type="text" class="form-control form-control-sm" formControlName="compteCode" maxlength="10" />
+              </td>
+              <td>
+                <input type="text" class="form-control form-control-sm" formControlName="libelle" maxlength="500" />
+              </td>
+              <td>
+                <select class="form-select form-select-sm" formControlName="sens">
+                  @for (s of sensOptions; track s) {
+                    <option [value]="s">{{ sensKey(s) | translate }}</option>
+                  }
+                </select>
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm text-end" formControlName="montant" min="0.01" step="0.01" />
+              </td>
+              <td>
+                <input type="text" class="form-control form-control-sm" formControlName="compteAuxiliaireRef" maxlength="50" />
+              </td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-danger"
+                  (click)="removeLigne(i)"
+                  [disabled]="lignes.length <= 2"
+                  [attr.aria-label]="'common.remove' | translate"
+                >
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="4" class="text-end">{{ 'common.total' | translate }}</td>
+            <td class="text-end">
+              <span [class.text-success]="isEquilibree" [class.text-danger]="!isEquilibree">
+                D: {{ totalDebit | number:'1.2-2' }}
+              </span>
+              /
+              <span [class.text-success]="isEquilibree" [class.text-danger]="!isEquilibree">
+                C: {{ totalCredit | number:'1.2-2' }}
+              </span>
+            </td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    @if (!isEquilibree && totalDebit > 0) {
+      <div class="alert alert-warning" role="alert">
+        <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+        {{ 'error.ecriture.unbalanced' | translate }}
+      </div>
+    }
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="submitting || !isEquilibree">
+        <i class="bi bi-save me-1" aria-hidden="true"></i>
+        {{ 'common.save' | translate }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+        {{ 'common.cancel' | translate }}
+      </button>
+    </div>
+  </form>
+</section>

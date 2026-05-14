@@ -8,6 +8,9 @@ import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.exception.ResourceNotFoundException;
 import com.cityprojects.citybackend.mapper.admin.HotelAdminMapper;
 import com.cityprojects.citybackend.repository.core.HotelRepository;
+import com.cityprojects.citybackend.service.finance.CompteMappingInitializer;
+import com.cityprojects.citybackend.service.finance.JournalComptableInitializer;
+import com.cityprojects.citybackend.service.finance.TauxTvaConfigInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -38,11 +41,20 @@ public class HotelAdminServiceImpl implements HotelAdminService {
 
     private final HotelRepository hotelRepository;
     private final HotelAdminMapper hotelMapper;
+    private final CompteMappingInitializer compteMappingInitializer;
+    private final JournalComptableInitializer journalComptableInitializer;
+    private final TauxTvaConfigInitializer tauxTvaConfigInitializer;
 
     public HotelAdminServiceImpl(HotelRepository hotelRepository,
-                                 HotelAdminMapper hotelMapper) {
+                                 HotelAdminMapper hotelMapper,
+                                 CompteMappingInitializer compteMappingInitializer,
+                                 JournalComptableInitializer journalComptableInitializer,
+                                 TauxTvaConfigInitializer tauxTvaConfigInitializer) {
         this.hotelRepository = hotelRepository;
         this.hotelMapper = hotelMapper;
+        this.compteMappingInitializer = compteMappingInitializer;
+        this.journalComptableInitializer = journalComptableInitializer;
+        this.tauxTvaConfigInitializer = tauxTvaConfigInitializer;
     }
 
     @Override
@@ -67,6 +79,25 @@ public class HotelAdminServiceImpl implements HotelAdminService {
         }
         Hotel saved = hotelRepository.save(entity);
         logger.info("Admin: hotel cree id={} code={}", saved.getHotelId(), saved.getHotelCode());
+
+        // Seed automatique des mappings comptables par defaut (B1) :
+        // l'hotel a immediatement une configuration comptable exploitable
+        // (codes par defaut depuis TypeEvenementComptable.defaultCompteCode).
+        // Le bean dedie ouvre une transaction REQUIRES_NEW + TenantScope.runAs,
+        // donc le seed est indépendant du flow de creation d'hotel et
+        // idempotent en cas de rejeu manuel.
+        compteMappingInitializer.initDefaultsForHotel(saved.getHotelId());
+
+        // Seed automatique des 6 journaux comptables standards (B2) :
+        // VTE, ACH, BAN, CAI, OD, AVO. Idempotent et isole transactionnel
+        // (REQUIRES_NEW + TenantScope.runAs).
+        journalComptableInitializer.seedDefault(saved.getHotelId());
+
+        // Seed automatique des configurations TVA par defaut (B4) :
+        // 7 types de services (HEBERGEMENT_NUITEE 0%, RESTAURATION 16%, etc.).
+        // Idempotent et isole transactionnel.
+        tauxTvaConfigInitializer.seedDefault(saved.getHotelId());
+
         return hotelMapper.toDto(saved);
     }
 

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B3 (compta native, branchement automatique) - lien bons inventory ->
+  ecriture comptable.
+
+  - bons_commande.ecriture_reception_id : reception BC (311 DEBIT / 401 CREDIT
+    via journal ACH).
+  - bons_sortie.ecriture_sortie_id : sortie de stock consommation interne
+    (601 DEBIT / 311 CREDIT via journal OD).
+
+  Toutes deux nullables : non touchees tant que la transition metier
+  (reception / livraison) n'a pas ete effectuee.
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="050-1-add-ecriture-reception-id-to-bons-commande" author="cityprojects">
+        <comment>
+            Bloc B3 - colonne nullable ecriture_reception_id sur bons_commande.
+            Renseignee par BonCommandeServiceImpl.receptionner() apres creation
+            de l'ecriture ACH (311 DEBIT / 401 CREDIT).
+        </comment>
+
+        <addColumn schemaName="inventory" tableName="bons_commande">
+            <column name="ecriture_reception_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="bons_commande" baseTableSchemaName="inventory"
+                baseColumnNames="ecriture_reception_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_bons_commande_ecriture_reception"/>
+
+        <createIndex tableName="bons_commande" schemaName="inventory"
+                     indexName="ix_bons_commande_ecriture_reception">
+            <column name="ecriture_reception_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="bons_commande" schemaName="inventory"
+                       indexName="ix_bons_commande_ecriture_reception"/>
+            <dropForeignKeyConstraint baseTableName="bons_commande" baseTableSchemaName="inventory"
+                                      constraintName="fk_bons_commande_ecriture_reception"/>
+            <dropColumn tableName="bons_commande" schemaName="inventory"
+                        columnName="ecriture_reception_id"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="050-2-add-ecriture-sortie-id-to-bons-sortie" author="cityprojects">
+        <comment>
+            Bloc B3 - colonne nullable ecriture_sortie_id sur bons_sortie.
+            Renseignee par BonSortieServiceImpl.livrer() apres creation
+            de l'ecriture OD (601 DEBIT / 311 CREDIT).
+        </comment>
+
+        <addColumn schemaName="inventory" tableName="bons_sortie">
+            <column name="ecriture_sortie_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="bons_sortie" baseTableSchemaName="inventory"
+                baseColumnNames="ecriture_sortie_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_bons_sortie_ecriture_sortie"/>
+
+        <createIndex tableName="bons_sortie" schemaName="inventory"
+                     indexName="ix_bons_sortie_ecriture_sortie">
+            <column name="ecriture_sortie_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="bons_sortie" schemaName="inventory"
+                       indexName="ix_bons_sortie_ecriture_sortie"/>
+            <dropForeignKeyConstraint baseTableName="bons_sortie" baseTableSchemaName="inventory"
+                                      constraintName="fk_bons_sortie_ecriture_sortie"/>
+            <dropColumn tableName="bons_sortie" schemaName="inventory"
+                        columnName="ecriture_sortie_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

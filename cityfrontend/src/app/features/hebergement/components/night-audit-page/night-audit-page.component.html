@@ -1,0 +1,291 @@
+<section class="night-audit-page">
+  <!-- ──────────── Header ──────────── -->
+  <header class="night-audit-page__header card border-0 shadow-sm mb-3">
+    <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+      <div>
+        <h1 class="h4 mb-1 d-flex align-items-center gap-2">
+          <i class="bi bi-moon-stars-fill text-info" aria-hidden="true"></i>
+          {{ 'hebergement.nightAudit.page.title' | translate }}
+        </h1>
+        <div class="text-muted small mb-1">
+          {{ 'hebergement.nightAudit.page.subtitle' | translate: { date: today } }}
+        </div>
+        <p class="mb-0 text-secondary small">
+          {{ 'hebergement.nightAudit.page.instructions' | translate }}
+        </p>
+      </div>
+      <div class="d-flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="loadAll()"
+          [attr.aria-label]="'hebergement.nightAudit.page.refresh' | translate"
+        >
+          <i class="bi bi-arrow-clockwise me-1" aria-hidden="true"></i>
+          {{ 'hebergement.nightAudit.page.refresh' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="back()"
+        >
+          <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+          {{ 'hebergement.nightAudit.page.back' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger d-flex align-items-center gap-2"
+          [disabled]="launching"
+          (click)="launch()"
+        >
+          @if (launching) {
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          } @else {
+            <i class="bi bi-moon-fill" aria-hidden="true"></i>
+          }
+          <span>{{ 'hebergement.nightAudit.page.launch' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ──────────── Section 1 — Check-ins en retard ──────────── -->
+  <article class="card border-0 shadow-sm mb-3 night-audit-page__section night-audit-page__section--danger">
+    <header class="card-header bg-danger-subtle border-bottom border-danger-subtle">
+      <h2 class="h6 mb-1 d-flex align-items-center gap-2 text-danger">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        {{ 'hebergement.nightAudit.page.retard.title' | translate }}
+      </h2>
+      <p class="mb-0 small text-muted">
+        {{ 'hebergement.nightAudit.page.retard.warning' | translate }}
+      </p>
+    </header>
+    <div class="card-body p-0">
+      @if (retardState === 'loading') {
+        <div class="text-center py-4">
+          <div class="spinner-border text-danger" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        </div>
+      } @else if (retardState === 'error') {
+        <div class="alert alert-danger m-3 mb-0" role="alert">
+          {{ 'hebergement.list.error' | translate }}
+        </div>
+      } @else if (retardState === 'empty') {
+        <div class="d-flex align-items-center gap-2 text-success p-3">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span>{{ 'hebergement.nightAudit.page.retard.empty' | translate }}</span>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.numero' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.client' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.chambres' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.dateArrivee' | translate }}</th>
+                <th scope="col" class="text-end">{{ 'hebergement.nightAudit.page.cols.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of retardItems; track trackByReservationId($index, r)) {
+                <tr>
+                  <td>{{ r.numeroReservation || '-' }}</td>
+                  <td>{{ clientName(r) }}</td>
+                  <td>{{ chambres(r) }}</td>
+                  <td>{{ r.dateArrivee || '-' }}</td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success me-1"
+                      (click)="checkIn(r)"
+                      [disabled]="isPending(r)"
+                      [attr.aria-label]="'hebergement.nightAudit.page.action.checkin' | translate"
+                    >
+                      <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.nightAudit.page.action.checkin' | translate }}
+                    </button>
+                    @if (canCancelReservation) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="cancel(r)"
+                        [disabled]="isPending(r)"
+                        [attr.aria-label]="'hebergement.nightAudit.page.action.cancel' | translate"
+                      >
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+                        {{ 'hebergement.nightAudit.page.action.cancel' | translate }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </article>
+
+  <!-- ──────────── Section 2 — Arrivées du jour ──────────── -->
+  <article class="card border-0 shadow-sm mb-3 night-audit-page__section night-audit-page__section--info">
+    <header class="card-header bg-info-subtle border-bottom border-info-subtle">
+      <h2 class="h6 mb-1 d-flex align-items-center gap-2 text-primary">
+        <i class="bi bi-calendar-event-fill" aria-hidden="true"></i>
+        {{ 'hebergement.nightAudit.page.arrivals.title' | translate }}
+      </h2>
+      <p class="mb-0 small text-muted">
+        {{ 'hebergement.nightAudit.page.arrivals.subtitle' | translate }}
+      </p>
+    </header>
+    <div class="card-body p-0">
+      @if (arrivalsState === 'loading') {
+        <div class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        </div>
+      } @else if (arrivalsState === 'error') {
+        <div class="alert alert-danger m-3 mb-0" role="alert">
+          {{ 'hebergement.list.error' | translate }}
+        </div>
+      } @else if (arrivalsState === 'empty') {
+        <div class="d-flex align-items-center gap-2 text-success p-3">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span>{{ 'hebergement.nightAudit.page.arrivals.empty' | translate }}</span>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.numero' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.client' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.chambres' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.dateArrivee' | translate }}</th>
+                <th scope="col" class="text-end">{{ 'hebergement.nightAudit.page.cols.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of arrivalsItems; track trackByReservationId($index, r)) {
+                <tr>
+                  <td>{{ r.numeroReservation || '-' }}</td>
+                  <td>{{ clientName(r) }}</td>
+                  <td>{{ chambres(r) }}</td>
+                  <td>{{ r.dateArrivee || '-' }}</td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success me-1"
+                      (click)="checkIn(r)"
+                      [disabled]="isPending(r)"
+                    >
+                      <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.nightAudit.page.action.checkin' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary me-1"
+                      (click)="report(r)"
+                      [disabled]="isPending(r)"
+                    >
+                      <i class="bi bi-clock-history me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.nightAudit.page.action.report' | translate }}
+                    </button>
+                    @if (canCancelReservation) {
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        (click)="cancel(r)"
+                        [disabled]="isPending(r)"
+                      >
+                        <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+                        {{ 'hebergement.nightAudit.page.action.cancel' | translate }}
+                      </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </article>
+
+  <!-- ──────────── Section 3 — Départs du jour ──────────── -->
+  <article class="card border-0 shadow-sm mb-3 night-audit-page__section night-audit-page__section--warning">
+    <header class="card-header bg-warning-subtle border-bottom border-warning-subtle">
+      <h2 class="h6 mb-1 d-flex align-items-center gap-2 text-warning-emphasis">
+        <i class="bi bi-door-open-fill" aria-hidden="true"></i>
+        {{ 'hebergement.nightAudit.page.departs.title' | translate }}
+      </h2>
+      <p class="mb-0 small text-muted">
+        {{ 'hebergement.nightAudit.page.departs.subtitle' | translate }}
+      </p>
+    </header>
+    <div class="card-body p-0">
+      @if (departsState === 'loading') {
+        <div class="text-center py-4">
+          <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        </div>
+      } @else if (departsState === 'error') {
+        <div class="alert alert-danger m-3 mb-0" role="alert">
+          {{ 'hebergement.list.error' | translate }}
+        </div>
+      } @else if (departsState === 'empty') {
+        <div class="d-flex align-items-center gap-2 text-success p-3">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <span>{{ 'hebergement.nightAudit.page.departs.empty' | translate }}</span>
+        </div>
+      } @else {
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.numero' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.client' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.chambres' | translate }}</th>
+                <th scope="col">{{ 'hebergement.nightAudit.page.cols.dateDepart' | translate }}</th>
+                <th scope="col" class="text-end">{{ 'hebergement.nightAudit.page.cols.actions' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of departsItems; track trackByReservationId($index, r)) {
+                <tr>
+                  <td>{{ r.numeroReservation || '-' }}</td>
+                  <td>{{ clientName(r) }}</td>
+                  <td>{{ chambres(r) }}</td>
+                  <td>{{ r.dateDepart || '-' }}</td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary me-1"
+                      (click)="payAndCheckout(r)"
+                      [disabled]="isPending(r)"
+                    >
+                      <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.nightAudit.page.action.payCheckout' | translate }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      (click)="prolong(r)"
+                      [disabled]="isPending(r)"
+                    >
+                      <i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.nightAudit.page.action.prolong' | translate }}
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </article>
+</section>

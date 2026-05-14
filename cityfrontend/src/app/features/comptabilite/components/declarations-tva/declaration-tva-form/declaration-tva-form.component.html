@@ -1,0 +1,41 @@
+<section class="declaration-tva-form">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.declarationTva.form.title' | translate }}</h2>
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+      {{ 'common.cancel' | translate }}
+    </button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label for="dateDebut" class="form-label">
+          {{ 'comptabilite.declarationTva.fields.dateDebut' | translate }}
+        </label>
+        <input id="dateDebut" type="date" class="form-control" formControlName="dateDebut" />
+      </div>
+      <div class="col-md-4">
+        <label for="dateFin" class="form-label">
+          {{ 'comptabilite.declarationTva.fields.dateFin' | translate }}
+        </label>
+        <input id="dateFin" type="date" class="form-control" formControlName="dateFin" />
+      </div>
+    </div>
+
+    <div class="alert alert-info mt-3" role="alert">
+      <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+      {{ 'comptabilite.declarationTva.form.info' | translate }}
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="submitting">
+        <i class="bi bi-save me-1" aria-hidden="true"></i>
+        {{ 'common.save' | translate }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+        {{ 'common.cancel' | translate }}
+      </button>
+    </div>
+  </form>
+</section>

@@ -70,6 +70,15 @@ public class DBUser {
     @Column(name = "mot_passe_temporaire", nullable = false)
     private Boolean motPasseTemporaire = false;
 
+    /**
+     * Tour A : nom du fichier image stocke pour l'avatar self-service
+     * (cf. AvatarStorageService + WebConfig). Format generique
+     * {@code user-{userId}-{uuid}.{ext}} pour eviter les collisions et limiter
+     * le devinable. {@code null} si pas d'avatar.
+     */
+    @Column(name = "avatar_filename", length = 255)
+    private String avatarFilename;
+
     @CreatedDate
     @Column(name = "date_creation", updatable = false)
     private LocalDateTime dateCreation;
@@ -140,6 +149,9 @@ public class DBUser {
 
     public Boolean getMotPasseTemporaire() { return motPasseTemporaire; }
     public void setMotPasseTemporaire(Boolean motPasseTemporaire) { this.motPasseTemporaire = motPasseTemporaire; }
+
+    public String getAvatarFilename() { return avatarFilename; }
+    public void setAvatarFilename(String avatarFilename) { this.avatarFilename = avatarFilename; }
 
     public LocalDateTime getDateCreation() { return dateCreation; }
     public void setDateCreation(LocalDateTime dateCreation) { this.dateCreation = dateCreation; }

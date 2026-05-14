@@ -17,7 +17,6 @@ import java.util.Optional;
  * Repository des comptes client/societe (Hibernate filtre auto via @TenantId).
  */
 @Repository
-@SuppressWarnings("deprecation")
 public interface CompteRepository
         extends JpaRepository<Compte, Long>, JpaSpecificationExecutor<Compte> {
 

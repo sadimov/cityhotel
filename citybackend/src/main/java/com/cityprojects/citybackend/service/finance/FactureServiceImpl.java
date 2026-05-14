@@ -1,15 +1,22 @@
 package com.cityprojects.citybackend.service.finance;
 
+import com.cityprojects.citybackend.common.audit.AuditFinanceAction;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.finance.FactureCreateDto;
 import com.cityprojects.citybackend.dto.finance.FactureDto;
 import com.cityprojects.citybackend.dto.finance.LigneFactureCreateDto;
 import com.cityprojects.citybackend.dto.finance.LigneFactureDto;
+import com.cityprojects.citybackend.dto.finance.LigneFactureRecapDto;
+import com.cityprojects.citybackend.dto.finance.LigneServiceCreateRequest;
+import com.cityprojects.citybackend.dto.finance.TransfertLignesRequest;
+import com.cityprojects.citybackend.entity.finance.AffectationPaiement;
 import com.cityprojects.citybackend.entity.finance.Facture;
 import com.cityprojects.citybackend.entity.finance.LigneFacture;
 import com.cityprojects.citybackend.entity.finance.StatutFacture;
 import com.cityprojects.citybackend.entity.finance.TypeFacture;
 import com.cityprojects.citybackend.entity.finance.TypeLigneFacture;
+import com.cityprojects.citybackend.entity.finance.TypeServiceTva;
+import com.cityprojects.citybackend.entity.inventory.ServiceHotelier;
 import com.cityprojects.citybackend.entity.hebergement.Nuitee;
 import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.entity.hebergement.StatutNuitee;
@@ -21,6 +28,7 @@ import com.cityprojects.citybackend.exception.ResourceNotFoundException;
 import com.cityprojects.citybackend.mapper.finance.FactureMapper;
 import com.cityprojects.citybackend.repository.client.ClientRepository;
 import com.cityprojects.citybackend.repository.client.SocieteRepository;
+import com.cityprojects.citybackend.repository.finance.AffectationPaiementRepository;
 import com.cityprojects.citybackend.repository.finance.CompteRepository;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
 import com.cityprojects.citybackend.repository.finance.LigneFactureRepository;
@@ -28,6 +36,7 @@ import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
 import com.cityprojects.citybackend.repository.inventory.FournisseurRepository;
 import com.cityprojects.citybackend.repository.inventory.ProduitRepository;
+import com.cityprojects.citybackend.repository.inventory.ServiceHotelierRepository;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.LigneCommandeRepository;
 import com.cityprojects.citybackend.security.UserPrincipal;
@@ -44,7 +53,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation de {@link FactureService}.
@@ -62,7 +74,7 @@ import java.util.List;
 @Service
 @RequireTenant
 @Transactional(readOnly = true)
-public class FactureServiceImpl implements FactureService {
+public class FactureServiceImpl implements FactureService, FactureRecalcInternalService {
 
     private static final Logger logger = LoggerFactory.getLogger(FactureServiceImpl.class);
 
@@ -75,12 +87,18 @@ public class FactureServiceImpl implements FactureService {
     private final CompteRepository compteRepository;
     private final FournisseurRepository fournisseurRepository;
     private final ProduitRepository produitRepository;
+    private final ServiceHotelierRepository serviceHotelierRepository;
     private final CommandeRepository commandeRepository;
     private final LigneCommandeRepository ligneCommandeRepository;
+    private final AffectationPaiementRepository affectationRepository;
     private final FactureMapper mapper;
     private final NumerotationService numerotationService;
     private final CompteService compteService;
     private final OperationCompteService operationCompteService;
+    private final ExerciceService exerciceService;
+    private final EcritureGenerationService ecritureGenerationService;
+    private final EcritureComptableService ecritureComptableService;
+    private final TauxTvaConfigService tauxTvaConfigService;
 
     public FactureServiceImpl(FactureRepository factureRepository,
                               LigneFactureRepository ligneRepository,
@@ -91,12 +109,18 @@ public class FactureServiceImpl implements FactureService {
                               CompteRepository compteRepository,
                               FournisseurRepository fournisseurRepository,
                               ProduitRepository produitRepository,
+                              ServiceHotelierRepository serviceHotelierRepository,
                               CommandeRepository commandeRepository,
                               LigneCommandeRepository ligneCommandeRepository,
+                              AffectationPaiementRepository affectationRepository,
                               FactureMapper mapper,
                               NumerotationService numerotationService,
                               CompteService compteService,
-                              OperationCompteService operationCompteService) {
+                              OperationCompteService operationCompteService,
+                              ExerciceService exerciceService,
+                              EcritureGenerationService ecritureGenerationService,
+                              EcritureComptableService ecritureComptableService,
+                              TauxTvaConfigService tauxTvaConfigService) {
         this.factureRepository = factureRepository;
         this.ligneRepository = ligneRepository;
         this.reservationRepository = reservationRepository;
@@ -106,17 +130,52 @@ public class FactureServiceImpl implements FactureService {
         this.compteRepository = compteRepository;
         this.fournisseurRepository = fournisseurRepository;
         this.produitRepository = produitRepository;
+        this.serviceHotelierRepository = serviceHotelierRepository;
         this.commandeRepository = commandeRepository;
         this.ligneCommandeRepository = ligneCommandeRepository;
+        this.affectationRepository = affectationRepository;
         this.mapper = mapper;
         this.numerotationService = numerotationService;
         this.compteService = compteService;
         this.operationCompteService = operationCompteService;
+        this.exerciceService = exerciceService;
+        this.ecritureGenerationService = ecritureGenerationService;
+        this.ecritureComptableService = ecritureComptableService;
+        this.tauxTvaConfigService = tauxTvaConfigService;
+    }
+
+    /**
+     * Mapping {@link TypeLigneFacture} -&gt; {@link TypeServiceTva} (B4).
+     *
+     * <p>Source unique pour appliquer le bon taux TVA selon le type de
+     * ligne. Les producteurs internes ({@code fromReservation},
+     * {@code fromCommande}, etc.) appliquent ce mapping ; les DTOs externes
+     * ({@code LigneFactureCreateDto.tauxTva}) peuvent override manuellement
+     * pour des cas speciaux.</p>
+     */
+    private static TypeServiceTva tvaTypeForLigne(TypeLigneFacture type) {
+        if (type == null) {
+            return TypeServiceTva.AUTRE_SERVICE_HOTELIER;
+        }
+        return switch (type) {
+            case NUITEE -> TypeServiceTva.HEBERGEMENT_NUITEE;
+            case PRODUIT -> TypeServiceTva.RESTAURATION;
+            case COMMANDE -> TypeServiceTva.RESTAURATION;
+            case SERVICE -> TypeServiceTva.AUTRE_SERVICE_HOTELIER;
+            case DIVERS -> TypeServiceTva.AUTRE_SERVICE_HOTELIER;
+        };
     }
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "FACTURE_CREATION", entityType = "FACTURE")
     public FactureDto create(FactureCreateDto dto) {
+        // Garde anti-modification dans exercice clos (B1) : refuse la
+        // creation d'une facture dont la date appartient a un exercice
+        // EN_CLOTURE ou CLOTURE. Auto-cree l'exercice courant si necessaire.
+        LocalDate dateCible = dto.dateFacture() != null ? dto.dateFacture() : LocalDate.now();
+        exerciceService.assertOuvert(dateCible);
+
         Facture facture = new Facture();
         facture.setTypeFacture(dto.typeFacture() != null ? dto.typeFacture() : TypeFacture.FACTURE);
         // Validation tenant-aware des FK cross-module : Hibernate filtre la lecture
@@ -192,10 +251,13 @@ public class FactureServiceImpl implements FactureService {
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "FACTURE_EMISSION", entityType = "FACTURE")
     public FactureDto emettre(Long factureId) {
         Facture facture = factureRepository.findById(factureId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
         if (facture.getStatut() != StatutFacture.BROUILLON) {
+            // Idempotence : si deja EMISE / PAYEE / ANNULEE, refus avant
+            // generation d'ecriture (evite un 2e jeu d'ecritures).
             throw new BusinessException("error.facture.emission.statutInvalide");
         }
         facture.setStatut(StatutFacture.EMISE);
@@ -207,12 +269,28 @@ public class FactureServiceImpl implements FactureService {
         // (cash anonyme, facture fournisseur via fournisseurId).
         recordDebitOnAccountIfApplicable(facture);
 
-        logger.info("Facture emise : id={}, numero={}", facture.getFactureId(), facture.getNumeroFacture());
+        // Bloc B3 : generation atomique de l'ecriture VTE (411xxx D / 706xxx C).
+        // Si la generation echoue (exercice clos, compte invalide, etc.) la TX
+        // rollback et la facture reste BROUILLON. Cas AVOIR : skip - la
+        // contre-passation specifique sera traitee plus tard (cf. emettreEcritureFacture
+        // qui ne genere QUE pour TypeFacture.FACTURE via le compte client).
+        if (facture.getTypeFacture() == TypeFacture.FACTURE) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureFacture(facture);
+            if (ecritureId != null) {
+                facture.setEcritureEmissionId(ecritureId);
+                factureRepository.save(facture);
+            }
+        }
+
+        logger.info("Facture emise : id={}, numero={}, ecritureEmissionId={}",
+                facture.getFactureId(), facture.getNumeroFacture(),
+                facture.getEcritureEmissionId());
         return toDtoWithLignes(facture);
     }
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "FACTURE_ANNULATION", entityType = "FACTURE")
     public FactureDto annuler(Long factureId) {
         Facture facture = factureRepository.findById(factureId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
@@ -226,15 +304,30 @@ public class FactureServiceImpl implements FactureService {
         if (facture.getMontantPaye().compareTo(BigDecimal.ZERO) > 0) {
             throw new BusinessException("error.facture.annulation.dejaPayee");
         }
+        boolean avaitEcriture = facture.getEcritureEmissionId() != null;
         facture.setStatut(StatutFacture.ANNULEE);
         factureRepository.save(facture);
-        logger.info("Facture annulee : id={}, numero={}", facture.getFactureId(), facture.getNumeroFacture());
+
+        // Bloc B3 : contre-passation de l'ecriture VTE si la facture avait
+        // ete emise (donc avait genere une ecriture). La contre-passation
+        // se fait sur l'exercice OUVERT courant (cf. EcritureComptableService).
+        if (avaitEcriture) {
+            ecritureComptableService.contrePasser(
+                    facture.getEcritureEmissionId(),
+                    "Annulation facture " + facture.getNumeroFacture());
+        }
+
+        logger.info("Facture annulee : id={}, numero={}, contrePassation={}",
+                facture.getFactureId(), facture.getNumeroFacture(), avaitEcriture);
         return toDtoWithLignes(facture);
     }
 
     @Override
     @Transactional
     public FactureDto fromReservation(Long reservationId) {
+        // Garde anti-modification dans exercice clos (B1).
+        exerciceService.assertOuvert(LocalDate.now());
+
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
 
@@ -275,7 +368,11 @@ public class FactureServiceImpl implements FactureService {
         facture.setNumeroFacture(numerotationService.next(TypeNumerotation.FACT));
         Facture savedFacture = factureRepository.save(facture);
 
-        // Cree 1 ligne NUITEE par nuitee
+        // Cree 1 ligne NUITEE par nuitee. Taux TVA resolu via TauxTvaConfigService
+        // (B4) : par defaut HEBERGEMENT_NUITEE = 0% (exoneration de fait
+        // dans la pratique hoteliere mauritanienne). Un admin peut surcharger
+        // a 16% via /api/finance/tva/config si l'etablissement est concerne.
+        BigDecimal tauxNuitee = tauxTvaConfigService.getTaux(TypeServiceTva.HEBERGEMENT_NUITEE);
         for (Nuitee n : nuiteesAFacturer) {
             LigneFacture ligne = new LigneFacture();
             ligne.setFactureId(savedFacture.getFactureId());
@@ -284,7 +381,7 @@ public class FactureServiceImpl implements FactureService {
             ligne.setLibelle("Nuit du " + n.getDateNuit() + " - chambre " + n.getChambreId());
             ligne.setQuantite(BigDecimal.ONE);
             ligne.setPrixUnitaire(n.getPrixNuit());
-            ligne.setTauxTva(BigDecimal.ZERO);
+            ligne.setTauxTva(tauxNuitee);
             ligne.setDatePrestation(n.getDateNuit());
             LigneFacture savedLigne = ligneRepository.save(ligne);
 
@@ -297,7 +394,10 @@ public class FactureServiceImpl implements FactureService {
 
         // Tour 25 : cree 1 ligne COMMANDE par ligne de chaque commande REPORTE_CHAMBRE,
         // puis attache la commande a la facture (commande.factureId).
-        // Pas de TVA POS (cf. doctrine prompt_restaurant_pos.txt).
+        // Pas de TVA POS (doctrine prompt_restaurant_pos.txt) : la TVA n'est
+        // pas appliquee sur les commandes POS reportees en chambre. Si un hotel
+        // doit la facturer, il pourra surcharger via une evolution dediee
+        // (B4 ne casse pas la doctrine POS existante).
         for (Commande cmd : commandesReportees) {
             List<LigneCommande> lignesCmd = ligneCommandeRepository
                     .findByCommandeIdOrderByLigneIdAsc(cmd.getCommandeId());
@@ -334,6 +434,15 @@ public class FactureServiceImpl implements FactureService {
         // nuitees + commandes reportees (coherent avec la facture totale).
         recordDebitOnAccountIfApplicable(refreshed);
 
+        // Bloc B3 : ecriture VTE associee (411xxx D / 706xxx C).
+        if (refreshed.getTypeFacture() == TypeFacture.FACTURE) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureFacture(refreshed);
+            if (ecritureId != null) {
+                refreshed.setEcritureEmissionId(ecritureId);
+                factureRepository.save(refreshed);
+            }
+        }
+
         logger.info("Facture creee depuis reservation {} : id={}, numero={}, nuitees={}, commandesReportees={}, total={}",
                 reservationId, refreshed.getFactureId(), refreshed.getNumeroFacture(),
                 nuiteesAFacturer.size(), commandesReportees.size(), refreshed.getMontantTtc());
@@ -343,7 +452,100 @@ public class FactureServiceImpl implements FactureService {
 
     @Override
     @Transactional
+    public FactureDto previsionFromReservation(Long reservationId) {
+        // Garde anti-modification dans exercice clos (B1).
+        exerciceService.assertOuvert(LocalDate.now());
+
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+        if (reservation.getFactureId() != null) {
+            throw new BusinessException("error.facture.reservation.dejaFacturee");
+        }
+
+        // Toutes les nuitees de la reservation, quel que soit leur statut
+        // (incl. PREVUE - la facture est creee a l'avance).
+        List<Nuitee> nuitees = nuiteeRepository.findByReservationIdOrderByDateNuitAsc(reservationId);
+        if (nuitees.isEmpty()) {
+            throw new BusinessException("error.facture.reservation.aucuneNuitee");
+        }
+
+        // Cree la facture en BROUILLON puis EMISE (recalc montants atomique).
+        Facture facture = new Facture();
+        facture.setTypeFacture(TypeFacture.FACTURE);
+        facture.setReservationId(reservationId);
+        facture.setClientId(reservation.getClientPrincipalId());
+        facture.setSocieteId(reservation.getSocieteId());
+        facture.setDateFacture(LocalDate.now());
+        facture.setDevise("MRU");
+        facture.setStatut(StatutFacture.BROUILLON);
+        facture.setUserId(currentUserId());
+        facture.setNumeroFacture(numerotationService.next(TypeNumerotation.FACT));
+        Facture savedFacture = factureRepository.save(facture);
+
+        // 1 ligne NUITEE par nuitee. Pas de transition de statut (Nuitee
+        // reste PREVUE jusqu'au check-in / night audit). On rattache toutefois
+        // factureId + ligneFactureId pour la traçabilite. Taux TVA B4 :
+        // HEBERGEMENT_NUITEE (defaut 0%, surchargable).
+        BigDecimal tauxNuiteePrev = tauxTvaConfigService.getTaux(TypeServiceTva.HEBERGEMENT_NUITEE);
+        for (Nuitee n : nuitees) {
+            LigneFacture ligne = new LigneFacture();
+            ligne.setFactureId(savedFacture.getFactureId());
+            ligne.setTypeLigne(TypeLigneFacture.NUITEE);
+            ligne.setNuiteeId(n.getNuiteeId());
+            ligne.setLibelle("Nuit du " + n.getDateNuit() + " - chambre " + n.getChambreId());
+            ligne.setQuantite(BigDecimal.ONE);
+            ligne.setPrixUnitaire(n.getPrixNuit());
+            ligne.setTauxTva(tauxNuiteePrev);
+            ligne.setDatePrestation(n.getDateNuit());
+            LigneFacture savedLigne = ligneRepository.save(ligne);
+
+            n.setFactureId(savedFacture.getFactureId());
+            n.setLigneFactureId(savedLigne.getLigneFactureId());
+            // Volontairement PAS de setStatut(FACTUREE) : la nuitee reste
+            // PREVUE et passera CONSOMMEE/FACTUREE selon le flux check-in.
+            nuiteeRepository.save(n);
+        }
+
+        // Met a jour la reservation : factureId pointe sur la prevision.
+        reservation.setFactureId(savedFacture.getFactureId());
+        reservationRepository.save(reservation);
+
+        // Recalcule les montants HT/TVA/TTC (somme lignes via @PrePersist).
+        recalcMontantsFacture(savedFacture.getFactureId());
+
+        // Emet immediatement (la facture previsionnelle est figee : la
+        // reservation peut deja recevoir des paiements).
+        Facture refreshed = factureRepository.findById(savedFacture.getFactureId())
+                .orElseThrow(() -> new BusinessException("error.facture.notFound"));
+        refreshed.setStatut(StatutFacture.EMISE);
+        factureRepository.save(refreshed);
+
+        // DEBIT compte auxiliaire client (engage la dette des creation).
+        recordDebitOnAccountIfApplicable(refreshed);
+
+        // Bloc B3 : ecriture VTE associee.
+        if (refreshed.getTypeFacture() == TypeFacture.FACTURE) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureFacture(refreshed);
+            if (ecritureId != null) {
+                refreshed.setEcritureEmissionId(ecritureId);
+                factureRepository.save(refreshed);
+            }
+        }
+
+        logger.info("Facture previsionnelle creee depuis reservation {} : id={}, numero={}, nuitees={}, total={}",
+                reservationId, refreshed.getFactureId(), refreshed.getNumeroFacture(),
+                nuitees.size(), refreshed.getMontantTtc());
+
+        return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    @Transactional
     public FactureDto fromCommande(Long commandeId) {
+        // Garde anti-modification dans exercice clos (B1).
+        exerciceService.assertOuvert(LocalDate.now());
+
         Commande commande = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
 
@@ -399,6 +601,17 @@ public class FactureServiceImpl implements FactureService {
         // clientId existe (sinon facture cash anonyme : pas de compte auxiliaire).
         recordDebitOnAccountIfApplicable(refreshed);
 
+        // Bloc B3 : ecriture VTE associee (commande comptant -> facture EMISE,
+        // l'ecriture est posee maintenant ; l'encaissement separe declenchera
+        // sa propre ecriture CAI/BAN via PaiementServiceImpl.create()).
+        if (refreshed.getTypeFacture() == TypeFacture.FACTURE) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureFacture(refreshed);
+            if (ecritureId != null) {
+                refreshed.setEcritureEmissionId(ecritureId);
+                factureRepository.save(refreshed);
+            }
+        }
+
         // Met a jour la commande : facture_id pointe sur la facture creee.
         commande.setFactureId(refreshed.getFactureId());
         commandeRepository.save(commande);
@@ -424,11 +637,10 @@ public class FactureServiceImpl implements FactureService {
      * <p>Le compte est cree a la volee si inexistant (idempotent via
      * {@link CompteService#findOrCreateForClient(Long)}).</p>
      *
-     * <p>TODO Tour finance-2 : gerer le cas {@code TypeFacture.AVOIR} avec
-     * ecriture CREDIT sur le compte client (annulation comptable d'une dette
-     * precedemment debitee).</p>
+     * <p>Cas AVOIR (TypeFacture.AVOIR) : ecriture inverse traitee dans le
+     * Bloc B2 de la compta native (creation directe de l'OperationCompte
+     * CREDIT lors de l'emission de l'avoir).</p>
      */
-    @SuppressWarnings("deprecation")
     private void recordDebitOnAccountIfApplicable(Facture facture) {
         if (facture.getTypeFacture() != TypeFacture.FACTURE) {
             return; // AVOIR : differé Tour finance-2
@@ -484,7 +696,14 @@ public class FactureServiceImpl implements FactureService {
         ligne.setLibelle(dto.libelle());
         ligne.setQuantite(dto.quantite());
         ligne.setPrixUnitaire(dto.prixUnitaire());
-        ligne.setTauxTva(dto.tauxTva() != null ? dto.tauxTva() : BigDecimal.ZERO);
+        // B4 : taux TVA respecte l'override DTO (cas special, y compris 0
+        // explicite) ; sinon resolution via TauxTvaConfigService selon le
+        // type de ligne. Tous les tests existants passent BigDecimal.ZERO
+        // explicite -> compat 100%.
+        BigDecimal tauxResolu = (dto.tauxTva() != null)
+                ? dto.tauxTva()
+                : tauxTvaConfigService.getTaux(tvaTypeForLigne(dto.typeLigne()));
+        ligne.setTauxTva(tauxResolu);
         ligne.setDatePrestation(dto.datePrestation());
         ligneRepository.save(ligne);
     }
@@ -495,8 +714,13 @@ public class FactureServiceImpl implements FactureService {
      * est elle-meme recalculee via @PrePersist/@PreUpdate).
      *
      * <p>Arrondi HALF_UP scale=2.</p>
+     *
+     * <p>Tour 45 : visibilite passe a {@code public} pour implementer
+     * {@link FactureRecalcInternalService} (exposition aux services
+     * cross-module sans casser l'API REST).</p>
      */
-    void recalcMontantsFacture(Long factureId) {
+    @Override
+    public void recalcMontantsFacture(Long factureId) {
         Facture facture = factureRepository.findById(factureId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
         List<LigneFacture> lignes = ligneRepository.findByFactureIdOrderByLigneFactureIdAsc(factureId);
@@ -529,5 +753,267 @@ public class FactureServiceImpl implements FactureService {
             return principal.getUserId();
         }
         throw new BusinessException("error.user.unknown");
+    }
+
+    @Override
+    @Transactional
+    public FactureDto transfererLignes(TransfertLignesRequest request) {
+        if (request == null) {
+            throw new BusinessException("error.facture.transfert.requestRequired");
+        }
+        List<Long> lignesIds = request.lignesIds();
+        Long factureCibleId = request.factureCibleId();
+        if (lignesIds == null || lignesIds.isEmpty()) {
+            throw new BusinessException("error.facture.transfert.lignesRequired");
+        }
+        if (factureCibleId == null) {
+            throw new BusinessException("error.facture.transfert.factureCibleRequired");
+        }
+
+        // 1) Verifier la facture cible (tenant filter auto)
+        Facture cible = factureRepository.findById(factureCibleId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
+        if (cible.getStatut() == StatutFacture.PAYEE || cible.getStatut() == StatutFacture.ANNULEE) {
+            throw new BusinessException("error.facture.transfert.factureCibleTerminated");
+        }
+
+        // 2) Recuperer toutes les lignes et identifier les factures sources concernees.
+        // Verifier qu'aucune ligne n'a deja un paiement affecte.
+        Set<Long> sourcesIds = new HashSet<>();
+        List<LigneFacture> lignesAdeplacer = new ArrayList<>();
+        for (Long ligneId : lignesIds) {
+            LigneFacture ligne = ligneRepository.findById(ligneId)
+                    .orElseThrow(() -> new ResourceNotFoundException("error.ligneFacture.notFound"));
+            // Refus si la ligne a deja une affectation paiement.
+            // Tour 45 : on cherche par ligneFactureId (nouveau champ).
+            List<AffectationPaiement> affsByLigne = affectationRepository
+                    .findByFactureIdOrderByDateAffectationAsc(ligne.getFactureId())
+                    .stream()
+                    .filter(a -> ligneId.equals(a.getLigneFactureId()))
+                    .collect(Collectors.toList());
+            if (!affsByLigne.isEmpty()) {
+                throw new BusinessException("error.facture.transfert.lignePayee");
+            }
+            sourcesIds.add(ligne.getFactureId());
+            lignesAdeplacer.add(ligne);
+        }
+
+        // 3) Verifier le statut de toutes les factures sources distinctes.
+        for (Long sourceId : sourcesIds) {
+            Facture source = factureRepository.findById(sourceId)
+                    .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
+            if (source.getStatut() == StatutFacture.PAYEE || source.getStatut() == StatutFacture.ANNULEE) {
+                throw new BusinessException("error.facture.transfert.factureSourceTerminated");
+            }
+        }
+
+        // 4) Effectuer le transfert : reaffecter ligne.factureId vers la cible.
+        for (LigneFacture ligne : lignesAdeplacer) {
+            ligne.setFactureId(factureCibleId);
+            ligneRepository.save(ligne);
+        }
+
+        // 5) Recalculer les factures sources et la cible.
+        for (Long sourceId : sourcesIds) {
+            recalcMontantsFacture(sourceId);
+        }
+        recalcMontantsFacture(factureCibleId);
+
+        logger.info("Transfert lignes Tour 45 : {} lignes deplacees vers facture cible {}",
+                lignesAdeplacer.size(), factureCibleId);
+
+        Facture refreshed = factureRepository.findById(factureCibleId)
+                .orElseThrow(() -> new BusinessException("error.facture.notFound"));
+        return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    public List<LigneFactureRecapDto> findLignesRecapByReservation(Long reservationId) {
+        // Verifie l'appartenance tenant de la reservation (Hibernate filtre @TenantId).
+        reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+        // Cache local des numeros de facture pour eviter N+1 lookups quand
+        // plusieurs lignes appartiennent a la meme facture.
+        java.util.Map<Long, String> numeroByFactureId = new java.util.HashMap<>();
+        List<LigneFacture> lignes = ligneRepository.findByReservationId(reservationId);
+        List<LigneFactureRecapDto> result = new ArrayList<>(lignes.size());
+        for (LigneFacture l : lignes) {
+            String numero = numeroByFactureId.computeIfAbsent(l.getFactureId(), fid ->
+                    factureRepository.findById(fid).map(Facture::getNumeroFacture).orElse(""));
+
+            String description = (l.getLibelle() != null && !l.getLibelle().isBlank())
+                    ? l.getLibelle()
+                    : ("Ligne #" + l.getLigneFactureId());
+
+            // dateLigne : NUITEE -> nuitee.dateNuit ; sinon datePrestation (peut etre null).
+            LocalDate dateLigne = l.getDatePrestation();
+            if (l.getTypeLigne() == TypeLigneFacture.NUITEE && l.getNuiteeId() != null && dateLigne == null) {
+                dateLigne = nuiteeRepository.findById(l.getNuiteeId())
+                        .map(Nuitee::getDateNuit)
+                        .orElse(null);
+            }
+
+            BigDecimal montantTtc = l.getMontantTtc() != null ? l.getMontantTtc() : BigDecimal.ZERO;
+            BigDecimal montantPaye = affectationRepository
+                    .sumMontantByLigneFactureId(l.getLigneFactureId());
+            if (montantPaye == null) {
+                montantPaye = BigDecimal.ZERO;
+            }
+            BigDecimal reste = montantTtc.subtract(montantPaye).max(BigDecimal.ZERO);
+
+            result.add(new LigneFactureRecapDto(
+                    l.getLigneFactureId(),
+                    l.getFactureId(),
+                    numero,
+                    description,
+                    l.getTypeLigne(),
+                    dateLigne,
+                    montantTtc.setScale(2, RoundingMode.HALF_UP),
+                    montantPaye.setScale(2, RoundingMode.HALF_UP),
+                    reste.setScale(2, RoundingMode.HALF_UP)));
+        }
+        return result;
+    }
+
+    /**
+     * Tour 51bis - Bridge ServiceHotelier -&gt; LigneFacture.
+     *
+     * <p>Cf. {@link FactureService#addLigneService(LigneServiceCreateRequest)}
+     * pour le contrat metier.</p>
+     */
+    @Override
+    @Transactional
+    public LigneFactureDto addLigneService(LigneServiceCreateRequest request) {
+        if (request == null) {
+            throw new BusinessException("error.ligneService.requestRequired");
+        }
+
+        // Garde anti-modification dans exercice clos (B1).
+        exerciceService.assertOuvert(LocalDate.now());
+
+        // 1) Resolution du ServiceHotelier (filtre @TenantId Hibernate auto)
+        ServiceHotelier service = serviceHotelierRepository.findById(request.serviceId())
+                .orElseThrow(() -> new ResourceNotFoundException("error.serviceHotelier.notFound"));
+        if (!Boolean.TRUE.equals(service.getActif())) {
+            throw new BusinessException("error.ligneService.serviceInactif");
+        }
+
+        // 2) Resolution de la facture cible
+        Facture facture = resolveTargetFacture(request);
+
+        // 3) Refus si facture terminale (PAYEE ou ANNULEE)
+        if (facture.getStatut() == StatutFacture.PAYEE
+                || facture.getStatut() == StatutFacture.ANNULEE) {
+            throw new BusinessException("error.facture.statut.cloturee");
+        }
+
+        // 4) Construction de la ligne SERVICE
+        LigneFacture ligne = new LigneFacture();
+        ligne.setFactureId(facture.getFactureId());
+        ligne.setTypeLigne(TypeLigneFacture.SERVICE);
+        ligne.setServiceId(service.getServiceId());
+        String libelle = (request.description() != null && !request.description().isBlank())
+                ? request.description()
+                : service.getNom();
+        ligne.setLibelle(libelle);
+        ligne.setQuantite(request.quantite());
+        BigDecimal prixUnitaire = (request.prixUnitaireOverride() != null)
+                ? request.prixUnitaireOverride()
+                : service.getPrixUnitaire();
+        ligne.setPrixUnitaire(prixUnitaire != null ? prixUnitaire : BigDecimal.ZERO);
+        // B4 : override respecte ; sinon AUTRE_SERVICE_HOTELIER (defaut 16%).
+        BigDecimal tauxService = (request.tauxTva() != null)
+                ? request.tauxTva()
+                : tauxTvaConfigService.getTaux(TypeServiceTva.AUTRE_SERVICE_HOTELIER);
+        ligne.setTauxTva(tauxService);
+        ligne.setDatePrestation(LocalDate.now());
+
+        // Capture l'ancien montant pour calculer le delta DEBIT si facture deja emise
+        BigDecimal montantAvant = facture.getMontantTtc() != null
+                ? facture.getMontantTtc() : BigDecimal.ZERO;
+
+        LigneFacture saved = ligneRepository.save(ligne);
+
+        // 5) Recalcul des montants de la facture parente
+        recalcMontantsFacture(facture.getFactureId());
+
+        // 6) Si la facture est deja "comptablement engagee" (EMISE ou
+        //    PARTIELLEMENT_PAYEE) avec un client rattache, on enregistre un
+        //    DEBIT complementaire equivalent au delta (la nouvelle ligne ajoute
+        //    de l'engagement). Pour BROUILLON, pas de DEBIT - il sera passe a
+        //    l'emission via recordDebitOnAccountIfApplicable.
+        Facture refreshed = factureRepository.findById(facture.getFactureId())
+                .orElseThrow(() -> new BusinessException("error.facture.notFound"));
+        if ((refreshed.getStatut() == StatutFacture.EMISE
+                || refreshed.getStatut() == StatutFacture.PARTIELLEMENT_PAYEE)
+                && refreshed.getClientId() != null
+                && refreshed.getTypeFacture() == TypeFacture.FACTURE) {
+            BigDecimal montantApres = refreshed.getMontantTtc() != null
+                    ? refreshed.getMontantTtc() : BigDecimal.ZERO;
+            BigDecimal delta = montantApres.subtract(montantAvant);
+            if (delta.signum() > 0) {
+                var compte = compteService.findOrCreateForClient(refreshed.getClientId());
+                operationCompteService.recordDebit(
+                        compte.getCompteId(),
+                        delta,
+                        refreshed.getFactureId(),
+                        "Service " + service.getCode() + " - Facture " + refreshed.getNumeroFacture());
+            }
+        }
+
+        logger.info(
+                "LigneFacture SERVICE creee : ligneId={}, factureId={}, serviceId={}, montantTtc={}",
+                saved.getLigneFactureId(), facture.getFactureId(),
+                service.getServiceId(), saved.getMontantTtc());
+
+        // Recharge pour avoir montants HT/TVA/TTC recalcules par @PrePersist
+        LigneFacture freshLigne = ligneRepository.findById(saved.getLigneFactureId())
+                .orElseThrow(() -> new BusinessException("error.ligneFacture.notFound"));
+        return mapper.toLigneDto(freshLigne);
+    }
+
+    /**
+     * Resolution de la facture cible pour {@link #addLigneService}.
+     *
+     * <p>Priorite a {@code factureId} ; sinon recherche par
+     * {@code reservationId} (selectionne la facture non terminale la plus
+     * recente). Refuse si aucun des deux n'est fourni ou si la recherche
+     * par reservation ne donne aucun resultat exploitable.</p>
+     */
+    private Facture resolveTargetFacture(LigneServiceCreateRequest request) {
+        if (request.factureId() != null) {
+            return factureRepository.findById(request.factureId())
+                    .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
+        }
+        if (request.reservationId() != null) {
+            // Verifie l'appartenance tenant de la reservation (Hibernate @TenantId)
+            reservationRepository.findById(request.reservationId())
+                    .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+            List<Facture> factures = factureRepository.findByReservationId(request.reservationId());
+            // Selectionne la plus recente parmi celles non terminales (PAYEE / ANNULEE
+            // exclues) ; tri par factureId DESC pour avoir la derniere creee.
+            Facture target = null;
+            Long maxId = -1L;
+            for (Facture f : factures) {
+                if (f.getStatut() == StatutFacture.PAYEE
+                        || f.getStatut() == StatutFacture.ANNULEE) {
+                    continue;
+                }
+                if (f.getFactureId() != null && f.getFactureId() > maxId) {
+                    maxId = f.getFactureId();
+                    target = f;
+                }
+            }
+            if (target == null) {
+                // Aucune facture exploitable : si la reservation a des factures
+                // toutes terminees, c'est une erreur metier explicite ;
+                // sinon "aucune facture trouvee" -> meme erreur cible.
+                throw new BusinessException("error.ligneService.reservationSansFactureOuverte");
+            }
+            return target;
+        }
+        throw new BusinessException("error.ligneService.targetRequired");
     }
 }

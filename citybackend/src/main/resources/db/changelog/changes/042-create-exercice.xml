@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B1 (compta native) - exercice comptable par hotel.
+
+  Table finance.exercice : tenant-aware (hotel_id). Periode generalement
+  calendaire mais flexible (dateDebut / dateFin). Statut OUVERT -> EN_CLOTURE
+  -> CLOTURE (transition uniquement vers l'avant - audit comptable).
+
+  Garde anti-modification : FactureServiceImpl et PaiementServiceImpl
+  appellent ExerciceService.assertOuvert(LocalDate) avant tout INSERT/UPDATE
+  pour empecher d'antidater dans un exercice clos.
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="041-1-create-table-exercice" author="cityprojects">
+        <comment>
+            Exercice comptable par hotel. Cycle OUVERT -> EN_CLOTURE -> CLOTURE.
+            Verrou metier sur les ecritures factures/paiements via assertOuvert.
+        </comment>
+
+        <createTable tableName="exercice" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_exercice" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_debut" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_fin" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="OUVERT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_cloture" type="DATE"/>
+            <column name="cloture_by" type="VARCHAR(100)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="exercice" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_exercice_hotel"/>
+
+        <addUniqueConstraint
+                tableName="exercice" schemaName="finance"
+                columnNames="hotel_id, code"
+                constraintName="uk_exercice_hotel_code"/>
+
+        <addUniqueConstraint
+                tableName="exercice" schemaName="finance"
+                columnNames="hotel_id, date_debut, date_fin"
+                constraintName="uk_exercice_hotel_dates"/>
+
+        <sql>
+            ALTER TABLE finance.exercice
+            ADD CONSTRAINT chk_exercice_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.exercice
+            ADD CONSTRAINT chk_exercice_statut
+            CHECK (statut IN ('OUVERT', 'EN_CLOTURE', 'CLOTURE'))
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.exercice
+            ADD CONSTRAINT chk_exercice_dates
+            CHECK (date_debut &lt; date_fin)
+        </sql>
+
+        <createIndex tableName="exercice" schemaName="finance"
+                     indexName="ix_exercice_hotel_statut">
+            <column name="hotel_id"/>
+            <column name="statut"/>
+        </createIndex>
+
+        <createIndex tableName="exercice" schemaName="finance"
+                     indexName="ix_exercice_hotel_dates">
+            <column name="hotel_id"/>
+            <column name="date_debut"/>
+            <column name="date_fin"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="exercice" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

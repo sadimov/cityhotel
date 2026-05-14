@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B1 (compta native) - Plan Comptable General SYSCOHADA mauritanien.
+
+  Reference globale partagee entre tous les hotels (pas de hotel_id, pas
+  d'isolation tenant Hibernate). Lecture seule cote application : les
+  evolutions du PCG passent par de nouveaux changesets Liquibase.
+
+  Source : plan_comptable_mauritanien.pdf (racine projet) + SYSCOHADA AUDCIF.
+
+  Comptes seedes :
+    - Classe 1 : Ressources durables (capitaux, reserves, resultat, provisions)
+    - Classe 2 : Actif immobilise (terrains, batiments, mobilier, amortissements)
+    - Classe 3 : Stocks (marchandises, matieres premieres restaurant, consommables)
+    - Classe 4 : Tiers (fournisseurs, clients, personnel, etat, TVA)
+    - Classe 5 : Tresorerie (banque, caisses physiques, wallets mobile money)
+    - Classe 6 : Charges (achats, services exterieurs, personnel, amortissements)
+    - Classe 7 : Produits (ventes hotelieres, reductions, exceptionnels)
+
+  Les comptes utilisable=false sont des comptes de regroupement (titres) -
+  jamais references par une ecriture, sert au regroupement balance/bilan.
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="039-1-create-table-plan-comptable-general" author="cityprojects">
+        <comment>
+            Table referentielle du Plan Comptable General SYSCOHADA mauritanien.
+            PK metier = compte_code (10 chars). Pas de hotel_id (referentiel global).
+        </comment>
+
+        <createTable tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" type="VARCHAR(10)">
+                <constraints primaryKey="true" primaryKeyName="pk_plan_comptable_general" nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="classe" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="parent_code" type="VARCHAR(10)"/>
+            <column name="nature" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="sens_normal" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="utilisable" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="statut" type="VARCHAR(20)" defaultValue="ACTIF">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <sql>
+            ALTER TABLE finance.plan_comptable_general
+            ADD CONSTRAINT chk_plan_comptable_general_classe_range
+            CHECK (classe BETWEEN 1 AND 7)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.plan_comptable_general
+            ADD CONSTRAINT chk_plan_comptable_general_nature
+            CHECK (nature IN ('ACTIF', 'PASSIF', 'CHARGE', 'PRODUIT', 'MIXTE'))
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.plan_comptable_general
+            ADD CONSTRAINT chk_plan_comptable_general_sens
+            CHECK (sens_normal IN ('DEBITEUR', 'CREDITEUR', 'MIXTE'))
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.plan_comptable_general
+            ADD CONSTRAINT chk_plan_comptable_general_statut
+            CHECK (statut IN ('ACTIF', 'ARCHIVE'))
+        </sql>
+
+        <createIndex tableName="plan_comptable_general" schemaName="finance"
+                     indexName="ix_pcg_classe">
+            <column name="classe"/>
+            <column name="compte_code"/>
+        </createIndex>
+
+        <createIndex tableName="plan_comptable_general" schemaName="finance"
+                     indexName="ix_pcg_parent">
+            <column name="parent_code"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="plan_comptable_general" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Seed PCG mauritanien (SYSCOHADA).
+         Une seule transaction pour idempotence (preCondition sur table vide).
+         ==================================================================== -->
+    <changeSet id="039-2-seed-plan-comptable-general" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM finance.plan_comptable_general
+            </sqlCheck>
+        </preConditions>
+
+        <comment>
+            Seed exhaustif des comptes hoteliers principaux + comptes parents
+            non utilisables pour la hierarchie. Idempotent via preCondition.
+        </comment>
+
+        <!-- ============================== Classe 1 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="100000"/>
+            <column name="libelle" value="Comptes de ressources durables"/>
+            <column name="classe" valueNumeric="1"/>
+            <column name="parent_code"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="101100"/>
+            <column name="libelle" value="Capital social"/>
+            <column name="classe" valueNumeric="1"/>
+            <column name="parent_code" value="100000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="106300"/>
+            <column name="libelle" value="Reserves legales"/>
+            <column name="classe" valueNumeric="1"/>
+            <column name="parent_code" value="100000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="120000"/>
+            <column name="libelle" value="Resultat net de l'exercice"/>
+            <column name="classe" valueNumeric="1"/>
+            <column name="parent_code" value="100000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="141000"/>
+            <column name="libelle" value="Provisions reglementees"/>
+            <column name="classe" valueNumeric="1"/>
+            <column name="parent_code" value="100000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 2 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="200000"/>
+            <column name="libelle" value="Comptes d'actif immobilise"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="211000"/>
+            <column name="libelle" value="Terrains"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="231000"/>
+            <column name="libelle" value="Batiments"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="244000"/>
+            <column name="libelle" value="Mobilier hotelier"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="245000"/>
+            <column name="libelle" value="Materiel de transport"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="281100"/>
+            <column name="libelle" value="Amortissements terrains"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="283100"/>
+            <column name="libelle" value="Amortissements batiments"/>
+            <column name="classe" valueNumeric="2"/>
+            <column name="parent_code" value="200000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 3 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="300000"/>
+            <column name="libelle" value="Comptes de stocks"/>
+            <column name="classe" valueNumeric="3"/>
+            <column name="parent_code"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="311000"/>
+            <column name="libelle" value="Marchandises"/>
+            <column name="classe" valueNumeric="3"/>
+            <column name="parent_code" value="300000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="321000"/>
+            <column name="libelle" value="Matieres premieres restaurant"/>
+            <column name="classe" valueNumeric="3"/>
+            <column name="parent_code" value="300000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="324000"/>
+            <column name="libelle" value="Produits d'entretien et consommables"/>
+            <column name="classe" valueNumeric="3"/>
+            <column name="parent_code" value="300000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 4 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="400000"/>
+            <column name="libelle" value="Comptes de tiers"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code"/>
+            <column name="nature" value="MIXTE"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="401100"/>
+            <column name="libelle" value="Fournisseurs ordinaires"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="401200"/>
+            <column name="libelle" value="Fournisseurs immobilisations"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="411100"/>
+            <column name="libelle" value="Clients particuliers"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="411200"/>
+            <column name="libelle" value="Clients societes"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="418500"/>
+            <column name="libelle" value="Clients douteux"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="421000"/>
+            <column name="libelle" value="Personnel - remunerations dues"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="431000"/>
+            <column name="libelle" value="Securite sociale"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="441000"/>
+            <column name="libelle" value="Etat - impots et taxes"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="445600"/>
+            <column name="libelle" value="TVA deductible sur achats"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="445700"/>
+            <column name="libelle" value="TVA collectee sur ventes"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="445800"/>
+            <column name="libelle" value="TVA a decaisser"/>
+            <column name="classe" valueNumeric="4"/>
+            <column name="parent_code" value="400000"/>
+            <column name="nature" value="PASSIF"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 5 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="500000"/>
+            <column name="libelle" value="Comptes de tresorerie"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="512100"/>
+            <column name="libelle" value="Banque - compte principal"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="512200"/>
+            <column name="libelle" value="Banque - compte secondaire"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531100"/>
+            <column name="libelle" value="Caisse principale MRU"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531400"/>
+            <column name="libelle" value="Caisse Bankily"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531401"/>
+            <column name="libelle" value="Caisse Masrivi"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531402"/>
+            <column name="libelle" value="Caisse Sedad"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531403"/>
+            <column name="libelle" value="Caisse Click"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531404"/>
+            <column name="libelle" value="Caisse Amanety"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531405"/>
+            <column name="libelle" value="Caisse BFI Cash"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531406"/>
+            <column name="libelle" value="Caisse Moov Money"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="531407"/>
+            <column name="libelle" value="Caisse Gazapay"/>
+            <column name="classe" valueNumeric="5"/>
+            <column name="parent_code" value="500000"/>
+            <column name="nature" value="ACTIF"/>
+            <column name="sens_normal" value="MIXTE"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 6 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="600000"/>
+            <column name="libelle" value="Charges"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="601000"/>
+            <column name="libelle" value="Achats de marchandises"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="611100"/>
+            <column name="libelle" value="Fournitures de bureau"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="612000"/>
+            <column name="libelle" value="Transports"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="621000"/>
+            <column name="libelle" value="Sous-traitance"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="627000"/>
+            <column name="libelle" value="Services bancaires"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="641000"/>
+            <column name="libelle" value="Charges de personnel"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="656000"/>
+            <column name="libelle" value="Charges d'amortissement"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="671000"/>
+            <column name="libelle" value="Charges financieres"/>
+            <column name="classe" valueNumeric="6"/>
+            <column name="parent_code" value="600000"/>
+            <column name="nature" value="CHARGE"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <!-- ============================== Classe 7 ============================== -->
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="700000"/>
+            <column name="libelle" value="Produits"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="false"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706100"/>
+            <column name="libelle" value="Ventes - nuitees hebergement"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706200"/>
+            <column name="libelle" value="Ventes - restauration"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706300"/>
+            <column name="libelle" value="Ventes - bar"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706400"/>
+            <column name="libelle" value="Ventes - services a la chambre"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706500"/>
+            <column name="libelle" value="Ventes - blanchisserie"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="706800"/>
+            <column name="libelle" value="Ventes - autres services hoteliers"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="719100"/>
+            <column name="libelle" value="Reductions accordees sur ventes"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="DEBITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+        <insert tableName="plan_comptable_general" schemaName="finance">
+            <column name="compte_code" value="754000"/>
+            <column name="libelle" value="Produits exceptionnels"/>
+            <column name="classe" valueNumeric="7"/>
+            <column name="parent_code" value="700000"/>
+            <column name="nature" value="PRODUIT"/>
+            <column name="sens_normal" value="CREDITEUR"/>
+            <column name="utilisable" valueBoolean="true"/>
+            <column name="statut" value="ACTIF"/>
+        </insert>
+
+        <rollback>
+            <sql>DELETE FROM finance.plan_comptable_general</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

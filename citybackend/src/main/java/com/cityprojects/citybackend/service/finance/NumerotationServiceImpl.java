@@ -18,7 +18,7 @@ import java.util.Optional;
  * <p>
  * Strategie d'incrementation :
  * <ol>
- *   <li>Charger le compteur (type, exercice) avec
+ *   <li>Charger le compteur (type, exercice, discriminant) avec
  *       {@code SELECT ... FOR UPDATE}.</li>
  *   <li>S'il n'existe pas, creer une nouvelle ligne initialisee a 0.
  *       En cas d'insertion concurrente, le verrou pessimiste serialise
@@ -37,9 +37,18 @@ import java.util.Optional;
  *       perd sa garantie d'unicite.</li>
  * </ul>
  *
+ * <h3>Format produit</h3>
+ * <ul>
+ *   <li>Sans discriminant : {@code TYPE-{exercice}-{codePays}-{6 chiffres}},
+ *       ex. {@code FACT-2026-MR-000123}.</li>
+ *   <li>Avec discriminant (JRN obligatoire) :
+ *       {@code TYPE-{discriminant}-{exercice}-{codePays}-{6 chiffres}},
+ *       ex. {@code JRN-VTE-2026-MR-000007}.</li>
+ * </ul>
+ *
  * <h3>Performance</h3>
  * <p>Une invocation = un SELECT FOR UPDATE + un UPDATE + un SELECT hotel
- * (~3 round-trips DB). Acceptable pour la cible city ({}lt; 100 numeros/s).
+ * (~3 round-trips DB). Acceptable pour la cible city (&lt; 100 numeros/s).
  * Pas de cache : un cache transactionnel decorrele la valeur retournee de
  * la valeur reellement persistee, ce qui defait l'invariant "pas de trou".</p>
  */
@@ -62,8 +71,19 @@ public class NumerotationServiceImpl implements NumerotationService {
 
     @Override
     public String next(TypeNumerotation type) {
+        return next(type, null);
+    }
+
+    @Override
+    public String next(TypeNumerotation type, String discriminant) {
         if (type == null) {
             throw new IllegalArgumentException("error.numerotation.type.null");
+        }
+        // JRN exige un discriminant non vide (le code journal). Toute autre
+        // famille tolere un discriminant null (qui devient chaine vide en BDD).
+        String effectiveDiscriminant = (discriminant == null) ? "" : discriminant.trim();
+        if (type == TypeNumerotation.JRN && effectiveDiscriminant.isEmpty()) {
+            throw new IllegalArgumentException("error.numerotation.discriminant.required");
         }
 
         // TenantContext.get() leve si absent — double garde avec @RequireTenant
@@ -76,15 +96,16 @@ public class NumerotationServiceImpl implements NumerotationService {
         Integer exercice = LocalDate.now(clock).getYear();
 
         Optional<NumerotationSequence> existing =
-                sequenceRepository.findByTypeAndExerciceForUpdate(type, exercice);
+                sequenceRepository.findByTypeExerciceAndDiscriminantForUpdate(
+                        type, exercice, effectiveDiscriminant);
 
         NumerotationSequence sequence = existing.orElseGet(
-                () -> new NumerotationSequence(hotelId, type, exercice));
+                () -> new NumerotationSequence(hotelId, type, exercice, effectiveDiscriminant));
 
         long nextValue = sequence.getLastValue() + 1L;
         sequence.setLastValue(nextValue);
         // saveAndFlush garantit qu'en cas d'erreur posterieure dans la transaction
-        // appelante (insertion d'une facture par exemple), le compteur soit cohérent
+        // appelante (insertion d'une facture par exemple), le compteur soit coherent
         // avec le rollback global. Le save() classique suffirait, mais flush rend
         // explicite l'INSERT/UPDATE et facilite le debug si une contrainte casse.
         NumerotationSequence persisted = sequenceRepository.saveAndFlush(sequence);
@@ -92,8 +113,17 @@ public class NumerotationServiceImpl implements NumerotationService {
         Hotel hotel = hotelRepository.findById(hotelId)
                 .orElseThrow(() -> new IllegalStateException("error.hotel.notFound"));
 
-        return String.format("%s-%d-%s-%06d",
+        // Format avec ou sans discriminant
+        if (effectiveDiscriminant.isEmpty()) {
+            return String.format("%s-%d-%s-%06d",
+                    type.name(),
+                    exercice,
+                    hotel.getCodePays(),
+                    persisted.getLastValue());
+        }
+        return String.format("%s-%s-%d-%s-%06d",
                 type.name(),
+                effectiveDiscriminant,
                 exercice,
                 hotel.getCodePays(),
                 persisted.getLastValue());

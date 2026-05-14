@@ -3,6 +3,11 @@ import { Component, EventEmitter, Output } from '@angular/core';
 import { LigneCommande } from '../../../models/commande.model';
 import { PosStore } from '../state/pos.store';
 
+/** Type interne — événement émis pour déclencher une impression ticket. */
+export interface PrintTicketEvent {
+  commandeId: number;
+}
+
 /**
  * Panier en cours d'édition (colonne droite POS).
  *
@@ -20,6 +25,9 @@ import { PosStore } from '../state/pos.store';
 export class CartComponent {
   @Output() readonly checkoutComptant = new EventEmitter<void>();
   @Output() readonly reportChambre = new EventEmitter<void>();
+  @Output() readonly printCaisse = new EventEmitter<PrintTicketEvent>();
+  @Output() readonly printCuisine = new EventEmitter<PrintTicketEvent>();
+  @Output() readonly startNewOrder = new EventEmitter<void>();
 
   readonly cart$ = this.store.cart$;
   readonly total$ = this.store.total$;
@@ -28,6 +36,8 @@ export class CartComponent {
   readonly canCheckoutComptant$ = this.store.canCheckoutComptant$;
   readonly canReportChambre$ = this.store.canReportChambre$;
   readonly submitting$ = this.store.submitting$;
+  readonly lastCommande$ = this.store.lastCommande$;
+  readonly printingTicket$ = this.store.printingTicket$;
 
   constructor(private readonly store: PosStore) {}
 
@@ -67,6 +77,18 @@ export class CartComponent {
 
   onReportChambre(): void {
     this.reportChambre.emit();
+  }
+
+  onPrintCaisse(commandeId: number): void {
+    this.printCaisse.emit({ commandeId });
+  }
+
+  onPrintCuisine(commandeId: number): void {
+    this.printCuisine.emit({ commandeId });
+  }
+
+  onStartNewOrder(): void {
+    this.startNewOrder.emit();
   }
 
   trackByCartLine(_index: number, line: LigneCommande): string {

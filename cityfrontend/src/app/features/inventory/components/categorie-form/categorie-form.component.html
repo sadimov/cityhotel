@@ -1,0 +1,66 @@
+<section class="categorie-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      {{ (isEditing ? 'inventory.categories.form.titleEdit' : 'inventory.categories.form.titleCreate') | translate }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.categories.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="codeCategorie" class="form-label">{{ 'inventory.categories.fields.codeCategorie' | translate }}</label>
+          <input id="codeCategorie" type="text" class="form-control" formControlName="codeCategorie"
+            [class.is-invalid]="form.get('codeCategorie')?.invalid && form.get('codeCategorie')?.touched" />
+          @if (form.get('codeCategorie')?.touched && form.get('codeCategorie')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.categories.errors.codeRequired' | translate }}</div>
+          }
+          @if (form.get('codeCategorie')?.touched && form.get('codeCategorie')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.categories.errors.codePattern' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-md-8">
+          <label for="nomCategorie" class="form-label">{{ 'inventory.categories.fields.nomCategorie' | translate }}</label>
+          <input id="nomCategorie" type="text" class="form-control" formControlName="nomCategorie"
+            [class.is-invalid]="form.get('nomCategorie')?.invalid && form.get('nomCategorie')?.touched" />
+          @if (form.get('nomCategorie')?.touched && form.get('nomCategorie')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.categories.errors.nomRequired' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">{{ 'inventory.categories.fields.description' | translate }}</label>
+          <textarea id="description" class="form-control" rows="2" formControlName="description"></textarea>
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center gap-3 pt-3">
+          <div class="form-check">
+            <input id="actif" type="checkbox" class="form-check-input" formControlName="actif" />
+            <label for="actif" class="form-check-label">{{ 'inventory.categories.fields.actif' | translate }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">{{ 'inventory.actions.cancel' | translate }}</button>
+        <button type="submit" class="btn btn-primary" [disabled]="state === 'submitting'">
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'inventory.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

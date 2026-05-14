@@ -76,6 +76,15 @@ spring:
     time-zone: Africa/Nouakchott
     default-property-inclusion: NON_NULL
 
+  # Tour A : multipart pour upload avatar profil (limites coordonnees avec
+  # AvatarStorageService.MAX_BYTES = 2 MB ; max-request-size legerement plus
+  # large pour absorber les headers multipart).
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 2MB
+      max-request-size: 3MB
+
 # Configuration du serveur
 server:
   port: 8080
@@ -124,6 +133,12 @@ app:
     session:
       max-sessions-per-user: 3
       concurrent-sessions: 80  # Support pour 80 sessions simultanées
+
+  # Tour A : repertoire de stockage disque des avatars utilisateurs.
+  # Override via env AVATARS_DIR en prod (ex. /var/lib/citybackend/avatars).
+  uploads:
+    avatars:
+      dir: ${AVATARS_DIR:./uploads/avatars}
 
 # Configuration du logging
 logging:
@@ -175,6 +190,20 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: create-drop
+
+# Night audit (Tour 13) — heures paramétrables.
+# Valeurs par défaut (production) appliquées si commentées (cf. NightAuditScheduler).
+# Décommenter et adapter pour tester rapidement (ex. toutes les 2 minutes).
+city:
+  night-audit:
+    # Alerte 3 min avant l'heure cible (broadcast tous les utilisateurs connectés).
+    # Format Spring cron : "sec min hour day month dayOfWeek". Mettre "-" pour désactiver.
+    alert-cron: "0 27 16 * * *"
+    # Heure cible : ouvre la modale de lancement chez les ADMIN/SUPERADMIN/NIGHTAUDIT.
+    # Test rapide : "0 */2 * * * *" = toutes les 2 minutes
+    # Test très rapide : "0 * * * * *" = toutes les minutes
+    run-cron: "0 30 16 * * *"
+    timezone: Africa/Nouakchott
 
 logging:
   level:

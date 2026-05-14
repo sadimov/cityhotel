@@ -1,0 +1,70 @@
+<section class="journal-form">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">
+      {{ (editing ? 'comptabilite.journal.form.titleEdit' : 'comptabilite.journal.form.titleCreate') | translate }}
+    </h2>
+    <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+      <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+      {{ 'common.cancel' | translate }}
+    </button>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label for="code" class="form-label">{{ 'comptabilite.journal.fields.code' | translate }}</label>
+        <input
+          id="code"
+          type="text"
+          class="form-control"
+          formControlName="code"
+          maxlength="5"
+        />
+        @if (form.get('code')?.touched && form.get('code')?.invalid) {
+          <div class="invalid-feedback d-block">
+            @if (form.get('code')?.errors?.['required']) {
+              {{ 'error.journal.codeRequired' | translate }}
+            } @else if (form.get('code')?.errors?.['pattern']) {
+              {{ 'error.journal.codeFormat' | translate }}
+            }
+          </div>
+        }
+      </div>
+
+      <div class="col-md-6">
+        <label for="libelle" class="form-label">{{ 'comptabilite.journal.fields.libelle' | translate }}</label>
+        <input
+          id="libelle"
+          type="text"
+          class="form-control"
+          formControlName="libelle"
+          maxlength="100"
+        />
+        @if (form.get('libelle')?.touched && form.get('libelle')?.invalid) {
+          <div class="invalid-feedback d-block">
+            {{ 'error.journal.libelleRequired' | translate }}
+          </div>
+        }
+      </div>
+
+      <div class="col-md-3">
+        <label for="type" class="form-label">{{ 'comptabilite.journal.fields.type' | translate }}</label>
+        <select id="type" class="form-select" formControlName="type">
+          @for (t of typesJournal; track t) {
+            <option [value]="t">{{ typeKey(t) | translate }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+      <button type="submit" class="btn btn-primary" [disabled]="submitting">
+        <i class="bi bi-save me-1" aria-hidden="true"></i>
+        {{ 'common.save' | translate }}
+      </button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+        {{ 'common.cancel' | translate }}
+      </button>
+    </div>
+  </form>
+</section>

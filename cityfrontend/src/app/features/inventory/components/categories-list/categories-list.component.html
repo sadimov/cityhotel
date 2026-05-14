@@ -1,0 +1,98 @@
+<section class="categories-list">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'inventory.categories.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'inventory.categories.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="mb-3" style="max-width: 360px;">
+    <input
+      type="search"
+      class="form-control"
+      [placeholder]="'inventory.categories.list.search' | translate"
+      [value]="searchTerm"
+      (input)="onSearchChange($any($event.target).value)"
+      [attr.aria-label]="'inventory.categories.list.search' | translate"
+    />
+  </div>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.categories.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'inventory.categories.list.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'inventory.categories.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'inventory.categories.fields.codeCategorie' | translate }}</th>
+            <th>{{ 'inventory.categories.fields.nomCategorie' | translate }}</th>
+            <th>{{ 'inventory.categories.fields.description' | translate }}</th>
+            <th class="text-end">{{ 'inventory.categories.fields.nombreProduits' | translate }}</th>
+            <th>{{ 'inventory.categories.fields.actif' | translate }}</th>
+            <th class="text-end">{{ 'inventory.categories.list.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of page.content; track c.categorieId) {
+            <tr>
+              <td><code>{{ c.codeCategorie }}</code></td>
+              <td>{{ c.nomCategorie }}</td>
+              <td>{{ c.description || '-' }}</td>
+              <td class="text-end">{{ c.nombreProduits ?? 0 }}</td>
+              <td>
+                <span class="badge" [ngClass]="c.actif !== false ? 'text-bg-success' : 'text-bg-secondary'">
+                  {{ (c.actif !== false ? 'inventory.statut.actif' : 'inventory.statut.inactif') | translate }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button type="button" class="btn btn-sm btn-outline-info me-1" (click)="view(c)" [attr.aria-label]="'inventory.actions.view' | translate">
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="edit(c)" [attr.aria-label]="'inventory.actions.edit' | translate">
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(c)" [disabled]="deleting" [attr.aria-label]="'inventory.actions.delete' | translate">
+                  <i class="bi bi-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'inventory.categories.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

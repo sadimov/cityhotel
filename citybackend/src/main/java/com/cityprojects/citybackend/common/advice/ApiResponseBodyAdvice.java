@@ -65,7 +65,27 @@ public class ApiResponseBodyAdvice implements ResponseBodyAdvice<Object> {
         if (body instanceof String) {
             return body;
         }
-        // Cas 4 : tous les autres → wrapper standard ApiResponse.success(body)
+        // Cas 4 (Tour 40) : body binaire (byte[] / Resource) ou content-type non-JSON
+        // (PDF, XLSX, octet-stream...) → ne PAS wrapper. Le ResponseBodyAdvice se
+        // declenche AVANT serialisation, donc on intercepte ici pour les exports
+        // reporting (PDF/XLSX) qui doivent passer en binaire pur.
+        if (body instanceof byte[] || body instanceof org.springframework.core.io.Resource) {
+            return body;
+        }
+        if (selectedContentType != null && !isJsonCompatible(selectedContentType)) {
+            return body;
+        }
+        // Cas 5 : tous les autres → wrapper standard ApiResponse.success(body)
         return ApiResponse.success(body);
+    }
+
+    /**
+     * Indique si {@code contentType} est compatible avec une serialisation JSON
+     * (application/json, application/*+json, ...). Sinon (PDF, XLSX, image, ...)
+     * on ne wrap pas — le corps reste binaire pur.
+     */
+    private static boolean isJsonCompatible(MediaType contentType) {
+        return contentType.includes(MediaType.APPLICATION_JSON)
+                || (contentType.getSubtype() != null && contentType.getSubtype().endsWith("+json"));
     }
 }

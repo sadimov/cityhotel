@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B2 (compta native partie double) - ajout du discriminant sur la table
+  finance.numerotation_sequence.
+
+  Pourquoi : pour le type JRN (ecritures comptables) la sequence doit etre
+  segmentee par code de journal (VTE, ACH, BAN, CAI, OD, AVO). On ne peut pas
+  utiliser un seul compteur par exercice : chaque journal a sa propre suite
+  numerique (JRN-VTE-2026-MR-000001, JRN-ACH-2026-MR-000001, ...).
+
+  Backward compat : pour les types existants (FACT, PAY, BC, BS, AVOIR, ...),
+  le discriminant vaut chaine vide ('' - JAMAIS NULL pour eviter qu'un UNIQUE
+  ne devienne permissif sur NULL distinct). NumerotationServiceImpl traduit
+  un discriminant null en chaine vide cote applicatif.
+
+  Migration :
+    1. Ajouter la colonne discriminant VARCHAR(10) NOT NULL DEFAULT ''.
+    2. Backfill : les lignes existantes ont deja par defaut '' (la colonne
+       est cree avec DEFAULT '' donc l'INSERT precedent ne genere pas NULL,
+       et l'ADD COLUMN propage la valeur par defaut sur les lignes existantes).
+    3. Drop l'ancien UNIQUE (hotel_id, type, exercice).
+    4. Ajouter le nouveau UNIQUE (hotel_id, type, exercice, discriminant).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="045-1-add-discriminant-to-numerotation-sequence" author="cityprojects">
+        <comment>
+            Bloc B2 - Ajout colonne discriminant a numerotation_sequence pour
+            segmenter la sequence du type JRN par code de journal. Backward
+            compatible (default ''). Drop ancien UNIQUE + add nouveau UNIQUE.
+        </comment>
+
+        <addColumn tableName="numerotation_sequence" schemaName="finance">
+            <column name="discriminant" type="VARCHAR(10)" defaultValue="">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Drop ancien UNIQUE puis ajout du nouveau (hotel_id, type, exercice, discriminant). -->
+        <dropUniqueConstraint
+                tableName="numerotation_sequence" schemaName="finance"
+                constraintName="uk_numerotation_hotel_type_exercice"/>
+
+        <addUniqueConstraint
+                tableName="numerotation_sequence" schemaName="finance"
+                columnNames="hotel_id, type, exercice, discriminant"
+                constraintName="uk_numerotation_hotel_type_exercice_disc"/>
+
+        <rollback>
+            <dropUniqueConstraint
+                    tableName="numerotation_sequence" schemaName="finance"
+                    constraintName="uk_numerotation_hotel_type_exercice_disc"/>
+            <addUniqueConstraint
+                    tableName="numerotation_sequence" schemaName="finance"
+                    columnNames="hotel_id, type, exercice"
+                    constraintName="uk_numerotation_hotel_type_exercice"/>
+            <dropColumn tableName="numerotation_sequence" schemaName="finance" columnName="discriminant"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -107,6 +107,11 @@ public class SecurityConfig {
 
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
+                // Tour A : avatars servis en static (URL contient UUID, peu devinable).
+                // L'image n'est pas une donnee sensible ; la garde sur la mutation reste
+                // /api/profile/me/avatar (auth obligatoire).
+                .requestMatchers("/uploads/avatars/**").permitAll()
+
                 // /error est public mais NE doit JAMAIS embarquer le MDC dans le payload
                 // reponse (ni hotelId, ni user_id). Verifie dans JwtAuthenticationEntryPoint
                 // et GlobalExceptionHandler (audit Tour 7B I3 : OK au 2026-05-05).
@@ -116,6 +121,11 @@ public class SecurityConfig {
                 // Les anciennes regles dispersees /admin/hotels, /admin/users, /admin/roles
                 // ne matchaient rien (tous les controllers exposent /api/admin/...).
                 .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
+
+                // Tour A : ADMIN d'hotel gere ses users via /api/hotel/users/**.
+                // SUPERADMIN inclus pour cohrence (en pratique il passe par /api/admin/...).
+                // Le tenant est resolu par TenantContext cote service (jamais path-param).
+                .requestMatchers("/api/hotel/**").hasAnyRole("ADMIN", "SUPERADMIN")
 
                 // Endpoints de gestion des hotels - ADMIN et GERANT
                 .requestMatchers("/hotels/**").hasAnyRole("SUPERADMIN", "ADMIN", "GERANT")
@@ -143,7 +153,9 @@ public class SecurityConfig {
                 .requestMatchers("/reporting/**").hasAnyRole("ADMIN", "GERANT")
 
                 // Profile accessible a tous les utilisateurs authentifies
-                .requestMatchers("/profile/**").authenticated()
+                // (Tour A : /api/profile/** ajoute pour le self-service ; ancien
+                // /profile/** conserve pour compat avec d'anciens clients tests).
+                .requestMatchers("/profile/**", "/api/profile/**").authenticated()
 
                 // Toutes les autres requetes necessitent une authentification
                 .anyRequest().authenticated()

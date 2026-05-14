@@ -4,6 +4,7 @@ import com.cityprojects.citybackend.common.paging.PageableUtils;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.hebergement.TypeChambreCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.TypeChambreDto;
+import com.cityprojects.citybackend.entity.hebergement.CategorieEspace;
 import com.cityprojects.citybackend.entity.hebergement.Chambre;
 import com.cityprojects.citybackend.entity.hebergement.TypeChambre;
 import com.cityprojects.citybackend.exception.BusinessException;
@@ -63,6 +64,10 @@ public class TypeChambreServiceImpl implements TypeChambreService {
 
         TypeChambre entity = typeChambreMapper.toEntity(dto);
         entity.setActif(Boolean.TRUE);
+        // Tour 49 : defaut CHAMBRE si categorie non fournie (ancienne API).
+        if (entity.getCategorie() == null) {
+            entity.setCategorie(CategorieEspace.CHAMBRE);
+        }
         // PAS de setHotelId : Hibernate s'en charge.
 
         TypeChambre saved = typeChambreRepository.save(entity);
@@ -88,6 +93,10 @@ public class TypeChambreServiceImpl implements TypeChambreService {
         entity.setNbLitsMax(dto.nbLitsMax());
         entity.setNbPersonnesMax(dto.nbPersonnesMax());
         entity.setPrixBase(dto.prixBase());
+        // Tour 49 : update categorie si fournie (sinon on conserve l'existante).
+        if (dto.categorie() != null) {
+            entity.setCategorie(dto.categorie());
+        }
 
         return typeChambreMapper.toDto(typeChambreRepository.save(entity));
     }

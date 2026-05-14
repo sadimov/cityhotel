@@ -1,0 +1,108 @@
+<section class="grand-livre-viewer">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.grandLivre.title' | translate }}</h2>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="generate()" novalidate class="mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-2">
+        <label for="compteCode" class="form-label">{{ 'comptabilite.etats.fields.compteCode' | translate }}</label>
+        <input id="compteCode" type="text" class="form-control" formControlName="compteCode" maxlength="10" />
+      </div>
+      <div class="col-md-2">
+        <label for="exerciceId" class="form-label">{{ 'comptabilite.etats.fields.exerciceId' | translate }}</label>
+        <input id="exerciceId" type="number" class="form-control" formControlName="exerciceId" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateDebut" class="form-label">{{ 'comptabilite.etats.fields.dateDebut' | translate }}</label>
+        <input id="dateDebut" type="date" class="form-control" formControlName="dateDebut" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateFin" class="form-label">{{ 'comptabilite.etats.fields.dateFin' | translate }}</label>
+        <input id="dateFin" type="date" class="form-control" formControlName="dateFin" />
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-play-fill me-1" aria-hidden="true"></i>
+          {{ 'comptabilite.etats.actions.generate' | translate }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="exportXlsx()" [disabled]="exporting">
+          <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i> XLSX
+        </button>
+        <button type="button" class="btn btn-outline-danger" (click)="exportPdf()" [disabled]="exporting">
+          <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i> PDF
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">{{ 'error.etat.fetchFailed' | translate }}</div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">{{ 'comptabilite.grandLivre.empty' | translate }}</div>
+  } @else if (state === 'ready' && grandLivre) {
+    <div class="mb-3">
+      <strong>{{ 'comptabilite.balance.periode' | translate }}:</strong>
+      {{ grandLivre.dateDebut }} → {{ grandLivre.dateFin }}
+    </div>
+
+    @for (c of grandLivre.comptes; track c.compteCode) {
+      <div class="card mb-2">
+        <div class="card-header d-flex justify-content-between align-items-center" role="button" tabindex="0" (click)="toggle(c.compteCode)" (keydown.enter)="toggle(c.compteCode)" (keydown.space)="toggle(c.compteCode)">
+          <div>
+            <code>{{ c.compteCode }}</code> — <strong>{{ c.compteLibelle }}</strong>
+          </div>
+          <div class="d-flex gap-3 align-items-center">
+            <span class="text-muted">{{ 'comptabilite.grandLivre.reportInitial' | translate }}: <strong>{{ c.reportInitial | number:'1.2-2' }}</strong></span>
+            <span class="text-muted">D: <strong>{{ c.totalDebit | number:'1.2-2' }}</strong></span>
+            <span class="text-muted">C: <strong>{{ c.totalCredit | number:'1.2-2' }}</strong></span>
+            <span class="fw-bold" [class.text-success]="c.soldeFinal >= 0" [class.text-danger]="c.soldeFinal < 0">
+              {{ 'comptabilite.grandLivre.soldeFinal' | translate }}: {{ c.soldeFinal | number:'1.2-2' }}
+            </span>
+            <i class="bi" [class.bi-chevron-down]="!isExpanded(c.compteCode)" [class.bi-chevron-up]="isExpanded(c.compteCode)" aria-hidden="true"></i>
+          </div>
+        </div>
+        @if (isExpanded(c.compteCode)) {
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col">{{ 'comptabilite.grandLivre.lignes.date' | translate }}</th>
+                    <th scope="col">{{ 'comptabilite.grandLivre.lignes.numero' | translate }}</th>
+                    <th scope="col">{{ 'comptabilite.grandLivre.lignes.journal' | translate }}</th>
+                    <th scope="col">{{ 'comptabilite.grandLivre.lignes.libelle' | translate }}</th>
+                    <th scope="col">{{ 'comptabilite.grandLivre.lignes.reference' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'comptabilite.ecriture.lignes.debit' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'comptabilite.ecriture.lignes.credit' | translate }}</th>
+                    <th scope="col" class="text-end">{{ 'comptabilite.grandLivre.lignes.soldeProgressif' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of c.lignes; track $index) {
+                    <tr>
+                      <td>{{ l.dateComptable }}</td>
+                      <td><code>{{ l.numeroEcriture }}</code></td>
+                      <td><code>{{ l.journalCode }}</code></td>
+                      <td>{{ l.libelleEcriture }}</td>
+                      <td>{{ l.reference || '-' }}</td>
+                      <td class="text-end">{{ l.debit ? (l.debit | number:'1.2-2') : '-' }}</td>
+                      <td class="text-end">{{ l.credit ? (l.credit | number:'1.2-2') : '-' }}</td>
+                      <td class="text-end">{{ l.soldeProgressif | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+</section>

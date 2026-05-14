@@ -206,7 +206,7 @@ export class ReservationsListComponent implements OnInit, OnDestroy {
 
   /** Classe Bootstrap badge pour color-coder le statut. */
   badgeClass(statut: StatutReservation | undefined): string {
-    return STATUT_RESERVATION_BADGE_MAP[statut ?? StatutReservation.EN_ATTENTE];
+    return STATUT_RESERVATION_BADGE_MAP[statut ?? StatutReservation.CONFIRMEE];
   }
 
   /** Clé i18n du libellé statut. */

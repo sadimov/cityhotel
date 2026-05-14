@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 41 - PHASE 51 : ajout colonne source_canal sur hebergement.reservations.
+  Necessaire au rapport R-HEB-004 (repartition par canal de distribution).
+  Souplesse : pas de CHECK constraint (les libelles ci-dessous sont indicatifs).
+
+  Valeurs typees (informatif, geree cote code) :
+    DIRECT_HOTEL, WEBSITE, BOOKING_COM, EXPEDIA, AIRBNB,
+    AGENCE_VOYAGE, WALK_IN, TELEPHONE, EMAIL, AUTRE
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="044-1-add-source-canal-reservations" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="hebergement" tableName="reservations" columnName="source_canal"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="hebergement" tableName="reservations">
+            <column name="source_canal" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="reservations" schemaName="hebergement"
+                     indexName="ix_reservations_source_canal">
+            <column name="source_canal"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="hebergement" tableName="reservations"
+                       indexName="ix_reservations_source_canal"/>
+            <dropColumn schemaName="hebergement" tableName="reservations"
+                        columnName="source_canal"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

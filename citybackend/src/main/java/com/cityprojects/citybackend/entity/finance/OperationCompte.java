@@ -18,37 +18,23 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 /**
- * <h2>⚠️ DÉPRÉCATION SÉMANTIQUE — Tour 20 (2026-05-07)</h2>
+ * <h2>Mouvement sur compte AUXILIAIRE CLIENT / SOCIETE</h2>
  *
- * <p>Cette entité est un <b>journal de mouvements sur compte AUXILIAIRE CLIENT</b>
- * (DEBIT/CREDIT sur le solde de la dette client), <b>PAS</b> une écriture
- * comptable partie double SYSCOHADA. Le nom {@code OperationCompte} prête à
- * confusion : lire comme {@code MouvementCompteClient}.</p>
- *
- * <p><b>Limites structurelles vs SYSCOHADA</b> (cf. audit Tour 20) :</p>
- * <ul>
- *   <li>Une ligne au lieu de N≥2 (pas de partie double équilibrée).</li>
- *   <li>Pas de notion de journal (caisse/banque/ventes/achats).</li>
- *   <li>Pas de classes 1-9 (le compte référencé est un compte AUXILIAIRE,
- *       pas un compte du PCG).</li>
- *   <li>Pas d'exercice clôturé.</li>
- * </ul>
- *
- * <p>La <b>comptabilité générale</b> est <b>externalisée vers Dolibarr</b> via
- * bridge Feign REST (cf. {@code CLAUDE.md} racine §6.2). Cette entité reste
- * utile pour l'audit trail interne du solde client, mais ne couvre pas les
- * obligations comptables réglementaires (Article 14 OHADA).</p>
- *
- * <p>Renommage prévu : {@code OperationCompte} → {@code MouvementCompteClient}.</p>
- *
- * <h2>Rôle effectif</h2>
- *
- * <p>Journal d'audit des mouvements sur les comptes auxiliaires client/société.</p>
+ * <p>Journal d'audit des mouvements DEBIT/CREDIT sur les comptes auxiliaires
+ * (cf. {@link Compte}). Sert au calcul incremental du solde client, a la
+ * production du folio (releve de compte client), et a la reconciliation
+ * avec le compte collectif du PCG.</p>
  *
  * <p>Chaque modification de {@code Compte.soldeActuel} doit creer une
- * {@link OperationCompte} (DEBIT ou CREDIT). C'est l'audit trail
- * <b>auxiliaire client</b> : une lecture chronologique des operations doit
- * reconstituer le solde a tout instant.</p>
+ * {@link OperationCompte} (DEBIT ou CREDIT). Une lecture chronologique des
+ * operations doit reconstituer le solde a tout instant.</p>
+ *
+ * <p>Distinction avec une ecriture comptable au sens SYSCOHADA : un
+ * {@code OperationCompte} est un <em>mouvement auxiliaire</em>, pas une
+ * ecriture partie double equilibree. La comptabilite generale (journaux
+ * partie double, classes 1-9, FEC) est tenue nativement par l'application
+ * dans des blocs ulterieurs (B2-B5) ; B1 pose les referentiels (PCG,
+ * mapping, exercice) sans encore remplacer le grand-livre auxiliaire ci-dessous.</p>
  *
  * <h3>Contraintes</h3>
  * <ul>
@@ -66,7 +52,6 @@ import java.time.Instant;
  *   <li>{@code paiementId} : pour CREDIT issu d'un paiement (optionnel).</li>
  * </ul>
  */
-@Deprecated(since = "2026-05-07", forRemoval = false)
 @Entity
 @Table(name = "operations_comptes", schema = "finance")
 public class OperationCompte implements TenantAware {

@@ -18,32 +18,26 @@ import org.hibernate.annotations.TenantId;
 import java.math.BigDecimal;
 
 /**
- * <h2>⚠️ DÉPRÉCATION SÉMANTIQUE — Tour 20 (2026-05-07)</h2>
+ * <h2>Compte AUXILIAIRE CLIENT / SOCIETE</h2>
  *
- * <p>Cette entité représente un compte <b>AUXILIAIRE CLIENT/SOCIETE</b>
- * (suivi de la dette client par tenant), <b>PAS</b> un compte du Plan Comptable
- * Général SYSCOHADA / mauritanien. Le nom {@code Compte} prête à confusion :
- * lire comme {@code CompteClient} ou {@code CompteAuxiliaire}.</p>
+ * <p>Cette entite represente un compte <b>AUXILIAIRE</b> (suivi du solde
+ * client/societe par tenant), composante du grand-livre tenu nativement par
+ * l'application depuis B1 (2026-05-08).</p>
  *
- * <p>La <b>comptabilité générale</b> (partie double, classes 1-9, balances, bilan,
- * compte de résultat, journaux, FEC, exercices clôturés) est <b>externalisée
- * vers Dolibarr</b> via bridge Feign REST (cf. {@code CLAUDE.md} racine §6.2 +
- * audit Tour 20 : 5 🔴 + 6 🟠 + 5 💡).</p>
+ * <p>Distinction avec le Plan Comptable General : un {@code Compte} est
+ * un <em>auxiliaire</em> (tiers individualise) qui se rattache via mapping
+ * comptable a un compte collectif du PCG :
+ * <ul>
+ *   <li>par defaut, {@code CLIENT_PARTICULIER} -> {@code 411100},
+ *       {@code CLIENT_SOCIETE} -> {@code 411200} (cf. {@link TypeEvenementComptable}).</li>
+ *   <li>la balance auxiliaire client de cet hotel doit toujours egaler le
+ *       solde du compte collectif au PCG (controle de coherence Tour B5).</li>
+ * </ul>
  *
- * <p>Renommage prévu lors d'un tour de cleanup ultérieur :
- * {@code Compte} → {@code CompteClient}, {@code OperationCompte} →
- * {@code MouvementCompteClient}. {@code @Deprecated(forRemoval = false)} :
- * la fonction reste utile (auxiliaire client), seul le nom change.</p>
- *
- * <h2>Rôle effectif (auxiliaire client uniquement)</h2>
- *
- * <p>Compte client/societe (debit/credit) pour facturation differee.</p>
- *
- * <p>Permet de suivre le solde du d'un client ou d'une societe sur l'hotel.
- * Le solde est mis a jour de facon synchrone par {@link OperationCompte} a
- * chaque facturation (DEBIT) ou paiement (CREDIT). Le champ {@code soldeActuel}
- * est la source de verite ; les operations fournissent l'audit trail
- * <b>auxiliaire client</b> (pas une partie double SYSCOHADA).</p>
+ * <p>Le solde {@code soldeActuel} est mis a jour de facon synchrone par
+ * {@link OperationCompte} a chaque facturation (DEBIT) ou paiement (CREDIT).
+ * Le champ est la source de verite ; les operations fournissent l'audit trail
+ * auxiliaire client.</p>
  *
  * <h3>Numerotation</h3>
  * <p>{@code numeroCompte} suit le format simplifie {@code CPT-{type}-{client/societe-id}}
@@ -57,7 +51,6 @@ import java.math.BigDecimal;
  *   <li>Mutuellement exclusifs (regle service-side).</li>
  * </ul>
  */
-@Deprecated(since = "2026-05-07", forRemoval = false)
 @Entity
 @Table(
         name = "comptes",

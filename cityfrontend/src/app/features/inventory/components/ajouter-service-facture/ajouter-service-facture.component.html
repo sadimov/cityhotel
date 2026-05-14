@@ -1,0 +1,145 @@
+<section class="ajouter-service-facture">
+  <header class="mb-3">
+    <h2 class="h4 m-0">{{ 'inventory.bridgeService.title' | translate }}</h2>
+    <p class="text-muted small mb-0">{{ 'inventory.bridgeService.subtitle' | translate }}</p>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.bridgeService.messages.loadError' | translate }}
+    </div>
+  } @else {
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="reservationId" class="form-label">
+                {{ 'inventory.bridgeService.fields.reservation' | translate }}
+              </label>
+              <select
+                id="reservationId"
+                class="form-select"
+                formControlName="reservationId"
+                [class.is-invalid]="form.get('reservationId')?.invalid && form.get('reservationId')?.touched"
+              >
+                <option [ngValue]="null">--</option>
+                @for (r of reservations; track r.reservationId) {
+                  <option [ngValue]="r.reservationId">{{ reservationLabel(r) }}</option>
+                }
+              </select>
+              @if (form.get('reservationId')?.touched && form.get('reservationId')?.errors?.['required']) {
+                <div class="invalid-feedback d-block">
+                  {{ 'inventory.bridgeService.errors.reservationRequired' | translate }}
+                </div>
+              }
+              @if (reservations.length === 0) {
+                <div class="form-text text-warning">
+                  {{ 'inventory.bridgeService.messages.noReservations' | translate }}
+                </div>
+              }
+            </div>
+
+            <div class="col-md-6">
+              <label for="serviceId" class="form-label">
+                {{ 'inventory.bridgeService.fields.service' | translate }}
+              </label>
+              <select
+                id="serviceId"
+                class="form-select"
+                formControlName="serviceId"
+                [class.is-invalid]="form.get('serviceId')?.invalid && form.get('serviceId')?.touched"
+              >
+                <option [ngValue]="null">--</option>
+                @for (s of services; track s.serviceId) {
+                  <option [ngValue]="s.serviceId">{{ s.nomService }} ({{ s.codeService }})</option>
+                }
+              </select>
+              @if (form.get('serviceId')?.touched && form.get('serviceId')?.errors?.['required']) {
+                <div class="invalid-feedback d-block">
+                  {{ 'inventory.bridgeService.errors.serviceRequired' | translate }}
+                </div>
+              }
+            </div>
+
+            <div class="col-md-4">
+              <label for="quantite" class="form-label">
+                {{ 'inventory.bridgeService.fields.quantite' | translate }}
+              </label>
+              <input
+                id="quantite"
+                type="number"
+                class="form-control"
+                min="0"
+                step="0.01"
+                formControlName="quantite"
+                [class.is-invalid]="form.get('quantite')?.invalid && form.get('quantite')?.touched"
+              />
+            </div>
+
+            <div class="col-md-4">
+              <label for="prixUnitaire" class="form-label">
+                {{ 'inventory.bridgeService.fields.prixUnitaire' | translate }}
+                <small class="text-muted">({{ 'inventory.bridgeService.fields.optional' | translate }})</small>
+              </label>
+              <input
+                id="prixUnitaire"
+                type="number"
+                class="form-control"
+                min="0"
+                step="0.01"
+                formControlName="prixUnitaire"
+                [placeholder]="selectedService ? (selectedService.prixUnitaire | number:'1.2-2') : ''"
+              />
+            </div>
+
+            <div class="col-md-4">
+              <label for="datePrestation" class="form-label">
+                {{ 'inventory.bridgeService.fields.datePrestation' | translate }}
+              </label>
+              <input
+                id="datePrestation"
+                type="date"
+                class="form-control"
+                formControlName="datePrestation"
+              />
+            </div>
+
+            <div class="col-12">
+              <label for="libelle" class="form-label">
+                {{ 'inventory.bridgeService.fields.libelle' | translate }}
+                <small class="text-muted">({{ 'inventory.bridgeService.fields.optional' | translate }})</small>
+              </label>
+              <input
+                id="libelle"
+                type="text"
+                class="form-control"
+                formControlName="libelle"
+                [placeholder]="'inventory.bridgeService.fields.libellePlaceholder' | translate"
+              />
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end gap-2 mt-4">
+            <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+              {{ 'inventory.actions.cancel' | translate }}
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="state === 'submitting'">
+              @if (state === 'submitting') {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              }
+              <i class="bi bi-plus-circle me-1" aria-hidden="true"></i>
+              {{ 'inventory.bridgeService.actions.submit' | translate }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+</section>

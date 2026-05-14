@@ -28,9 +28,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h3>Pourquoi Resilience4j et pas Bucket4j</h3>
  * <p>Resilience4j est deja au pom (artifact {@code resilience4j-spring-boot3} 2.2.0)
- * pour les besoins Dolibarr. Reutiliser cette dependance evite d'introduire
- * Bucket4j et son ecosysteme. La config par defaut "auth-endpoints" est fournie
- * via {@code application.yml} sous {@code resilience4j.ratelimiter.instances}.</p>
+ * pour les besoins de resilience cross-cutting. Reutiliser cette dependance
+ * evite d'introduire Bucket4j et son ecosysteme. La config par defaut
+ * "auth-endpoints" est fournie via {@code application.yml} sous
+ * {@code resilience4j.ratelimiter.instances}.</p>
  *
  * <h3>Cache des RateLimiter par IP</h3>
  * <p>{@link ConcurrentHashMap} simple - une entree par IP source. Pas d'eviction

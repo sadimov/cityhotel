@@ -1,8 +1,10 @@
 <!-- Layout principal de l'application -->
 @if (!isLoading) {
-  <div class="main-layout">
+  <div class="main-layout" [class.is-fullscreen]="isFullscreenRoute">
     <!-- Header principal -->
     <app-header></app-header>
+    <!-- Notifier night audit (invisible, écoute SSE — Tour 47) -->
+    <app-night-audit-notifier></app-night-audit-notifier>
     <!-- Contenu principal avec sidebar -->
     <div class="layout-content">
       <!-- Sidebar de navigation -->

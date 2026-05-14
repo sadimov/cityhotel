@@ -1,0 +1,100 @@
+<section class="plan-comptable-list">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.planComptable.list.title' | translate }}</h2>
+  </header>
+
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <select
+      class="form-select"
+      style="max-width: 200px;"
+      [value]="selectedClasse"
+      (change)="onClasseChange($any($event.target).value)"
+      [attr.aria-label]="'comptabilite.planComptable.fields.classe' | translate"
+    >
+      <option value="">{{ 'comptabilite.planComptable.list.filterAllClasses' | translate }}</option>
+      @for (c of classes; track c) {
+        <option [value]="c">{{ 'comptabilite.planComptable.classe' | translate }} {{ c }}</option>
+      }
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'comptabilite.planComptable.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'comptabilite.planComptable.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.compteCode' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.libelle' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.classe' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.nature' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.sensNormal' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.utilisable' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.statut' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of comptes; track c.compteCode) {
+            <tr>
+              <td><code>{{ c.compteCode }}</code></td>
+              <td>{{ c.libelle }}</td>
+              <td>{{ c.classe }}</td>
+              <td>
+                <span class="badge" [ngClass]="natureBadge[c.nature]">
+                  {{ natureKey(c.nature) | translate }}
+                </span>
+              </td>
+              <td>{{ ('comptabilite.planComptable.sens.' + c.sensNormal) | translate }}</td>
+              <td>
+                @if (c.utilisable) {
+                  <i class="bi bi-check-circle-fill text-success" aria-hidden="true"></i>
+                } @else {
+                  <i class="bi bi-dash-circle text-muted" aria-hidden="true"></i>
+                }
+              </td>
+              <td>
+                <span class="badge" [ngClass]="statutBadge[c.statut]">
+                  {{ statutKey(c.statut) | translate }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav>
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

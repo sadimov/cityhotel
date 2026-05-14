@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template Jasper R-HEB-005 (Tour 41 P1) - KPIs reception jour.
+     Itere sur List<KpiReceptionDto> (1 element). -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="kpi-reception" pageWidth="595" pageHeight="842"
+              columnWidth="555" leftMargin="20" rightMargin="20"
+              topMargin="20" bottomMargin="20" uuid="c1f1f1a1-0000-0000-0000-000000000005">
+
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="HOTEL_ID" class="java.lang.Long"/>
+    <parameter name="DATE" class="java.time.LocalDate"/>
+    <parameter name="NB_CHECK_IN" class="java.lang.Long"/>
+    <parameter name="NB_CHECK_OUT" class="java.lang.Long"/>
+    <parameter name="NB_WALK_IN" class="java.lang.Long"/>
+    <parameter name="NB_ACTIVES" class="java.lang.Long"/>
+    <parameter name="NB_NO_SHOW" class="java.lang.Long"/>
+    <parameter name="TOTAL_CHAMBRES" class="java.lang.Long"/>
+    <parameter name="NB_OCCUPEES" class="java.lang.Long"/>
+    <parameter name="TAUX_OCCUPATION" class="java.math.BigDecimal"/>
+
+    <field name="date" class="java.time.LocalDate"/>
+
+    <title>
+        <band height="80">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="30"/>
+                <textElement>
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="32" width="555" height="16"/>
+                <textFieldExpression><![CDATA["Hotel #" + $P{HOTEL_ID} + "  -  Date " + $P{DATE}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <detail>
+        <band height="200">
+            <staticText><reportElement x="0" y="0" width="280" height="20"/><text><![CDATA[Check-in du jour]]></text></staticText>
+            <textField><reportElement x="280" y="0" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_CHECK_IN}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="22" width="280" height="20"/><text><![CDATA[Check-out du jour]]></text></staticText>
+            <textField><reportElement x="280" y="22" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_CHECK_OUT}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="44" width="280" height="20"/><text><![CDATA[Walk-in]]></text></staticText>
+            <textField><reportElement x="280" y="44" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_WALK_IN}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="66" width="280" height="20"/><text><![CDATA[Reservations actives]]></text></staticText>
+            <textField><reportElement x="280" y="66" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_ACTIVES}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="88" width="280" height="20"/><text><![CDATA[No-show]]></text></staticText>
+            <textField><reportElement x="280" y="88" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_NO_SHOW}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="110" width="280" height="20"/><text><![CDATA[Total chambres actives]]></text></staticText>
+            <textField><reportElement x="280" y="110" width="275" height="20"/><textFieldExpression><![CDATA[$P{TOTAL_CHAMBRES}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="132" width="280" height="20"/><text><![CDATA[Chambres occupees]]></text></staticText>
+            <textField><reportElement x="280" y="132" width="275" height="20"/><textFieldExpression><![CDATA[$P{NB_OCCUPEES}]]></textFieldExpression></textField>
+
+            <staticText><reportElement x="0" y="154" width="280" height="20"/><textElement><font isBold="true"/></textElement><text><![CDATA[Taux d'occupation du jour]]></text></staticText>
+            <textField><reportElement x="280" y="154" width="275" height="20"/><textElement><font isBold="true"/></textElement><textFieldExpression><![CDATA[$P{TAUX_OCCUPATION} + " %"]]></textFieldExpression></textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="20">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="20"/>
+                <textElement textAlignment="Right"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER} + " - City Hotel reporting"]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

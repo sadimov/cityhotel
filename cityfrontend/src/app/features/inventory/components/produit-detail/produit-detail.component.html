@@ -1,0 +1,160 @@
+<section class="produit-detail">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'inventory.produit.detail.title' | translate }}</h2>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.back' | translate }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="edit()" [disabled]="!entity">
+        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.edit' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.produit.form.loadError' | translate }}
+    </div>
+  } @else if (entity) {
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.codeProduit' | translate }}</dt>
+          <dd class="col-sm-8"><code>{{ entity.codeProduit }}</code></dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.nomProduit' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.nomProduit }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.description' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.description || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.categorie' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.nomCategorie || ('#' + entity.categorieId) }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.uniteMesure' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.uniteMesure }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.prixUnitaire' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.prixUnitaire | number:'1.2-2' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.stockActuel' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.stockActuel | number:'1.0-2' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.seuilAlerte' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.seuilAlerte | number:'1.0-2' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.seuilCritique' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.seuilCritique | number:'1.0-2' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.statutStock' | translate }}</dt>
+          <dd class="col-sm-8">
+            <span class="badge" [ngClass]="badgeClassStock(entity.statutStock)">
+              {{ statutStockKey(entity.statutStock) | translate }}
+            </span>
+          </dd>
+
+          @if (entity.nomFournisseurPrincipal) {
+            <dt class="col-sm-4">{{ 'inventory.produit.fields.fournisseurPrincipal' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.nomFournisseurPrincipal }}</dd>
+          }
+
+          @if (entity.valeurStock != null) {
+            <dt class="col-sm-4">{{ 'inventory.produit.detail.valeurStock' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.valeurStock | number:'1.2-2' }}</dd>
+          }
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.estFacturable' | translate }}</dt>
+          <dd class="col-sm-8">
+            <span class="badge" [ngClass]="entity.estFacturable !== false ? 'text-bg-success' : 'text-bg-secondary'">
+              {{ (entity.estFacturable !== false ? 'inventory.statut.actif' : 'inventory.statut.inactif') | translate }}
+            </span>
+          </dd>
+
+          <dt class="col-sm-4">{{ 'inventory.produit.fields.actif' | translate }}</dt>
+          <dd class="col-sm-8">
+            <span class="badge" [ngClass]="entity.actif !== false ? 'text-bg-success' : 'text-bg-secondary'">
+              {{ (entity.actif !== false ? 'inventory.statut.actif' : 'inventory.statut.inactif') | translate }}
+            </span>
+          </dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h3 class="h6 m-0">{{ 'inventory.produit.detail.mouvementsTitle' | translate }}</h3>
+        @if (mouvementsLoading) {
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        }
+      </div>
+      <div class="card-body p-0">
+        @if (mouvementsPage; as mp) {
+          @if ((mp.numberOfElements ?? 0) > 0) {
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>{{ 'inventory.mouvements.fields.dateMouvement' | translate }}</th>
+                    <th>{{ 'inventory.mouvements.fields.typeMouvement' | translate }}</th>
+                    <th class="text-end">{{ 'inventory.mouvements.fields.quantite' | translate }}</th>
+                    <th class="text-end">{{ 'inventory.mouvements.fields.stockAvant' | translate }}</th>
+                    <th class="text-end">{{ 'inventory.mouvements.fields.stockApres' | translate }}</th>
+                    <th>{{ 'inventory.mouvements.fields.referenceDocument' | translate }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (m of mp.content; track m.mouvementId) {
+                    <tr>
+                      <td>{{ m.dateMouvement }}</td>
+                      <td>
+                        <span class="badge" [ngClass]="badgeClassMouvement(m.typeMouvement)">
+                          {{ ('inventory.mouvements.type.' + m.typeMouvement) | translate }}
+                        </span>
+                      </td>
+                      <td class="text-end">{{ m.quantite | number:'1.0-2' }}</td>
+                      <td class="text-end">{{ m.stockAvant | number:'1.0-2' }}</td>
+                      <td class="text-end">{{ m.stockApres | number:'1.0-2' }}</td>
+                      <td>{{ m.referenceDocument || '-' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (mp.totalPages > 1) {
+              <nav class="p-2" [attr.aria-label]="'inventory.mouvements.list.pagination' | translate">
+                <ul class="pagination pagination-sm justify-content-end m-0">
+                  <li class="page-item" [class.disabled]="mp.first">
+                    <button type="button" class="page-link" (click)="loadMouvementsPage(mp.number - 1)" [disabled]="mp.first">&laquo;</button>
+                  </li>
+                  @for (p of mouvementsPagesArray; track p) {
+                    <li class="page-item" [class.active]="p === mp.number">
+                      <button type="button" class="page-link" (click)="loadMouvementsPage(p)">{{ p + 1 }}</button>
+                    </li>
+                  }
+                  <li class="page-item" [class.disabled]="mp.last">
+                    <button type="button" class="page-link" (click)="loadMouvementsPage(mp.number + 1)" [disabled]="mp.last">&raquo;</button>
+                  </li>
+                </ul>
+              </nav>
+            }
+          } @else if (!mouvementsLoading) {
+            <div class="text-center text-muted py-4">{{ 'inventory.mouvements.list.empty' | translate }}</div>
+          }
+        } @else if (!mouvementsLoading) {
+          <div class="text-center text-muted py-4">{{ 'inventory.mouvements.list.empty' | translate }}</div>
+        }
+      </div>
+    </div>
+  }
+</section>

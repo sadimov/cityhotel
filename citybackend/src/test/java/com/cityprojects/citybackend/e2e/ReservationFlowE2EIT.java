@@ -198,6 +198,16 @@ class ReservationFlowE2EIT {
     }
 
     private void cleanAll() {
+        // Tour 44 Phase 1 : la chaine create() de reservation genere desormais
+        // une facture previsionnelle + lignes + DEBIT compte client. Purger
+        // d'abord les tables finance (FK lignes_factures.nuitee_id et
+        // factures.reservation_id) avant de toucher hebergement.
+        jdbcTemplate.update("DELETE FROM finance.affectations_paiements");
+        jdbcTemplate.update("DELETE FROM finance.operations_comptes");
+        jdbcTemplate.update("DELETE FROM finance.paiements");
+        jdbcTemplate.update("DELETE FROM finance.lignes_factures");
+        jdbcTemplate.update("DELETE FROM finance.factures");
+        jdbcTemplate.update("DELETE FROM finance.comptes");
         jdbcTemplate.update("DELETE FROM hebergement.nuitees");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_clients");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_chambres");

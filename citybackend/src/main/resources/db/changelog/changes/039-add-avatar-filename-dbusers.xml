@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour A : ajout de la colonne avatar_filename sur core.dbusers pour le
+    self-service profil. Nom de fichier de l'avatar stocke disque (cf.
+    AvatarStorageService + WebConfig). Format : user-{userId}-{uuid}.{ext}.
+
+    - Nullable : un user n'a pas forcement un avatar.
+    - 255 chars : suffisant (uuid 36 + prefixe + ext).
+    - Pas de migration : les users existants restent NULL (avatar par defaut
+      cote front).
+    ============================================================================
+    -->
+
+    <changeSet id="039-add-avatar-filename-dbusers" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="core" tableName="dbusers" columnName="avatar_filename"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="core" tableName="dbusers">
+            <column name="avatar_filename" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

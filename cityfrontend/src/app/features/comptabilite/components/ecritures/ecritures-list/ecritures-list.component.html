@@ -1,0 +1,107 @@
+<section class="ecritures-list">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.ecriture.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'comptabilite.ecriture.actions.create' | translate }}
+    </button>
+  </header>
+
+  <div class="mb-3 d-flex flex-wrap gap-2">
+    <select
+      class="form-select"
+      style="max-width: 220px;"
+      [value]="selectedStatut"
+      (change)="onStatutChange($any($event.target).value)"
+      [attr.aria-label]="'comptabilite.ecriture.fields.statut' | translate"
+    >
+      <option value="">{{ 'comptabilite.ecriture.list.filterAll' | translate }}</option>
+      @for (s of statuts; track s) {
+        <option [value]="s">{{ statutKey(s) | translate }}</option>
+      }
+    </select>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'comptabilite.ecriture.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'comptabilite.ecriture.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.numero' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.dateComptable' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.journal' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.exercice' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.libelle' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.ecriture.fields.totalDebit' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.ecriture.fields.totalCredit' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.fields.statut' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ec of ecritures; track ec.id) {
+            <tr>
+              <td><code>{{ ec.numero }}</code></td>
+              <td>{{ ec.dateComptable }}</td>
+              <td><code>{{ ec.journalCode }}</code> — {{ ec.journalLibelle }}</td>
+              <td><code>{{ ec.exerciceCode }}</code></td>
+              <td>{{ ec.libelle }}</td>
+              <td class="text-end">{{ ec.totalDebit | number:'1.2-2' }}</td>
+              <td class="text-end">{{ ec.totalCredit | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeMap[ec.statut]">
+                  {{ statutKey(ec.statut) | translate }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="view(ec)"
+                  [attr.aria-label]="'common.view' | translate"
+                >
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav>
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 51 - inventory : types_services_hoteliers + services_hoteliers.
+
+  Un service hotelier = prestation ponctuelle facturee au client durant son
+  sejour (spa, blanchisserie, transfert aeroport, location de salle, etc.).
+  Categorise par TypeServiceHotelier (Restauration, Bien-etre, Transport,
+  Blanchisserie, Autre).
+
+  Pattern Tour 16 reutilise :
+  - Schema 'inventory'.
+  - PK BIGSERIAL metier (type_service_id, service_id).
+  - hotel_id BIGINT NOT NULL + FK core.hotels + CHECK > 0 (sentinel ROOT
+    interdit comme hotel_id reel).
+  - created_at/updated_at TIMESTAMP WITH TIME ZONE.
+  - created_by NOT NULL default 'system', updated_by nullable.
+  - UNIQUE (hotel_id, code) sur les deux tables.
+
+  Pas de FK vers une table finance : l'integration finance se fait via le
+  champ id_service dans LigneFacture (type SERVICE) cote module finance,
+  sans contrainte JPA bidirectionnelle (cross-module).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 036-1 : table inventory.types_services_hoteliers
+         ==================================================================== -->
+    <changeSet id="036-1-create-table-types-services-hoteliers" author="cityprojects">
+        <comment>
+            Categorisation metier des services hoteliers (Restauration,
+            Bien-etre, Transport, Blanchisserie, Autre...). code unique par hotel.
+        </comment>
+
+        <createTable tableName="types_services_hoteliers" schemaName="inventory">
+            <column name="type_service_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_types_services_hoteliers" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="types_services_hoteliers" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_types_services_hoteliers_hotel"/>
+
+        <addUniqueConstraint
+            tableName="types_services_hoteliers" schemaName="inventory"
+            columnNames="hotel_id, code"
+            constraintName="uk_types_services_hoteliers_hotel_code"/>
+
+        <sql>
+            ALTER TABLE inventory.types_services_hoteliers
+            ADD CONSTRAINT chk_types_services_hoteliers_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="types_services_hoteliers" schemaName="inventory"
+                     indexName="ix_types_services_hoteliers_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="types_services_hoteliers" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 036-2 : table inventory.services_hoteliers
+         ==================================================================== -->
+    <changeSet id="036-2-create-table-services-hoteliers" author="cityprojects">
+        <comment>
+            Services hoteliers facturables au client (prestation ponctuelle).
+            code unique par hotel ; reference un TypeServiceHotelier (FK).
+            prix_unitaire en MRU (ouguiya) ; unite = "prestation", "heure",
+            "kg", etc.
+        </comment>
+
+        <createTable tableName="services_hoteliers" schemaName="inventory">
+            <column name="service_id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_services_hoteliers" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_service_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="nom" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="prix_unitaire" type="DECIMAL(10,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="unite" type="VARCHAR(20)" defaultValue="prestation">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+            baseTableName="services_hoteliers" baseTableSchemaName="inventory"
+            baseColumnNames="hotel_id"
+            referencedTableName="hotels" referencedTableSchemaName="core"
+            referencedColumnNames="hotel_id"
+            constraintName="fk_services_hoteliers_hotel"/>
+
+        <addForeignKeyConstraint
+            baseTableName="services_hoteliers" baseTableSchemaName="inventory"
+            baseColumnNames="type_service_id"
+            referencedTableName="types_services_hoteliers" referencedTableSchemaName="inventory"
+            referencedColumnNames="type_service_id"
+            constraintName="fk_services_hoteliers_type"/>
+
+        <addUniqueConstraint
+            tableName="services_hoteliers" schemaName="inventory"
+            columnNames="hotel_id, code"
+            constraintName="uk_services_hoteliers_hotel_code"/>
+
+        <sql>
+            ALTER TABLE inventory.services_hoteliers
+            ADD CONSTRAINT chk_services_hoteliers_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE inventory.services_hoteliers
+            ADD CONSTRAINT chk_services_hoteliers_prix_positive CHECK (prix_unitaire &gt;= 0)
+        </sql>
+
+        <createIndex tableName="services_hoteliers" schemaName="inventory"
+                     indexName="ix_services_hoteliers_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <createIndex tableName="services_hoteliers" schemaName="inventory"
+                     indexName="ix_services_hoteliers_hotel_type">
+            <column name="hotel_id"/>
+            <column name="type_service_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="services_hoteliers" schemaName="inventory"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

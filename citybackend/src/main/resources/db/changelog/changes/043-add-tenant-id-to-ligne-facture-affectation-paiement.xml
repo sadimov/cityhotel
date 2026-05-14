@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B1 (Fix audit 2026-05-08 L1) - ajout @TenantId sur lignes_factures et
+  affectations_paiements.
+
+  Probleme : ces deux tables enfants n'avaient pas de colonne hotel_id, donc
+  les requetes Spring Data ne posaient pas le filtre Hibernate @TenantId
+  automatique. Cela ouvrait des fuites cross-hotel sur :
+   - LigneFactureRepository.existsByNuiteeId (lookup direct sans join sur factures)
+   - AffectationPaiementRepository.sumMontantByLigneFactureId (aggregation sans
+     filtre tenant)
+
+  Solution : ajouter une colonne hotel_id NOT NULL + backfill depuis le parent
+  (factures pour lignes_factures, paiements pour affectations_paiements) +
+  CHECK > 0 + index (hotel_id, ...). Les entites JPA portent maintenant
+  @TenantId qui declenche le filtre Hibernate sur toutes les requetes.
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 042-1 : ajout colonne hotel_id sur lignes_factures
+         + backfill depuis factures + NOT NULL + CHECK + index.
+         ==================================================================== -->
+    <changeSet id="042-1-add-hotel-id-lignes-factures" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="finance" tableName="lignes_factures" columnName="hotel_id"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="finance" tableName="lignes_factures">
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Backfill : recopier le hotel_id de la facture parente. -->
+        <sql>
+            UPDATE finance.lignes_factures lf
+            SET hotel_id = (SELECT f.hotel_id FROM finance.factures f
+                            WHERE f.facture_id = lf.facture_id)
+        </sql>
+
+        <addNotNullConstraint schemaName="finance"
+                              tableName="lignes_factures"
+                              columnName="hotel_id"
+                              columnDataType="BIGINT"/>
+
+        <sql>
+            ALTER TABLE finance.lignes_factures
+            ADD CONSTRAINT chk_lignes_factures_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <addForeignKeyConstraint
+                baseTableName="lignes_factures" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_lignes_factures_hotel"/>
+
+        <createIndex tableName="lignes_factures" schemaName="finance"
+                     indexName="ix_lignes_factures_hotel_facture">
+            <column name="hotel_id"/>
+            <column name="facture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="finance" tableName="lignes_factures"
+                       indexName="ix_lignes_factures_hotel_facture"/>
+            <dropForeignKeyConstraint baseTableName="lignes_factures"
+                                      baseTableSchemaName="finance"
+                                      constraintName="fk_lignes_factures_hotel"/>
+            <sql>ALTER TABLE finance.lignes_factures DROP CONSTRAINT IF EXISTS chk_lignes_factures_hotel_id_positive</sql>
+            <dropColumn schemaName="finance" tableName="lignes_factures" columnName="hotel_id"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 042-2 : ajout colonne hotel_id sur affectations_paiements
+         + backfill depuis paiements.
+         ==================================================================== -->
+    <changeSet id="042-2-add-hotel-id-affectations-paiements" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="finance" tableName="affectations_paiements" columnName="hotel_id"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="finance" tableName="affectations_paiements">
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <sql>
+            UPDATE finance.affectations_paiements ap
+            SET hotel_id = (SELECT p.hotel_id FROM finance.paiements p
+                            WHERE p.paiement_id = ap.paiement_id)
+        </sql>
+
+        <addNotNullConstraint schemaName="finance"
+                              tableName="affectations_paiements"
+                              columnName="hotel_id"
+                              columnDataType="BIGINT"/>
+
+        <sql>
+            ALTER TABLE finance.affectations_paiements
+            ADD CONSTRAINT chk_affectations_paiements_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <addForeignKeyConstraint
+                baseTableName="affectations_paiements" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_affectations_paiements_hotel"/>
+
+        <createIndex tableName="affectations_paiements" schemaName="finance"
+                     indexName="ix_affectations_paiements_hotel_paiement">
+            <column name="hotel_id"/>
+            <column name="paiement_id"/>
+        </createIndex>
+
+        <createIndex tableName="affectations_paiements" schemaName="finance"
+                     indexName="ix_affectations_paiements_hotel_ligne">
+            <column name="hotel_id"/>
+            <column name="ligne_facture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="finance" tableName="affectations_paiements"
+                       indexName="ix_affectations_paiements_hotel_ligne"/>
+            <dropIndex schemaName="finance" tableName="affectations_paiements"
+                       indexName="ix_affectations_paiements_hotel_paiement"/>
+            <dropForeignKeyConstraint baseTableName="affectations_paiements"
+                                      baseTableSchemaName="finance"
+                                      constraintName="fk_affectations_paiements_hotel"/>
+            <sql>ALTER TABLE finance.affectations_paiements DROP CONSTRAINT IF EXISTS chk_affectations_paiements_hotel_id_positive</sql>
+            <dropColumn schemaName="finance" tableName="affectations_paiements" columnName="hotel_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

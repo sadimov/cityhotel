@@ -5,6 +5,7 @@ import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { FileDownloadUtil } from '../../../../shared/utils/file-download.util';
 import { FactureDto, StatutFacture } from '../../models/facture.model';
 import { ModePaiement } from '../../models/paiement.model';
 import { FacturesService } from '../../services/factures.service';
@@ -35,6 +36,7 @@ export class FactureDetailComponent implements OnInit, OnDestroy {
   facture: FactureDto | null = null;
   cancelling = false;
   emitting = false;
+  downloadingPdf = false;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -167,6 +169,37 @@ export class FactureDetailComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/finance/factures']);
+  }
+
+  /**
+   * Télécharge la facture au format PDF (B6/B7).
+   *
+   * Le back retourne un `Content-Type: application/pdf`. Le helper
+   * `FileDownloadUtil.saveBlob` orchestre le download navigateur via une
+   * balise `<a download>` jetable + `URL.createObjectURL`.
+   */
+  downloadPdf(): void {
+    if (!this.facture?.factureId) return;
+    const id = this.facture.factureId;
+    const numero = this.facture.numeroFacture;
+    this.downloadingPdf = true;
+    this.facturesService
+      .downloadPdf(id)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => (this.downloadingPdf = false)),
+      )
+      .subscribe({
+        next: (blob) => {
+          FileDownloadUtil.saveBlob(blob, `FACTURE-${numero}.pdf`);
+        },
+        error: () => {
+          Swal.fire({
+            icon: 'error',
+            title: this.i18n.translate('finance.facture.messages.pdfError'),
+          });
+        },
+      });
   }
 
   badgeClass(statut: StatutFacture | undefined): string {

@@ -27,6 +27,6 @@ public record FactureCreateDto(
         LocalDate dateFacture,
         LocalDate dateEcheance,
         @Size(max = 3) String devise,
-        String commentaires,
+        @Size(max = 2000) String commentaires,
         @Valid List<LigneFactureCreateDto> lignes) {
 }

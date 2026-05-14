@@ -5,15 +5,15 @@ import com.cityprojects.citybackend.entity.finance.Compte;
 import java.util.Optional;
 
 /**
- * Service du compte AUXILIAIRE CLIENT (Tour 22.1).
+ * Service du compte AUXILIAIRE CLIENT.
  *
- * <p><b>⚠️ DÉPRÉCATION SÉMANTIQUE - Tour 20bis (2026-05-07).</b> L'entite
- * {@link Compte} represente un compte <em>auxiliaire client/societe</em> (suivi
- * de la dette client par tenant), <b>PAS</b> un compte du Plan Comptable General
- * SYSCOHADA / mauritanien. La comptabilite generale est externalisee vers
- * Dolibarr (bridge a venir tour ulterieur).</p>
+ * <p>L'entite {@link Compte} represente un compte <em>auxiliaire
+ * client/societe</em> (suivi du solde client par tenant), un tiers
+ * individualise qui se rattache au compte collectif du Plan Comptable
+ * General via le mapping comptable (cf.
+ * {@link com.cityprojects.citybackend.entity.finance.TypeEvenementComptable}).</p>
  *
- * <p>Ce service ne fait que de l'audit trail auxiliaire client : DEBIT a
+ * <p>Ce service realise l'audit trail auxiliaire client : DEBIT a
  * l'emission de facture, CREDIT a la validation de paiement, mise a jour
  * {@link Compte#getSoldeActuel()} coherente.</p>
  *

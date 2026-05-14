@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
-import { EMPTY, Observable, of } from 'rxjs';
+import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 import {
   catchError,
   map,
@@ -26,9 +26,11 @@ import {
   ModeReglement,
   ReportChambreRequest,
 } from '../../../models/commande.model';
+import { TicketDto } from '../../../models/ticket.model';
 import { ArticlesMenusService } from '../../../services/articles-menus.service';
 import { CategoriesMenusService } from '../../../services/categories-menus.service';
 import { CommandesService } from '../../../services/commandes.service';
+import { TicketsService } from '../../../services/tickets.service';
 
 /**
  * Étapes du workflow POS — pilote l'affichage de la zone active.
@@ -87,6 +89,10 @@ export interface PosState {
   lastSuccessMessage: string | null;
   /** Dernière commande créée (utilisée pour navigation post-paiement). */
   lastCommande: Commande | null;
+  /** Vrai pendant l'impression d'un ticket (caisse / cuisine). */
+  printingTicket: boolean;
+  /** Dernier ticket édité (si l'utilisateur souhaite re-télécharger). */
+  lastTicket: TicketDto | null;
 }
 
 const INITIAL_STATE: PosState = {
@@ -109,6 +115,8 @@ const INITIAL_STATE: PosState = {
   error: null,
   lastSuccessMessage: null,
   lastCommande: null,
+  printingTicket: false,
+  lastTicket: null,
 };
 
 /**
@@ -157,6 +165,7 @@ export class PosStore extends ComponentStore<PosState> {
     private readonly articlesService: ArticlesMenusService,
     private readonly reservationsService: ReservationsService,
     private readonly commandesService: CommandesService,
+    private readonly ticketsService: TicketsService,
   ) {
     super(INITIAL_STATE);
   }
@@ -186,6 +195,8 @@ export class PosStore extends ComponentStore<PosState> {
   readonly error$ = this.select((s) => s.error);
   readonly lastSuccessMessage$ = this.select((s) => s.lastSuccessMessage);
   readonly lastCommande$ = this.select((s) => s.lastCommande);
+  readonly printingTicket$ = this.select((s) => s.printingTicket);
+  readonly lastTicket$ = this.select((s) => s.lastTicket);
 
   /** Total panier en MRU (somme des sous-totaux). */
   readonly total$ = this.select(this.cart$, (cart) =>
@@ -438,11 +449,36 @@ export class PosStore extends ComponentStore<PosState> {
     }),
   );
 
+  readonly setPrintingTicket = this.updater<boolean>((state, printingTicket) => ({
+    ...state,
+    printingTicket,
+  }));
+
+  readonly setLastTicket = this.updater<TicketDto | null>((state, lastTicket) => ({
+    ...state,
+    lastTicket,
+  }));
+
   /**
-   * Réinitialise totalement l'état après une commande clôturée — prêt pour
-   * la prochaine vente. Conserve les catégories chargées.
+   * Vide le panier + désélectionne client/réservation après checkout, MAIS
+   * conserve `lastCommande` + `lastTicket` visibles pour autoriser l'impression
+   * du ticket caisse / cuisine sur la commande qui vient d'être encaissée.
+   *
+   * Le reset complet (effacement de `lastCommande`) se fait via
+   * `startNewOrder()` — déclenché par le bouton « Nouvelle commande ».
    */
   readonly resetAfterCheckout = this.updater((state) => ({
+    ...INITIAL_STATE,
+    categories: state.categories,
+    lastCommande: state.lastCommande,
+    lastTicket: state.lastTicket,
+  }));
+
+  /**
+   * Reset total : utilisé pour démarrer une nouvelle commande après avoir
+   * imprimé ou consulté le ticket de la commande précédente.
+   */
+  readonly startNewOrder = this.updater((state) => ({
     ...INITIAL_STATE,
     categories: state.categories,
   }));
@@ -508,6 +544,23 @@ export class PosStore extends ComponentStore<PosState> {
       switchMap((clientId) =>
         this.reservationsService.page({ clientId }, 0, 50).pipe(
           map((page) => page.content.filter(isActiveForPos)),
+          // Charge le détail (chambres + clients) de chaque réservation active
+          // pour pouvoir afficher numéro/type de chambre dans le POS.
+          // Reproduit la logique de l'ancien `point-de-vente` qui interrogeait
+          // `getInstanceReservationsForClient` avec les jointures.
+          switchMap((reservations: Reservation[]) => {
+            if (reservations.length === 0) {
+              return of<Reservation[]>([]);
+            }
+            const details$ = reservations.map((r) =>
+              r.reservationId != null
+                ? this.reservationsService
+                    .findById(r.reservationId)
+                    .pipe(catchError(() => of(r)))
+                : of(r),
+            );
+            return forkJoin(details$);
+          }),
           tap((reservations: Reservation[]) => {
             this.setActiveReservations(reservations);
             this.setReservationsLoading(false);
@@ -630,9 +683,101 @@ export class PosStore extends ComponentStore<PosState> {
     ),
   );
 
+  /**
+   * Imprime un ticket caisse (PDF base64 retourné par le backend) pour une
+   * commande donnée. Ouvre une fenêtre d'impression. Aucun changement d'état
+   * panier — c'est une action transversale sur `lastCommande`.
+   */
+  readonly imprimerTicketCaisse = this.effect<number>((commandeId$) =>
+    commandeId$.pipe(
+      tap(() => {
+        this.setPrintingTicket(true);
+        this.setError(null);
+      }),
+      switchMap((commandeId) =>
+        this.ticketsService.imprimerCaisse(commandeId).pipe(
+          tap((ticket) => {
+            this.setLastTicket(ticket);
+            this.setPrintingTicket(false);
+            this.openTicketPdf(ticket);
+          }),
+          catchError(() => {
+            this.setPrintingTicket(false);
+            this.setError('restaurant.pos.errors.ticketCaisse');
+            return EMPTY;
+          }),
+        ),
+      ),
+    ),
+  );
+
+  /**
+   * Imprime un ticket cuisine (bon de fabrication) pour une commande.
+   */
+  readonly imprimerTicketCuisine = this.effect<number>((commandeId$) =>
+    commandeId$.pipe(
+      tap(() => {
+        this.setPrintingTicket(true);
+        this.setError(null);
+      }),
+      switchMap((commandeId) =>
+        this.ticketsService.imprimerCuisine(commandeId).pipe(
+          tap((ticket) => {
+            this.setLastTicket(ticket);
+            this.setPrintingTicket(false);
+            this.openTicketPdf(ticket);
+          }),
+          catchError(() => {
+            this.setPrintingTicket(false);
+            this.setError('restaurant.pos.errors.ticketCuisine');
+            return EMPTY;
+          }),
+        ),
+      ),
+    ),
+  );
+
   // ──────────────────────────────────────────────────────────────────────
   // Helpers privés
   // ──────────────────────────────────────────────────────────────────────
+
+  /**
+   * Ouvre le PDF base64 du ticket dans une nouvelle fenêtre et déclenche
+   * l'impression. Reproduit le pattern de l'ancienne implémentation
+   * (`printInvoice()` jsPDF) mais en s'appuyant sur le PDF généré côté
+   * serveur, pour ne pas dupliquer la mise en forme entête / pied de page.
+   */
+  private openTicketPdf(ticket: TicketDto): void {
+    if (!ticket.pdfBase64) {
+      return;
+    }
+    try {
+      const byteCharacters = atob(ticket.pdfBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const blob = new Blob([new Uint8Array(byteNumbers)], {
+        type: 'application/pdf',
+      });
+      const blobUrl = URL.createObjectURL(blob);
+      const w = window.open(blobUrl, '_blank');
+      if (w) {
+        // Laisse le navigateur charger le PDF puis déclenche l'impression.
+        w.addEventListener('load', () => {
+          try {
+            w.print();
+          } catch {
+            /* l'utilisateur peut imprimer manuellement depuis la fenêtre */
+          }
+        });
+      }
+      // Libère l'URL après 60 s — laisse le temps au rendu et à l'impression.
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch {
+      this.setError('restaurant.pos.errors.ticketDecode');
+    }
+  }
 
   /**
    * Construit le payload `CreerCommandeRequest` à partir de l'état panier

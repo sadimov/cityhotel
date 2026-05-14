@@ -1,0 +1,603 @@
+
+<div *ngIf="loading" class="row">
+  <div class="col-md-3" style="margin: auto; padding: 150px">
+    <div class="spinner-border text-info" style="width: 3rem; height: 3rem;"></div>
+  </div>
+  
+</div>
+
+<div class="loader-container" *ngIf="isCreatingReservation">
+  <div class="loader"></div>
+  <p>Traitement en cours ...</p>
+</div>
+
+<div *ngIf="!loading" class="calendar-container">
+  <!-- Calendar grid table -->
+  <table class="calendar-grid" matRipple>
+    <thead>
+      <tr>
+        <th class="header-room" rowspan="2" style="padding: 0px !important; padding-left: 2px;">
+          <!-- Date range picker to adjust the displayed months -->
+          <input 
+              [ngStyle]="false ? {'display': 'none'}:{'display': 'block'}"
+              style="position: relative; z-index: 100; margin-top: 0px; left: 2px; width: 145px;"
+              type="text" 
+              name="daterange" 
+              value="05/01/2025 - 05/31/2025" />
+          
+                  
+           <br>
+           <span>
+              chambres
+           </span>
+        </th>
+        <th *ngFor="let day of days" style="background-color: rgb(45, 45, 114); color: white;">
+            0 
+        </th>
+      </tr>
+      <tr>
+        <th *ngFor="let day of days" 
+            class="header-day" 
+            [ngClass]="{ 'weekend': isWeekend(day), 'today-header': isToday(day) }">
+            {{ day | date:'d' : 'fr-FR' }} {{ getFormattedDay(day) }}
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Group rows by room type -->
+      <ng-container *ngFor="let type of roomTypes">
+        <!-- Room type header row -->
+        <tr class="room-type-row">
+          <td class="room-type-cell" [attr.colspan]="days.length + 1">
+            <p style="width: 10%; text-align: left; display: inline-block;margin:0">{{ type }}</p>
+            <p style="width: 80%; text-align: center; display: inline-block;margin:0">Cliquer et glisser la souris pour réserver</p>
+          </td>
+        </tr>
+        <!-- Room rows for this type -->
+        <ng-container *ngFor="let room of roomsByType[type]">
+          <tr class="room-row">
+            <!-- First column: Room number and type label -->
+            <td class="room-label">{{ room.chambreNum }} – {{ room.chambreType.typeChambreLibele }}</td>
+            <!-- Day columns -->
+            <ng-container *ngFor="let day of getRenderedDays(room.id); let i = index">
+              <!-- Check if a reservation starts on this day for this room -->
+              <ng-container *ngIf="getReservationStarting(room.id, day) as res; else emptyCell">
+                <!-- Reservation spans multiple days: set colspan and styling based on status -->
+                <td class="reservation-cell" 
+                    [attr.colspan]="getReservationSpanDays(res.reservation!)" 
+                    [ngClass]="{
+                      'status-0': res.reservation?.reservationStatus === 0, 
+                      'status-2': res.reservation?.reservationStatus === 1, 
+                      'status-4': res.reservation?.reservationStatus === 3,
+                      'start-near': res.reservation?.reservationStatus === 0 && isStartDateNear(res.reservation?.reservationDateDebut!),
+                      'end-near': res.reservation?.reservationStatus === 2 && isEndDateNear(res.reservation?.reservationDateFin!)
+                    }"
+                    (click)="openReservationDetails(res)"
+                    (contextmenu)="openContextMenu($event, res)">
+                  {{ res.client?.prenom }}
+                </td>
+                <!-- Skip the extra days covered by this reservation in the loop -->
+                <!-- (The loop index i will advance by colspan in TS logic if needed) -->
+              </ng-container>
+              <!-- Template for an empty cell (no reservation starting this day) -->
+              <ng-template #emptyCell>
+                <td class="day-cell" 
+                    [ngClass]="{
+                      'past': isPast(day), 
+                      'today-cell': isToday(day), 
+                      'weekend-cell': isWeekend(day),
+                      'selected': isCellSelected(room.id, day)
+                    }"
+                    (mousedown)="startDrag(room, day)" 
+                    (mouseenter)="onDragOver(room, day)" 
+                    (mouseup)="endDrag(room, day)">
+                  <!-- Empty cell (click or drag to create reservation) -->
+                </td>
+              </ng-template>
+            </ng-container>
+          </tr>
+        </ng-container>
+      </ng-container>
+    </tbody>
+  </table>
+
+  <!-- Hidden menu trigger element for context menu (used to open mat-menu on right-click) 
+  <button #menuTrigger="matMenuTrigger" [matMenuTriggerFor]="contextMenuTemplate" style="display:none;"></button>-->
+
+  <!-- Context menu for reservation actions 
+  <mat-menu #contextMenu="matMenu">
+    <button mat-menu-item (click)="goToPayments()">Payments</button>
+    <button mat-menu-item (click)="checkIn()">Check-In</button>
+    <button mat-menu-item (click)="modifyReservation()">Modify</button>
+    <button mat-menu-item (click)="checkOut()">Check-Out</button>
+  </mat-menu>-->
+
+  <!-- Template du menu contextuel -->
+<ng-template #contextMenuTemplate>
+  <div class="context-menu">
+    <button mat-menu-item (click)="goToPayments()">Paiements</button>
+    <button mat-menu-item (click)="checkIn()">Check-In</button>
+    <button mat-menu-item (click)="modifyReservation()">Modify</button>
+    <button mat-menu-item (click)="checkOut()">Check-Out</button>
+  </div>
+</ng-template>
+
+</div>
+
+<!--
+/*##################################################################################################################*/
+/*---------------------------------------------------METIER DE RESERVATION------------------------------------------*/
+/*-----*CREATION*----*CONSULTATION*----*MODIFICATION*----*CHECKIN*----*CHECKOUT*-----*PAIEMENTS*----*ANNULATION*----*/
+/*##################################################################################################################*/
+-->
+
+<div class="modal fade" tabindex="-1" role="dialog" id="reservModal">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Réservation</h3>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="row">
+                  <div class="col-md-12">
+                    <i class="fa fa-calendar" aria-hidden="true"></i> &nbsp;&nbsp; <span id="resdd"></span> - <span id="resdf"></span> <span id="duree">({{ periodeReservation }} Jours)</span>
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <form class="border-bottom border-info" style="margin-bottom: 10px;">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <b>Client: </b>
+                      </div>
+                    </div>
+                    <div class="row" *ngIf="!loading">
+                      <div class="form-group col">
+                        <label for="sprenom"><em>Client:</em></label>
+                        <select class="form-select form-select-sm" 
+                                aria-label="Choix de client"
+                                (ngModelChange)="addClient($event)" [ngModel]="clients"
+                                id="sprenom"
+                                name="sprenom"
+                                required
+                                >
+                            <option *ngFor="let client of clients" [ngValue]="client"> {{ client.prenom }} </option>
+                        </select>
+                      </div>
+                  
+                      <div class="form-group col">
+                        <label for="prenom"><em>Prénom:</em></label>
+                        <input class="form-control form-control-sm" type="text" id="prenom" required>
+                      </div>
+
+                      <div class="form-group col">
+                        <label for="identifiant"><em>ID:</em></label>
+                        <input class="form-control form-control-sm" type="text" id="identifiant" required>
+                      </div>
+                      
+                      <div class="form-group col">
+                        <label for="tel"><em>Tel:</em></label>
+                        <input class="form-control form-control-sm" type="text" id="tel">
+                      </div>
+                    </div>
+                  
+                    <div class="row">
+                      <div class="form-group col">
+                        <label for="address"><em>Adresse:</em></label>
+                        <input class="form-control form-control-sm" type="text" id="address" required>
+                      </div>
+                      <div class="form-group col">
+                          <label for="typeId"><em>Type Id:</em></label>
+                          <select  class="form-select form-select-sm"
+                              aria-label="Choix de client"
+                              id="typeId"
+                              name="typeId"
+                              required >
+                            <option selected>Type</option>
+                            <option *ngFor="let type of typeIdentifications" 
+                                    value="{{type.id}}"
+                                    > 
+                              {{ type.typeIdentificationNom }} 
+                            </option>
+                          </select>
+                      </div>
+                  
+                      <div class="form-group col">
+                        <label for="nat"><em>Nalté:</em></label>
+                        <select  class="form-select form-select-sm" 
+                              aria-label="Choix de client"
+                              id="nat"
+                              required
+                              >
+                          <option selected>Nat.</option>
+                          <option *ngFor="let nat of nationalites" 
+                                  value="{{nat.id}}"
+                                  > 
+                            {{ nat.nationalite }} 
+                          </option>
+                         </select>
+                      </div>
+                      
+                      <div class="form-group col">
+                        <br>
+                        <button type="submit" class="btn btn-sm btn-info" (click)="createClient()">
+                          <i class="fa fa-plus" aria-hidden="true"> </i>
+                        </button>
+                      </div>
+
+                    </div>
+                    <br>
+                  </form>
+                  
+                  <form class="border-bottom border-info">
+                    <div class="row">
+                      <div class="col-md-12">
+                        <b>Entreprise: </b>
+                      </div>
+                    </div>
+                    <div class="row" *ngIf="!loading">
+                      <div class="form-group col">
+                        <label for="sste"><em>Société:</em></label>
+                        <select class="form-select form-select-sm"  
+                            aria-label="Choix de client"
+                            (ngModelChange)="addSociete($event)" [ngModel]="societes"
+                            id="sste"
+                            name="sste"
+                            required
+                            >
+                          <option *ngFor="let ste of societes" [ngValue]="ste"> {{ ste.societeNom }} </option>
+                        </select>
+                      </div>
+
+                      <div class="form-group col">
+                        <label for="ste"><em>Libellé:</em></label>
+                        <input class="form-control form-control-sm" type="text" id="ste" required>
+                      </div>
+
+                      <div class="form-group col">
+                        <br>
+                        <button class="btn btn-sm btn-info" (click)="createSociete()">
+                          <i class="fa fa-plus" aria-hidden="true"> </i>
+                        </button>
+                      </div>
+                    </div>
+                    <br>
+                  </form>
+                </div>
+            </div>
+            <div class="col-md-4" style="padding-top: 20px; padding-left: 30px;">
+                <div class="row">
+                  <div class="col-md-12">
+                    <p *ngFor="let chambre of addedChambres" style="font-size: medium;">
+                      <ng-template [ngIf]="chambre.chambreStatus.id === 1">
+                        <i class="fa fa-bed" aria-hidden="true"></i>&nbsp;
+                        <span scope="row">  
+                          {{ chambre.chambreNum }}
+                        </span>
+                        <span>
+                            ({{ chambre.chambreType.typeChambreLibele }})
+                        </span>
+                        &nbsp;
+                        <span class="badge badge-info" *ngFor="let price of chambre.chambreType.chambrePrix">
+                          <ng-template [ngIf]="price.chambrePrixDateFin === null">
+                            {{ price.chambrePrix }} MRU
+                          </ng-template>
+                        </span>
+                      </ng-template>
+                    </p>
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <i class="fa fa-list" aria-hidden="true"></i> &nbsp;<span id="price">Montant: {{ montantReservation/(1 - reductionReservation/100) }}</span>
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="col-md-6" style="padding-top: 5px;">
+                    <i class="fa fa-percent" aria-hidden="true"></i> &nbsp;
+                    <span>Réduction</span>
+                  </div>
+                  <div class="col-md-4">
+                    <input type="number" 
+                             class="form-control form-control-sm" 
+                             id="reduction" 
+                             name="reduction"
+                             placeholder="Réduction"
+                             [ngModel]="reductionReservation"
+                             (change)="changeReduction($event)"
+                             >
+                  </div>
+                </div>
+                <br>
+                <div class="row">
+                  <div class="col-md-12">
+                    <i class="fa fa-calculator" aria-hidden="true"></i> &nbsp;<span id="total">Total: {{ montantReservation }}</span>
+                  </div>
+                </div>
+            </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" (click)="cancelReservation()">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="createReservation()">Réserver</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" tabindex="-1" role="dialog" id="consultReservModal">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+    <div class="row">
+    <div class="col-md-12" *ngIf="!consultLoading">
+      <h3 class="modal-title">Réservation #{{ currentConsultReservCltChmb.reservation?.reservationId }} </h3>
+    </div>
+    
+    </div>
+        
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+            <div class="col-md-6">
+        
+                <div class="card">
+        <div class="card-body">
+          <div *ngIf="consultLoading" class="spinner-border spinner-border-sm"></div>
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p> 
+                <i class="fa fa-user"> </i> {{ currentConsultReservCltChmb.client?.prenom }} 
+                <span class="badge border border-info text-info" *ngIf="factureConsult">
+                  {{ factureConsult.factureId }}
+                </span>
+              </p>
+            </div>
+          </div>
+          
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p>
+                {{ currentConsultReservCltChmb.client?.prenom?.toUpperCase() }} 
+              </p>
+            </div> 
+          </div>
+          
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p>
+                <i class="fa fa-phone"> </i>
+                {{ currentConsultReservCltChmb.client?.tel }} 
+              </p>
+            </div>
+          </div>
+          
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p>
+                <i class="fa fa-id-card"> </i>
+                {{ currentConsultReservCltChmb.client?.adress }} <b>ID: </b>{{ currentConsultReservCltChmb.client?.identification }}
+              </p>
+            </div>
+          </div>
+        </div>
+        </div>				  
+            </div>
+      <div class="col-md-6">
+                <div class="card">
+        <div class="card-body">
+          <div *ngIf="consultLoading" class="spinner-border spinner-border-sm"></div>
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p>
+                <i class="fa fa-bed" aria-hidden="true"></i>&nbsp;
+                {{ currentConsultReservCltChmb.chambre?.chambreType?.typeChambreLibele }} | #{{ currentConsultReservCltChmb.chambre?.chambreNum }}
+              </p>
+            </div>
+          </div>
+          
+          <div class="row" *ngIf="!consultLoading">
+            <div class="col-md-12">
+              <p> Détails séjour 
+                <br> 
+                {{ currentConsultReservCltChmb.reservation?.reservationDateDebut | date: 'dd/MM/yyyy' }} - {{ currentConsultReservCltChmb.reservation?.reservationDateFin | date: 'dd/MM/yyyy' }}
+              </p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <p><i class="fa fa-user" aria-hidden="true"></i>&nbsp; 1</p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-12">
+              <p *ngIf="currentConsultReservCltChmb">Arrivée: 	{{ currentConsultReservCltChmb.reservation?.reservationDateDebut | date: 'dd/MM/yyyy' }} Départ: {{ currentConsultReservCltChmb.reservation?.reservationDateFin | date: 'dd/MM/yyyy' }}</p>
+            </div>
+          </div>
+        </div>
+        </div>
+        
+            </div>
+        </div>
+    <br>
+    <div class="row" *ngIf="!consultLoading">
+      <div class="col-md-12">
+      <div class="card">
+        <div class="card-body">
+          <div *ngIf="consultLoading" class="spinner-border spinner-border-sm"></div>
+          <div class="row">
+            <div class="col-md-8">
+              <div class="row">
+                <div class="col-md-12">
+                  <p>Reduction: {{ currentConsultReservCltChmb.reservation?.reservationReduction }}</p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <p>
+                    <i class="fa fa-gift"> </i> Inclus: 
+                    
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="row">
+                <div class="col-md-12">
+                  <p>Total: <span>{{ sousTotalSumC }} MRU</span></p> 
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <p>Payé: <span>{{ totalAffectationSum }} MRU</span></p>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-12">
+                  <p>Balance: <span>{{ montantRestantSum }} MRU</span></p> 
+                </div>
+              </div>
+            </div>
+            </div>
+        </div>
+        </div>				  
+            </div>
+        </div>
+    
+      </div>
+      <div class="modal-footer">
+        <!-- Bouton pour modifier les nuitées -->
+        <button type="button" 
+            class="btn btn-warning me-2" 
+            (click)="navigateToModifNuitees()"
+            *ngIf="currentConsultReservCltChmb?.reservation?.reservationId">
+          <i class="fas fa-edit me-1"></i>
+          Modifier les nuitées
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" >OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="modifyReservationModal" tabindex="-1" aria-labelledby="modifyReservationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modifyReservationModalLabel">Modifier la Réservation</h3>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="closeModifyReservationModal()"></button>
+      </div>
+      <form [formGroup]="modifyReservationForm" (ngSubmit)="updateReservation()">
+      <div class="modal-body">
+        
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="modClientId" class="form-label">Client</label>
+              <select id="modClientId" 
+                      class="form-select" 
+                      formControlName="modClientId"
+                      [(ngModel)]="newModClientId">
+                <option *ngFor="let client of clients" [value]="client.id" selected="{{ client.id === inModifReservCltChmb?.client?.id }}">
+                  {{ client.prenom }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="modChambreId" class="form-label">Chambre</label>
+              <select id="modChambreId" 
+                      class="form-select" 
+                      formControlName="modChambreId"
+                      [(ngModel)]="newModChambreId">
+                <option *ngFor="let chambre of rooms" [value]="chambre.id" selected="{{ chambre.id === inModifReservCltChmb?.chambre?.id }}">
+                  {{ chambre.chambreNum }} - {{ chambre.chambreType.typeChambreLibele }}
+                </option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="modDateDebut" class="form-label">Date Début</label>
+              <input type="date" id="modDateDebut" class="form-control" formControlName="modDateDebut" 
+                     *ngIf="selectedReservation"
+                     [value]="selectedReservation.reservationDateDebut | date: 'yyyy-MM-dd'">    
+            </div>
+            <div class="col-md-6">
+              <label for="modDateFin" class="form-label">Date Fin</label>
+              <input type="date" id="modDateFin" class="form-control" formControlName="modDateFin" 
+                     *ngIf="selectedReservation"
+                     [value]="selectedReservation.reservationDateFin | date: 'yyyy-MM-dd'">    
+            </div>            
+          </div>
+          <div class="row mb-3">            
+            <div class="col-md-6">
+              <label for="modSocieteId" class="form-label">Société</label>
+              <select id="modSocieteId" 
+                      class="form-select" 
+                      formControlName="modSocieteId"
+                      [(ngModel)]="newModSocieteId">
+                <option *ngFor="let societe of societes" [value]="societe.id" selected="{{ societe.id === inModifReservCltChmb?.societe?.id }}">
+                  {{ societe.societeNom }}
+                </option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="modReduction" class="form-label">Réduction (%)</label>
+              <input type="number" 
+                  *ngIf="selectedReservation"
+                  [value]="selectedReservation.reservationReduction" id="modReduction" class="form-control" formControlName="modReduction">
+            </div>
+          </div>
+        
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModifyReservationModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+      </div>
+    </form>
+    </div>
+  </div>
+</div>
+
+<div class="mb-4">
+  <p id="currentReservationStartDate" style="display: none;"></p>
+  <p id="currentReservationEndDate" style="display: none;"></p>
+
+  <!-- Modification -->
+  <p id="modificationReservationStartDate" style="display: none;"></p>
+  <p id="modificationReservationEndDate" style="display: none;"></p>
+  <!-- Modification -->
+
+  <p id="currentLocationId" style="display: none;"></p>
+  <p id="consultReservId" style="display: none;"></p>
+  <p id="origY" style="display: none;"></p>
+  <p id="origX" style="display: none;"></p>
+</div>
+
+<div 
+  class="custom-context-menu"
+  [style.top.px]="contextMenuPosition.y"
+  [style.left.px]="contextMenuPosition.x"
+  [style.visibility]="showContextMenu ? 'visible' : 'hidden'"
+  [style.display]="showContextMenu ? 'block' : 'none'"
+>
+  <button class="dropdown-item" (click)="goToPayments()">Paiements</button>
+  <button class="dropdown-item" (click)="checkIn()">Check-In</button>
+  <button class="dropdown-item" (click)="modifyReservation()">Modifier</button>
+  <button class="dropdown-item" (click)="checkOut()">Check-Out</button>
+</div>
+
+

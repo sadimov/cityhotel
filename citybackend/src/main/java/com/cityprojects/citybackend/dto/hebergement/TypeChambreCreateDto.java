@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.dto.hebergement;
 
+import com.cityprojects.citybackend.entity.hebergement.CategorieEspace;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -11,6 +12,9 @@ import java.math.BigDecimal;
 /**
  * DTO de creation d'un type de chambre. Aucun {@code hotelId} : resolu via
  * {@link com.cityprojects.citybackend.common.tenant.TenantContext}.
+ *
+ * <p>Tour 49 : {@code categorie} optionnel ; defaut {@link CategorieEspace#CHAMBRE}
+ * applique cote service si {@code null}.</p>
  */
 public record TypeChambreCreateDto(
         @NotBlank(message = "error.typeChambre.code.blank")
@@ -35,5 +39,7 @@ public record TypeChambreCreateDto(
         Integer nbPersonnesMax,
 
         @PositiveOrZero(message = "error.typeChambre.prixBase.negative")
-        BigDecimal prixBase) {
+        BigDecimal prixBase,
+
+        CategorieEspace categorie) {
 }

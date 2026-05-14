@@ -56,5 +56,18 @@ public enum TypeNumerotation {
      * comme les autres types.
      * Ajoute au Tour 11 (integration module hebergement).
      */
-    RES
+    RES,
+
+    /**
+     * Ecriture comptable (journal). Format :
+     * {@code JRN-{codeJournal}-{exercice}-{codePays}-{6 chiffres}}, par exemple
+     * {@code JRN-VTE-2026-MR-000123}.
+     * <p>Particularite : seule famille de numerotation qui exige un
+     * <b>discriminant</b> supplementaire (le code du journal comptable :
+     * VTE, ACH, BAN, CAI, OD, AVO). La sequence est donc segmentee par
+     * (hotel, type=JRN, exercice, discriminant), ce qui impose un appel
+     * {@link NumerotationService#next(TypeNumerotation, String)}.</p>
+     * Ajoute au Bloc B2 (compta native - partie double).
+     */
+    JRN
 }

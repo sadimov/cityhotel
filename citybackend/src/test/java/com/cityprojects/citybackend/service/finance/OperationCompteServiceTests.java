@@ -54,7 +54,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       2 appels avec le meme clientId retournent le meme compte.</li>
  * </ol>
  */
-@SuppressWarnings("deprecation")
 @SpringBootTest
 @ActiveProfiles("test")
 class OperationCompteServiceTests {

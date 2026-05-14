@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template Jasper R-RES-001 (Tour 41 P2) - Journal de caisse.
+     Itere sur List<JournalCaisseDto.ModePaiementLigneDto>. -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="journal-caisse" pageWidth="595" pageHeight="842"
+              columnWidth="555" leftMargin="20" rightMargin="20"
+              topMargin="20" bottomMargin="20" uuid="c2f1f1a1-0000-0000-0000-000000000005">
+
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="HOTEL_ID" class="java.lang.Long"/>
+    <parameter name="DATE" class="java.time.LocalDate"/>
+    <parameter name="NB_COMMANDES" class="java.lang.Long"/>
+    <parameter name="TOTAL_RECETTES" class="java.math.BigDecimal"/>
+
+    <field name="modePaiement" class="com.cityprojects.citybackend.entity.finance.ModePaiement"/>
+    <field name="nbPaiements" class="java.lang.Long"/>
+    <field name="montantTotal" class="java.math.BigDecimal"/>
+
+    <title>
+        <band height="100">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="30"/>
+                <textElement>
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="32" width="555" height="16"/>
+                <textFieldExpression><![CDATA["Hotel #" + $P{HOTEL_ID} + "  -  Date " + $P{DATE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="52" width="555" height="16"/>
+                <textFieldExpression><![CDATA["Nb commandes encaissees : " + $P{NB_COMMANDES} + "  -  Total recettes : " + $P{TOTAL_RECETTES} + " MRU"]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement x="0" y="0" width="200" height="20"/><textElement><font isBold="true"/></textElement><text><![CDATA[Mode paiement]]></text></staticText>
+            <staticText><reportElement x="200" y="0" width="150" height="20"/><textElement><font isBold="true"/></textElement><text><![CDATA[Nb paiements]]></text></staticText>
+            <staticText><reportElement x="350" y="0" width="205" height="20"/><textElement><font isBold="true"/></textElement><text><![CDATA[Montant total (MRU)]]></text></staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="18">
+            <textField><reportElement x="0" y="0" width="200" height="18"/><textFieldExpression><![CDATA[$F{modePaiement}.name()]]></textFieldExpression></textField>
+            <textField><reportElement x="200" y="0" width="150" height="18"/><textFieldExpression><![CDATA[$F{nbPaiements}]]></textFieldExpression></textField>
+            <textField><reportElement x="350" y="0" width="205" height="18"/><textFieldExpression><![CDATA[$F{montantTotal}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="20">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="20"/>
+                <textElement textAlignment="Right"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER} + " - City Hotel reporting"]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>

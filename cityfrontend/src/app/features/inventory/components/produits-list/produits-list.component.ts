@@ -134,6 +134,13 @@ export class ProduitsListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/inventory/produits', produit.produitId]);
   }
 
+  view(produit: Produit): void {
+    if (produit.produitId == null) {
+      return;
+    }
+    this.router.navigate(['/inventory/produits', produit.produitId, 'view']);
+  }
+
   remove(produit: Produit): void {
     if (produit.produitId == null) {
       return;

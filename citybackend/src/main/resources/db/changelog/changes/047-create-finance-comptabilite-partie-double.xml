@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B2 (compta native partie double) - cœur du moteur d'ecritures
+  comptables.
+
+  Tables creees :
+    - finance.journal_comptable : journal par hotel (VTE, ACH, BAN, CAI, OD, AVO).
+    - finance.ecriture_comptable : en-tete d'une ecriture en partie double.
+    - finance.ligne_ecriture : ligne debit/credit d'une ecriture.
+
+  Toutes tenant-aware (@TenantId Hibernate + CHECK hotel_id > 0).
+
+  Auto-references (ecriture <-> contre-passation) via colonnes Long nullable :
+    - ecriture_comptable.contre_passee_par_id : FK self vers la nouvelle
+      ecriture (NULL tant que l'originale n'a pas ete contre-passee).
+    - ecriture_comptable.ecriture_source_id : FK self vers l'originale
+      (renseigne uniquement sur les contre-passations).
+
+  Garde-fou equilibre (Σ D == Σ C) :
+    - cote applicatif : EcritureComptableServiceImpl#creer valide avant save.
+    - cote BDD : trigger PL/pgSQL en Postgres (defense en profondeur, ignore
+      sur H2 via dbms="postgresql" du Liquibase <sql>).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         CHANGESET 1 : table finance.journal_comptable
+         ==================================================================== -->
+    <changeSet id="047-1-create-journal-comptable" author="cityprojects">
+        <comment>
+            Bloc B2 - Journal comptable par hotel (code unique par hotel, type
+            VENTE/ACHAT/TRESORERIE/OPERATION_DIVERSE/AVOIR).
+        </comment>
+
+        <createTable tableName="journal_comptable" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_journal_comptable" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="code" type="VARCHAR(5)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="journal_comptable" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_journal_comptable_hotel"/>
+
+        <addUniqueConstraint
+                tableName="journal_comptable" schemaName="finance"
+                columnNames="hotel_id, code"
+                constraintName="uk_journal_comptable_hotel_code"/>
+
+        <sql>
+            ALTER TABLE finance.journal_comptable
+            ADD CONSTRAINT chk_journal_comptable_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.journal_comptable
+            ADD CONSTRAINT chk_journal_comptable_type
+            CHECK (type IN ('VENTE','ACHAT','TRESORERIE','OPERATION_DIVERSE','AVOIR'))
+        </sql>
+
+        <createIndex tableName="journal_comptable" schemaName="finance"
+                     indexName="ix_journal_comptable_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="journal_comptable" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         CHANGESET 2 : table finance.ecriture_comptable
+         ==================================================================== -->
+    <changeSet id="047-2-create-ecriture-comptable" author="cityprojects">
+        <comment>
+            Bloc B2 - En-tete d'ecriture comptable. Numerotation JRN
+            (discriminant = code journal). Lien auto-referentiel pour
+            contre-passation (contre_passee_par_id + ecriture_source_id).
+            Totaux D/C denormalises (recalcules par @PrePersist/@PreUpdate).
+        </comment>
+
+        <createTable tableName="ecriture_comptable" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_ecriture_comptable" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="numero" type="VARCHAR(30)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_comptable" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_piece" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="journal_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="exercice_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(500)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="reference" type="VARCHAR(50)"/>
+            <column name="statut" type="VARCHAR(20)" defaultValue="BROUILLON">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contre_passee_par_id" type="BIGINT"/>
+            <column name="ecriture_source_id" type="BIGINT"/>
+            <column name="total_debit" type="NUMERIC(19,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_credit" type="NUMERIC(19,2)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="ecriture_comptable" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_ecriture_comptable_hotel"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ecriture_comptable" baseTableSchemaName="finance"
+                baseColumnNames="journal_id"
+                referencedTableName="journal_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_ecriture_comptable_journal"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ecriture_comptable" baseTableSchemaName="finance"
+                baseColumnNames="exercice_id"
+                referencedTableName="exercice" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_ecriture_comptable_exercice"/>
+
+        <!-- Auto-references nullable (lien contre-passation). -->
+        <addForeignKeyConstraint
+                baseTableName="ecriture_comptable" baseTableSchemaName="finance"
+                baseColumnNames="contre_passee_par_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_ecriture_comptable_contre_passee_par"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ecriture_comptable" baseTableSchemaName="finance"
+                baseColumnNames="ecriture_source_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_ecriture_comptable_source"/>
+
+        <addUniqueConstraint
+                tableName="ecriture_comptable" schemaName="finance"
+                columnNames="hotel_id, numero"
+                constraintName="uk_ecriture_comptable_hotel_numero"/>
+
+        <sql>
+            ALTER TABLE finance.ecriture_comptable
+            ADD CONSTRAINT chk_ecriture_comptable_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.ecriture_comptable
+            ADD CONSTRAINT chk_ecriture_comptable_statut
+            CHECK (statut IN ('BROUILLON','VALIDEE','CONTRE_PASSEE'))
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.ecriture_comptable
+            ADD CONSTRAINT chk_ecriture_comptable_totals_nonneg
+            CHECK (total_debit &gt;= 0 AND total_credit &gt;= 0)
+        </sql>
+
+        <createIndex tableName="ecriture_comptable" schemaName="finance"
+                     indexName="ix_ecriture_comptable_hotel_date">
+            <column name="hotel_id"/>
+            <column name="date_comptable"/>
+        </createIndex>
+
+        <createIndex tableName="ecriture_comptable" schemaName="finance"
+                     indexName="ix_ecriture_comptable_journal">
+            <column name="journal_id"/>
+            <column name="date_comptable"/>
+        </createIndex>
+
+        <createIndex tableName="ecriture_comptable" schemaName="finance"
+                     indexName="ix_ecriture_comptable_exercice">
+            <column name="exercice_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="ecriture_comptable" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         CHANGESET 3 : table finance.ligne_ecriture
+         ==================================================================== -->
+    <changeSet id="047-3-create-ligne-ecriture" author="cityprojects">
+        <comment>
+            Bloc B2 - Ligne d'ecriture (debit ou credit). Compte_code = FK
+            logique vers plan_comptable_general (pas de FK SQL : PCG global,
+            ligne tenant-scopee - on valide cote service avec
+            existsUtilisableByCode).
+        </comment>
+
+        <createTable tableName="ligne_ecriture" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_ligne_ecriture" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ecriture_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ordre" type="INTEGER" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compte_code" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(500)"/>
+            <column name="sens" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant" type="NUMERIC(19,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compte_auxiliaire_ref" type="VARCHAR(50)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="ligne_ecriture" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_ligne_ecriture_hotel"/>
+
+        <addForeignKeyConstraint
+                baseTableName="ligne_ecriture" baseTableSchemaName="finance"
+                baseColumnNames="ecriture_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_ligne_ecriture_ecriture"
+                onDelete="CASCADE"/>
+
+        <sql>
+            ALTER TABLE finance.ligne_ecriture
+            ADD CONSTRAINT chk_ligne_ecriture_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.ligne_ecriture
+            ADD CONSTRAINT chk_ligne_ecriture_sens
+            CHECK (sens IN ('DEBIT','CREDIT'))
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.ligne_ecriture
+            ADD CONSTRAINT chk_ligne_ecriture_montant_positif
+            CHECK (montant &gt; 0)
+        </sql>
+
+        <createIndex tableName="ligne_ecriture" schemaName="finance"
+                     indexName="ix_ligne_ecriture_ecriture">
+            <column name="ecriture_id"/>
+        </createIndex>
+
+        <createIndex tableName="ligne_ecriture" schemaName="finance"
+                     indexName="ix_ligne_ecriture_hotel_compte">
+            <column name="hotel_id"/>
+            <column name="compte_code"/>
+            <column name="ecriture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="ligne_ecriture" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         CHANGESET 4 : trigger PG defense en profondeur pour l'equilibre
+         Σ debits = Σ credits sur les ecritures VALIDEE.
+
+         Skip H2 (dbms="postgresql") : la garde reste applicative
+         (EcritureComptableServiceImpl#creer valide avant save).
+         ==================================================================== -->
+    <changeSet id="047-4-trigger-balance-ecriture-pg" author="cityprojects" dbms="postgresql">
+        <comment>
+            Bloc B2 - Trigger PL/pgSQL : empeche l'INSERT/UPDATE d'une
+            ecriture VALIDEE si total_debit != total_credit (tolerance 0.01).
+            Defense en profondeur cote BDD ; la garde primaire reste
+            applicative dans EcritureComptableServiceImpl.
+        </comment>
+
+        <sql splitStatements="false" stripComments="false">
+            CREATE OR REPLACE FUNCTION finance.check_ecriture_balance()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF NEW.statut = 'VALIDEE' THEN
+                    IF ABS(COALESCE(NEW.total_debit, 0) - COALESCE(NEW.total_credit, 0)) &gt; 0.01 THEN
+                        RAISE EXCEPTION 'error.ecriture.unbalanced (debit=% credit=%)',
+                            NEW.total_debit, NEW.total_credit;
+                    END IF;
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        </sql>
+
+        <sql splitStatements="false" stripComments="false">
+            DROP TRIGGER IF EXISTS trg_ecriture_balance ON finance.ecriture_comptable;
+            CREATE TRIGGER trg_ecriture_balance
+                BEFORE INSERT OR UPDATE ON finance.ecriture_comptable
+                FOR EACH ROW
+                EXECUTE FUNCTION finance.check_ecriture_balance();
+        </sql>
+
+        <rollback>
+            <sql splitStatements="false">
+                DROP TRIGGER IF EXISTS trg_ecriture_balance ON finance.ecriture_comptable;
+            </sql>
+            <sql splitStatements="false">
+                DROP FUNCTION IF EXISTS finance.check_ecriture_balance();
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

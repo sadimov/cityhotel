@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Tour 51bis - Bridge ServiceHotelier -> LigneFacture.
+
+  La colonne finance.lignes_factures.service_id existe deja (cf. changeset
+  006-f-4-create-table-lignes-factures, type BIGINT NULL) pour stocker la
+  reference vers une prestation hoteliere quand type_ligne = SERVICE.
+
+  Ce changeset ajoute :
+    - une FK vers inventory.services_hoteliers(service_id) (cross-module ;
+      l'isolation tenant cross-tenant est garantie par les services finance
+      qui filtrent via @TenantId Hibernate cote ServiceHotelier),
+    - un index sur service_id pour acceler les remontees folio par service.
+
+  Pas de modification de la table elle-meme : la colonne est deja en place
+  et nullable. Pas de migration de donnees (jusqu'au tour 51bis, aucune
+  ligne SERVICE n'a ete creee, le champ etait toujours null).
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ====================================================================
+         Changeset 037-1 : FK lignes_factures.service_id -> services_hoteliers
+         ==================================================================== -->
+    <changeSet id="037-1-fk-lignes-factures-service" author="cityprojects">
+        <comment>
+            FK cross-module finance.lignes_factures(service_id) -> inventory.services_hoteliers(service_id).
+            Tenant-safety : la lecture des services hoteliers est filtree par
+            @TenantId Hibernate cote FactureServiceImpl avant la creation de
+            la ligne ; la FK assure la coherence referentielle SQL.
+            Pas d'ON DELETE CASCADE : la suppression physique d'un service
+            hotelier est refusee si une ligne de facture le reference (audit
+            comptable).
+        </comment>
+
+        <addForeignKeyConstraint
+            baseTableName="lignes_factures" baseTableSchemaName="finance"
+            baseColumnNames="service_id"
+            referencedTableName="services_hoteliers" referencedTableSchemaName="inventory"
+            referencedColumnNames="service_id"
+            constraintName="fk_lignes_factures_service"/>
+
+        <rollback>
+            <dropForeignKeyConstraint
+                baseTableName="lignes_factures" baseTableSchemaName="finance"
+                constraintName="fk_lignes_factures_service"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 037-2 : index sur service_id
+         ==================================================================== -->
+    <changeSet id="037-2-index-lignes-factures-service" author="cityprojects">
+        <comment>
+            Index sur service_id pour les remontees folio par service hotelier
+            (statistiques de prestations vendues) et pour eviter un seq-scan
+            sur deletion d'un service (controle d'integrite cote service).
+        </comment>
+
+        <createIndex tableName="lignes_factures" schemaName="finance"
+                     indexName="ix_lignes_factures_service">
+            <column name="service_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="lignes_factures" schemaName="finance"
+                       indexName="ix_lignes_factures_service"/>
+        </rollback>
+    </changeSet>
+
+    <!-- ====================================================================
+         Changeset 037-3 : motif d'annulation sur bons_sortie
+         ==================================================================== -->
+    <changeSet id="037-3-add-motif-annulation-bons-sortie" author="cityprojects">
+        <comment>
+            Tour 51bis : ajout du motif d'annulation sur bons_sortie.
+            Obligatoire cote DTO lors de l'annulation (audit inventaire) ;
+            nullable cote SQL pour les BS deja annules avant la migration et
+            pour eviter de bloquer un eventuel rollback applicatif.
+        </comment>
+
+        <addColumn tableName="bons_sortie" schemaName="inventory">
+            <column name="motif_annulation" type="VARCHAR(500)"/>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="bons_sortie" schemaName="inventory"
+                        columnName="motif_annulation"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

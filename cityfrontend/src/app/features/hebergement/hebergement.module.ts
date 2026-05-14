@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 
 import { CheckInFormComponent } from './components/check-in-form/check-in-form.component';
+import { NightAuditPageComponent } from './components/night-audit-page/night-audit-page.component';
 import { ReservationFormComponent } from './components/reservation-form/reservation-form.component';
 import { ReservationsCalendarComponent } from './components/reservations-calendar/reservations-calendar.component';
 import { ReservationsListComponent } from './components/reservations-list/reservations-list.component';
@@ -25,6 +26,7 @@ import { HebergementRoutingModule } from './hebergement-routing.module';
     ReservationsListComponent,
     ReservationFormComponent,
     CheckInFormComponent,
+    NightAuditPageComponent,
   ],
   imports: [
     CommonModule,

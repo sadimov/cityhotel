@@ -73,7 +73,32 @@ public class Hotel {
 
     @Column(name = "fuseau_horaire", length = 50)
     private String fuseauHoraire = "Africa/Nouakchott";
-    
+
+    /**
+     * Numero d'Identification Fiscale de l'hotel (Mauritanie).
+     * <p>Champ optionnel utilise par la generation PDF de factures clients
+     * (mention legale obligatoire). Aucune valeur par defaut : si null,
+     * la mention n'est tout simplement pas imprimee.</p>
+     */
+    @Column(name = "nif", length = 50)
+    private String nif;
+
+    /**
+     * Libelle paramatrable des conditions de paiement, imprime en pied de
+     * facture PDF. Si null, le {@code FacturePdfHelper} utilise une valeur
+     * par defaut codee ("A reception de facture, sauf accord ecrit.").
+     */
+    @Column(name = "mentions_conditions_paiement", columnDefinition = "TEXT")
+    private String mentionsConditionsPaiement;
+
+    /**
+     * Libelle paramatrable des penalites de retard, imprime en pied de
+     * facture PDF. Si null, le {@code FacturePdfHelper} utilise une valeur
+     * par defaut codee ("Penalites de retard : taux legal applicable...").
+     */
+    @Column(name = "mentions_penalites_retard", columnDefinition = "TEXT")
+    private String mentionsPenalitesRetard;
+
     @Column(name = "actif")
     private Boolean actif = true;
     
@@ -139,7 +164,20 @@ public class Hotel {
 
     public String getFuseauHoraire() { return fuseauHoraire; }
     public void setFuseauHoraire(String fuseauHoraire) { this.fuseauHoraire = fuseauHoraire; }
-    
+
+    public String getNif() { return nif; }
+    public void setNif(String nif) { this.nif = nif; }
+
+    public String getMentionsConditionsPaiement() { return mentionsConditionsPaiement; }
+    public void setMentionsConditionsPaiement(String mentionsConditionsPaiement) {
+        this.mentionsConditionsPaiement = mentionsConditionsPaiement;
+    }
+
+    public String getMentionsPenalitesRetard() { return mentionsPenalitesRetard; }
+    public void setMentionsPenalitesRetard(String mentionsPenalitesRetard) {
+        this.mentionsPenalitesRetard = mentionsPenalitesRetard;
+    }
+
     public Boolean getActif() { return actif; }
     public void setActif(Boolean actif) { this.actif = actif; }
     

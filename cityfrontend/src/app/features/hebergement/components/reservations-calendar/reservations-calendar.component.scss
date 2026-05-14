@@ -1,125 +1,868 @@
+// =============================================================================
+//  reservations-calendar — Refonte Tour 43 (2026-05-09)
+//  Grille temporelle plein écran : colonnes = jours, lignes = chambres
+//  groupées par type. Identité graphique bleu clair (var --bs-info).
+// =============================================================================
+
 :host {
   display: block;
+  height: 100%;
 }
 
 .reservations-calendar {
-  &__header h2 {
-    color: var(--bs-primary, #0dcaf0);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 70px); // moins le header app
+  background: #fff;
+
+  // ── Topbar : identité + navigation + actions ──────────────────────────
+  &__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.35rem 1rem;
+    min-height: 44px;
+    background: linear-gradient(180deg, #f4f9fe 0%, #fbfdff 100%);
+    border-bottom: 1px solid #d8e3ef;
+    box-shadow: 0 1px 2px rgba(20, 94, 155, 0.04);
   }
 
-  &__monthLabel {
-    font-size: 1rem;
-    color: #555;
+  &__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
   }
 
-  &__grid {
-    border: 1px solid #e3e6ea;
-    border-radius: 0.5rem;
-    overflow: hidden;
-    background: #fff;
+  &__brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    background: linear-gradient(135deg, #145e9b 0%, #1d7ec7 100%);
+    color: #fff;
+    font-size: 0.95rem;
+    box-shadow: 0 2px 4px rgba(20, 94, 155, 0.25);
+    flex-shrink: 0;
   }
 
-  &__weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    background: #f8f9fa;
-    border-bottom: 1px solid #e3e6ea;
-  }
-
-  &__weekday {
-    padding: 0.5rem 0.75rem;
-    text-align: center;
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: #444;
-    text-transform: uppercase;
-  }
-
-  &__days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    grid-auto-rows: minmax(96px, 1fr);
-  }
-
-  &__cell {
-    border-right: 1px solid #f0f1f3;
-    border-bottom: 1px solid #f0f1f3;
-    padding: 0.35rem;
+  &__brand-text {
     display: flex;
     flex-direction: column;
-    background: #fff;
+    line-height: 1.1;
+    min-width: 0;
+  }
 
-    &:nth-child(7n) {
-      border-right: none;
+  &__brand-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0e3f6a;
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__brand-subtitle {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #5a7693;
+    margin-top: 2px;
+    text-transform: capitalize;
+    letter-spacing: 0.2px;
+  }
+
+  &__nav {
+    display: inline-flex;
+    align-items: center;
+    background: #fff;
+    border: 1px solid #d3dfeb;
+    border-radius: 8px;
+    padding: 2px;
+    gap: 2px;
+    box-shadow: 0 1px 2px rgba(20, 94, 155, 0.04) inset;
+  }
+
+  &__nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    padding: 0 0.65rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    color: #1f4e75;
+    font-size: 0.73rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
+    white-space: nowrap;
+
+    i { font-size: 0.85rem; line-height: 1; }
+
+    &:hover {
+      background: #e8f1fb;
+      color: #0e3f6a;
     }
 
-    &--out {
-      background: #fafafa;
-      color: #b8b8b8;
+    &:active {
+      transform: scale(0.97);
+    }
+
+    &--icon {
+      width: 28px;
+      padding: 0;
+    }
+  }
+
+  &__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+
+    .reservations-calendar__nav-btn {
+      background: #fff;
+      border: 1px solid #d3dfeb;
+      box-shadow: 0 1px 2px rgba(20, 94, 155, 0.04);
+
+      &:hover {
+        background: #e8f1fb;
+        border-color: #b5d1ea;
+      }
+    }
+  }
+
+  // Responsive : sur petit écran, on cache le sous-titre et réduit encore.
+  @media (max-width: 992px) {
+    &__brand-subtitle { display: none; }
+    &__nav-btn span { display: none; }
+    &__nav-btn { padding: 0 0.4rem; width: 28px; }
+  }
+
+  &__loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // ── Conteneur scrollable de la grille ─────────────────────────────────
+  &__scroll {
+    flex: 1;
+    overflow: auto;
+    position: relative;
+  }
+
+  // ── Table principale ──────────────────────────────────────────────────
+  &__grid {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: max-content;
+    min-width: 100%;
+    font-size: 0.8rem;
+
+    thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
+
+    th,
+    td {
+      border: 1px solid #e9ecef;
+      padding: 0;
+    }
+  }
+
+  // Coin haut-gauche (libellé + date range)
+  &__corner-cell {
+    background: #fff;
+    padding: 0.4rem 0.6rem !important;
+    min-width: 200px;
+    text-align: left;
+    font-weight: 600;
+    color: #145e9b;
+    position: sticky;
+    left: 0;
+    z-index: 11;
+
+    // Section haute : daterange picker. Hauteur alignée sur corner-row (22px).
+    &--top {
+      padding: 0 0.35rem !important;
+      height: 22px;
+      border-bottom: 1px solid #dde6ee;
+    }
+
+    // Section basse : libellé "Chambres". Hauteur alignée sur day-header (36px).
+    &--label {
+      height: 36px;
+      display: table-cell;
+      vertical-align: middle;
+    }
+  }
+
+  // ── Daterange picker (en-tête colonne chambres) ────────────────────────
+  &__daterange-input {
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: #145e9b;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0 0.4rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+
+    &:hover,
+    &.is-open {
+      background: #eaf3fb;
+      border-color: #b4d6f0;
+    }
+
+    .reservations-calendar__daterange-value {
+      flex: 1;
+      text-align: center;
+    }
+  }
+}
+
+.reservations-calendar__daterange-picker {
+  position: fixed;
+  background: #fff;
+  border: 1px solid #d0dce8;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(20, 94, 155, 0.18);
+  z-index: 1080; // au-dessus de tout sauf modal SweetAlert2
+  padding: 0.75rem;
+  min-width: 560px;
+}
+
+.reservations-calendar__daterange-hint {
+  font-size: 0.78rem;
+  color: #4a5568;
+  background: #f1f7fd;
+  border: 1px solid #d6e6f3;
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.reservations-calendar__daterange-months {
+  display: flex;
+  gap: 1rem;
+}
+
+.reservations-calendar__daterange-month {
+  flex: 1;
+  min-width: 0;
+}
+
+.reservations-calendar__daterange-month-header {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.reservations-calendar__daterange-month-name {
+  text-align: center;
+  font-weight: 600;
+  color: #145e9b;
+  font-size: 0.85rem;
+  text-transform: capitalize;
+}
+
+.reservations-calendar__daterange-nav,
+.reservations-calendar__daterange-nav-placeholder {
+  width: 28px;
+  height: 28px;
+}
+
+.reservations-calendar__daterange-nav {
+  border: 1px solid #dde6ee;
+  border-radius: 4px;
+  background: #fff;
+  color: #145e9b;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #eaf3fb;
+  }
+}
+
+.reservations-calendar__daterange-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+
+  span {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    padding: 2px 0;
+  }
+}
+
+.reservations-calendar__daterange-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.reservations-calendar__daterange-day {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 4px;
+  height: 30px;
+  font-size: 0.78rem;
+  color: #2d3748;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+
+  &:hover:not(.is-start):not(.is-end) {
+    background: #eaf3fb;
+  }
+
+  &.is-other-month {
+    color: #c0c8d2;
+  }
+
+  &.is-today {
+    border-color: #145e9b;
+    font-weight: 700;
+  }
+
+  &.is-in-range {
+    background: #d8eafc;
+    color: #145e9b;
+    border-radius: 0;
+  }
+
+  &.is-start,
+  &.is-end {
+    background: #145e9b;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &.is-start {
+    border-radius: 4px 0 0 4px;
+  }
+
+  &.is-end {
+    border-radius: 0 4px 4px 0;
+  }
+}
+
+// Bloc fictif pour fermer correctement le sélecteur racine .reservations-calendar
+// (les règles &__* du picker terminent au bloc parent ci-dessus, on rouvre ici).
+.reservations-calendar {
+
+  // Cases ligne 1 : chiffre `0` fond bleu (cf. cahier des charges)
+  &__corner-row {
+    background: #145e9b;
+    color: #fff;
+    text-align: center;
+    font-weight: 600;
+    height: 22px;
+    width: 36px;
+    min-width: 36px;
+  }
+
+  // Cases ligne 2 : numéro jour + 3 lettres
+  &__day-header {
+    text-align: center;
+    background: #f1f5fa;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 2px 0 !important;
+    font-weight: 500;
+    color: #333;
+
+    &--weekend {
+      background: #eef0f2;
+    }
+
+    &--today {
+      background: #145e9b !important;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    &--past {
+      color: #999;
+    }
+  }
+
+  &__day-num {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  &__day-lbl {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  // ── Bandeau type chambre (non interactif) ─────────────────────────────
+  &__type-row {
+    background: #e9eef4;
+
+    .reservations-calendar__type-cell {
+      padding: 0.4rem 0.75rem !important;
+      background: #e9eef4;
+      border-left: 3px solid #145e9b;
+    }
+
+    // Tour 49 — Variante "Salles" pour distinguer visuellement les espaces
+    // événementiels (conférence, réunion) des chambres d'hébergement.
+    // Bandeau légèrement violet, bordure gauche violette aussi.
+    &--salle {
+      background: #f0eafa;
+
+      .reservations-calendar__type-cell {
+        background: #f0eafa;
+        border-left-color: #7a4cb7;
+      }
+    }
+  }
+
+  // Tour 49 — Séparateur entre les chambres et les salles : fine ligne
+  // diagonale + label discret. Évite de surcharger la grille tout en
+  // marquant le pivot inventaire-hébergement → inventaire-événementiel.
+  &__category-separator {
+    background: linear-gradient(180deg, #ffffff 0%, #f0eafa 100%);
+
+    .reservations-calendar__category-separator-cell {
+      padding: 0.5rem 0.75rem !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f0eafa 100%);
+      border-top: 2px dashed #c8b8e0;
+      border-left: 3px solid #7a4cb7;
+    }
+  }
+
+  &__category-separator-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #5a3a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  &__type-hint {
+    font-size: 0.75rem;
+    font-style: italic;
+  }
+
+  // ── Lignes chambre ────────────────────────────────────────────────────
+  &__room-row {
+    height: 24px;
+    transition: background-color 0.15s ease;
+
+    // Hover ligne entière : voile bleu transparent sur toutes les cellules
+    // vides. Les <td> .day-cell ont un background blanc opaque qui couvrirait
+    // un simple `background-color` sur le <tr>, d'où l'override via descendant.
+    // Les rectangles de réservation (.resa-cell) gardent leur couleur de statut.
+    &:hover {
+      .reservations-calendar__day-cell {
+        background-color: rgba(98, 180, 248, 0.18);
+
+        &--weekend {
+          background-color: rgba(98, 180, 248, 0.14);
+        }
+
+        &--today {
+          background-color: rgba(98, 180, 248, 0.28);
+        }
+
+        // --past garde son hachuré gris (non interactif)
+        &--past {
+          background-color: transparent;
+        }
+      }
+    }
+  }
+
+  &__room-label {
+    background: #fafbfc;
+    padding: 0.3rem 0.6rem !important;
+    min-width: 160px;
+    width: 160px;
+    white-space: nowrap;
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    border-right: 2px solid #e9ecef;
+  }
+
+  // ── Cellules jour vides ───────────────────────────────────────────────
+  &__day-cell {
+    width: 36px;
+    min-width: 36px;
+    height: 24px;
+    cursor: pointer;
+    background: #fff;
+    transition: background-color 0.1s ease;
+
+    &:hover {
+      background: rgba(98, 180, 248, 0.18);
+    }
+
+    &--weekend {
+      background: #f6f7f9;
     }
 
     &--today {
       background: #e7f6fc;
-      box-shadow: inset 0 0 0 2px #0dcaf0;
+    }
+
+    &--past {
+      background-image: repeating-linear-gradient(
+        45deg,
+        #d8d8d8 0,
+        #d8d8d8 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      cursor: not-allowed;
+
+      &:hover {
+        background-image: repeating-linear-gradient(
+          45deg,
+          #d8d8d8 0,
+          #d8d8d8 1px,
+          transparent 1px,
+          transparent 4px
+        );
+      }
+    }
+
+    &--selected {
+      background: rgba(220, 53, 69, 0.45) !important;
     }
   }
 
-  &__day {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: inherit;
-    margin-bottom: 0.2rem;
-  }
-
-  &__chips {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    overflow: hidden;
-  }
-
-  &__chip {
-    border: none;
-    border-radius: 0.25rem;
-    padding: 1px 6px;
-    font-size: 0.72rem;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  // ── Rectangles réservation ────────────────────────────────────────────
+  &__resa-cell {
+    color: #fff;
+    text-align: center;
+    padding: 0.2rem 0.6rem !important;
     cursor: pointer;
-    transition: filter 200ms ease;
+    font-size: 0.78rem;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    transition: filter 0.15s ease;
+    // Côtés courts verticaux obliques (parallélogramme penché vers la droite).
+    // Le coin haut-gauche est décalé de 6px à droite, le coin bas-droite de 6px à gauche.
+    // Avec une hauteur de ligne ~24px, l'angle est ≈ atan(6/24) ≈ 14°.
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 
     &:hover {
       filter: brightness(0.92);
     }
+    // Les variantes --start-near / --end-near sont gérées en règles
+    // dédiées par statut plus bas (rose pour EN_ATTENTE, vert clair pour
+    // CONFIRMEE/ARRIVEE). Pas de filter brightness générique : on veut des
+    // couleurs métier distinctes (cf. cahier de charges /correction-calendar/).
+  }
 
-    // Color coding par statut (cohérent avec roles_utilisateurs.txt /
-    // identité graphique bleu clair).
-    &--en-attente {
-      background: #fff3cd;
-      color: #856404;
-    }
+  // ── Color-coding statuts (mirror du STATUT_RESERVATION_CHIP_MAP) ──────
+  // Workflow et sémantique métier :
+  //   CONFIRMEE → rouge      (créée, pas encore arrivée — non confirmée par check-in)
+  //   ARRIVEE   → vert       (check-in effectué, client présent)
+  //   PARTIE    → orange     (check-out effectué)
+  //   ANNULEE   → gris foncé barré (annulée — distincte du rouge CONFIRMEE)
+  //   NO_SHOW   → gris       (non-présentation détectée par le night audit)
+  .reservations-calendar__chip--confirmee {
+    background: #dc3545; // rouge Bootstrap danger (créée, non confirmée)
+    color: #fff;
+  }
+  .reservations-calendar__chip--arrivee {
+    background: #28a745; // vert Bootstrap success (check-in fait)
+    color: #fff;
+  }
+  .reservations-calendar__chip--partie {
+    background: #fd7e14; // orange (check-out fait)
+    color: #fff;
+  }
+  .reservations-calendar__chip--annulee {
+    background: #495057; // gris foncé (distinct du rouge CONFIRMEE)
+    color: #fff;
+    text-decoration: line-through;
+    opacity: 0.75;
+  }
+  .reservations-calendar__chip--no-show {
+    background: #6c757d; // gris Bootstrap secondary
+    color: #fff;
+    text-decoration: line-through;
+    opacity: 0.85;
+  }
 
-    &--confirmee {
-      background: #cfe9ff;
-      color: #0a4275;
-    }
+  // Variantes "near" (cahier des charges) — date d'arrivée ou de fin proche.
+  //   CONFIRMEE + start-near → rose (arrivée imminente, encore non confirmée)
+  //   ARRIVEE + end-near    → vert clair (départ imminent)
+  //
+  // Spécificité renforcée : on cumule `&__resa-cell` (la classe statique du <td>)
+  // pour battre une éventuelle règle externe qui surchargerait le background.
+  &__resa-cell.reservations-calendar__resa-cell--start-near.reservations-calendar__chip--confirmee {
+    background: #ec4899; // rose franc (Tailwind pink-500) — bien distinct du rouge danger
+    color: #fff;
+  }
+  &__resa-cell.reservations-calendar__resa-cell--end-near.reservations-calendar__chip--arrivee {
+    background: #86efac; // vert clair (Tailwind green-300)
+    color: #14532d; // texte vert sombre pour contraste
+  }
 
-    &--arrivee {
-      background: #d1e7dd;
-      color: #0f5132;
-    }
+  // ── Loader plein écran (saving) ───────────────────────────────────────
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050;
+  }
 
-    &--partie {
-      background: #e2e3e5;
-      color: #41464b;
-    }
+  // ── Empty state ───────────────────────────────────────────────────────
+  &__empty {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+  }
 
-    &--annulee {
-      background: #f8d7da;
-      color: #842029;
-      text-decoration: line-through;
+  &__resa-name {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  // ── Quick-create client (modale création — Phase 2) ──────────────────
+  &__quick-client {
+    background: #f1f7fd;
+    border: 1px solid #c5e0f7;
+    border-radius: 0.5rem;
+
+    .form-label.small {
+      margin-bottom: 0.15rem;
+      font-weight: 500;
     }
   }
+
+  // ── Bloc tarification (Phase 2) ──────────────────────────────────────
+  &__tarif {
+    background: #f8fafd;
+    border: 1px solid #e1ebf5;
+    border-radius: 0.5rem;
+  }
+
+  &__tarif-detail {
+    max-height: 240px;
+    overflow-y: auto;
+    border-top: 1px solid #e1ebf5;
+    padding-top: 0.5rem;
+  }
+
+  // ── Bloc changement chambre (modale modification — Phase 2) ──────────
+  &__change-room {
+    background: #fdf8f1;
+    border: 1px solid #f0e0c5;
+    border-radius: 0.5rem;
+
+    legend {
+      width: auto;
+      padding: 0 0.5rem;
+      color: #b06a00;
+    }
+  }
+
+  // ── Cartes récap (modale Paiements — Phase 2) ────────────────────────
+  &__recap-card {
+    background: #f8fafd;
+    border: 1px solid #e1ebf5;
+    border-radius: 0.5rem;
+  }
+
+  // ── Tour 45 — Quick-create société (modale création) ────────────────
+  &__quick-societe {
+    background: #fdf4f9;
+    border: 1px solid #f4cee0;
+    border-radius: 0.5rem;
+
+    .form-label.small {
+      margin-bottom: 0.15rem;
+      font-weight: 500;
+    }
+  }
+
+  // ── Tour 45 — Bandeau client modale consultation ────────────────────
+  &__consult-client {
+    background: linear-gradient(135deg, #e8f3fc 0%, #f5fafd 100%);
+    border: 1px solid #c5e0f7;
+    border-radius: 0.6rem;
+  }
+
+  // ── Tour 45 — Avatar circulaire (modale consultation) ───────────────
+  &__avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #145e9b 0%, #1d7ec7 100%);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(20, 94, 155, 0.25);
+  }
+
+  // ── Tour 45 — Bandeau client modale édition (compact) ───────────────
+  &__edit-client-banner {
+    background: #f4f9fe;
+    border: 1px solid #d6e6f5;
+    border-radius: 0.5rem;
+  }
+
+  // ── Tour 45 — Sections modales (titre + bloc) ───────────────────────
+  &__section {
+    padding: 0.85rem 1rem;
+    background: #fcfdff;
+    border: 1px solid #e8eef5;
+    border-radius: 0.5rem;
+  }
+
+  &__section-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #145e9b;
+    margin: 0 0 0.6rem;
+  }
+
+  // ── Tour 45 — Toolbar paiements + sous-panels ────────────────────────
+  &__pay-toolbar {
+    background: #fcfdff;
+    border: 1px dashed #d6e6f5;
+    border-radius: 0.5rem;
+  }
+
+  &__sub-panel {
+    background: #f8fafd;
+    border: 1px solid #c5e0f7;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(20, 94, 155, 0.06);
+  }
+
+  // ── Tour 46 — Scroll vertical de la liste folio (modale paiements) ──
+  &__folio-scroll {
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    &::-webkit-scrollbar-track {
+      background: #eef4fb;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: #b6cfe6;
+      border-radius: 3px;
+    }
+    scrollbar-width: thin;
+    scrollbar-color: #b6cfe6 #eef4fb;
+  }
+}
+
+// ── Menu contextuel custom ─────────────────────────────────────────────
+.reservations-calendar__context-menu {
+  position: fixed;
+  z-index: 2000;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  padding: 4px 0;
+  min-width: 180px;
+
+  .dropdown-item {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    color: #333;
+
+    &:hover:not(:disabled) {
+      background: #f5f7fa;
+    }
+
+    &:disabled,
+    &[aria-disabled='true'] {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    &.text-danger:not(:disabled):hover {
+      background: #fdecec;
+    }
+  }
+
+  .dropdown-divider {
+    height: 0;
+    margin: 4px 0;
+    border-top: 1px solid #e9eef3;
+  }
+}
+
+// ── Scrollbar fine (cohérent avec le reste de l'app) ───────────────────
+.reservations-calendar__scroll {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+  }
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
 }

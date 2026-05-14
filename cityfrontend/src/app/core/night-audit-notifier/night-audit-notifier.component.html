@@ -1,0 +1,72 @@
+<!--
+  Composant invisible — n'émet aucun bloc dans le flux du layout.
+  Seule la modale Bootstrap est portée dans le DOM (cachée par défaut via
+  `.modal`/`display:none` côté Bootstrap), affichée à la réception d'un
+  event `night-audit-modal`.
+
+  Tour 48 — refonte : deux actions au lieu d'une.
+   - "Démarrer" : navigue vers la page de préparation /hebergement/night-audit
+   - "Reporter" : memoize snooze pour la journée
+-->
+<div
+  #launchModal
+  class="modal fade"
+  tabindex="-1"
+  aria-labelledby="nightAuditLaunchModalTitle"
+  aria-hidden="true"
+  data-bs-backdrop="static"
+  data-bs-keyboard="false"
+>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-info-subtle">
+        <h5 class="modal-title d-flex align-items-center gap-2" id="nightAuditLaunchModalTitle">
+          <i class="bi bi-moon-stars" aria-hidden="true"></i>
+          {{ 'nightAudit.modal.title' | translate }}
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          [attr.aria-label]="'common.close' | translate"
+          (click)="closeLaunchModal()"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">
+          {{ 'nightAudit.modal.subtitle' | translate: { date: today } }}
+        </p>
+        <h6 class="fw-semibold mb-2">
+          {{ 'nightAudit.modal.actions.title' | translate }}
+        </h6>
+        <ul class="list-unstyled mb-0">
+          <li class="d-flex align-items-start gap-2 mb-2">
+            <i class="bi bi-x-circle text-danger mt-1" aria-hidden="true"></i>
+            <span>{{ 'nightAudit.modal.actions.noShow' | translate }}</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-moon-fill text-info mt-1" aria-hidden="true"></i>
+            <span>{{ 'nightAudit.modal.actions.nuitees' | translate }}</span>
+          </li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline-secondary d-flex align-items-center gap-2"
+          (click)="snooze()"
+        >
+          <i class="bi bi-clock-history" aria-hidden="true"></i>
+          <span>{{ 'hebergement.nightAudit.page.notifier.snooze' | translate }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger d-flex align-items-center gap-2"
+          (click)="start()"
+        >
+          <i class="bi bi-play-fill" aria-hidden="true"></i>
+          <span>{{ 'hebergement.nightAudit.page.notifier.start' | translate }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

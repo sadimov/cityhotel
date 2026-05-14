@@ -4,6 +4,8 @@ import com.cityprojects.citybackend.common.audit.AuditableEntity;
 import com.cityprojects.citybackend.common.tenant.TenantAware;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -73,6 +75,16 @@ public class TypeChambre extends AuditableEntity implements TenantAware {
 
     @Column(name = "prix_base", precision = 10, scale = 2)
     private BigDecimal prixBase = BigDecimal.ZERO;
+
+    /**
+     * Categorie fonctionnelle : CHAMBRE (nuitee) ou SALLE (journee).
+     * Tour 49 : permet de gerer les salles de conferences dans le meme
+     * modele que les chambres (reservations, nuitees, facturation reutilises).
+     */
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "categorie", nullable = false, length = 20)
+    private CategorieEspace categorie = CategorieEspace.CHAMBRE;
 
     @Column(name = "actif", nullable = false)
     private Boolean actif = Boolean.TRUE;
@@ -161,5 +173,13 @@ public class TypeChambre extends AuditableEntity implements TenantAware {
 
     public void setActif(Boolean actif) {
         this.actif = actif;
+    }
+
+    public CategorieEspace getCategorie() {
+        return categorie;
+    }
+
+    public void setCategorie(CategorieEspace categorie) {
+        this.categorie = categorie;
     }
 }

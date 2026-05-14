@@ -26,5 +26,5 @@ public record PaiementCreateDto(
         @NotNull ModePaiement modePaiement,
         @Size(max = 100) String referencePaiement,
         LocalDate datePaiement,
-        String commentaires) {
+        @Size(max = 2000) String commentaires) {
 }

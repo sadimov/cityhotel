@@ -121,6 +121,21 @@ export class BonsCommandeService {
       .pipe(map((r) => r.data as BonCommande));
   }
 
+  /** Helper Tour 51bis : envoie un bon (brouillon -> envoye). */
+  envoyer(id: number): Observable<BonCommande> {
+    return this.changerStatut(id, 'envoye');
+  }
+
+  /** Helper Tour 51bis : confirme un bon (envoye -> confirme). */
+  confirmer(id: number): Observable<BonCommande> {
+    return this.changerStatut(id, 'confirme');
+  }
+
+  /** Helper Tour 51bis : annule un bon. */
+  annuler(id: number): Observable<BonCommande> {
+    return this.changerStatut(id, 'annule');
+  }
+
   receptionner(id: number, dto: ReceptionMarchandise): Observable<BonCommande> {
     return this.http
       .post<ApiResponse<BonCommande>>(`${this.base}/${id}/reception`, dto)

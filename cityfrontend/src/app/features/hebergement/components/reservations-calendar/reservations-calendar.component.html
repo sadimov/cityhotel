@@ -1,89 +1,2285 @@
-<section class="reservations-calendar">
-  <header class="reservations-calendar__header d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 m-0">{{ 'hebergement.calendar.title' | translate }}</h2>
-    <div class="d-flex gap-2">
+<section class="reservations-calendar" (contextmenu)="$event.preventDefault()">
+  <!-- ── Bandeau du haut : titre + navigation période ──────────────────── -->
+  <header class="reservations-calendar__topbar">
+    <!-- Identité : icône + titre -->
+    <div class="reservations-calendar__brand">
+      <span class="reservations-calendar__brand-icon" aria-hidden="true">
+        <i class="bi bi-calendar3-week"></i>
+      </span>
+      <div class="reservations-calendar__brand-text">
+        <span class="reservations-calendar__brand-title">{{ 'hebergement.calendar.title' | translate }}</span>
+        <span class="reservations-calendar__brand-subtitle">
+          {{ viewStart | date: 'dd MMM' }} – {{ viewEnd | date: 'dd MMM yyyy' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Navigation période -->
+    <nav class="reservations-calendar__nav" [attr.aria-label]="'hebergement.calendar.title' | translate">
       <button
         type="button"
-        class="btn btn-outline-secondary btn-sm"
-        (click)="prevMonth()"
+        class="reservations-calendar__nav-btn reservations-calendar__nav-btn--icon"
+        (click)="prevPeriod()"
         [attr.aria-label]="'hebergement.calendar.previous' | translate"
+        [title]="'hebergement.calendar.previous' | translate"
       >
         <i class="bi bi-chevron-left" aria-hidden="true"></i>
       </button>
       <button
         type="button"
-        class="btn btn-outline-secondary btn-sm"
+        class="reservations-calendar__nav-btn"
         (click)="goToday()"
+        [title]="'hebergement.calendar.today' | translate"
       >
-        {{ 'hebergement.calendar.today' | translate }}
+        <i class="bi bi-bullseye me-1" aria-hidden="true"></i>
+        <span>{{ 'hebergement.calendar.today' | translate }}</span>
       </button>
       <button
         type="button"
-        class="btn btn-outline-secondary btn-sm"
-        (click)="nextMonth()"
+        class="reservations-calendar__nav-btn"
+        (click)="goCurrentMonth()"
+        [title]="'hebergement.calendar.currentMonth' | translate"
+      >
+        <i class="bi bi-calendar-month me-1" aria-hidden="true"></i>
+        <span>{{ 'hebergement.calendar.currentMonth' | translate }}</span>
+      </button>
+      <button
+        type="button"
+        class="reservations-calendar__nav-btn reservations-calendar__nav-btn--icon"
+        (click)="nextPeriod()"
         [attr.aria-label]="'hebergement.calendar.next' | translate"
+        [title]="'hebergement.calendar.next' | translate"
       >
         <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </button>
+    </nav>
+
+    <!-- Actions secondaires -->
+    <div class="reservations-calendar__actions">
+      <button
+        type="button"
+        class="reservations-calendar__nav-btn reservations-calendar__nav-btn--icon"
+        (click)="loadAll()"
+        [attr.aria-label]="'hebergement.calendar.refresh' | translate"
+        [title]="'hebergement.calendar.refresh' | translate"
+      >
+        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
       </button>
     </div>
   </header>
 
-  <div class="reservations-calendar__monthLabel mb-2 text-capitalize fw-semibold">
-    {{ monthLabel }}
-  </div>
-
+  <!-- ── État chargement / erreur ─────────────────────────────────────── -->
   @if (state === 'loading') {
     <div class="reservations-calendar__loading text-center py-5">
-      <div class="spinner-border text-primary" role="status">
+      <div class="spinner-border text-info" role="status">
         <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
       </div>
     </div>
   } @else if (state === 'error') {
-    <div class="alert alert-danger" role="alert">
-      {{ 'hebergement.calendar.error' | translate }}
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-danger ms-2"
-        (click)="goToday()"
-      >
+    <div class="alert alert-danger d-flex align-items-center justify-content-between m-3" role="alert">
+      <span>{{ 'hebergement.calendar.error' | translate }}</span>
+      <button type="button" class="btn btn-sm btn-outline-danger" (click)="retry()">
         {{ 'hebergement.calendar.retry' | translate }}
       </button>
     </div>
   } @else {
-    <div class="reservations-calendar__grid" role="grid">
-      <div class="reservations-calendar__weekdays" role="row">
-        @for (key of weekdayKeys; track key) {
-          <div class="reservations-calendar__weekday" role="columnheader">
-            {{ key | translate }}
-          </div>
-        }
-      </div>
-
-      <div class="reservations-calendar__days">
-        @for (cell of cells; track cell.iso) {
-          <div
-            class="reservations-calendar__cell"
-            [class.reservations-calendar__cell--out]="!cell.inCurrentMonth"
-            [class.reservations-calendar__cell--today]="cell.isToday"
-            role="gridcell"
-          >
-            <div class="reservations-calendar__day">{{ cell.day }}</div>
-            <div class="reservations-calendar__chips">
-              @for (r of cell.reservations; track r.reservationId) {
-                <button
-                  type="button"
-                  class="reservations-calendar__chip"
-                  [ngClass]="statutClass(r.statut)"
-                  (click)="goToReservation(r)"
-                  [attr.title]="r.numeroReservation + ' — ' + (r.nomClientPrincipal || '')"
+    <!-- ── Grille calendrier ────────────────────────────────────────── -->
+    <div class="reservations-calendar__scroll">
+      <table class="reservations-calendar__grid" (mouseleave)="cancelSelection()">
+        <thead>
+          <tr>
+            <th class="reservations-calendar__corner-cell reservations-calendar__corner-cell--top">
+              <button
+                type="button"
+                class="reservations-calendar__daterange-input"
+                [class.is-open]="pickerOpen"
+                (click)="togglePicker($event)"
+                [attr.aria-expanded]="pickerOpen"
+                [attr.aria-label]="'hebergement.calendar.range.openPicker' | translate"
+              >
+                <i class="bi bi-calendar-range me-1" aria-hidden="true"></i>
+                <span class="reservations-calendar__daterange-value">
+                  {{ viewStart | date: 'dd/MM/yy' }} – {{ viewEnd | date: 'dd/MM/yy' }}
+                </span>
+                <i class="bi bi-chevron-down ms-auto" aria-hidden="true"></i>
+              </button>
+            </th>
+            <th
+              *ngFor="let day of days; trackBy: trackByDate"
+              class="reservations-calendar__corner-row"
+            >
+              0
+            </th>
+          </tr>
+          <tr>
+            <th class="reservations-calendar__corner-cell reservations-calendar__corner-cell--label">
+              <i class="bi bi-house-door me-1" aria-hidden="true"></i>
+              {{ 'hebergement.calendar.rooms' | translate }}
+            </th>
+            <th
+              *ngFor="let day of days; trackBy: trackByDate"
+              class="reservations-calendar__day-header"
+              [class.reservations-calendar__day-header--weekend]="isWeekend(day)"
+              [class.reservations-calendar__day-header--today]="isToday(day)"
+              [class.reservations-calendar__day-header--past]="isPast(day)"
+            >
+              <span class="reservations-calendar__day-num">{{ dayNumber(day) }}</span>
+              <span class="reservations-calendar__day-lbl">{{ weekdayKey(day) | translate }}</span>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let group of groups; let groupIdx = index">
+            <!-- Tour 49 — Séparateur visuel avant le premier groupe SALLE -->
+            <tr
+              class="reservations-calendar__category-separator"
+              *ngIf="isFirstSalleGroup(groupIdx)"
+            >
+              <td
+                class="reservations-calendar__category-separator-cell"
+                [attr.colspan]="days.length + 1"
+              >
+                <span class="reservations-calendar__category-separator-label">
+                  <i class="bi bi-people-fill me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.groups.salles.title' | translate }}
+                </span>
+              </td>
+            </tr>
+            <!-- Bandeau type chambre/salle (non interactif) -->
+            <tr
+              class="reservations-calendar__type-row"
+              [class.reservations-calendar__type-row--salle]="typeCategorie(group.type) === 'SALLE'"
+            >
+              <td
+                class="reservations-calendar__type-cell"
+                [attr.colspan]="days.length + 1"
+              >
+                <i
+                  class="bi me-2"
+                  [class.bi-door-open]="typeCategorie(group.type) === 'CHAMBRE'"
+                  [class.bi-people-fill]="typeCategorie(group.type) === 'SALLE'"
+                  aria-hidden="true"
+                ></i>
+                <span class="fw-semibold">{{ group.type.typeNom }}</span>
+                <span class="reservations-calendar__type-hint text-muted ms-3">
+                  {{ 'hebergement.calendar.dragHint' | translate }}
+                </span>
+              </td>
+            </tr>
+            <!-- Lignes chambre -->
+            <tr
+              *ngFor="let room of group.chambres"
+              class="reservations-calendar__room-row"
+            >
+              <td class="reservations-calendar__room-label">
+                <span class="fw-semibold">{{ room.numeroChambre }}</span>
+                <span class="text-muted small ms-2">{{ group.type.typeNom }}</span>
+              </td>
+              <ng-container *ngFor="let day of renderedDays(room.chambreId ?? -1); trackBy: trackByDate">
+                <ng-container
+                  *ngIf="reservationStartingHere(room.chambreId ?? -1, day) as res; else emptyCell"
                 >
-                  {{ r.nomClientPrincipal || r.numeroReservation }}
-                </button>
-              }
-            </div>
-          </div>
-        }
-      </div>
+                  <td
+                    class="reservations-calendar__resa-cell"
+                    [ngClass]="statutChipClass(res.statut)"
+                    [class.reservations-calendar__resa-cell--start-near]="isStartNear(res)"
+                    [class.reservations-calendar__resa-cell--end-near]="isEndNear(res)"
+                    [attr.colspan]="reservationSpan(res)"
+                    (click)="openConsultModal(res); $event.stopPropagation()"
+                    (contextmenu)="openContextMenu($event, res)"
+                    [attr.title]="(res.numeroReservation || '') + ' — ' + (res.nomClientPrincipal || '')"
+                  >
+                    <span class="reservations-calendar__resa-name">
+                      {{ clientLabel(res) }}
+                    </span>
+                  </td>
+                </ng-container>
+                <ng-template #emptyCell>
+                  <td
+                    class="reservations-calendar__day-cell"
+                    [class.reservations-calendar__day-cell--past]="isPast(day)"
+                    [class.reservations-calendar__day-cell--weekend]="isWeekend(day)"
+                    [class.reservations-calendar__day-cell--today]="isToday(day)"
+                    [class.reservations-calendar__day-cell--selected]="
+                      isCellSelected(room.chambreId ?? -1, day)
+                    "
+                    (mousedown)="startDrag(room, day, $event)"
+                    (mouseenter)="onDragOver(room, day)"
+                    (mouseup)="endDrag(room, day)"
+                  ></td>
+                </ng-template>
+              </ng-container>
+            </tr>
+          </ng-container>
+
+          <ng-container *ngIf="groups.length === 0">
+            <tr>
+              <td
+                [attr.colspan]="days.length + 1"
+                class="text-center text-muted py-4"
+              >
+                {{ 'hebergement.calendar.empty' | translate }}
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
     </div>
   }
+
+  <!-- ── Loader plein écran (saving) ──────────────────────────────────── -->
+  <div class="reservations-calendar__overlay" *ngIf="saving">
+    <div class="spinner-border text-info" role="status">
+      <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+    </div>
+  </div>
 </section>
+
+<!-- ── Date range picker popup (hors scroll, position: fixed) ─────────── -->
+<div
+  class="reservations-calendar__daterange-picker"
+  *ngIf="pickerOpen"
+  [style.top.px]="pickerY"
+  [style.left.px]="pickerX"
+  (click)="$event.stopPropagation()"
+  role="dialog"
+  aria-modal="false"
+>
+  <div class="reservations-calendar__daterange-hint">
+    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+    {{ (pickerSelectingStart ? 'hebergement.calendar.range.selectStart' : 'hebergement.calendar.range.selectEnd') | translate }}
+  </div>
+
+  <div class="reservations-calendar__daterange-months">
+    <!-- Mois de gauche -->
+    <div class="reservations-calendar__daterange-month">
+      <header class="reservations-calendar__daterange-month-header">
+        <button type="button" class="reservations-calendar__daterange-nav" (click)="pickerPrevMonth()" [attr.aria-label]="'common.previous' | translate">
+          <i class="bi bi-chevron-left" aria-hidden="true"></i>
+        </button>
+        <span class="reservations-calendar__daterange-month-name">{{ pickerLeftMonth | date: 'MMMM yyyy' }}</span>
+        <span class="reservations-calendar__daterange-nav-placeholder"></span>
+      </header>
+      <div class="reservations-calendar__daterange-weekdays">
+        <span *ngFor="let k of pickerWeekdayKeys">{{ k | translate }}</span>
+      </div>
+      <div class="reservations-calendar__daterange-grid">
+        <button
+          *ngFor="let d of pickerDaysFor(pickerLeftMonth); trackBy: trackByDate"
+          type="button"
+          class="reservations-calendar__daterange-day"
+          [class.is-other-month]="pickerIsOtherMonth(d, pickerLeftMonth)"
+          [class.is-today]="pickerIsToday(d)"
+          [class.is-start]="pickerIsStart(d)"
+          [class.is-end]="pickerIsEnd(d)"
+          [class.is-in-range]="pickerIsInRange(d)"
+          (click)="pickerSelectDay(d)"
+        >{{ d | date: 'd' }}</button>
+      </div>
+    </div>
+
+    <!-- Mois de droite -->
+    <div class="reservations-calendar__daterange-month">
+      <header class="reservations-calendar__daterange-month-header">
+        <span class="reservations-calendar__daterange-nav-placeholder"></span>
+        <span class="reservations-calendar__daterange-month-name">{{ pickerRightMonth | date: 'MMMM yyyy' }}</span>
+        <button type="button" class="reservations-calendar__daterange-nav" (click)="pickerNextMonth()" [attr.aria-label]="'common.next' | translate">
+          <i class="bi bi-chevron-right" aria-hidden="true"></i>
+        </button>
+      </header>
+      <div class="reservations-calendar__daterange-weekdays">
+        <span *ngFor="let k of pickerWeekdayKeys">{{ k | translate }}</span>
+      </div>
+      <div class="reservations-calendar__daterange-grid">
+        <button
+          *ngFor="let d of pickerDaysFor(pickerRightMonth); trackBy: trackByDate"
+          type="button"
+          class="reservations-calendar__daterange-day"
+          [class.is-other-month]="pickerIsOtherMonth(d, pickerRightMonth)"
+          [class.is-today]="pickerIsToday(d)"
+          [class.is-start]="pickerIsStart(d)"
+          [class.is-end]="pickerIsEnd(d)"
+          [class.is-in-range]="pickerIsInRange(d)"
+          (click)="pickerSelectDay(d)"
+        >{{ d | date: 'd' }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Menu contextuel (clic droit) ─────────────────────────────────── -->
+<div
+  class="reservations-calendar__context-menu"
+  *ngIf="contextMenu.visible"
+  [style.top.px]="contextMenu.y"
+  [style.left.px]="contextMenu.x"
+  (click)="$event.stopPropagation()"
+>
+  <button type="button" class="dropdown-item" (click)="ctxConsult()">
+    <i class="bi bi-eye me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.consult' | translate }}
+  </button>
+  <button type="button" class="dropdown-item" (click)="ctxModify()">
+    <i class="bi bi-pencil me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.modify' | translate }}
+  </button>
+  <button type="button" class="dropdown-item" (click)="ctxCheckIn()">
+    <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.checkIn' | translate }}
+  </button>
+  <button type="button" class="dropdown-item" (click)="ctxCheckOut()">
+    <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.checkOut' | translate }}
+  </button>
+  <button type="button" class="dropdown-item" (click)="ctxPayments()">
+    <i class="bi bi-credit-card me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.payments' | translate }}
+  </button>
+  <button
+    type="button"
+    class="dropdown-item"
+    (click)="ctxModifyNuitees()"
+    [disabled]="contextMenu.reservation ? !canModifyNuitees(contextMenu.reservation) : true"
+    [attr.aria-disabled]="contextMenu.reservation ? !canModifyNuitees(contextMenu.reservation) : true"
+  >
+    <i class="bi bi-list-check me-2" aria-hidden="true"></i>
+    {{ 'hebergement.calendar.menu.modifyNuitees' | translate }}
+  </button>
+  <ng-container *ngIf="canCancelReservation">
+    <div class="dropdown-divider"></div>
+    <button
+      type="button"
+      class="dropdown-item text-danger"
+      (click)="ctxCancel()"
+      [disabled]="contextMenu.reservation ? isReservationTerminated(contextMenu.reservation) : true"
+      [attr.aria-disabled]="contextMenu.reservation ? isReservationTerminated(contextMenu.reservation) : true"
+    >
+      <i class="bi bi-x-circle me-2" aria-hidden="true"></i>
+      {{ 'hebergement.calendar.menu.cancel' | translate }}
+    </button>
+  </ng-container>
+</div>
+
+<!-- ── Modale création ──────────────────────────────────────────────── -->
+<div
+  #createModal
+  class="modal fade"
+  tabindex="-1"
+  aria-hidden="true"
+  [attr.aria-labelledby]="'createModalTitle'"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5 d-flex align-items-center" id="createModalTitle">
+          <i class="bi bi-calendar-plus me-2 text-info" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.create.title' | translate }}
+        </h2>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeCreateModal()"
+          [attr.aria-label]="'hebergement.actions.close' | translate"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-3" *ngIf="createTargetRoom && createDateDebut && createDateFin">
+          <div class="col-md-6">
+            <div class="text-muted small">
+              {{ 'hebergement.calendar.create.room' | translate }}
+            </div>
+            <div class="fw-semibold">
+              {{ createTargetRoom.numeroChambre }} —
+              {{ createTargetRoom.typeNom }}
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small">
+              {{ 'hebergement.calendar.create.period' | translate }}
+            </div>
+            <div class="fw-semibold">
+              {{ createDateDebut | date: 'dd/MM/yyyy' }}
+              <span class="mx-1">→</span>
+              {{ createDateFin | date: 'dd/MM/yyyy' }}
+              <span class="text-muted ms-2">({{ createPeriodNights }} {{ 'hebergement.fields.nbNuits' | translate }})</span>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="createForm" (ngSubmit)="submitCreate()">
+          <div class="row g-3">
+            <div class="col-md-12">
+              <div class="d-flex align-items-end gap-2">
+                <div class="flex-grow-1">
+                  <label for="createClientId" class="form-label">
+                    {{ 'hebergement.fields.client' | translate }} <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    id="createClientId"
+                    class="form-select"
+                    formControlName="clientPrincipalId"
+                  >
+                    <option [ngValue]="null">—</option>
+                    <option *ngFor="let c of clients" [ngValue]="c.clientId">
+                      {{ c.nomComplet || (c.prenom + ' ' + c.nom) }}
+                      <span *ngIf="c.telephone"> — {{ c.telephone }}</span>
+                    </option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-outline-info"
+                  (click)="openQuickCreateClient()"
+                  *ngIf="!quickCreateClientVisible"
+                >
+                  <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.client.add' | translate }}
+                </button>
+              </div>
+              <div
+                class="form-text text-danger"
+                *ngIf="createForm.get('clientPrincipalId')?.touched && createForm.get('clientPrincipalId')?.invalid"
+              >
+                {{ 'hebergement.errors.clientRequired' | translate }}
+              </div>
+            </div>
+
+            <!-- Quick-create client : panel inline -->
+            <div class="col-md-12" *ngIf="quickCreateClientVisible">
+              <div class="reservations-calendar__quick-client p-3">
+                <h3 class="h6 mb-3">
+                  <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.client.quickCreate.title' | translate }}
+                </h3>
+                <form [formGroup]="clientQuickCreateForm" (ngSubmit)="submitQuickCreateClient()">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label for="qcPrenom" class="form-label small">
+                        {{ 'hebergement.calendar.client.quickCreate.firstName' | translate }}
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        id="qcPrenom"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="prenom"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-6">
+                      <label for="qcNom" class="form-label small">
+                        {{ 'hebergement.calendar.client.quickCreate.lastName' | translate }}
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        id="qcNom"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="nom"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-4">
+                      <label for="qcTel" class="form-label small">
+                        {{ 'hebergement.calendar.client.quickCreate.phone' | translate }}
+                      </label>
+                      <input
+                        id="qcTel"
+                        type="tel"
+                        class="form-control form-control-sm"
+                        formControlName="telephone"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-4">
+                      <label for="qcEmail" class="form-label small">
+                        {{ 'hebergement.calendar.client.quickCreate.email' | translate }}
+                      </label>
+                      <input
+                        id="qcEmail"
+                        type="email"
+                        class="form-control form-control-sm"
+                        formControlName="email"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-4">
+                      <label for="qcCni" class="form-label small">
+                        {{ 'hebergement.calendar.client.quickCreate.cni' | translate }}
+                      </label>
+                      <input
+                        id="qcCni"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="cni"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        (click)="cancelQuickCreateClient()"
+                      >
+                        {{ 'hebergement.calendar.client.quickCreate.cancel' | translate }}
+                      </button>
+                      <button
+                        type="submit"
+                        class="btn btn-sm btn-info"
+                        [disabled]="saving || clientQuickCreateForm.invalid"
+                      >
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>
+                        {{ 'hebergement.calendar.client.quickCreate.create' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="createNbAdultes" class="form-label">
+                {{ 'hebergement.fields.nbAdultes' | translate }}
+              </label>
+              <input
+                id="createNbAdultes"
+                type="number"
+                class="form-control"
+                formControlName="nbAdultes"
+                min="1"
+              />
+            </div>
+            <div class="col-md-3">
+              <label for="createNbEnfants" class="form-label">
+                {{ 'hebergement.fields.nbEnfants' | translate }}
+              </label>
+              <input
+                id="createNbEnfants"
+                type="number"
+                class="form-control"
+                formControlName="nbEnfants"
+                min="0"
+              />
+            </div>
+            <div class="col-md-3">
+              <label for="createReduction" class="form-label">
+                {{ 'hebergement.fields.reductionPourcentage' | translate }}
+              </label>
+              <input
+                id="createReduction"
+                type="number"
+                class="form-control"
+                formControlName="reductionPourcentage"
+                min="0"
+                max="100"
+              />
+            </div>
+            <div class="col-md-12">
+              <div class="d-flex align-items-end gap-2">
+                <div class="flex-grow-1">
+                  <label for="createSocieteId" class="form-label">
+                    <i class="bi bi-building me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.fields.societeId' | translate }}
+                  </label>
+                  <select
+                    id="createSocieteId"
+                    class="form-select"
+                    formControlName="societeId"
+                  >
+                    <option [ngValue]="null">—</option>
+                    <option *ngFor="let s of societes" [ngValue]="s.societeId">
+                      {{ s.societeNom }}
+                      <span *ngIf="s.telephone"> — {{ s.telephone }}</span>
+                    </option>
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-outline-info"
+                  (click)="openQuickCreateSociete()"
+                  *ngIf="!quickCreateSocieteVisible"
+                >
+                  <i class="bi bi-building-add me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.societe.quickCreate.open' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Quick-create société : panel inline (Tour 45 F4) -->
+            <div class="col-md-12" *ngIf="quickCreateSocieteVisible">
+              <div class="reservations-calendar__quick-societe p-3">
+                <h3 class="h6 mb-3">
+                  <i class="bi bi-building-add me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.societe.quickCreate.title' | translate }}
+                </h3>
+                <form [formGroup]="societeQuickCreateForm" (ngSubmit)="submitQuickCreateSociete()">
+                  <div class="row g-2">
+                    <div class="col-md-6">
+                      <label for="qsNom" class="form-label small">
+                        {{ 'hebergement.calendar.societe.quickCreate.nom' | translate }}
+                        <span class="text-danger">*</span>
+                      </label>
+                      <input
+                        id="qsNom"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="nom"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-6">
+                      <label for="qsTel" class="form-label small">
+                        {{ 'hebergement.calendar.societe.quickCreate.telephone' | translate }}
+                      </label>
+                      <input
+                        id="qsTel"
+                        type="tel"
+                        class="form-control form-control-sm"
+                        formControlName="telephone"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-6">
+                      <label for="qsNif" class="form-label small">
+                        {{ 'hebergement.calendar.societe.quickCreate.nif' | translate }}
+                      </label>
+                      <input
+                        id="qsNif"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="nif"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-6">
+                      <label for="qsAdr" class="form-label small">
+                        {{ 'hebergement.calendar.societe.quickCreate.adresse' | translate }}
+                      </label>
+                      <input
+                        id="qsAdr"
+                        type="text"
+                        class="form-control form-control-sm"
+                        formControlName="adresse"
+                        autocomplete="off"
+                      />
+                    </div>
+                    <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                      <button
+                        type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        (click)="cancelQuickCreateSociete()"
+                      >
+                        <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+                        {{ 'hebergement.calendar.societe.quickCreate.cancel' | translate }}
+                      </button>
+                      <button
+                        type="submit"
+                        class="btn btn-sm btn-info"
+                        [disabled]="saving || societeQuickCreateForm.invalid"
+                      >
+                        <i class="bi bi-check2 me-1" aria-hidden="true"></i>
+                        {{ 'hebergement.calendar.societe.quickCreate.create' | translate }}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <!-- Bloc Tarification (Phase 2) -->
+            <div class="col-md-12">
+              <div class="reservations-calendar__tarif p-3">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div>
+                    <div class="text-muted small">
+                      {{ 'hebergement.fields.montantTotal' | translate }}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="h5 m-0 fw-semibold">
+                        {{ createTotalAfterReduction | number: '1.0-2' }} MRU
+                      </span>
+                      <span
+                        class="spinner-border spinner-border-sm text-info"
+                        *ngIf="tarif.loading"
+                        role="status"
+                      ></span>
+                    </div>
+                    <div class="text-muted small mt-1" *ngIf="tarif.data">
+                      {{ 'hebergement.calendar.tarif.totalNights' | translate }} :
+                      <strong>{{ tarif.data.totalNuits }}</strong>
+                      <span class="mx-2">·</span>
+                      {{ 'hebergement.calendar.tarif.amountHt' | translate }} :
+                      {{ tarif.data.montantHt | number: '1.0-2' }} MRU
+                      <span class="mx-2">·</span>
+                      {{ 'hebergement.calendar.tarif.amountTtc' | translate }} :
+                      {{ tarif.data.montantTtc | number: '1.0-2' }} MRU
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link"
+                    (click)="toggleTarifDetail()"
+                    *ngIf="tarif.data && tarif.data.detail.length > 0"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-chevron-down]="!tarif.detailVisible"
+                      [class.bi-chevron-up]="tarif.detailVisible"
+                      aria-hidden="true"
+                    ></i>
+                    {{ 'hebergement.calendar.tarif.detail' | translate }}
+                  </button>
+                </div>
+                <div class="reservations-calendar__tarif-detail mt-3" *ngIf="tarif.detailVisible && tarif.data">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr>
+                        <th>{{ 'hebergement.fields.dateArrivee' | translate }}</th>
+                        <th class="text-end">{{ 'hebergement.fields.montantTotal' | translate }}</th>
+                        <th>{{ 'hebergement.calendar.tarif.detail' | translate }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let d of tarif.data.detail">
+                        <td>{{ d.date }}</td>
+                        <td class="text-end">{{ d.prix | number: '1.0-2' }} MRU</td>
+                        <td>
+                          <span class="badge text-bg-light text-muted small">
+                            {{ tarifOriginKey(d.origine) | translate }}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <label for="createMotif" class="form-label">
+                {{ 'hebergement.fields.motifSejour' | translate }}
+              </label>
+              <input
+                id="createMotif"
+                type="text"
+                class="form-control"
+                formControlName="motifSejour"
+              />
+            </div>
+            <div class="col-md-12">
+              <label for="createComm" class="form-label">
+                {{ 'hebergement.fields.commentaires' | translate }}
+              </label>
+              <textarea
+                id="createComm"
+                class="form-control"
+                formControlName="commentaires"
+                rows="2"
+              ></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateModal()">
+          {{ 'hebergement.actions.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="submitCreate()"
+          [disabled]="saving || createForm.invalid"
+        >
+          <span class="spinner-border spinner-border-sm me-1" *ngIf="saving"></span>
+          {{ 'hebergement.actions.save' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modale consultation ───────────────────────────────────────────── -->
+<div
+  #consultModal
+  class="modal fade"
+  tabindex="-1"
+  aria-hidden="true"
+  [attr.aria-labelledby]="'consultModalTitle'"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" *ngIf="consultReservation as r">
+      <div class="modal-header">
+        <h2 class="modal-title h5 d-flex align-items-center" id="consultModalTitle">
+          <i class="bi bi-eye me-2 text-info" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.consult.title' | translate }}
+          <span class="badge text-bg-info ms-2" *ngIf="r.numeroReservation">
+            {{ r.numeroReservation }}
+          </span>
+        </h2>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeConsultModal()"
+          [attr.aria-label]="'hebergement.actions.close' | translate"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <!-- Bandeau Client avec avatar + info contact -->
+        <div class="reservations-calendar__consult-client p-3 mb-3">
+          <div class="d-flex align-items-center">
+            <div class="reservations-calendar__avatar me-3" aria-hidden="true">
+              <i class="bi bi-person-circle"></i>
+            </div>
+            <div class="flex-grow-1 min-width-0">
+              <div class="text-muted small text-uppercase">
+                <i class="bi bi-person me-1" aria-hidden="true"></i>
+                {{ 'hebergement.calendar.consult.client.label' | translate }}
+              </div>
+              <div class="h5 mb-1 fw-semibold text-truncate">
+                {{ consultClientLabel(r) || '—' }}
+              </div>
+              <div class="text-muted small d-flex flex-wrap gap-3">
+                <span *ngIf="consultClientPhone(r) as tel">
+                  <i class="bi bi-telephone me-1" aria-hidden="true"></i>{{ tel }}
+                </span>
+                <span *ngIf="consultClientEmail(r) as mail">
+                  <i class="bi bi-envelope me-1" aria-hidden="true"></i>{{ mail }}
+                </span>
+              </div>
+            </div>
+            <div class="text-end">
+              <span class="badge" [ngClass]="statutChipClass(r.statut)">
+                <i class="bi bi-circle-fill me-1" aria-hidden="true"></i>
+                {{ ('hebergement.statut.' + (r.statut ?? 'CONFIRMEE').toLowerCase()) | translate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Dates / Occupants -->
+        <div class="reservations-calendar__section mb-3">
+          <h3 class="reservations-calendar__section-title">
+            <i class="bi bi-calendar-range me-2" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.consult.section.dates' | translate }}
+          </h3>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="text-muted small">
+                <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>
+                {{ 'hebergement.fields.dateArrivee' | translate }}
+              </div>
+              <div class="fw-semibold">{{ r.dateArrivee }}</div>
+            </div>
+            <div class="col-md-6">
+              <div class="text-muted small">
+                <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+                {{ 'hebergement.fields.dateDepart' | translate }}
+              </div>
+              <div class="fw-semibold">{{ r.dateDepart }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted small">
+                <i class="bi bi-moon-stars me-1" aria-hidden="true"></i>
+                {{ 'hebergement.fields.nbNuits' | translate }}
+              </div>
+              <div class="fw-semibold">{{ r.nbNuits ?? '—' }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted small">
+                <i class="bi bi-people me-1" aria-hidden="true"></i>
+                {{ 'hebergement.fields.nbAdultes' | translate }}
+              </div>
+              <div class="fw-semibold">{{ r.nbAdultes }}</div>
+            </div>
+            <div class="col-md-4">
+              <div class="text-muted small">
+                <i class="bi bi-emoji-smile me-1" aria-hidden="true"></i>
+                {{ 'hebergement.fields.nbEnfants' | translate }}
+              </div>
+              <div class="fw-semibold">{{ r.nbEnfants }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Tarif -->
+        <div class="reservations-calendar__section mb-3">
+          <h3 class="reservations-calendar__section-title">
+            <i class="bi bi-cash-coin me-2" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.consult.section.tarif' | translate }}
+          </h3>
+          <div class="d-flex align-items-baseline gap-3">
+            <span class="text-muted small">
+              {{ 'hebergement.fields.montantTotal' | translate }} :
+            </span>
+            <span class="h5 mb-0 fw-semibold">
+              {{ (r.montantTotal ?? 0) | number: '1.0-2' }} MRU
+            </span>
+          </div>
+        </div>
+
+        <!-- Section Chambres -->
+        <div class="reservations-calendar__section mb-3" *ngIf="(r.chambres?.length ?? 0) > 0">
+          <h3 class="reservations-calendar__section-title">
+            <i class="bi bi-door-open me-2" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.consult.rooms' | translate }}
+          </h3>
+          <ul class="list-unstyled mb-0">
+            <li *ngFor="let rc of r.chambres" class="mb-1">
+              <i class="bi bi-door-open me-1 text-info" aria-hidden="true"></i>
+              <span class="fw-semibold">{{ rc.numeroChambre || rc.chambreId }}</span>
+              <span class="text-muted ms-2">
+                <i class="bi bi-arrow-right mx-1" aria-hidden="true"></i>
+                {{ rc.dateDebut }} <i class="bi bi-arrow-right mx-1" aria-hidden="true"></i> {{ rc.dateFin }}
+              </span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Section Commentaires -->
+        <div class="reservations-calendar__section" *ngIf="r.motifSejour || r.commentaires">
+          <h3 class="reservations-calendar__section-title">
+            <i class="bi bi-chat-left-text me-2" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.consult.section.notes' | translate }}
+          </h3>
+          <div *ngIf="r.motifSejour" class="mb-2">
+            <div class="text-muted small">{{ 'hebergement.fields.motifSejour' | translate }}</div>
+            <div>{{ r.motifSejour }}</div>
+          </div>
+          <div *ngIf="r.commentaires">
+            <div class="text-muted small">{{ 'hebergement.fields.commentaires' | translate }}</div>
+            <div>{{ r.commentaires }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-outline-warning"
+          (click)="consultModifyNuitees()"
+          [disabled]="!canModifyNuitees(r)"
+        >
+          <i class="bi bi-list-check me-1" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.nuitees.modify.openButton' | translate }}
+        </button>
+        <button type="button" class="btn btn-outline-primary" (click)="consultGoToFullDetail()">
+          <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.consult.fullDetail' | translate }}
+        </button>
+        <button type="button" class="btn btn-secondary" (click)="closeConsultModal()">
+          <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+          {{ 'hebergement.actions.close' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modale modification ──────────────────────────────────────────── -->
+<div
+  #editModal
+  class="modal fade"
+  tabindex="-1"
+  aria-hidden="true"
+  [attr.aria-labelledby]="'editModalTitle'"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5 d-flex align-items-center" id="editModalTitle">
+          <i class="bi bi-pencil-square me-2 text-info" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.edit.title' | translate }}
+          <span class="badge text-bg-info ms-2" *ngIf="editingReservation?.numeroReservation">
+            {{ editingReservation?.numeroReservation }}
+          </span>
+        </h2>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeEditModal()"
+          [attr.aria-label]="'hebergement.actions.close' | translate"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <!--
+          Tour 49 — Bandeau client devient interactif : sélecteur client/société
+          modifiables + boutons quick-create réutilisant les panels du Tour 45.
+          Anciennement (Tour 45 F2) : bandeau read-only avec icône + nom.
+        -->
+        <form [formGroup]="editForm" (ngSubmit)="submitEdit()">
+          <div class="reservations-calendar__edit-client-banner p-3 mb-3" *ngIf="editingReservation">
+            <div class="d-flex align-items-center mb-2">
+              <i class="bi bi-person-circle text-info me-2 fs-4" aria-hidden="true"></i>
+              <div>
+                <div class="fw-semibold">
+                  {{ 'hebergement.calendar.edit.client.changeLabel' | translate }}
+                </div>
+                <div class="text-muted small">
+                  {{ 'hebergement.calendar.edit.client.help' | translate }}
+                </div>
+              </div>
+            </div>
+            <div class="row g-2">
+              <!-- Client principal -->
+              <div class="col-md-6">
+                <label for="editClientPrincipalId" class="form-label small">
+                  {{ 'hebergement.fields.client' | translate }}
+                  <span class="text-danger">*</span>
+                </label>
+                <div class="d-flex align-items-end gap-2">
+                  <div class="flex-grow-1">
+                    <select
+                      id="editClientPrincipalId"
+                      class="form-select form-select-sm"
+                      formControlName="clientPrincipalId"
+                    >
+                      <option [ngValue]="null">—</option>
+                      <option *ngFor="let c of clients" [ngValue]="c.clientId">
+                        {{ c.nomComplet || (c.prenom + ' ' + c.nom) }}
+                        <span *ngIf="c.telephone"> — {{ c.telephone }}</span>
+                      </option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    (click)="openQuickCreateClient('edit')"
+                    *ngIf="!quickCreateClientVisible"
+                  >
+                    <i class="bi bi-person-plus" aria-hidden="true"></i>
+                  </button>
+                </div>
+                <div
+                  class="form-text text-danger"
+                  *ngIf="editForm.get('clientPrincipalId')?.touched && editForm.get('clientPrincipalId')?.invalid"
+                >
+                  {{ 'hebergement.errors.clientRequired' | translate }}
+                </div>
+              </div>
+              <!-- Société -->
+              <div class="col-md-6">
+                <label for="editSocieteId" class="form-label small">
+                  <i class="bi bi-building me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.edit.societe.changeLabel' | translate }}
+                </label>
+                <div class="d-flex align-items-end gap-2">
+                  <div class="flex-grow-1">
+                    <select
+                      id="editSocieteId"
+                      class="form-select form-select-sm"
+                      formControlName="societeId"
+                    >
+                      <option [ngValue]="null">—</option>
+                      <option *ngFor="let s of societes" [ngValue]="s.societeId">
+                        {{ s.societeNom }}
+                        <span *ngIf="s.telephone"> — {{ s.telephone }}</span>
+                      </option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-info"
+                    (click)="openQuickCreateSociete('edit')"
+                    *ngIf="!quickCreateSocieteVisible"
+                  >
+                    <i class="bi bi-building-add" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick-create client : panel inline (réutilisé Tour 45 / Tour 49) -->
+              <div class="col-md-12" *ngIf="quickCreateClientVisible">
+                <div class="reservations-calendar__quick-client p-3">
+                  <h3 class="h6 mb-3">
+                    <i class="bi bi-person-plus me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.client.quickCreate.title' | translate }}
+                  </h3>
+                  <div [formGroup]="clientQuickCreateForm">
+                    <div class="row g-2">
+                      <div class="col-md-6">
+                        <label for="qcPrenomEdit" class="form-label small">
+                          {{ 'hebergement.calendar.client.quickCreate.firstName' | translate }}
+                          <span class="text-danger">*</span>
+                        </label>
+                        <input
+                          id="qcPrenomEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="prenom"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label for="qcNomEdit" class="form-label small">
+                          {{ 'hebergement.calendar.client.quickCreate.lastName' | translate }}
+                          <span class="text-danger">*</span>
+                        </label>
+                        <input
+                          id="qcNomEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="nom"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label for="qcTelEdit" class="form-label small">
+                          {{ 'hebergement.calendar.client.quickCreate.phone' | translate }}
+                        </label>
+                        <input
+                          id="qcTelEdit"
+                          type="tel"
+                          class="form-control form-control-sm"
+                          formControlName="telephone"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label for="qcEmailEdit" class="form-label small">
+                          {{ 'hebergement.calendar.client.quickCreate.email' | translate }}
+                        </label>
+                        <input
+                          id="qcEmailEdit"
+                          type="email"
+                          class="form-control form-control-sm"
+                          formControlName="email"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-4">
+                        <label for="qcCniEdit" class="form-label small">
+                          {{ 'hebergement.calendar.client.quickCreate.cni' | translate }}
+                        </label>
+                        <input
+                          id="qcCniEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="cni"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="cancelQuickCreateClient()"
+                        >
+                          {{ 'hebergement.calendar.client.quickCreate.cancel' | translate }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-info"
+                          (click)="submitQuickCreateClient()"
+                          [disabled]="saving || clientQuickCreateForm.invalid"
+                        >
+                          <i class="bi bi-check2 me-1" aria-hidden="true"></i>
+                          {{ 'hebergement.calendar.client.quickCreate.create' | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Quick-create société : panel inline -->
+              <div class="col-md-12" *ngIf="quickCreateSocieteVisible">
+                <div class="reservations-calendar__quick-societe p-3">
+                  <h3 class="h6 mb-3">
+                    <i class="bi bi-building-add me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.societe.quickCreate.title' | translate }}
+                  </h3>
+                  <div [formGroup]="societeQuickCreateForm">
+                    <div class="row g-2">
+                      <div class="col-md-6">
+                        <label for="qsNomEdit" class="form-label small">
+                          {{ 'hebergement.calendar.societe.quickCreate.nom' | translate }}
+                          <span class="text-danger">*</span>
+                        </label>
+                        <input
+                          id="qsNomEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="nom"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label for="qsTelEdit" class="form-label small">
+                          {{ 'hebergement.calendar.societe.quickCreate.telephone' | translate }}
+                        </label>
+                        <input
+                          id="qsTelEdit"
+                          type="tel"
+                          class="form-control form-control-sm"
+                          formControlName="telephone"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label for="qsNifEdit" class="form-label small">
+                          {{ 'hebergement.calendar.societe.quickCreate.nif' | translate }}
+                        </label>
+                        <input
+                          id="qsNifEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="nif"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-6">
+                        <label for="qsAdrEdit" class="form-label small">
+                          {{ 'hebergement.calendar.societe.quickCreate.adresse' | translate }}
+                        </label>
+                        <input
+                          id="qsAdrEdit"
+                          type="text"
+                          class="form-control form-control-sm"
+                          formControlName="adresse"
+                          autocomplete="off"
+                        />
+                      </div>
+                      <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          (click)="cancelQuickCreateSociete()"
+                        >
+                          <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+                          {{ 'hebergement.calendar.societe.quickCreate.cancel' | translate }}
+                        </button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-info"
+                          (click)="submitQuickCreateSociete()"
+                          [disabled]="saving || societeQuickCreateForm.invalid"
+                        >
+                          <i class="bi bi-check2 me-1" aria-hidden="true"></i>
+                          {{ 'hebergement.calendar.societe.quickCreate.create' | translate }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="editArrivee" class="form-label">
+                {{ 'hebergement.fields.dateArrivee' | translate }} <span class="text-danger">*</span>
+              </label>
+              <input
+                id="editArrivee"
+                type="date"
+                class="form-control"
+                formControlName="dateArrivee"
+                (change)="onEditDateChange()"
+              />
+            </div>
+            <div class="col-md-6">
+              <label for="editDepart" class="form-label">
+                {{ 'hebergement.fields.dateDepart' | translate }} <span class="text-danger">*</span>
+              </label>
+              <input
+                id="editDepart"
+                type="date"
+                class="form-control"
+                formControlName="dateDepart"
+                (change)="onEditDateChange()"
+              />
+            </div>
+            <div class="col-md-4">
+              <label for="editReduction" class="form-label">
+                {{ 'hebergement.fields.reductionPourcentage' | translate }}
+              </label>
+              <input
+                id="editReduction"
+                type="number"
+                class="form-control"
+                formControlName="reductionPourcentage"
+                min="0"
+                max="100"
+              />
+            </div>
+            <div class="col-md-8">
+              <label for="editMotif" class="form-label">
+                {{ 'hebergement.fields.motifSejour' | translate }}
+              </label>
+              <input
+                id="editMotif"
+                type="text"
+                class="form-control"
+                formControlName="motifSejour"
+              />
+            </div>
+            <div class="col-md-12">
+              <label for="editComm" class="form-label">
+                {{ 'hebergement.fields.commentaires' | translate }}
+              </label>
+              <textarea
+                id="editComm"
+                class="form-control"
+                formControlName="commentaires"
+                rows="2"
+              ></textarea>
+            </div>
+
+            <!-- Tarif récap mode édition -->
+            <div class="col-md-12" *ngIf="tarif.data || tarif.loading">
+              <div class="reservations-calendar__tarif p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <div class="text-muted small">
+                      {{ 'hebergement.fields.montantTotal' | translate }}
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="h6 m-0 fw-semibold">
+                        {{ editTotalAfterReduction | number: '1.0-2' }} MRU
+                      </span>
+                      <span
+                        class="spinner-border spinner-border-sm text-info"
+                        *ngIf="tarif.loading"
+                        role="status"
+                      ></span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-link"
+                    (click)="toggleTarifDetail()"
+                    *ngIf="tarif.data && tarif.data.detail.length > 0"
+                  >
+                    <i
+                      class="bi"
+                      [class.bi-chevron-down]="!tarif.detailVisible"
+                      [class.bi-chevron-up]="tarif.detailVisible"
+                      aria-hidden="true"
+                    ></i>
+                    {{ 'hebergement.calendar.tarif.detail' | translate }}
+                  </button>
+                </div>
+                <div class="reservations-calendar__tarif-detail mt-3" *ngIf="tarif.detailVisible && tarif.data">
+                  <table class="table table-sm mb-0">
+                    <tbody>
+                      <tr *ngFor="let d of tarif.data.detail">
+                        <td>{{ d.date }}</td>
+                        <td class="text-end">{{ d.prix | number: '1.0-2' }} MRU</td>
+                        <td>
+                          <span class="badge text-bg-light text-muted small">
+                            {{ tarifOriginKey(d.origine) | translate }}
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bloc changement chambre (Phase 2) -->
+            <div class="col-md-12">
+              <fieldset class="reservations-calendar__change-room p-3">
+                <legend class="h6 mb-2">
+                  <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.changeRoom.title' | translate }}
+                </legend>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label for="editNewRoom" class="form-label small">
+                      {{ 'hebergement.calendar.changeRoom.newRoom' | translate }}
+                    </label>
+                    <select
+                      id="editNewRoom"
+                      class="form-select form-select-sm"
+                      formControlName="nouvelleChambreId"
+                    >
+                      <option [ngValue]="null">—</option>
+                      <option *ngFor="let r of rooms" [ngValue]="r.chambreId">
+                        {{ r.numeroChambre }} — {{ r.typeNom }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="editChangeReason" class="form-label small">
+                      {{ 'hebergement.calendar.changeRoom.reason' | translate }}
+                    </label>
+                    <input
+                      id="editChangeReason"
+                      type="text"
+                      class="form-control form-control-sm"
+                      formControlName="raisonChangementChambre"
+                      maxlength="500"
+                    />
+                  </div>
+                  <div class="col-md-12 d-flex justify-content-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-info"
+                      (click)="submitChangeRoom()"
+                      [disabled]="saving || !editingReservation?.reservationId"
+                    >
+                      <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.calendar.changeRoom.action' | translate }}
+                    </button>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeEditModal()">
+          {{ 'hebergement.actions.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="submitEdit()"
+          [disabled]="saving || editForm.invalid"
+        >
+          <span class="spinner-border spinner-border-sm me-1" *ngIf="saving"></span>
+          {{ 'hebergement.actions.save' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modale Paiements (Tour 46 — refonte 3 sections + global + folio) ───── -->
+<div
+  #paymentsModalEl
+  class="modal fade"
+  tabindex="-1"
+  aria-hidden="true"
+  [attr.aria-labelledby]="'paymentsModalTitle'"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5 d-flex align-items-center" id="paymentsModalTitle">
+          <i class="bi bi-credit-card-2-front me-2 text-info" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.payments.title' | translate }}
+          <span class="badge text-bg-info ms-2" *ngIf="paymentsModal.reservationLabel">
+            {{ paymentsModal.reservationLabel }}
+          </span>
+          <span
+            class="text-muted ms-2 small"
+            *ngIf="paymentsModal.reservation as r"
+          >
+            — {{ clientLabel(r) }}
+          </span>
+        </h2>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closePaymentsModal()"
+          [attr.aria-label]="'hebergement.actions.close' | translate"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center py-4" *ngIf="paymentsModal.loading">
+          <div class="spinner-border text-info" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        </div>
+
+        <ng-container *ngIf="!paymentsModal.loading && paymentsModal.data as recap">
+          <!-- ── SECTIONS 1 & 2 : Détails réservation + Folio (côte à côte) ── -->
+          <div class="row g-3 mb-3">
+            <!-- SECTION 1 — Détails réservation (col-md-6) -->
+            <div class="col-md-6">
+              <div
+                class="reservations-calendar__section h-100"
+                *ngIf="paymentsModal.reservation as r"
+              >
+                <h3 class="reservations-calendar__section-title m-0 mb-2">
+                  <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.payments.details.title' | translate }}
+                </h3>
+                <dl class="row g-2 mb-0 small">
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.numero' | translate }}
+                  </dt>
+                  <dd class="col-7 fw-semibold m-0">
+                    {{ r.numeroReservation || ('#' + (r.reservationId || '')) }}
+                  </dd>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.client' | translate }}
+                  </dt>
+                  <dd class="col-7 m-0">{{ clientLabel(r) }}</dd>
+
+                  <ng-container *ngIf="paymentsSocieteName(r) as societeNom">
+                    <dt class="col-5 text-muted">
+                      {{ 'hebergement.calendar.payments.details.societe' | translate }}
+                    </dt>
+                    <dd class="col-7 m-0">{{ societeNom }}</dd>
+                  </ng-container>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.periode' | translate }}
+                  </dt>
+                  <dd class="col-7 m-0">
+                    {{ r.dateArrivee }} → {{ r.dateDepart }}
+                    <span class="text-muted" *ngIf="r.nbNuits != null">
+                      ({{ r.nbNuits }} {{ 'hebergement.fields.nbNuits' | translate }})
+                    </span>
+                  </dd>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.occupants' | translate }}
+                  </dt>
+                  <dd class="col-7 m-0">
+                    {{ r.nbAdultes }} {{ 'hebergement.fields.nbAdultes' | translate }}
+                    <span *ngIf="r.nbEnfants > 0">
+                      • {{ r.nbEnfants }} {{ 'hebergement.fields.nbEnfants' | translate }}
+                    </span>
+                  </dd>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.chambres' | translate }}
+                  </dt>
+                  <dd class="col-7 m-0">
+                    <ng-container *ngIf="r.chambres && r.chambres.length > 0; else noRooms">
+                      <span class="badge text-bg-light text-dark me-1" *ngFor="let rc of r.chambres">
+                        <i class="bi bi-door-closed me-1" aria-hidden="true"></i>
+                        {{ roomLabel(rc.chambreId, rc.numeroChambre) }}
+                      </span>
+                    </ng-container>
+                    <ng-template #noRooms>—</ng-template>
+                  </dd>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.statut' | translate }}
+                  </dt>
+                  <dd class="col-7 m-0">
+                    <span class="badge" [ngClass]="reservationBadgeClass(r.statut)">
+                      {{ ('hebergement.statut.' + (r.statut || 'confirmee').toLowerCase()) | translate }}
+                    </span>
+                  </dd>
+
+                  <dt class="col-5 text-muted">
+                    {{ 'hebergement.calendar.payments.details.total' | translate }}
+                  </dt>
+                  <dd class="col-7 fw-semibold m-0">
+                    {{ (r.montantTotal || 0) | number: '1.0-2' }} MRU
+                  </dd>
+                </dl>
+              </div>
+            </div>
+
+            <!-- SECTION 2 — Folio : liste des factures de la réservation -->
+            <div class="col-md-6">
+              <div class="reservations-calendar__section h-100 d-flex flex-column">
+                <h3 class="reservations-calendar__section-title m-0 mb-2">
+                  <i class="bi bi-receipt me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.payments.folio.title' | translate }}
+                </h3>
+
+                <div
+                  class="table-responsive reservations-calendar__folio-scroll"
+                  style="max-height: 280px;"
+                >
+                  <table class="table table-sm align-middle small mb-0">
+                    <thead class="table-light">
+                      <tr>
+                        <th>{{ 'hebergement.calendar.payments.folio.numero' | translate }}</th>
+                        <th>{{ 'hebergement.calendar.payments.folio.date' | translate }}</th>
+                        <th>{{ 'hebergement.calendar.payments.folio.statut' | translate }}</th>
+                        <th class="text-end">
+                          {{ 'hebergement.calendar.payments.folio.total' | translate }}
+                        </th>
+                        <th class="text-end">
+                          {{ 'hebergement.calendar.payments.folio.paye' | translate }}
+                        </th>
+                        <th class="text-end">
+                          {{ 'hebergement.calendar.payments.folio.balance' | translate }}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let f of recap.factures">
+                        <td class="fw-semibold">{{ f.numero }}</td>
+                        <td>{{ f.dateFacture }}</td>
+                        <td>
+                          <span class="badge" [ngClass]="factureBadgeClass(f.statut)">
+                            {{ ('hebergement.facture.statut.' + f.statut.toLowerCase()) | translate }}
+                          </span>
+                        </td>
+                        <td class="text-end">{{ f.montantTotal | number: '1.0-2' }} MRU</td>
+                        <td class="text-end text-success">
+                          {{ f.montantPaye | number: '1.0-2' }} MRU
+                        </td>
+                        <td
+                          class="text-end fw-semibold"
+                          [class.text-danger]="f.reste > 0"
+                          [class.text-success]="f.reste <= 0"
+                        >
+                          {{ f.reste | number: '1.0-2' }} MRU
+                        </td>
+                      </tr>
+                      <tr *ngIf="recap.factures.length === 0">
+                        <td colspan="6" class="text-center text-muted py-3">
+                          {{ 'hebergement.calendar.payments.folio.empty' | translate }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Footer Folio : totaux factures -->
+                <div class="border-top pt-2 mt-2 small" *ngIf="recap.factures.length > 0">
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted">
+                      {{ 'hebergement.calendar.payments.folio.totalFactures' | translate }}
+                    </span>
+                    <span class="fw-semibold">
+                      {{ recap.totalGlobal | number: '1.0-2' }} MRU
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted">
+                      {{ 'hebergement.calendar.payments.folio.totalPaye' | translate }}
+                    </span>
+                    <span class="text-success">
+                      {{ recap.payeGlobal | number: '1.0-2' }} MRU
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between fw-semibold border-top pt-1 mt-1">
+                    <span>
+                      {{ 'hebergement.calendar.payments.folio.balanceGlobale' | translate }}
+                    </span>
+                    <span
+                      [class.text-danger]="recap.resteGlobal > 0"
+                      [class.text-success]="recap.resteGlobal <= 0"
+                    >
+                      {{ recap.resteGlobal | number: '1.0-2' }} MRU
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Récap global (3 cards) -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-3">
+                <div class="text-muted small">
+                  {{ 'hebergement.calendar.payments.totalGlobal' | translate }}
+                </div>
+                <div class="h5 m-0 fw-semibold">{{ recap.totalGlobal | number: '1.0-2' }} MRU</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-3">
+                <div class="text-muted small">
+                  {{ 'hebergement.calendar.payments.paidGlobal' | translate }}
+                </div>
+                <div class="h5 m-0 fw-semibold text-success">{{ recap.payeGlobal | number: '1.0-2' }} MRU</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-3">
+                <div class="text-muted small">
+                  {{ 'hebergement.calendar.payments.remainingGlobal' | translate }}
+                </div>
+                <div
+                  class="h5 m-0 fw-semibold"
+                  [class.text-danger]="recap.resteGlobal > 0"
+                  [class.text-success]="recap.resteGlobal <= 0"
+                >
+                  {{ recap.resteGlobal | number: '1.0-2' }} MRU
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3 — Lignes facture (lecture seule, Tour 46) -->
+          <h3 class="h6 mb-2">
+            <i class="bi bi-receipt me-1" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.payments.factures' | translate }}
+          </h3>
+          <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>{{ 'hebergement.calendar.payments.lignes.description' | translate }}</th>
+                  <th>{{ 'hebergement.calendar.payments.lignes.date' | translate }}</th>
+                  <th class="text-end">{{ 'hebergement.calendar.payments.lignes.sousTotal' | translate }}</th>
+                  <th class="text-end">{{ 'hebergement.calendar.payments.lignes.paye' | translate }}</th>
+                  <th class="text-end">{{ 'hebergement.calendar.payments.lignes.reste' | translate }}</th>
+                  <th class="text-end">{{ 'hebergement.list.actions' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of lignesFromRecap(recap)">
+                  <td class="fw-semibold">{{ row.description }}</td>
+                  <td>{{ row.date }}</td>
+                  <td class="text-end">{{ row.sousTotal | number: '1.0-2' }} MRU</td>
+                  <td class="text-end text-success">{{ row.paye | number: '1.0-2' }} MRU</td>
+                  <td class="text-end" [class.text-danger]="row.reste > 0">
+                    {{ row.reste | number: '1.0-2' }} MRU
+                  </td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      (click)="goToFactureDetail(row.factureId)"
+                    >
+                      <i class="bi bi-eye me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.calendar.payments.viewFactureDetail' | translate }}
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="recap.factures.length === 0">
+                  <td colspan="6" class="text-center text-muted py-3">
+                    {{ 'hebergement.calendar.payments.empty' | translate }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- SECTION 4 — Paiement global (formulaire principal Tour 46) -->
+          <div class="reservations-calendar__sub-panel p-3 mb-3">
+            <h3 class="h6 mb-3 d-flex align-items-center">
+              <i class="bi bi-cash-coin me-2 text-info" aria-hidden="true"></i>
+              {{ 'hebergement.calendar.payments.global.title' | translate }}
+            </h3>
+            <form [formGroup]="payerGlobalForm" (ngSubmit)="submitPayerGlobal()">
+              <div class="row g-2">
+                <div class="col-md-4">
+                  <label for="globalMontant" class="form-label small fw-semibold">
+                    <i class="bi bi-currency-exchange me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.montant' | translate }}
+                    <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    id="globalMontant"
+                    type="number"
+                    class="form-control form-control-lg"
+                    formControlName="montant"
+                    min="0.01"
+                    step="0.01"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="globalMode" class="form-label small fw-semibold">
+                    <i class="bi bi-credit-card me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.mode' | translate }}
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    id="globalMode"
+                    class="form-select form-select-lg"
+                    formControlName="modePaiement"
+                  >
+                    <option *ngFor="let m of modesPaiement" [ngValue]="m">
+                      {{ ('finance.paiement.mode.' + m) | translate }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="globalMotif" class="form-label small fw-semibold">
+                    <i class="bi bi-tag me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.motif' | translate }}
+                  </label>
+                  <input
+                    id="globalMotif"
+                    type="text"
+                    class="form-control"
+                    formControlName="motif"
+                    maxlength="255"
+                  />
+                </div>
+                <div class="col-md-12">
+                  <label for="globalDesc" class="form-label small fw-semibold">
+                    <i class="bi bi-chat-left-text me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.description' | translate }}
+                  </label>
+                  <textarea
+                    id="globalDesc"
+                    class="form-control"
+                    formControlName="description"
+                    rows="2"
+                    maxlength="500"
+                  ></textarea>
+                </div>
+
+                <!-- Indicateur visuel selon montant saisi -->
+                <div class="col-md-12" *ngIf="globalMontantSaisi > 0">
+                  <div
+                    class="alert alert-info small mb-0 py-2"
+                    *ngIf="globalPayerStatus === 'partial'"
+                  >
+                    <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.partial' | translate: { amount: (globalPartialReste | number: '1.0-2') } }}
+                  </div>
+                  <div
+                    class="alert alert-success small mb-0 py-2"
+                    *ngIf="globalPayerStatus === 'full'"
+                  >
+                    <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.full' | translate }}
+                  </div>
+                  <div
+                    class="alert alert-warning small mb-0 py-2"
+                    *ngIf="globalPayerStatus === 'excess'"
+                  >
+                    <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.excess' | translate: { amount: (globalExcedent | number: '1.0-2') } }}
+                  </div>
+                </div>
+
+                <div class="col-md-12 d-flex justify-content-between align-items-center mt-2">
+                  <div class="text-muted small">
+                    {{ 'hebergement.calendar.payments.remainingGlobal' | translate }} :
+                    <strong [class.text-danger]="globalResteAPayer > 0">
+                      {{ globalResteAPayer | number: '1.0-2' }} MRU
+                    </strong>
+                  </div>
+                  <button
+                    type="submit"
+                    class="btn btn-info btn-lg"
+                    [disabled]="saving || payerGlobalForm.invalid"
+                  >
+                    <span class="spinner-border spinner-border-sm me-1" *ngIf="saving"></span>
+                    <i class="bi bi-credit-card-2-front me-1" *ngIf="!saving" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.global.action' | translate }}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- SECTION 5 — Actions avancées (transfert + check-out express) -->
+          <div class="reservations-calendar__pay-toolbar p-2 mb-3" *ngIf="recap.factures.length > 0">
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary w-100 d-flex justify-content-between align-items-center"
+              (click)="toggleAdvancedActions()"
+              [attr.aria-expanded]="paymentsModal.advancedActionsVisible"
+            >
+              <span>
+                <i class="bi bi-gear me-1" aria-hidden="true"></i>
+                {{ 'hebergement.calendar.payments.advanced' | translate }}
+              </span>
+              <i
+                class="bi"
+                [class.bi-chevron-down]="!paymentsModal.advancedActionsVisible"
+                [class.bi-chevron-up]="paymentsModal.advancedActionsVisible"
+                aria-hidden="true"
+              ></i>
+            </button>
+
+            <div class="mt-2" *ngIf="paymentsModal.advancedActionsVisible">
+              <div class="d-flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-warning"
+                  [disabled]="saving"
+                  (click)="openTransferPanel()"
+                >
+                  <i class="bi bi-arrow-left-right me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.payments.action.transferer' | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-success"
+                  [disabled]="saving || !paymentsModal.reservation || isReservationTerminated(paymentsModal.reservation)"
+                  (click)="openCheckoutExpressPanel()"
+                >
+                  <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.payments.action.checkoutExpress' | translate }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sous-panel : Transférer lignes (depuis actions avancées) -->
+          <div class="reservations-calendar__sub-panel p-3 mb-3" *ngIf="paymentsModal.transferPanelVisible">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h4 class="h6 mb-0">
+                <i class="bi bi-arrow-left-right me-1 text-warning" aria-hidden="true"></i>
+                {{ 'hebergement.calendar.payments.transferer.title' | translate }}
+              </h4>
+              <button
+                type="button"
+                class="btn btn-sm btn-link text-secondary"
+                (click)="closeTransferPanel()"
+                [attr.aria-label]="'hebergement.actions.close' | translate"
+              >
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            </div>
+            <form [formGroup]="transferForm" (ngSubmit)="submitTransfertLignes()">
+              <div class="row g-2">
+                <!-- Sélection lignes à transférer (locale au panel) -->
+                <div class="col-md-12">
+                  <label class="form-label small fw-semibold">
+                    {{ 'hebergement.calendar.payments.lignes.select' | translate }}
+                  </label>
+                  <div class="table-responsive" style="max-height: 200px;">
+                    <table class="table table-sm align-middle small mb-0">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 40px"></th>
+                          <th>{{ 'hebergement.calendar.payments.lignes.description' | translate }}</th>
+                          <th class="text-end">
+                            {{ 'hebergement.calendar.payments.lignes.reste' | translate }}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let row of lignesFromRecap(recap)">
+                          <td>
+                            <input
+                              type="checkbox"
+                              class="form-check-input"
+                              [checked]="isTransferLigneSelected(row.ligneFactureId)"
+                              [disabled]="row.reste <= 0"
+                              (change)="toggleTransferLigne(row.ligneFactureId, $any($event.target).checked)"
+                              [attr.aria-label]="'hebergement.calendar.payments.lignes.select' | translate"
+                            />
+                          </td>
+                          <td>{{ row.description }}</td>
+                          <td class="text-end">{{ row.reste | number: '1.0-2' }} MRU</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="col-md-8">
+                  <label for="transferTarget" class="form-label small">
+                    <i class="bi bi-receipt me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.transferer.targetFacture' | translate }}
+                  </label>
+                  <select
+                    id="transferTarget"
+                    class="form-select form-select-sm"
+                    formControlName="factureCibleId"
+                    [attr.disabled]="transferForm.value.creerNouvelleFacture ? '' : null"
+                  >
+                    <option [ngValue]="null">—</option>
+                    <option *ngFor="let f of factureCiblesOptions" [ngValue]="f.id">
+                      {{ f.numero }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                  <div class="form-check">
+                    <input
+                      id="transferNew"
+                      type="checkbox"
+                      class="form-check-input"
+                      formControlName="creerNouvelleFacture"
+                    />
+                    <label for="transferNew" class="form-check-label small">
+                      <i class="bi bi-plus-square me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.calendar.payments.transferer.newFacture' | translate }}
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="closeTransferPanel()"
+                  >
+                    {{ 'hebergement.actions.cancel' | translate }}
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-sm btn-warning"
+                    [disabled]="saving"
+                  >
+                    <span class="spinner-border spinner-border-sm me-1" *ngIf="saving"></span>
+                    <i class="bi bi-arrow-left-right me-1" *ngIf="!saving" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.action.transferer' | translate }}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Sous-panel : Check-out express (sélection société si absente) -->
+          <div class="reservations-calendar__sub-panel p-3 mb-3" *ngIf="paymentsModal.checkoutExpressPanelVisible">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h4 class="h6 mb-0">
+                <i class="bi bi-building me-1 text-success" aria-hidden="true"></i>
+                {{ 'hebergement.calendar.payments.checkoutExpress.selectSociete' | translate }}
+              </h4>
+              <button
+                type="button"
+                class="btn btn-sm btn-link text-secondary"
+                (click)="closeCheckoutExpressPanel()"
+                [attr.aria-label]="'hebergement.actions.close' | translate"
+              >
+                <i class="bi bi-x-lg" aria-hidden="true"></i>
+              </button>
+            </div>
+            <form [formGroup]="checkoutExpressForm" (ngSubmit)="submitCheckoutExpress()">
+              <div class="row g-2">
+                <div class="col-md-12">
+                  <label for="checkoutSociete" class="form-label small">
+                    <i class="bi bi-building me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.fields.societeId' | translate }}
+                    <span class="text-danger">*</span>
+                  </label>
+                  <select
+                    id="checkoutSociete"
+                    class="form-select form-select-sm"
+                    formControlName="societeId"
+                  >
+                    <option [ngValue]="null">—</option>
+                    <option *ngFor="let s of societes" [ngValue]="s.societeId">
+                      {{ s.societeNom }}
+                    </option>
+                  </select>
+                </div>
+                <div class="col-md-12 d-flex justify-content-end gap-2 mt-2">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="closeCheckoutExpressPanel()"
+                  >
+                    {{ 'hebergement.actions.cancel' | translate }}
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-sm btn-success"
+                    [disabled]="saving || checkoutExpressForm.invalid"
+                  >
+                    <i class="bi bi-box-arrow-right me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.payments.action.checkoutExpress' | translate }}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Paiements historiques -->
+          <h3 class="h6 mb-2">
+            <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
+            {{ 'hebergement.calendar.payments.payments' | translate }}
+          </h3>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>{{ 'finance.paiement.fields.numeroPaiement' | translate }}</th>
+                  <th>{{ 'finance.paiement.fields.datePaiement' | translate }}</th>
+                  <th>{{ 'finance.paiement.fields.modePaiement' | translate }}</th>
+                  <th>{{ 'finance.paiement.fields.statut' | translate }}</th>
+                  <th class="text-end">{{ 'finance.paiement.fields.montant' | translate }}</th>
+                  <th>{{ 'finance.facture.fields.numeroFacture' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let p of recap.paiements">
+                  <td class="fw-semibold">{{ p.numeroPaiement }}</td>
+                  <td>{{ p.datePaiement }}</td>
+                  <td>
+                    <span class="badge text-bg-light text-dark">
+                      {{ ('finance.paiement.mode.' + p.modePaiement) | translate }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="paiementBadgeClass(p.statut)">
+                      {{ ('finance.paiement.statut.' + p.statut) | translate }}
+                    </span>
+                  </td>
+                  <td class="text-end">{{ p.montantAffecte | number: '1.0-2' }} MRU</td>
+                  <td>{{ p.factureNumero }}</td>
+                </tr>
+                <tr *ngIf="recap.paiements.length === 0">
+                  <td colspan="6" class="text-center text-muted py-3">
+                    {{ 'hebergement.calendar.payments.empty' | translate }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closePaymentsModal()">
+          <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+          {{ 'hebergement.actions.close' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modale Modification de nuitées (Tour 45 F6) ──────────────────── -->
+<div
+  #modifyNuiteesModalEl
+  class="modal fade"
+  tabindex="-1"
+  aria-hidden="true"
+  [attr.aria-labelledby]="'modifyNuiteesModalTitle'"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5 d-flex align-items-center" id="modifyNuiteesModalTitle">
+          <i class="bi bi-list-check me-2 text-warning" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.nuitees.modify.title' | translate }}
+          <span class="badge text-bg-info ms-2" *ngIf="modifyNuiteesModal.reservationLabel">
+            {{ modifyNuiteesModal.reservationLabel }}
+          </span>
+        </h2>
+        <button
+          type="button"
+          class="btn-close"
+          (click)="closeModifyNuiteesModal()"
+          [attr.aria-label]="'hebergement.actions.close' | translate"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center py-4" *ngIf="modifyNuiteesModal.loading">
+          <div class="spinner-border text-warning" role="status">
+            <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+          </div>
+        </div>
+        <div class="alert alert-danger" *ngIf="modifyNuiteesModal.error && !modifyNuiteesModal.loading">
+          <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+          {{ 'hebergement.calendar.error' | translate }}
+        </div>
+
+        <ng-container *ngIf="!modifyNuiteesModal.loading && !modifyNuiteesModal.error">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>
+                    <i class="bi bi-calendar-event me-1" aria-hidden="true"></i>
+                    {{ 'hebergement.calendar.nuitees.modify.dateNuit' | translate }}
+                  </th>
+                  <th class="text-end">
+                    {{ 'hebergement.calendar.nuitees.modify.prixOriginal' | translate }}
+                  </th>
+                  <th class="text-end" style="width: 180px">
+                    {{ 'hebergement.calendar.nuitees.modify.nouveauMontant' | translate }}
+                  </th>
+                  <th>{{ 'hebergement.fields.statut' | translate }}</th>
+                  <th class="text-end">{{ 'hebergement.list.actions' | translate }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of modifyNuiteesModal.initial">
+                  <td class="fw-semibold">{{ row.dateNuit }}</td>
+                  <td class="text-end text-muted">{{ row.prixOriginal | number: '1.0-2' }} MRU</td>
+                  <td class="text-end">
+                    <input
+                      type="number"
+                      class="form-control form-control-sm text-end"
+                      [value]="nuiteeMontant(row.nuiteeId)"
+                      [readonly]="isNuiteeLocked(row)"
+                      [disabled]="isNuiteeLocked(row)"
+                      min="0"
+                      step="0.01"
+                      (input)="onNuiteeMontantChange(row.nuiteeId, $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <span
+                      class="badge"
+                      [class.text-bg-secondary]="isNuiteeLocked(row)"
+                      [class.text-bg-info]="!isNuiteeLocked(row) && row.statutNuitee === 'PREVUE'"
+                      [class.text-bg-success]="!isNuiteeLocked(row) && row.statutNuitee === 'CONSOMMEE'"
+                      [class.text-bg-warning]="!isNuiteeLocked(row) && row.statutNuitee === 'FACTUREE'"
+                    >
+                      <i
+                        class="bi me-1"
+                        [class.bi-lock]="isNuiteeLocked(row)"
+                        [class.bi-unlock]="!isNuiteeLocked(row)"
+                        aria-hidden="true"
+                      ></i>
+                      {{ row.statutNuitee }}
+                    </span>
+                  </td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-secondary"
+                      [disabled]="isNuiteeLocked(row)"
+                      (click)="resetNuiteeMontant(row)"
+                    >
+                      <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+                      {{ 'hebergement.calendar.nuitees.modify.reset' | translate }}
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="modifyNuiteesModal.initial.length === 0">
+                  <td colspan="5" class="text-center text-muted py-3">
+                    {{ 'hebergement.calendar.payments.empty' | translate }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Récap totaux -->
+          <div class="row g-2 mt-3" *ngIf="modifyNuiteesModal.initial.length > 0">
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-2">
+                <div class="text-muted small">
+                  <i class="bi bi-hash me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.nuitees.modify.totalAvant' | translate }}
+                </div>
+                <div class="fw-semibold">{{ nuiteesTotalAvant | number: '1.0-2' }} MRU</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-2">
+                <div class="text-muted small">
+                  <i class="bi bi-arrow-right me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.nuitees.modify.totalApres' | translate }}
+                </div>
+                <div class="fw-semibold">{{ nuiteesTotalApres | number: '1.0-2' }} MRU</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="reservations-calendar__recap-card p-2">
+                <div class="text-muted small">
+                  <i class="bi bi-graph-up-arrow me-1" aria-hidden="true"></i>
+                  {{ 'hebergement.calendar.nuitees.modify.impact' | translate }}
+                </div>
+                <div
+                  class="fw-semibold"
+                  [class.text-danger]="nuiteesImpact > 0"
+                  [class.text-success]="nuiteesImpact < 0"
+                  [class.text-muted]="nuiteesImpact === 0"
+                >
+                  {{ nuiteesImpact | number: '1.0-2' }} MRU
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeModifyNuiteesModal()">
+          <i class="bi bi-x-lg me-1" aria-hidden="true"></i>
+          {{ 'hebergement.actions.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          (click)="submitModifyNuitees()"
+          [disabled]="modifyNuiteesModal.saving || modifyNuiteesModal.loading"
+        >
+          <span class="spinner-border spinner-border-sm me-1" *ngIf="modifyNuiteesModal.saving"></span>
+          <i class="bi bi-check2 me-1" *ngIf="!modifyNuiteesModal.saving" aria-hidden="true"></i>
+          {{ 'hebergement.actions.save' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

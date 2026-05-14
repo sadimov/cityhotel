@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 45 : ajout colonne 'ligne_facture_id' (nullable) sur
+    finance.affectations_paiements + remplacement de la contrainte unique
+    (paiement_id, facture_id) par (paiement_id, facture_id, ligne_facture_id)
+    avec NULLS NOT DISTINCT pour preserver l'unicite du cas legacy
+    (ligne_facture_id IS NULL = paiement affecte a la facture entiere).
+
+    Permet le paiement de lignes selectionnees d'une facture (Tour 45 -
+    paiement granulaire). Les affectations existantes restent valides en
+    mode legacy (ligne_facture_id NULL = affectation a la facture entiere).
+
+    Postgres-only pour NULLS NOT DISTINCT : H2 (profil test) cree les tables
+    via Hibernate ddl-auto=create-drop a partir des annotations entite, donc
+    la contrainte unique annotee Hibernate s'applique en mode H2 standard
+    (NULLs distincts par defaut, ce qui est suffisant pour les tests
+    Surefire ou les insertions sont controlees).
+    ============================================================================
+    -->
+
+    <changeSet id="034-1-add-ligne-facture-id" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="finance" tableName="affectations_paiements" columnName="ligne_facture_id"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="finance" tableName="affectations_paiements">
+            <column name="ligne_facture_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="affectations_paiements" baseTableSchemaName="finance"
+                baseColumnNames="ligne_facture_id"
+                referencedTableName="lignes_factures" referencedTableSchemaName="finance"
+                referencedColumnNames="ligne_facture_id"
+                constraintName="fk_affectations_ligne_facture"
+                onDelete="RESTRICT"/>
+
+        <createIndex schemaName="finance" tableName="affectations_paiements"
+                     indexName="ix_affectations_ligne_facture">
+            <column name="ligne_facture_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="finance" tableName="affectations_paiements"
+                       indexName="ix_affectations_ligne_facture"/>
+            <dropForeignKeyConstraint
+                    baseTableName="affectations_paiements" baseTableSchemaName="finance"
+                    constraintName="fk_affectations_ligne_facture"/>
+            <dropColumn schemaName="finance" tableName="affectations_paiements"
+                        columnName="ligne_facture_id"/>
+        </rollback>
+    </changeSet>
+
+    <!-- Drop ancienne unique (paiement_id, facture_id) puis recree (paiement_id,
+         facture_id, ligne_facture_id) avec NULLS NOT DISTINCT (Postgres 15+).
+         Postgres-only car NULLS NOT DISTINCT n'existe pas en H2. -->
+    <changeSet id="034-2-replace-unique-constraint" author="cityprojects" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <columnExists schemaName="finance" tableName="affectations_paiements" columnName="ligne_facture_id"/>
+        </preConditions>
+
+        <dropUniqueConstraint
+                schemaName="finance" tableName="affectations_paiements"
+                constraintName="uk_affectations_paiement_facture"/>
+
+        <sql>
+            ALTER TABLE finance.affectations_paiements
+            ADD CONSTRAINT uk_affectations_paiement_facture_ligne
+            UNIQUE NULLS NOT DISTINCT (paiement_id, facture_id, ligne_facture_id)
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE finance.affectations_paiements
+                DROP CONSTRAINT uk_affectations_paiement_facture_ligne
+            </sql>
+            <addUniqueConstraint
+                    schemaName="finance" tableName="affectations_paiements"
+                    constraintName="uk_affectations_paiement_facture"
+                    columnNames="paiement_id, facture_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -11,17 +11,17 @@
     <!--
     ============================================================================
     CITY BACKEND - CHANGELOG MASTER
-    Système de gestion hôtelière multi-tenant
+    SystÃ¨me de gestion hÃ´teliÃ¨re multi-tenant
     ============================================================================
     -->
 
-    <!-- PHASE 1: Création des schémas et tables de base -->
+    <!-- PHASE 1: CrÃ©ation des schÃ©mas et tables de base -->
     <include file="db/changelog/changes/001-create-core-schema.sql"/>
 
-    <!-- PHASE 2: Tables des clients et sociétés (Tour 8 — XML, ex-fichier .sql vide) -->
+    <!-- PHASE 2: Tables des clients et sociÃ©tÃ©s (Tour 8 â€” XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/002-create-client-schema.xml"/>
 
-    <!-- PHASE 3: Tables d'hébergement (chambres, réservations) — Tour 11 (XML, ex-fichier .sql vide) -->
+    <!-- PHASE 3: Tables d'hÃ©bergement (chambres, rÃ©servations) â€” Tour 11 (XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/003-create-hebergement-schema.xml"/>
 
     <!-- PHASE 4: Tables du restaurant - CATALOGUE (Tour 23 - XML, ex-fichier .sql stub).
@@ -31,19 +31,19 @@
     <!-- PHASE 5: Tables de gestion des stocks (Tour 16 - XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/005-create-inventory-schema.xml"/>
 
-    <!-- PHASE 6: Tables financières (Tour 19 - XML, ex-fichier .sql vide) -->
+    <!-- PHASE 6: Tables financiÃ¨res (Tour 19 - XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/006-create-finance-schema.xml"/>
 
-    <!-- PHASE 7: Tables de ménage (Tour 27 - XML, ex-fichier .sql stub remplace) -->
+    <!-- PHASE 7: Tables de mÃ©nage (Tour 27 - XML, ex-fichier .sql stub remplace) -->
     <include file="db/changelog/changes/007-create-menage-schema.xml"/>
 
     <!-- PHASE 8: Tables de reporting -->
     <include file="db/changelog/changes/008-create-reporting-schema.sql"/>
 
-    <!-- PHASE 11: Données initiales - Rôles système -->
+    <!-- PHASE 11: DonnÃ©es initiales - RÃ´les systÃ¨me -->
     <include file="db/changelog/changes/011-insert-initial-roles.sql"/>
 
-    <!-- PHASE 12: Données initiales (placeholder, fichier vide à compléter) -->
+    <!-- PHASE 12: DonnÃ©es initiales (placeholder, fichier vide Ã  complÃ©ter) -->
     <include file="db/changelog/changes/012-insert-initial-data.sql"/>
 
     <!-- PHASE 14: Utilisateur super admin initial -->
@@ -52,7 +52,7 @@
     <!-- PHASE 17: Correction de la colonne ip_address (VARCHAR -> inet) -->
     <include file="db/changelog/changes/017-fix-ip-address-column.sql"/>
 
-    <!-- PHASE 18: Drop colonne salt obsolète sur core.dbusers (BCrypt embarque le salt) -->
+    <!-- PHASE 18: Drop colonne salt obsolÃ¨te sur core.dbusers (BCrypt embarque le salt) -->
     <include file="db/changelog/changes/018-drop-salt-column-dbusers.sql"/>
 
     <!-- PHASE 19: Ajout code pays ISO 3166 sur hotels (palier 1 multi-pays, sert au format de numerotation comptable) -->
@@ -90,7 +90,7 @@
     <include file="db/changelog/changes/008-link-inventory-finance.xml"/>
 
     <!-- ============================================================
-         PHASE 27 : fix audit fields numerotation_sequence (Tour 7D — audit /db-validate)
+         PHASE 27 : fix audit fields numerotation_sequence (Tour 7D â€” audit /db-validate)
          ============================================================ -->
     <include file="db/changelog/changes/021-fix-numerotation-sequence-audit-types.xml"/>
 
@@ -173,13 +173,13 @@
          PHASE 37 (Tour 31) : module admin SUPERADMIN
           - Table core.parametres (configuration applicative globale,
             pas de hotel_id, pas de @TenantId).
-          - Seed paramètres système initiaux (timezone, devise, email,
+          - Seed paramÃ¨tres systÃ¨me initiaux (timezone, devise, email,
             retention, maintenance message).
           ============================================================ -->
     <include file="db/changelog/changes/029-create-admin-parametres-schema.xml"/>
 
     <!-- ============================================================
-         PHASE 38 (Tour 42 post-release) : revert ip_address inet → VARCHAR(45)
+         PHASE 38 (Tour 42 post-release) : revert ip_address inet â†’ VARCHAR(45)
          Bug bloquant login : UserSession.ipAddress String incompatible inet.
          ============================================================ -->
     <include file="db/changelog/changes/032-fix-ip-address-back-to-varchar.xml"/>
@@ -196,12 +196,196 @@
          ============================================================ -->
     <include file="db/changelog/changes/031-create-refresh-tokens.xml"/>
 
+    <!-- ============================================================
+         PHASE 40 (Tour 44 Phase 1) : colonne priorite sur tarifs_chambres
+         (ranking tarif applicable pour calcul prix dates calendrier).
+         ============================================================ -->
+    <include file="db/changelog/changes/033-add-priorite-to-tarifs-chambres.xml"/>
+
+    <!-- ============================================================
+         PHASE 41 (Tour 45) : colonne ligne_facture_id (nullable) sur
+         finance.affectations_paiements + nouvelle unique
+         (paiement_id, facture_id, ligne_facture_id) NULLS NOT DISTINCT.
+         Permet le paiement granulaire de lignes selectionnees d'une facture
+         tout en preservant la semantique legacy (ligne_facture_id NULL =
+         affectation a la facture entiere).
+         ============================================================ -->
+    <include file="db/changelog/changes/034-add-ligne-facture-id-to-affectations-paiements.xml"/>
+
+    <!-- ============================================================
+         PHASE 42 (Tour 49) : colonne 'categorie' sur hebergement.types_chambres
+         (CHAMBRE / SALLE) + CHECK constraint. Permet de gerer les salles de
+         conferences/reunions dans le meme modele que les chambres (reservation,
+         nuitee, facture reutilises). Default CHAMBRE pour preserver l'existant.
+         ============================================================ -->
+    <include file="db/changelog/changes/035-add-categorie-to-types-chambres.xml"/>
+
+    <!-- ============================================================
+         PHASE 43 (Tour 51) : CRUD complet inventory - ajout services hoteliers.
+         Tables inventory.types_services_hoteliers et inventory.services_hoteliers
+         (prestations facturables au client : spa, blanchisserie, transfert,
+         location de salle, etc.). Cross-module finance via LigneFacture type
+         SERVICE (pas de FK JPA bidirectionnelle).
+         ============================================================ -->
+    <include file="db/changelog/changes/036-create-services-hoteliers.xml"/>
+
+    <!-- ============================================================
+         PHASE 44 (Tour 51bis) : Bridge ServiceHotelier -> LigneFacture.
+         FK + index sur finance.lignes_factures.service_id (colonne deja
+         creee au changeset 006-f-4) vers inventory.services_hoteliers.
+         Permet la facturation des prestations hotelieres ponctuelles
+         (spa, blanchisserie, transfert, etc.) via l'endpoint
+         POST /api/finance/factures/lignes-service.
+         ============================================================ -->
+    <include file="db/changelog/changes/037-add-fk-lignes-factures-service.xml"/>
+
+    <!-- ============================================================
+         PHASE 45 (menage qualite) : note de qualite (1..5) sur menage.taches.
+         Saisie a la cloture par un superviseur ; null tant que la note n'est
+         pas attribuee. CHECK 1..5 SQL pour garde-fou.
+         ============================================================ -->
+    <include file="db/changelog/changes/038-add-note-qualite-taches.xml"/>
+
+    <!-- ============================================================
+         PHASE 46 (Tour A) : colonne avatar_filename sur core.dbusers
+         pour le profil self-service. Stocke le nom de fichier disque
+         (AvatarStorageService). Nullable, 255 chars, pas de migration
+         des donnees (avatar par defaut cote front pour les users existants).
+         ============================================================ -->
+    <include file="db/changelog/changes/039-add-avatar-filename-dbusers.xml"/>
+
+    <!-- ============================================================
+         PHASE 47 (B1 compta native) : Plan Comptable General SYSCOHADA
+         mauritanien. Table referentielle globale (pas de hotel_id) seedee
+         avec les comptes hoteliers principaux des classes 1-7. Lecture
+         seule cote application (evolutions par migrations).
+         ============================================================ -->
+    <include file="db/changelog/changes/040-create-plan-comptable-general.xml"/>
+
+    <!-- ============================================================
+         PHASE 48 (B1 compta native) : mapping comptable par hotel
+         (TypeEvenementComptable -> compte PCG). Tenant-aware. Seed des
+         defauts par hotel via CompteMappingInitializer cote service.
+         ============================================================ -->
+    <include file="db/changelog/changes/041-create-compte-mapping.xml"/>
+
+    <!-- ============================================================
+         PHASE 49 (B1 compta native) : exercice comptable par hotel.
+         Garde anti-modification dans exercice clos appliquee cote service
+         (FactureService.create / Paiement* via ExerciceService.assertOuvert).
+         ============================================================ -->
+    <include file="db/changelog/changes/042-create-exercice.xml"/>
+
+    <!-- ============================================================
+         PHASE 50 (B1 fix audit L1) : ajout colonne hotel_id sur
+         lignes_factures et affectations_paiements pour activer le filtre
+         Hibernate @TenantId natif. Bouche les fuites cross-hotel sur
+         LigneFactureRepository.existsByNuiteeId et
+         AffectationPaiementRepository.sumMontantByLigneFactureId.
+         Backfill depuis le parent (factures / paiements).
+         ============================================================ -->
+    <include file="db/changelog/changes/043-add-tenant-id-to-ligne-facture-affectation-paiement.xml"/>
+
+    <!-- ============================================================
+         PHASE 51 (Tour 41) : colonne source_canal sur hebergement.reservations
+         (VARCHAR(50) nullable) + index. Necessaire au rapport R-HEB-004
+         (repartition des reservations par canal de distribution).
+         Souplesse : pas de CHECK constraint, les libelles sont indicatifs
+         (DIRECT_HOTEL, WEBSITE, BOOKING_COM, EXPEDIA, AIRBNB, AGENCE_VOYAGE,
+         WALK_IN, TELEPHONE, EMAIL, AUTRE).
+         ============================================================ -->
+    <include file="db/changelog/changes/044-add-source-canal-reservations.xml"/>
+
+    <!-- ============================================================
+         PHASE 52 (B2 compta native partie double) : ajout colonne
+         discriminant a finance.numerotation_sequence pour segmenter
+         la sequence du type JRN (ecritures comptables) par code de
+         journal. Backward compatible (default ''). Drop ancien
+         UNIQUE (hotel_id, type, exercice) + add nouveau UNIQUE
+         (hotel_id, type, exercice, discriminant).
+         ============================================================ -->
+    <include file="db/changelog/changes/046-add-discriminant-numerotation-sequence.xml"/>
+
+    <!-- ============================================================
+         PHASE 53 (B2 compta native partie double) : tables
+         finance.journal_comptable, finance.ecriture_comptable et
+         finance.ligne_ecriture. Toutes tenant-aware (@TenantId +
+         CHECK hotel_id > 0). Trigger PG defense en profondeur pour
+         l'equilibre Σ debits = Σ credits sur les ecritures VALIDEE
+         (skip H2 - garde applicative dans EcritureComptableServiceImpl).
+         ============================================================ -->
+    <include file="db/changelog/changes/047-create-finance-comptabilite-partie-double.xml"/>
+
+    <!-- ============================================================
+         PHASE 54 (B3 compta native, branchement auto) : lien
+         facture -> ecriture (ecriture_emission_id sur factures).
+         Renseigne par FactureServiceImpl.emettre().
+         ============================================================ -->
+    <include file="db/changelog/changes/048-add-ecriture-emission-id-to-factures.xml"/>
+
+    <!-- ============================================================
+         PHASE 55 (B3 compta native, branchement auto) : lien
+         paiement -> ecriture (ecriture_encaissement_id sur paiements).
+         Renseigne par PaiementServiceImpl.create().
+         ============================================================ -->
+    <include file="db/changelog/changes/049-add-ecriture-encaissement-id-to-paiements.xml"/>
+
+    <!-- ============================================================
+         PHASE 56 (B3 compta native, branchement auto) : lien
+         bons_commande/bons_sortie -> ecriture (ecriture_reception_id
+         + ecriture_sortie_id). Renseignes respectivement par
+         BonCommandeServiceImpl.receptionner() et BonSortieServiceImpl.livrer().
+         ============================================================ -->
+    <include file="db/changelog/changes/050-add-ecriture-id-to-bons-commande-and-bons-sortie.xml"/>
+
+    <!-- ============================================================
+         PHASE 57 (B3 compta native, audit) : table finance.audit_finance_log
+         pour tracer les actions financieres (FACTURE_*, PAIEMENT_*,
+         ECRITURE_*, EXERCICE_*). Aspect @AuditFinanceAction dedie pour
+         ne pas casser le pattern menage existant.
+         ============================================================ -->
+    <include file="db/changelog/changes/051-create-audit-finance-log.xml"/>
+
+    <!-- ============================================================
+         PHASE 58 (B4 compta native TVA) : configuration TVA par hotel
+         et par type de service (HEBERGEMENT_NUITEE, RESTAURATION, BAR,
+         SERVICE_CHAMBRE, BLANCHISSERIE, AUTRE_SERVICE_HOTELIER,
+         ACHAT_MARCHANDISES). Taux standard mauritanien 16% (Code General
+         des Impots). HEBERGEMENT_NUITEE par defaut 0% (exoneration de
+         fait). Seed des defauts par hotel via TauxTvaConfigInitializer.
+         ============================================================ -->
+    <include file="db/changelog/changes/052-create-taux-tva-config.xml"/>
+
+    <!-- ============================================================
+         PHASE 59 (B4 compta native TVA) : table finance.declaration_tva
+         pour les declarations TVA mensuelles. Cycle BROUILLON -> VALIDEE.
+         La validation genere l'ecriture de liquidation (journal OD) :
+           DEBIT  445700 (TVA collectee)
+           CREDIT 445600 (TVA deductible)
+           CREDIT 445800 (TVA a decaisser) ou DEBIT 445800 (credit reportable)
+         Atomicite via TX Spring : ecriture generee dans la meme TX que la
+         validation, en cas d'echec la declaration reste BROUILLON.
+         ============================================================ -->
+    <include file="db/changelog/changes/054-create-declaration-tva.xml"/>
+
+    <!-- ============================================================
+         PHASE 60 (B6 compta - PDF facture client) : colonnes hotel pour
+         mentions legales paramatrables + NIF.
+         - core.hotels.nif (VARCHAR(50)) : identifiant fiscal hotel.
+         - core.hotels.mentions_conditions_paiement (TEXT).
+         - core.hotels.mentions_penalites_retard (TEXT).
+         Toutes nullable : defauts fournis cote applicatif par
+         FacturePdfHelper si vide. Solution retenue plutot que reutiliser
+         core.parametres (non tenant-scoped, inadapte au multi-hotels).
+         ============================================================ -->
+    <include file="db/changelog/changes/055-add-hotel-mentions-facture.xml"/>
+
     <!--
-    TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
+    TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et crÃ©er les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql
        - db/changelog/data/roles.sql
        - db/changelog/data/statuts-taches.sql
-    Aujourd'hui orphelins : ne PAS les inclure tant que le contenu n'a pas été validé.
+    Aujourd'hui orphelins : ne PAS les inclure tant que le contenu n'a pas Ã©tÃ© validÃ©.
     -->
 
 </databaseChangeLog>

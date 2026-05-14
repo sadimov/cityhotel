@@ -8,12 +8,23 @@
  * lors d'un create/update — le backend les déduit du JWT et de la route.
  */
 
+/**
+ * Cycle de vie d'une réservation — aligné sur l'enum backend
+ * `StatutReservation` (5 valeurs, pas de `EN_ATTENTE` côté serveur).
+ *
+ * Workflow et couleurs grille calendrier :
+ *  - `CONFIRMEE` : réservation créée, non encore arrivée → ROUGE
+ *  - `ARRIVEE`   : check-in effectué                    → VERT
+ *  - `PARTIE`    : check-out effectué                    → ORANGE
+ *  - `ANNULEE`   : annulée (motif obligatoire)           → ROUGE foncé barré
+ *  - `NO_SHOW`   : non-présentation (night audit)        → GRIS
+ */
 export enum StatutReservation {
-  EN_ATTENTE = 'EN_ATTENTE',
   CONFIRMEE = 'CONFIRMEE',
   ARRIVEE = 'ARRIVEE',
   PARTIE = 'PARTIE',
   ANNULEE = 'ANNULEE',
+  NO_SHOW = 'NO_SHOW',
 }
 
 /** Lien réservation ↔ chambre (sous-période d'une réservation). */
@@ -188,11 +199,11 @@ export interface FiltresReservations {
  * futur affichant un badge statut (détail, filtres, dashboard).
  */
 export const STATUT_RESERVATION_BADGE_MAP: Record<StatutReservation, string> = {
-  [StatutReservation.EN_ATTENTE]: 'text-bg-warning',
-  [StatutReservation.CONFIRMEE]: 'text-bg-info',
-  [StatutReservation.ARRIVEE]: 'text-bg-success',
-  [StatutReservation.PARTIE]: 'text-bg-secondary',
-  [StatutReservation.ANNULEE]: 'text-bg-danger',
+  [StatutReservation.CONFIRMEE]: 'text-bg-danger',   // rouge — créée, pas encore arrivée
+  [StatutReservation.ARRIVEE]: 'text-bg-success',     // vert — check-in fait
+  [StatutReservation.PARTIE]: 'text-bg-warning',      // orange — check-out fait
+  [StatutReservation.ANNULEE]: 'text-bg-dark',        // gris foncé (différencié du rouge)
+  [StatutReservation.NO_SHOW]: 'text-bg-secondary',   // gris — no-show night audit
 };
 
 /**
@@ -201,21 +212,21 @@ export const STATUT_RESERVATION_BADGE_MAP: Record<StatutReservation, string> = {
  * Bootstrap car le SCSS du calendrier définit ses propres palettes.
  */
 export const STATUT_RESERVATION_CHIP_MAP: Record<StatutReservation, string> = {
-  [StatutReservation.EN_ATTENTE]: 'reservations-calendar__chip--en-attente',
   [StatutReservation.CONFIRMEE]: 'reservations-calendar__chip--confirmee',
   [StatutReservation.ARRIVEE]: 'reservations-calendar__chip--arrivee',
   [StatutReservation.PARTIE]: 'reservations-calendar__chip--partie',
   [StatutReservation.ANNULEE]: 'reservations-calendar__chip--annulee',
+  [StatutReservation.NO_SHOW]: 'reservations-calendar__chip--no-show',
 };
 
 /**
  * Renvoie la clé i18n du libellé statut (`hebergement.statut.<statut>` en
- * minuscules). Fallback sur `EN_ATTENTE` si le statut est indéterminé.
+ * minuscules). Fallback sur `CONFIRMEE` si le statut est indéterminé.
  *
  * Centralise la convention partagée par `reservations-list`,
  * `reservations-calendar` et `check-in-form`.
  */
 export function statutReservationKey(statut: StatutReservation | undefined): string {
-  const s = statut ?? StatutReservation.EN_ATTENTE;
+  const s = statut ?? StatutReservation.CONFIRMEE;
   return 'hebergement.statut.' + s.toLowerCase();
 }

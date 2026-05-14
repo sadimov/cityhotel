@@ -25,7 +25,8 @@
     "housekeeping": "التنظيف",
     "reporting": "التقارير",
     "profile": "الملف الشخصي",
-    "admin": "الإدارة"
+    "admin": "الإدارة",
+    "hotelAdmin": "فندقي"
   },
   "submenu": {
     "products": {
@@ -45,6 +46,9 @@
       "users": "المستخدمون",
       "roles": "الأدوار",
       "parametres": "الإعدادات"
+    },
+    "hotelAdmin": {
+      "users": "المستخدمون"
     }
   },
   "common": {
@@ -57,7 +61,17 @@
     "search": "بحث",
     "close": "إغلاق",
     "language": "اللغة",
-    "comingSoon": "هذه الميزة قادمة مع وحدة المالية."
+    "previous": "السابق",
+    "next": "التالي",
+    "comingSoon": "هذه الميزة قادمة مع وحدة المالية.",
+    "actions": "الإجراءات",
+    "view": "عرض",
+    "back": "رجوع",
+    "confirm": "تأكيد",
+    "retry": "إعادة المحاولة",
+    "remove": "حذف",
+    "select": "اختر",
+    "total": "المجموع"
   },
   "header": {
     "notifications": "الإشعارات",
@@ -69,7 +83,20 @@
     "minimize": "تصغير",
     "restore": "استعادة",
     "expand": "توسيع",
-    "collapse": "طي"
+    "collapse": "طي",
+    "comptabilite": "المحاسبة",
+    "comptabilite.exercices": "السنوات المالية",
+    "comptabilite.planComptable": "الدليل المحاسبي",
+    "comptabilite.mapping": "الربط المحاسبي",
+    "comptabilite.journaux": "اليوميات",
+    "comptabilite.ecritures": "القيود",
+    "comptabilite.tvaConfig": "إعداد الضريبة على القيمة المضافة",
+    "comptabilite.tvaDeclarations": "تصاريح الضريبة",
+    "comptabilite.balance": "ميزان المراجعة",
+    "comptabilite.grandLivre": "دفتر الأستاذ",
+    "comptabilite.journal": "اليومية المطبوعة",
+    "comptabilite.bilan": "الميزانية",
+    "comptabilite.compteResultat": "حساب النتائج"
   },
   "clients": {
     "list": {
@@ -122,11 +149,22 @@
   "hebergement": {
     "calendar": {
       "title": "تقويم الحجوزات",
-      "previous": "الشهر السابق",
-      "next": "الشهر التالي",
+      "previous": "الفترة السابقة",
+      "next": "الفترة التالية",
       "today": "اليوم",
+      "currentMonth": "الشهر الحالي",
+      "rooms": "الغرف",
+      "refresh": "تحديث التقويم",
+      "dragHint": "انقر واسحب لإنشاء حجز",
+      "empty": "لا توجد غرف للعرض.",
       "error": "تعذر تحميل التقويم.",
       "retry": "إعادة المحاولة",
+      "confirmCheckIn": "هل تؤكد تسجيل وصول هذا الحجز؟",
+      "confirmCheckOut": "هل تؤكد تسجيل مغادرة هذا الحجز؟",
+      "checkInSuccess": "تم تسجيل الوصول.",
+      "checkInError": "تعذر تسجيل الوصول.",
+      "checkOutSuccess": "تم تسجيل المغادرة.",
+      "checkOutError": "تعذر تسجيل المغادرة.",
       "weekday": {
         "mon": "اثن",
         "tue": "ثلا",
@@ -135,6 +173,221 @@
         "fri": "جمع",
         "sat": "سبت",
         "sun": "أحد"
+      },
+      "range": {
+        "openPicker": "اختر نطاق التواريخ",
+        "selectStart": "اختر تاريخ البدء",
+        "selectEnd": "اختر تاريخ الانتهاء"
+      },
+      "menu": {
+        "consult": "عرض",
+        "modify": "تعديل / نقل",
+        "checkIn": "تسجيل وصول",
+        "checkOut": "تسجيل مغادرة",
+        "payments": "المدفوعات",
+        "modifyNuitees": "تعديل الليالي",
+        "cancel": "إلغاء الحجز"
+      },
+      "create": {
+        "title": "حجز جديد",
+        "room": "الغرفة",
+        "period": "الفترة"
+      },
+      "consult": {
+        "title": "تفاصيل الحجز",
+        "rooms": "الغرف",
+        "fullDetail": "عرض / تعديل التفاصيل الكاملة",
+        "client": {
+          "label": "العميل"
+        },
+        "section": {
+          "dates": "التواريخ والشاغلون",
+          "tarif": "التسعير",
+          "notes": "ملاحظات"
+        }
+      },
+      "edit": {
+        "title": "تعديل الحجز",
+        "client": {
+          "label": "حجز",
+          "changeLabel": "تغيير العميل",
+          "help": "يمكنك استبدال العميل الرئيسي لهذا الحجز."
+        },
+        "societe": {
+          "changeLabel": "تغيير الشركة"
+        }
+      },
+      "groups": {
+        "chambres": {
+          "title": "الغرف"
+        },
+        "salles": {
+          "title": "القاعات"
+        }
+      },
+      "cancel": {
+        "title": "إلغاء الحجز",
+        "motifPlaceholder": "أدخل سبب الإلغاء…",
+        "motifRequired": "السبب مطلوب.",
+        "confirm": "إلغاء الحجز",
+        "success": "تم إلغاء الحجز."
+      },
+      "client": {
+        "add": "عميل جديد",
+        "quickCreate": {
+          "title": "إنشاء سريع لعميل",
+          "firstName": "الاسم",
+          "lastName": "اللقب",
+          "phone": "الهاتف",
+          "email": "البريد الإلكتروني",
+          "cni": "بطاقة الهوية",
+          "create": "إنشاء واختيار",
+          "cancel": "إلغاء",
+          "success": "تم إنشاء العميل واختياره."
+        }
+      },
+      "societe": {
+        "quickCreate": {
+          "open": "شركة جديدة",
+          "title": "إنشاء سريع لشركة",
+          "nom": "الاسم",
+          "telephone": "الهاتف",
+          "nif": "الرقم الضريبي (NIF)",
+          "adresse": "العنوان",
+          "create": "إنشاء واختيار",
+          "cancel": "إلغاء",
+          "success": "تم إنشاء الشركة واختيارها."
+        }
+      },
+      "tarif": {
+        "calculating": "جارٍ احتساب التعرفة…",
+        "totalNights": "الليالي",
+        "amountHt": "المبلغ قبل الضريبة",
+        "amountTtc": "المبلغ شامل الضريبة",
+        "detail": "تفاصيل يومية",
+        "origin": {
+          "tarif": "تعرفة موسمية",
+          "fallback": "السعر الأساسي"
+        }
+      },
+      "payments": {
+        "title": "مدفوعات الحجز",
+        "factures": "الفواتير",
+        "payments": "المدفوعات",
+        "totalGlobal": "الإجمالي الكلي",
+        "paidGlobal": "إجمالي المسدد",
+        "remainingGlobal": "المتبقي",
+        "viewFactureDetail": "تفاصيل الفاتورة",
+        "empty": "لا توجد عناصر للعرض.",
+        "selected": "المحدد",
+        "advanced": "إجراءات متقدمة",
+        "lignes": {
+          "description": "الوصف",
+          "date": "التاريخ",
+          "sousTotal": "المجموع الفرعي",
+          "paye": "المدفوع",
+          "reste": "المتبقي",
+          "select": "تحديد السطر"
+        },
+        "action": {
+          "payer": "دفع التحديد",
+          "transferer": "نقل السطور",
+          "checkoutExpress": "مغادرة سريعة"
+        },
+        "details": {
+          "title": "تفاصيل الحجز",
+          "numero": "رقم الحجز",
+          "client": "العميل",
+          "societe": "الشركة",
+          "periode": "الفترة",
+          "occupants": "النزلاء",
+          "chambres": "الغرف",
+          "statut": "الحالة",
+          "total": "المبلغ الإجمالي"
+        },
+        "folio": {
+          "title": "البطاقة — فواتير الحجز",
+          "numero": "رقم الفاتورة",
+          "date": "التاريخ",
+          "statut": "الحالة",
+          "total": "الإجمالي",
+          "paye": "المدفوع",
+          "balance": "المتبقي",
+          "empty": "لا توجد فاتورة لهذا الحجز.",
+          "totalFactures": "إجمالي الفواتير",
+          "totalPaye": "إجمالي المسدد",
+          "balanceGlobale": "الرصيد الإجمالي"
+        },
+        "global": {
+          "title": "تسجيل دفعة",
+          "montant": "المبلغ",
+          "mode": "طريقة الدفع",
+          "motif": "السبب",
+          "description": "الوصف",
+          "partial": "دفعة جزئية — سيبقى {amount} MRU للدفع.",
+          "full": "السداد كامل.",
+          "excess": "سيتم إضافة فائض {amount} MRU إلى حساب العميل.",
+          "confirm": "تأكيد التحصيل؟",
+          "action": "تسجيل الدفعة",
+          "success": "تم تسجيل الدفعة.",
+          "successFull": "تم تسجيل الدفعة الكاملة.",
+          "successExcess": "تم تسجيل الدفعة (فائض {amount} MRU مضاف إلى الحساب)."
+        },
+        "payer": {
+          "title": "تسجيل دفعة",
+          "amount": "المبلغ",
+          "mode": "طريقة الدفع",
+          "motif": "السبب",
+          "description": "الوصف",
+          "dueReste": "المتبقي",
+          "partial": "تم تسجيل دفعة جزئية.",
+          "full": "تم تسجيل الدفعة الكاملة.",
+          "excess": "تم إضافة الفائض إلى حساب العميل:"
+        },
+        "transferer": {
+          "title": "نقل السطور",
+          "targetFacture": "الفاتورة الهدف",
+          "newFacture": "إنشاء فاتورة جديدة",
+          "success": "تم نقل السطور بنجاح."
+        },
+        "checkoutExpress": {
+          "title": "مغادرة سريعة",
+          "confirm": "تحويل الفاتورة إلى حساب الشركة ثم الإغلاق؟",
+          "selectSociete": "اختر الشركة",
+          "success": "تمت المغادرة السريعة."
+        }
+      },
+      "nuitees": {
+        "modify": {
+          "openButton": "تعديل الليالي",
+          "title": "تعديل الليالي",
+          "dateNuit": "التاريخ",
+          "prixOriginal": "السعر الأصلي",
+          "nouveauMontant": "المبلغ الجديد",
+          "reset": "إعادة تعيين",
+          "totalAvant": "المجموع قبل",
+          "totalApres": "المجموع بعد",
+          "impact": "الفرق",
+          "confirm": "سيؤدي الأثر المالي إلى تعديل الفاتورة. هل تؤكد الحفظ؟",
+          "success": "تم تحديث مبالغ الليالي.",
+          "noChanges": "لا توجد تعديلات للحفظ."
+        }
+      },
+      "changeRoom": {
+        "title": "تغيير الغرفة",
+        "newRoom": "الغرفة الجديدة",
+        "reason": "السبب (اختياري)",
+        "action": "تغيير الغرفة",
+        "confirm": {
+          "title": "تأكيد تغيير الغرفة؟",
+          "message": "سيتم نقل الحجز إلى الغرفة الجديدة ونقل الليالي غير المفوترة."
+        },
+        "success": "تم تغيير الغرفة بنجاح."
+      },
+      "live": {
+        "syncToast": "تمت المزامنة",
+        "disconnected": "تم قطع الاتصال بالبث المباشر",
+        "reconnecting": "جارٍ إعادة الاتصال…"
       }
     },
     "list": {
@@ -188,11 +441,11 @@
       "reductionPourcentage": "خصم (%)"
     },
     "statut": {
-      "en_attente": "قيد الانتظار",
-      "confirmee": "مؤكد",
+      "confirmee": "غير مؤكد",
       "arrivee": "وصول",
       "partie": "مغادرة",
-      "annulee": "ملغى"
+      "annulee": "ملغى",
+      "no_show": "عدم الحضور"
     },
     "errors": {
       "clientRequired": "العميل الرئيسي مطلوب.",
@@ -208,13 +461,103 @@
       "cancelMotifRequired": "السبب مطلوب.",
       "cancelSuccess": "تم إلغاء الحجز",
       "cancelError": "تعذر إلغاء الحجز."
+    },
+    "nightAudit": {
+      "page": {
+        "title": "التدقيق الليلي — التحضير",
+        "subtitle": "تاريخ الفندق: {{date}}",
+        "instructions": "حضّر الإقفال بالتحقق من العمليات المتبقية. عند الجاهزية، اضغط « بدء الإقفال ».",
+        "back": "رجوع",
+        "refresh": "تحديث",
+        "launch": "بدء الإقفال",
+        "error": "خطأ أثناء التدقيق الليلي.",
+        "reportToast": "تم التأجيل للمعالجة لاحقاً",
+        "launchConfirm": {
+          "title": "بدء الإقفال؟",
+          "text": "سيؤدي هذا الإجراء إلى تعليم الحجوزات المتأخرة بدون تسجيل وصول كعدم حضور وتوليد الليالي الناقصة.",
+          "confirm": "بدء"
+        },
+        "result": {
+          "title": "تم الإقفال",
+          "text": "{{nbNoShow}} حجز عدم حضور · {{nbNuitees}} ليلة تم توليدها"
+        },
+        "retard": {
+          "title": "تسجيلات وصول متأخرة",
+          "empty": "لا يوجد تسجيل وصول متأخر.",
+          "warning": "حجوزات مؤكدة تاريخ وصولها مضى. إن لم تُعالج، ستُعتبر عدم حضور."
+        },
+        "arrivals": {
+          "title": "وصول اليوم",
+          "empty": "لا توجد وصولات مقررة اليوم.",
+          "subtitle": "حجوزات متوقعة لم يتم تسجيل وصولها بعد."
+        },
+        "departs": {
+          "title": "مغادرات اليوم",
+          "empty": "لا توجد مغادرات مقررة اليوم.",
+          "subtitle": "حجوزات جارية بتاريخ مغادرة اليوم."
+        },
+        "cols": {
+          "numero": "رقم الحجز",
+          "client": "العميل",
+          "chambres": "الغرفة (الغرف)",
+          "dateArrivee": "تاريخ الوصول",
+          "dateDepart": "تاريخ المغادرة",
+          "actions": "إجراءات"
+        },
+        "action": {
+          "checkin": "تسجيل الوصول",
+          "checkout": "تسجيل المغادرة",
+          "cancel": "إلغاء",
+          "report": "تأجيل",
+          "prolong": "تمديد",
+          "payCheckout": "دفع ومغادرة"
+        },
+        "notifier": {
+          "start": "بدء",
+          "snooze": "تأجيل",
+          "snoozed": "تم تأجيل التدقيق الليلي لهذا اليوم"
+        }
+      }
+    }
+  },
+  "nightAudit": {
+    "alert": {
+      "title": "تدقيق ليلي وشيك",
+      "message": "سيبدأ التدقيق الليلي خلال 3 دقائق. يرجى إنهاء العمليات الجارية."
+    },
+    "modal": {
+      "title": "إطلاق التدقيق الليلي",
+      "subtitle": "تاريخ الفندق: {{date}}",
+      "actions": {
+        "title": "الإجراءات التي ستُنفَّذ",
+        "noShow": "الحجوزات المتأخرة → عدم الحضور",
+        "nuitees": "إنشاء الليالي الناقصة للإقامات الجارية"
+      },
+      "cancel": "إلغاء",
+      "launch": "إطلاق الآن",
+      "confirm": "هل تؤكد إطلاق التدقيق الليلي؟"
+    },
+    "result": {
+      "title": "اكتمل التدقيق الليلي",
+      "summary": "تم تعليم {{nbNoShow}} حجز/حجوزات كعدم حضور، وتوليد {{nbNuitees}} ليلة/ليالٍ"
+    },
+    "error": {
+      "title": "خطأ في التدقيق الليلي"
     }
   },
   "inventory": {
     "actions": {
       "save": "حفظ",
       "cancel": "إلغاء",
-      "close": "إغلاق"
+      "close": "إغلاق",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "view": "عرض",
+      "back": "رجوع"
+    },
+    "detail": {
+      "dateCreation": "تاريخ الإنشاء",
+      "utilisateur": "المستخدم"
     },
     "produit": {
       "list": {
@@ -275,6 +618,11 @@
         "deleteConfirm": "هل تريد حذف هذا المنتج؟",
         "deleteError": "تعذر حذف هذا المنتج.",
         "saveError": "تعذر حفظ بيانات هذا المنتج."
+      },
+      "detail": {
+        "title": "تفاصيل المنتج",
+        "mouvementsTitle": "سجل حركات المخزون",
+        "valeurStock": "قيمة المخزون"
       }
     },
     "bonCommande": {
@@ -298,7 +646,10 @@
         "edit": "تعديل",
         "cancel": "إلغاء",
         "valider": "تأكيد",
-        "receptionner": "استلام"
+        "receptionner": "استلام",
+        "envoyer": "إرسال",
+        "confirmer": "تأكيد",
+        "annuler": "إلغاء"
       },
       "fields": {
         "numeroBon": "رقم الأمر",
@@ -340,7 +691,22 @@
       "messages": {
         "createSuccess": "تم إنشاء أمر الشراء بنجاح",
         "updateSuccess": "تم تعديل أمر الشراء بنجاح",
-        "saveError": "تعذر حفظ أمر الشراء."
+        "saveError": "تعذر حفظ أمر الشراء.",
+        "envoyerConfirm": "هل تريد إرسال هذا الأمر إلى المورد؟",
+        "envoyerSuccess": "تم إرسال أمر الشراء",
+        "envoyerError": "تعذر إرسال أمر الشراء.",
+        "confirmerConfirm": "هل تريد تأكيد استلام هذا الأمر؟",
+        "confirmerSuccess": "تم تأكيد أمر الشراء",
+        "confirmerError": "تعذر تأكيد أمر الشراء.",
+        "annulerConfirm": "هل تريد إلغاء هذا الأمر؟",
+        "annulerSuccess": "تم إلغاء أمر الشراء",
+        "annulerError": "تعذر إلغاء أمر الشراء."
+      },
+      "detail": {
+        "title": "تفاصيل أمر الشراء",
+        "pourcentageReception": "نسبة الاستلام",
+        "quantiteRecue": "الكمية المستلمة",
+        "lignesEmpty": "لا يوجد بند في هذا الأمر."
       }
     },
     "stock": {
@@ -364,6 +730,320 @@
         "alerte": "تنبيه",
         "critique": "حرج",
         "unknown": "غير محدد"
+      }
+    },
+    "statut": {
+      "actif": "نشط",
+      "inactif": "غير نشط"
+    },
+    "categories": {
+      "list": {
+        "title": "فئات المنتجات",
+        "search": "البحث عن فئة",
+        "empty": "لا توجد فئة",
+        "error": "تعذر تحميل الفئات.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم الفئات"
+      },
+      "form": {
+        "titleCreate": "فئة جديدة",
+        "titleEdit": "تعديل الفئة",
+        "loadError": "تعذر تحميل هذه الفئة."
+      },
+      "actions": {
+        "create": "فئة جديدة"
+      },
+      "fields": {
+        "codeCategorie": "الرمز",
+        "nomCategorie": "الاسم",
+        "description": "الوصف",
+        "nombreProduits": "المنتجات",
+        "actif": "نشط"
+      },
+      "errors": {
+        "codeRequired": "الرمز مطلوب.",
+        "codePattern": "يجب أن يتكون الرمز من 2 إلى 10 أحرف أبجدية رقمية.",
+        "nomRequired": "الاسم مطلوب."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الفئة بنجاح",
+        "updateSuccess": "تم تعديل الفئة بنجاح",
+        "deleteSuccess": "تم حذف الفئة",
+        "deleteConfirm": "هل تريد حذف هذه الفئة؟",
+        "deleteError": "تعذر حذف هذه الفئة.",
+        "saveError": "تعذر حفظ الفئة."
+      },
+      "detail": {
+        "title": "تفاصيل الفئة"
+      }
+    },
+    "fournisseurs": {
+      "list": {
+        "title": "الموردون",
+        "search": "البحث عن مورد",
+        "empty": "لا يوجد مورد",
+        "error": "تعذر تحميل الموردين.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم الموردين"
+      },
+      "form": {
+        "titleCreate": "مورد جديد",
+        "titleEdit": "تعديل المورد",
+        "loadError": "تعذر تحميل هذا المورد."
+      },
+      "actions": {
+        "create": "مورد جديد"
+      },
+      "fields": {
+        "nomFournisseur": "الاسم",
+        "contactPrincipal": "جهة الاتصال",
+        "telephone": "الهاتف",
+        "email": "البريد الإلكتروني",
+        "adresse": "العنوان",
+        "ville": "المدينة",
+        "pays": "البلد",
+        "conditionsPaiement": "شروط الدفع",
+        "actif": "نشط"
+      },
+      "errors": {
+        "nomRequired": "اسم المورد مطلوب.",
+        "emailInvalid": "البريد الإلكتروني غير صالح."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء المورد بنجاح",
+        "updateSuccess": "تم تعديل المورد بنجاح",
+        "deleteSuccess": "تم حذف المورد",
+        "deleteConfirm": "هل تريد حذف هذا المورد؟",
+        "deleteError": "تعذر حذف هذا المورد.",
+        "saveError": "تعذر حفظ المورد."
+      },
+      "detail": {
+        "title": "تفاصيل المورد",
+        "nombreBonsCommande": "عدد أوامر الشراء",
+        "montantTotalCommandes": "إجمالي مبالغ الأوامر"
+      }
+    },
+    "bonsSortie": {
+      "list": {
+        "title": "أوامر الصرف",
+        "search": "بحث (رقم الأمر، الوجهة...)",
+        "empty": "لا يوجد أمر صرف",
+        "error": "تعذر تحميل أوامر الصرف.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم أوامر الصرف",
+        "filterAll": "جميع الحالات"
+      },
+      "form": {
+        "titleCreate": "أمر صرف جديد",
+        "titleEdit": "تعديل أمر الصرف",
+        "loadError": "تعذر تحميل أمر الصرف هذا."
+      },
+      "actions": {
+        "create": "أمر صرف جديد",
+        "valider": "اعتماد",
+        "livrer": "تسليم",
+        "annuler": "إلغاء"
+      },
+      "fields": {
+        "numeroBon": "رقم الأمر",
+        "numeroBonAuto": "تلقائي",
+        "destination": "الوجهة",
+        "dateSortie": "تاريخ الصرف",
+        "statut": "الحالة",
+        "commentaires": "ملاحظات",
+        "nombreLignes": "البنود"
+      },
+      "statut": {
+        "brouillon": "مسودة",
+        "valide": "مؤكد",
+        "livre": "مُسلَّم",
+        "annule": "ملغى"
+      },
+      "lignes": {
+        "title": "بنود الأمر",
+        "add": "إضافة بند",
+        "remove": "حذف البند",
+        "produit": "المنتج",
+        "quantite": "الكمية",
+        "quantiteServie": "الكمية المُسلّمة",
+        "empty": "لا يوجد بند. انقر على \"إضافة بند\"."
+      },
+      "errors": {
+        "destinationRequired": "الوجهة مطلوبة."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء أمر الصرف بنجاح",
+        "updateSuccess": "تم تعديل أمر الصرف بنجاح",
+        "saveError": "تعذر حفظ أمر الصرف.",
+        "validerConfirm": "هل تريد اعتماد أمر الصرف هذا؟",
+        "validerSuccess": "تم اعتماد أمر الصرف",
+        "validerError": "تعذر اعتماد أمر الصرف.",
+        "livrerConfirm": "هل تريد تسليم أمر الصرف هذا؟",
+        "livrerWarning": "هذه العملية تُنشئ حركة مخزون \"خروج\" ولا يمكن التراجع عنها.",
+        "livrerSuccess": "تم تسليم أمر الصرف",
+        "livrerError": "تعذر تسليم أمر الصرف.",
+        "annulerTitle": "إلغاء أمر الصرف",
+        "annulerMotifLabel": "سبب الإلغاء",
+        "annulerMotifPlaceholder": "أدخل السبب (إلزامي)...",
+        "annulerMotifRequired": "سبب الإلغاء مطلوب.",
+        "annulerSuccess": "تم إلغاء أمر الصرف",
+        "annulerError": "تعذر إلغاء أمر الصرف."
+      },
+      "detail": {
+        "title": "تفاصيل أمر الصرف",
+        "pourcentageLivraison": "نسبة التسليم"
+      }
+    },
+    "mouvements": {
+      "list": {
+        "title": "حركات المخزون",
+        "empty": "لا توجد حركات",
+        "error": "تعذر تحميل الحركات.",
+        "retry": "إعادة المحاولة",
+        "filterAll": "جميع الأنواع",
+        "pagination": "ترقيم الحركات"
+      },
+      "fields": {
+        "dateMouvement": "التاريخ",
+        "produit": "المنتج",
+        "typeMouvement": "النوع",
+        "quantite": "الكمية",
+        "stockAvant": "المخزون قبل",
+        "stockApres": "المخزون بعد",
+        "referenceDocument": "المرجع"
+      },
+      "type": {
+        "entree": "إدخال",
+        "sortie": "إخراج",
+        "ajustement": "تعديل",
+        "perte": "فقدان"
+      }
+    },
+    "services": {
+      "list": {
+        "title": "الخدمات الفندقية",
+        "search": "البحث عن خدمة",
+        "empty": "لا توجد خدمة",
+        "error": "تعذر تحميل الخدمات.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم الخدمات",
+        "filterAllTypes": "جميع الأنواع"
+      },
+      "form": {
+        "titleCreate": "خدمة فندقية جديدة",
+        "titleEdit": "تعديل الخدمة",
+        "loadError": "تعذر تحميل هذه الخدمة."
+      },
+      "actions": {
+        "create": "خدمة جديدة"
+      },
+      "fields": {
+        "codeService": "الرمز",
+        "nomService": "الاسم",
+        "description": "الوصف",
+        "type": "النوع",
+        "uniteMesure": "الوحدة",
+        "prixUnitaire": "سعر الوحدة",
+        "estFacturable": "قابل للفوترة",
+        "actif": "نشط"
+      },
+      "unites": {
+        "forfait": "اشتراك",
+        "heure": "ساعة",
+        "jour": "يوم",
+        "nuit": "ليلة"
+      },
+      "errors": {
+        "codeRequired": "الرمز مطلوب.",
+        "codePattern": "يجب أن يتكون الرمز من 2 إلى 20 حرفًا أبجديًا رقميًا.",
+        "nomRequired": "الاسم مطلوب.",
+        "typeRequired": "النوع مطلوب."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الخدمة بنجاح",
+        "updateSuccess": "تم تعديل الخدمة بنجاح",
+        "deleteSuccess": "تم حذف الخدمة",
+        "deleteConfirm": "هل تريد حذف هذه الخدمة؟",
+        "deleteError": "تعذر حذف هذه الخدمة.",
+        "saveError": "تعذر حفظ الخدمة."
+      },
+      "detail": {
+        "title": "تفاصيل الخدمة الفندقية"
+      }
+    },
+    "typesServices": {
+      "list": {
+        "title": "أنواع الخدمات",
+        "search": "البحث عن نوع",
+        "empty": "لا يوجد نوع",
+        "error": "تعذر تحميل الأنواع.",
+        "retry": "إعادة المحاولة",
+        "actions": "الإجراءات",
+        "pagination": "ترقيم الأنواع"
+      },
+      "form": {
+        "titleCreate": "نوع خدمة جديد",
+        "titleEdit": "تعديل النوع",
+        "loadError": "تعذر تحميل هذا النوع."
+      },
+      "actions": {
+        "create": "نوع جديد"
+      },
+      "fields": {
+        "codeType": "الرمز",
+        "nomType": "الاسم",
+        "description": "الوصف",
+        "nombreServices": "الخدمات",
+        "actif": "نشط"
+      },
+      "errors": {
+        "codeRequired": "الرمز مطلوب.",
+        "codePattern": "يجب أن يتكون الرمز من 2 إلى 10 أحرف أبجدية رقمية.",
+        "nomRequired": "الاسم مطلوب."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء النوع بنجاح",
+        "updateSuccess": "تم تعديل النوع بنجاح",
+        "deleteSuccess": "تم حذف النوع",
+        "deleteConfirm": "هل تريد حذف هذا النوع؟",
+        "deleteError": "تعذر حذف هذا النوع.",
+        "saveError": "تعذر حفظ النوع."
+      },
+      "detail": {
+        "title": "تفاصيل نوع الخدمة"
+      }
+    },
+    "bridgeService": {
+      "title": "إضافة خدمة إلى فاتورة",
+      "subtitle": "اختر حجزًا جاريًا والخدمة المراد فوترتها.",
+      "actions": {
+        "open": "إضافة إلى فاتورة",
+        "submit": "إضافة إلى الفاتورة"
+      },
+      "fields": {
+        "reservation": "الحجز",
+        "service": "الخدمة الفندقية",
+        "quantite": "الكمية",
+        "prixUnitaire": "سعر الوحدة",
+        "libelle": "الوصف",
+        "libellePlaceholder": "النص المعروض على الفاتورة (اتركه فارغًا لاستخدام اسم الخدمة)",
+        "datePrestation": "تاريخ الخدمة",
+        "optional": "اختياري"
+      },
+      "errors": {
+        "reservationRequired": "الحجز مطلوب.",
+        "serviceRequired": "الخدمة مطلوبة.",
+        "quantiteMin": "يجب أن تكون الكمية أكبر من 0."
+      },
+      "messages": {
+        "success": "تمت إضافة الخدمة إلى الفاتورة",
+        "error": "تعذر إضافة الخدمة إلى الفاتورة.",
+        "loadError": "تعذر تحميل البيانات الأولية.",
+        "noReservations": "لا يوجد حجز جارٍ."
       }
     }
   },
@@ -503,6 +1183,7 @@
         "title": "الحجوزات الجارية",
         "noActive": "لا يوجد حجز جارٍ لهذا العميل.",
         "statut": "الحالة",
+        "chambre": "الغرفة",
         "clear": "إلغاء اختيار الحجز"
       },
       "articles": {
@@ -524,7 +1205,11 @@
         "remove": "حذف السطر",
         "clear": "تفريغ السلة",
         "checkout": "الدفع نقدًا",
-        "reportChambre": "تحميل على الغرفة"
+        "reportChambre": "تحميل على الغرفة",
+        "checkoutSuccess": "تم تحصيل الطلب",
+        "orderNumber": "رقم الطلب",
+        "invoiceNumber": "رقم الفاتورة",
+        "newOrder": "طلب جديد"
       },
       "payment": {
         "title": "الدفع",
@@ -567,7 +1252,10 @@
         "invalidPayload": "الطلب غير مكتمل.",
         "encaissement": "فشلت عملية الدفع. أعد المحاولة.",
         "reportChambre": "فشل التحميل على الغرفة.",
-        "reservationRequired": "اختر حجزًا أولًا."
+        "reservationRequired": "اختر حجزًا أولًا.",
+        "ticketCaisse": "تعذر طباعة إيصال الصندوق.",
+        "ticketCuisine": "تعذر طباعة تذكرة المطبخ.",
+        "ticketDecode": "تعذر عرض التذكرة (PDF غير صالح)."
       },
       "messages": {
         "encaissementSuccess": "تم تحصيل الطلب بنجاح.",
@@ -614,7 +1302,8 @@
         "view": "عرض التفاصيل",
         "emettre": "إصدار",
         "annuler": "إلغاء الفاتورة",
-        "encaisser": "تحصيل"
+        "encaisser": "تحصيل",
+        "downloadPdf": "تنزيل PDF"
       },
       "fields": {
         "numeroFacture": "رقم الفاتورة",
@@ -685,7 +1374,8 @@
         "emettreError": "تعذر إصدار الفاتورة.",
         "cancelConfirm": "هل تريد إلغاء هذه الفاتورة؟",
         "cancelSuccess": "تم إلغاء الفاتورة",
-        "cancelError": "تعذر إلغاء الفاتورة."
+        "cancelError": "تعذر إلغاء الفاتورة.",
+        "pdfError": "تعذر تنزيل ملف PDF للفاتورة."
       }
     },
     "paiement": {
@@ -1009,6 +1699,102 @@
       "empty": "لا يوجد موظف نشط متاح."
     }
   },
+  "profile": {
+    "tabs": {
+      "profile": "الملف الشخصي",
+      "security": "الأمان",
+      "preferences": "التفضيلات"
+    },
+    "sections": {
+      "personalInfo": "المعلومات الشخصية",
+      "changePassword": "تغيير كلمة المرور",
+      "preferences": "التفضيلات"
+    },
+    "fields": {
+      "prenom": "الاسم الأول",
+      "prenomPlaceholder": "اسمك الأول",
+      "nom": "اللقب",
+      "nomPlaceholder": "لقبك",
+      "email": "البريد الإلكتروني",
+      "emailReadonlyHint": "يدير المسؤول عنوان بريدك الإلكتروني.",
+      "telephone": "الهاتف",
+      "poste": "المنصب",
+      "postePlaceholder": "منصبك",
+      "currentPassword": "كلمة المرور الحالية",
+      "currentPasswordPlaceholder": "أدخل كلمة المرور الحالية",
+      "newPassword": "كلمة المرور الجديدة",
+      "newPasswordPlaceholder": "أدخل كلمة المرور الجديدة",
+      "newPasswordHint": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل.",
+      "confirmPassword": "تأكيد كلمة المرور الجديدة",
+      "confirmPasswordPlaceholder": "أكد كلمة المرور الجديدة"
+    },
+    "actions": {
+      "save": "حفظ",
+      "saving": "جارٍ الحفظ...",
+      "cancel": "إلغاء",
+      "changePassword": "تعديل كلمة المرور",
+      "passwordSaving": "جارٍ التعديل...",
+      "togglePassword": "إظهار / إخفاء كلمة المرور"
+    },
+    "avatar": {
+      "change": "تغيير الصورة",
+      "delete": "حذف الصورة",
+      "deleteConfirm": "هل تريد حذف صورة ملفك الشخصي؟",
+      "uploadSuccess": "تم تحديث الصورة الرمزية",
+      "uploadError": "تعذر رفع الصورة الرمزية.",
+      "deleteSuccess": "تم حذف الصورة الرمزية",
+      "deleteError": "تعذر حذف الصورة الرمزية.",
+      "errors": {
+        "type": "تنسيق غير مدعوم. استخدم JPG أو PNG أو WebP.",
+        "size": "الملف كبير جدًا (الحد الأقصى 2 ميغابايت)."
+      }
+    },
+    "security": {
+      "tipsTitle": "نصائح أمنية",
+      "tip1": "8 أحرف على الأقل",
+      "tip2": "أحرف كبيرة وصغيرة",
+      "tip3": "رقم واحد على الأقل",
+      "tip4": "يوصى بأحرف خاصة",
+      "tip5": "تجنب الكلمات الشائعة"
+    },
+    "preferences": {
+      "language": "لغة الواجهة",
+      "session": "معلومات الجلسة",
+      "lastLogin": "آخر اتصال",
+      "role": "الدور",
+      "unavailable": "غير متاح"
+    },
+    "lastConnection": "آخر اتصال",
+    "messages": {
+      "loadError": "تعذر تحميل ملفك الشخصي.",
+      "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
+      "updateError": "تعذر تحديث الملف الشخصي.",
+      "passwordSuccess": "تم تعديل كلمة المرور بنجاح",
+      "passwordError": "تعذر تعديل كلمة المرور."
+    },
+    "errors": {
+      "required": "هذا الحقل مطلوب",
+      "minLength": "عدد الأحرف غير كافٍ",
+      "maxLength": "عدد الأحرف كبير جدًا",
+      "email": "تنسيق البريد الإلكتروني غير صالح",
+      "passwordMismatch": "كلمتا المرور غير متطابقتين",
+      "invalid": "حقل غير صالح"
+    }
+  },
+  "hotelAdmin": {
+    "users": {
+      "list": {
+        "title": "مستخدمو فندقي",
+        "you": "أنت"
+      },
+      "fields": {
+        "poste": "المنصب"
+      },
+      "form": {
+        "roleHint": "لا يمكن إسناد دور SUPERADMIN أو ADMIN من هذه الواجهة."
+      }
+    }
+  },
   "admin": {
     "title": "الإدارة",
     "subtitle": "إدارة مركزية للفنادق والمستخدمين والأدوار والإعدادات",
@@ -1254,6 +2040,543 @@
     },
     "server": {
       "unavailable": "الخادم غير متاح مؤقتًا."
+    },
+    "reservation": {
+      "chambre": {
+        "conflict": "الغرفة محجوزة بالفعل في النطاق الزمني المطلوب."
+      },
+      "checkin": {
+        "invalidStatus": "حالة هذا الحجز لا تسمح بتسجيل الوصول.",
+        "tooEarly": "تسجيل الوصول ممكن فقط من تاريخ الوصول فصاعدًا."
+      },
+      "checkout": {
+        "invalidStatus": "لا يمكن إجراء تسجيل المغادرة لهذا الحجز (يلزم الحالة ARRIVEE)."
+      },
+      "cancel": {
+        "alreadyTerminated": "هذا الحجز انتهى أو ألغي بالفعل."
+      },
+      "update": {
+        "terminated": "هذا الحجز منتهٍ ولا يمكن تعديله."
+      },
+      "dates": {
+        "invalid": "يجب أن يكون تاريخ المغادرة بعد تاريخ الوصول."
+      },
+      "notFound": "الحجز غير موجود.",
+      "changerChambre": {
+        "terminated": "لا يمكن تغيير غرفة حجز منتهٍ أو ملغى.",
+        "identique": "يجب اختيار غرفة مختلفة.",
+        "ancienneChambre": {
+          "notFound": "الغرفة السابقة غير موجودة في هذا الحجز.",
+          "required": "يلزم تحديد الغرفة السابقة (الحجز يحتوي على عدة غرف)."
+        },
+        "aucuneChambre": "لا توجد غرفة مخصصة لهذا الحجز.",
+        "nouvelleChambre": {
+          "required": "الغرفة الجديدة مطلوبة."
+        },
+        "raison": {
+          "tooLong": "السبب طويل جدًا (500 حرف كحد أقصى)."
+        }
+      }
+    },
+    "tarifChambre": {
+      "calcul": {
+        "dates": {
+          "invalid": "تواريخ غير صالحة للحساب.",
+          "required": "تواريخ الحساب مطلوبة."
+        }
+      },
+      "dateFin": {
+        "beforeDebut": "يجب أن يكون تاريخ النهاية بعد تاريخ البداية."
+      }
+    },
+    "facture": {
+      "reservation": {
+        "dejaFacturee": "تم بالفعل إصدار فاتورة لهذا الحجز.",
+        "aucuneNuitee": "لا توجد ليالٍ قابلة للفوترة لهذا الحجز."
+      },
+      "transfert": {
+        "payee": "الفاتورة المصدر مدفوعة بالفعل، النقل غير ممكن.",
+        "factureSourceTerminated": "الفاتورة المصدر مغلقة أو ملغاة.",
+        "factureCibleTerminated": "الفاتورة الهدف مغلقة أو ملغاة."
+      },
+      "notFound": "الفاتورة غير موجودة.",
+      "pdfFailed": "فشل إنشاء ملف PDF."
+    },
+    "nuitee": {
+      "facture": {
+        "payee": "إحدى الليالي مرتبطة بفاتورة مدفوعة بالفعل."
+      },
+      "statut": {
+        "closed": "هذه الليلة مقفلة (سطر فاتورة مغلق)."
+      }
+    },
+    "checkoutExpress": {
+      "statut": {
+        "invalid": "الحجز ليس في حالة تسمح بالمغادرة السريعة."
+      },
+      "societe": {
+        "required": "الشركة مطلوبة للمغادرة السريعة."
+      }
+    },
+    "paiement": {
+      "global": {
+        "reservationRequired": "الحجز مطلوب للدفع الإجمالي.",
+        "aucuneLigne": "لا يوجد سطر فاتورة للتسوية في هذا الحجز.",
+        "clientRequired": "العميل الرئيسي مطلوب للدفع الإجمالي.",
+        "montantInvalid": "مبلغ الدفع غير صالح."
+      }
+    },
+    "client": {
+      "notFound": "العميل غير موجود.",
+      "inactif": "هذا العميل غير نشط ولا يمكن إسناده إلى حجز."
+    },
+    "societe": {
+      "notFound": "الشركة غير موجودة.",
+      "inactive": "هذه الشركة غير نشطة ولا يمكن إسنادها إلى حجز."
+    },
+    "user": {
+      "unknown": "مستخدم غير معروف.",
+      "notFound": "المستخدم غير موجود.",
+      "username": {
+        "exists": "اسم المستخدم هذا مستخدم بالفعل."
+      },
+      "email": {
+        "exists": "هذا البريد الإلكتروني مستخدم بالفعل."
+      },
+      "role": {
+        "escalation": {
+          "forbidden": "غير مصرح لك بإسناد هذا الدور."
+        }
+      },
+      "self": {
+        "action": {
+          "forbidden": "لا يمكنك تنفيذ هذا الإجراء على حسابك الخاص."
+        }
+      },
+      "password": {
+        "invalid": "كلمة المرور الحالية غير صحيحة.",
+        "mismatch": "كلمة المرور الجديدة وتأكيدها غير متطابقتين.",
+        "unchanged": "يجب أن تكون كلمة المرور الجديدة مختلفة عن السابقة.",
+        "weak": "كلمة المرور لا تستوفي سياسة الأمان.",
+        "wrong": "كلمة المرور الحالية غير صحيحة."
+      },
+      "avatar": {
+        "tooLarge": "الملف كبير جدًا (الحد الأقصى 2 ميغابايت).",
+        "invalidType": "تنسيق الملف غير مدعوم (JPG أو PNG أو WebP فقط)."
+      }
+    },
+    "exercice": {
+      "cloture": "لا يمكن: السنة المالية مقفلة أو قيد الإقفال.",
+      "ouvert": "يجب أن تكون السنة المالية مفتوحة لهذه العملية.",
+      "notFound": "السنة المالية غير موجودة.",
+      "alreadyClosed": "هذه السنة المالية مقفلة بالفعل."
+    },
+    "ecriture": {
+      "unbalanced": "قيد غير متوازن — يجب أن يساوي مجموع المدين مجموع الدائن.",
+      "unbalancedDetail": "هامش التسامح: 0.01 أوقية.",
+      "notValidated": "القيد غير مرحّل.",
+      "alreadyContrePassed": "تم عكس هذا القيد بالفعل.",
+      "minLines": "يجب أن يحتوي القيد على سطرين على الأقل.",
+      "motifRequired": "سبب العكس مطلوب (3 أحرف على الأقل).",
+      "compteUnknown": "الحساب المشار إليه غير موجود في الدليل المحاسبي.",
+      "compteNotUsable": "الحساب ليس حساب حركة.",
+      "exerciceClosed": "السنة المالية المرتبطة بتاريخ القيد ليست مفتوحة.",
+      "journalInactive": "اليومية المشار إليها غير نشطة.",
+      "formInvalid": "النموذج يحتوي على أخطاء.",
+      "contrepasserFailed": "فشل عكس القيد.",
+      "createFailed": "فشل إنشاء القيد."
+    },
+    "journal": {
+      "notFound": "اليومية غير موجودة.",
+      "codeRequired": "رمز اليومية مطلوب.",
+      "codeFormat": "يجب أن يكون الرمز من 1 إلى 5 أحرف أبجدية رقمية كبيرة.",
+      "libelleRequired": "البيان مطلوب.",
+      "codeExists": "رمز اليومية موجود بالفعل.",
+      "toggleFailed": "فشل تغيير حالة اليومية.",
+      "createFailed": "فشل إنشاء اليومية.",
+      "updateFailed": "فشل تحديث اليومية."
+    },
+    "mapping": {
+      "notFound": "الربط غير موجود.",
+      "compteCodeRequired": "رمز الحساب مطلوب.",
+      "compteNotFound": "رمز الحساب غير موجود في الدليل.",
+      "compteNotUsable": "الحساب ليس حساب حركة.",
+      "updateFailed": "فشل تحديث الربط."
+    },
+    "plancomptable": {
+      "notFound": "الحساب غير موجود.",
+      "notUsable": "هذا الحساب ليس حساب حركة.",
+      "archived": "هذا الحساب مؤرشف."
+    },
+    "tva": {
+      "config": {
+        "notFound": "إعداد الضريبة غير موجود."
+      },
+      "taux": {
+        "negatif": "يجب أن يكون المعدل موجبًا.",
+        "trop": {
+          "eleve": "لا يمكن أن يتجاوز المعدل 99.99٪."
+        },
+        "invalid": "يجب أن يكون المعدل بين 0 و 99.99."
+      },
+      "updateFailed": "فشل تحديث إعداد الضريبة."
+    },
+    "declaration": {
+      "notFound": "تصريح الضريبة غير موجود.",
+      "periodeInvalid": "يجب أن يكون تاريخ النهاية أكبر من أو يساوي تاريخ البداية.",
+      "alreadyValidated": "هذا التصريح مرحّل بالفعل.",
+      "validerFailed": "فشل ترحيل التصريح.",
+      "createFailed": "فشل إنشاء التصريح."
+    },
+    "etat": {
+      "fetchFailed": "فشل إنشاء الكشف.",
+      "exportFailed": "فشل التصدير.",
+      "exerciceRequired": "السنة المالية مطلوبة.",
+      "datesInvalid": "التواريخ المقدمة غير صالحة."
+    },
+    "ligneEcriture": {
+      "montantPositif": "يجب أن يكون المبلغ موجبًا تمامًا."
+    },
+    "unknown": "حدث خطأ غير متوقع."
+  },
+  "comptabilite": {
+    "exercice": {
+      "list": {
+        "title": "السنوات المالية",
+        "empty": "لا توجد سنوات مالية.",
+        "error": "تعذر تحميل السنوات المالية."
+      },
+      "fields": {
+        "code": "الرمز",
+        "dateDebut": "البداية",
+        "dateFin": "النهاية",
+        "statut": "الحالة",
+        "dateCloture": "تاريخ الإقفال",
+        "clotureBy": "تم الإقفال بواسطة"
+      },
+      "statut": {
+        "OUVERT": "مفتوحة",
+        "EN_CLOTURE": "قيد الإقفال",
+        "CLOTURE": "مقفلة"
+      },
+      "actions": {
+        "cloturer": "إقفال"
+      },
+      "messages": {
+        "cloturerConfirm": "هل تريد إقفال هذه السنة المالية؟",
+        "cloturerWarning": "إجراء غير قابل للتراجع — لن يتم تسجيل أي قيد بعد ذلك.",
+        "cloturerSuccess": "تم إقفال السنة المالية بنجاح."
+      }
+    },
+    "planComptable": {
+      "list": {
+        "title": "الدليل المحاسبي",
+        "empty": "لا توجد حسابات.",
+        "error": "تعذر تحميل الدليل المحاسبي.",
+        "filterAllClasses": "كل الفئات"
+      },
+      "fields": {
+        "compteCode": "الرمز",
+        "libelle": "البيان",
+        "classe": "الفئة",
+        "nature": "الطبيعة",
+        "sensNormal": "الاتجاه الطبيعي",
+        "utilisable": "قابل للاستخدام",
+        "statut": "الحالة"
+      },
+      "classe": "الفئة",
+      "nature": {
+        "ACTIF": "أصول",
+        "PASSIF": "خصوم",
+        "CHARGE": "تكاليف",
+        "PRODUIT": "إيرادات",
+        "MIXTE": "مختلط"
+      },
+      "sens": {
+        "DEBITEUR": "مدين",
+        "CREDITEUR": "دائن",
+        "MIXTE": "مختلط"
+      },
+      "statut": {
+        "ACTIF": "نشط",
+        "ARCHIVE": "مؤرشف"
+      }
+    },
+    "mapping": {
+      "list": {
+        "title": "الربط المحاسبي",
+        "subtitle": "اربط كل نوع حدث بحساب من الدليل.",
+        "empty": "لا توجد روابط متاحة.",
+        "error": "تعذر تحميل الروابط."
+      },
+      "fields": {
+        "typeEvenement": "نوع الحدث",
+        "compteCode": "رمز الحساب",
+        "compteLibelle": "بيان الحساب",
+        "actif": "نشط",
+        "defaut": "المصدر"
+      },
+      "defaut": "افتراضي",
+      "custom": "مخصص",
+      "type": {
+        "VENTE_NUITEE_HEBERGEMENT": "بيع ليلة إقامة",
+        "VENTE_RESTAURATION": "بيع مطعم",
+        "VENTE_BAR": "بيع البار",
+        "VENTE_SERVICE_CHAMBRE": "بيع خدمة الغرف",
+        "VENTE_BLANCHISSERIE": "بيع المغسلة",
+        "VENTE_AUTRE_SERVICE": "بيع خدمة أخرى",
+        "CLIENT_PARTICULIER": "عميل فرد",
+        "CLIENT_SOCIETE": "عميل شركة",
+        "CLIENT_DOUTEUX": "عميل متعثر",
+        "FOURNISSEUR_ORDINAIRE": "مورد عادي",
+        "TRESORERIE_ESPECES": "خزينة — نقدًا",
+        "TRESORERIE_BANQUE": "خزينة — بنك",
+        "TRESORERIE_CHEQUE": "خزينة — شيك",
+        "TRESORERIE_CARTE_BANCAIRE": "خزينة — بطاقة بنكية",
+        "TRESORERIE_BANKILY": "خزينة — Bankily",
+        "TRESORERIE_MASRIVI": "خزينة — Masrivi",
+        "TRESORERIE_SEDAD": "خزينة — Sedad",
+        "TRESORERIE_CLICK": "خزينة — Click",
+        "TRESORERIE_AMANETY": "خزينة — Amanety",
+        "TRESORERIE_BFI_CASH": "خزينة — BFI Cash",
+        "TRESORERIE_MOOV_MONEY": "خزينة — Moov Money",
+        "TRESORERIE_GAZAPAY": "خزينة — Gazapay",
+        "TRESORERIE_VIREMENT": "خزينة — تحويل",
+        "TVA_COLLECTEE": "ضريبة محصلة",
+        "TVA_DEDUCTIBLE": "ضريبة قابلة للخصم",
+        "TVA_A_DECAISSER": "ضريبة مستحقة الدفع",
+        "REDUCTION_ACCORDEE": "تخفيض ممنوح",
+        "ACHAT_MARCHANDISES": "شراء بضائع",
+        "STOCK_MARCHANDISES": "مخزون بضائع"
+      },
+      "messages": {
+        "updateSuccess": "تم تحديث الربط."
+      }
+    },
+    "journal": {
+      "list": {
+        "title": "اليوميات المحاسبية",
+        "empty": "لا توجد يوميات.",
+        "error": "تعذر تحميل اليوميات."
+      },
+      "fields": {
+        "code": "الرمز",
+        "libelle": "البيان",
+        "type": "النوع",
+        "actif": "نشط"
+      },
+      "actif": "نشط",
+      "inactif": "غير نشط",
+      "type": {
+        "VENTE": "المبيعات",
+        "ACHAT": "المشتريات",
+        "TRESORERIE": "الخزينة",
+        "OPERATION_DIVERSE": "عمليات متنوعة",
+        "AVOIR": "إشعارات دائنة"
+      },
+      "actions": {
+        "create": "يومية جديدة",
+        "deactivate": "تعطيل",
+        "reactivate": "تفعيل"
+      },
+      "form": {
+        "titleCreate": "يومية جديدة",
+        "titleEdit": "تعديل اليومية"
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء اليومية.",
+        "updateSuccess": "تم تحديث اليومية.",
+        "toggleSuccess": "تم تغيير حالة اليومية.",
+        "deactivateConfirm": "هل تريد تعطيل هذه اليومية؟",
+        "reactivateConfirm": "هل تريد تفعيل هذه اليومية؟",
+        "loadError": "تعذر تحميل اليومية."
+      }
+    },
+    "ecriture": {
+      "list": {
+        "title": "القيود المحاسبية",
+        "empty": "لا توجد قيود.",
+        "error": "تعذر تحميل القيود.",
+        "filterAll": "كل الحالات"
+      },
+      "fields": {
+        "numero": "الرقم",
+        "dateComptable": "تاريخ القيد",
+        "datePiece": "تاريخ المستند",
+        "journal": "اليومية",
+        "exercice": "السنة المالية",
+        "libelle": "البيان",
+        "reference": "المرجع",
+        "statut": "الحالة",
+        "totalDebit": "إجمالي المدين",
+        "totalCredit": "إجمالي الدائن",
+        "motif": "السبب",
+        "motifPlaceholder": "سبب عكس القيد بالتفصيل...",
+        "contrePasseePar": "تم عكسه بواسطة",
+        "ecritureSource": "القيد الأصلي"
+      },
+      "statut": {
+        "BROUILLON": "مسودة",
+        "VALIDEE": "مرحّل",
+        "CONTRE_PASSEE": "معكوس"
+      },
+      "sens": {
+        "DEBIT": "مدين",
+        "CREDIT": "دائن"
+      },
+      "actions": {
+        "create": "قيد جديد",
+        "contrepasser": "عكس"
+      },
+      "lignes": {
+        "title": "أسطر القيد",
+        "compteCode": "الحساب",
+        "libelle": "البيان",
+        "sens": "الاتجاه",
+        "debit": "مدين",
+        "credit": "دائن",
+        "montant": "المبلغ",
+        "auxiliaire": "حساب فرعي",
+        "add": "إضافة سطر"
+      },
+      "form": {
+        "title": "قيد محاسبي جديد"
+      },
+      "detail": {
+        "title": "تفاصيل القيد",
+        "notFound": "القيد غير موجود.",
+        "error": "تعذر تحميل القيد."
+      },
+      "messages": {
+        "createSuccess": "تم تسجيل القيد.",
+        "contrepasserConfirm": "هل تريد عكس هذا القيد؟",
+        "contrepasserWarning": "سيتم توليد قيد عكسي جديد لإلغاء هذا القيد.",
+        "contrepasserSuccess": "تم عكس القيد."
+      }
+    },
+    "tvaConfig": {
+      "list": {
+        "title": "إعدادات الضريبة على القيمة المضافة",
+        "subtitle": "المعدل حسب نوع الخدمة الفندقية.",
+        "empty": "لا توجد إعدادات ضريبية.",
+        "error": "تعذر تحميل إعدادات الضريبة."
+      },
+      "fields": {
+        "typeService": "نوع الخدمة",
+        "taux": "المعدل",
+        "actif": "نشط",
+        "libelle": "البيان",
+        "defaut": "المصدر"
+      },
+      "defaut": "افتراضي",
+      "custom": "مخصص",
+      "type": {
+        "HEBERGEMENT_NUITEE": "الإقامة (ليالٍ)",
+        "RESTAURATION": "مطعم",
+        "BAR": "بار",
+        "SERVICE_CHAMBRE": "خدمة الغرف",
+        "BLANCHISSERIE": "مغسلة",
+        "AUTRE_SERVICE_HOTELIER": "خدمة فندقية أخرى",
+        "ACHAT_MARCHANDISES": "شراء بضائع"
+      },
+      "messages": {
+        "updateSuccess": "تم تحديث إعداد الضريبة."
+      }
+    },
+    "declarationTva": {
+      "list": {
+        "title": "تصاريح الضريبة على القيمة المضافة",
+        "empty": "لا توجد تصاريح.",
+        "error": "تعذر تحميل التصاريح."
+      },
+      "fields": {
+        "periode": "الفترة",
+        "dateDebut": "البداية",
+        "dateFin": "النهاية",
+        "totalCollectee": "محصلة",
+        "totalDeductible": "قابلة للخصم",
+        "totalADecaisser": "مستحقة الدفع",
+        "statut": "الحالة",
+        "valideePar": "تم الترحيل بواسطة"
+      },
+      "statut": {
+        "BROUILLON": "مسودة",
+        "VALIDEE": "مرحّل"
+      },
+      "actions": {
+        "create": "تصريح جديد",
+        "valider": "ترحيل"
+      },
+      "form": {
+        "title": "تصريح ضريبة جديد",
+        "info": "سيقوم النظام بحساب إجماليات الضريبة المحصلة / القابلة للخصم / المستحقة تلقائيًا على الفترة وإنشاء تصريح كمسودة."
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء التصريح.",
+        "validerConfirm": "هل تريد ترحيل هذا التصريح الضريبي؟",
+        "validerWarning": "سيتم توليد قيد تسوية تلقائيًا. هذا الإجراء غير قابل للتراجع.",
+        "validerSuccess": "تم ترحيل التصريح."
+      }
+    },
+    "balance": {
+      "title": "ميزان المراجعة",
+      "empty": "لا توجد بيانات للمعايير المختارة.",
+      "exerciceCode": "السنة المالية",
+      "periode": "الفترة",
+      "totalDebit": "إجمالي المدين",
+      "totalCredit": "إجمالي الدائن",
+      "soldeDebiteur": "الرصيد المدين",
+      "soldeCrediteur": "الرصيد الدائن"
+    },
+    "grandLivre": {
+      "title": "دفتر الأستاذ",
+      "empty": "لا توجد قيود للمعايير المختارة.",
+      "reportInitial": "الرصيد الافتتاحي",
+      "soldeFinal": "الرصيد الختامي",
+      "lignes": {
+        "date": "التاريخ",
+        "numero": "رقم القيد",
+        "journal": "اليومية",
+        "libelle": "بيان القيد",
+        "reference": "المرجع",
+        "soldeProgressif": "الرصيد التدريجي"
+      }
+    },
+    "journalEdition": {
+      "title": "طباعة اليومية",
+      "empty": "لا توجد قيود للمعايير المختارة."
+    },
+    "bilan": {
+      "title": "الميزانية",
+      "dateArrete": "تاريخ الإقفال",
+      "actif": "الأصول",
+      "passif": "الخصوم",
+      "totalActif": "إجمالي الأصول",
+      "totalPassif": "إجمالي الخصوم",
+      "resultatNet": "صافي النتيجة"
+    },
+    "compteResultat": {
+      "title": "حساب النتائج",
+      "produits": "الإيرادات",
+      "charges": "التكاليف",
+      "totalProduits": "إجمالي الإيرادات",
+      "totalCharges": "إجمالي التكاليف",
+      "margeBrute": "إجمالي الربح",
+      "resultatNet": "صافي النتيجة"
+    },
+    "etats": {
+      "fields": {
+        "exerciceId": "معرف السنة المالية",
+        "dateDebut": "تاريخ البداية",
+        "dateFin": "تاريخ النهاية",
+        "classe": "الفئة",
+        "classeAll": "الكل",
+        "compteCode": "رمز الحساب",
+        "journalId": "اليومية"
+      },
+      "actions": {
+        "generate": "توليد"
+      }
     }
   }
 }

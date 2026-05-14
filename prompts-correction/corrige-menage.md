@@ -1,0 +1,1 @@
+vérifie, contrôle et corrige le fonctionnement du module menage: compète tout les manquements de façon définitive

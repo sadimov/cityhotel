@@ -25,7 +25,8 @@
     "housekeeping": "Ménage",
     "reporting": "Reporting",
     "profile": "Profil",
-    "admin": "Administration"
+    "admin": "Administration",
+    "hotelAdmin": "Mon hôtel"
   },
   "submenu": {
     "products": {
@@ -45,6 +46,9 @@
       "users": "Utilisateurs",
       "roles": "Rôles",
       "parametres": "Paramètres"
+    },
+    "hotelAdmin": {
+      "users": "Utilisateurs"
     }
   },
   "common": {
@@ -57,7 +61,17 @@
     "search": "Rechercher",
     "close": "Fermer",
     "language": "Langue",
-    "comingSoon": "Cette fonctionnalité arrive avec le module Finance."
+    "previous": "Précédent",
+    "next": "Suivant",
+    "comingSoon": "Cette fonctionnalité arrive avec le module Finance.",
+    "actions": "Actions",
+    "view": "Consulter",
+    "back": "Retour",
+    "confirm": "Confirmer",
+    "retry": "Réessayer",
+    "remove": "Supprimer",
+    "select": "Sélectionner",
+    "total": "Total"
   },
   "header": {
     "notifications": "Notifications",
@@ -69,7 +83,20 @@
     "minimize": "Minimiser",
     "restore": "Restaurer",
     "expand": "Étendre",
-    "collapse": "Réduire"
+    "collapse": "Réduire",
+    "comptabilite": "Comptabilité",
+    "comptabilite.exercices": "Exercices comptables",
+    "comptabilite.planComptable": "Plan comptable",
+    "comptabilite.mapping": "Mapping comptable",
+    "comptabilite.journaux": "Journaux",
+    "comptabilite.ecritures": "Écritures",
+    "comptabilite.tvaConfig": "Configuration TVA",
+    "comptabilite.tvaDeclarations": "Déclarations TVA",
+    "comptabilite.balance": "Balance",
+    "comptabilite.grandLivre": "Grand livre",
+    "comptabilite.journal": "Journal édité",
+    "comptabilite.bilan": "Bilan",
+    "comptabilite.compteResultat": "Compte de résultat"
   },
   "clients": {
     "list": {
@@ -122,11 +149,22 @@
   "hebergement": {
     "calendar": {
       "title": "Calendrier des réservations",
-      "previous": "Mois précédent",
-      "next": "Mois suivant",
+      "previous": "Période précédente",
+      "next": "Période suivante",
       "today": "Aujourd'hui",
+      "currentMonth": "Mois courant",
+      "rooms": "Chambres",
+      "refresh": "Actualiser le calendrier",
+      "dragHint": "Cliquer et glisser la souris pour réserver",
+      "empty": "Aucune chambre à afficher.",
       "error": "Impossible de charger le calendrier.",
       "retry": "Réessayer",
+      "confirmCheckIn": "Confirmer le check-in de cette réservation ?",
+      "confirmCheckOut": "Confirmer le check-out de cette réservation ?",
+      "checkInSuccess": "Check-in effectué.",
+      "checkInError": "Impossible d'effectuer le check-in.",
+      "checkOutSuccess": "Check-out effectué.",
+      "checkOutError": "Impossible d'effectuer le check-out.",
       "weekday": {
         "mon": "Lun",
         "tue": "Mar",
@@ -135,6 +173,221 @@
         "fri": "Ven",
         "sat": "Sam",
         "sun": "Dim"
+      },
+      "range": {
+        "openPicker": "Sélectionner une période",
+        "selectStart": "Sélectionnez la date de début",
+        "selectEnd": "Sélectionnez la date de fin"
+      },
+      "menu": {
+        "consult": "Consulter",
+        "modify": "Modifier / Déplacer",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "payments": "Paiements",
+        "modifyNuitees": "Modifier les nuitées",
+        "cancel": "Annuler la réservation"
+      },
+      "create": {
+        "title": "Nouvelle réservation",
+        "room": "Chambre",
+        "period": "Période"
+      },
+      "consult": {
+        "title": "Détails de la réservation",
+        "rooms": "Chambres",
+        "fullDetail": "Voir / modifier les détails complets",
+        "client": {
+          "label": "Client"
+        },
+        "section": {
+          "dates": "Dates & occupants",
+          "tarif": "Tarification",
+          "notes": "Notes"
+        }
+      },
+      "edit": {
+        "title": "Modifier la réservation",
+        "client": {
+          "label": "Réservation de",
+          "changeLabel": "Modifier le client",
+          "help": "Vous pouvez remplacer le client principal de cette réservation."
+        },
+        "societe": {
+          "changeLabel": "Modifier la société"
+        }
+      },
+      "groups": {
+        "chambres": {
+          "title": "Chambres"
+        },
+        "salles": {
+          "title": "Salles"
+        }
+      },
+      "cancel": {
+        "title": "Annuler la réservation",
+        "motifPlaceholder": "Saisir le motif d'annulation…",
+        "motifRequired": "Le motif est obligatoire.",
+        "confirm": "Annuler la réservation",
+        "success": "Réservation annulée."
+      },
+      "client": {
+        "add": "Nouveau client",
+        "quickCreate": {
+          "title": "Création rapide d'un client",
+          "firstName": "Prénom",
+          "lastName": "Nom",
+          "phone": "Téléphone",
+          "email": "Email",
+          "cni": "Pièce d'identité",
+          "create": "Créer & sélectionner",
+          "cancel": "Annuler",
+          "success": "Client créé et sélectionné."
+        }
+      },
+      "societe": {
+        "quickCreate": {
+          "open": "Nouvelle société",
+          "title": "Création rapide d'une société",
+          "nom": "Nom",
+          "telephone": "Téléphone",
+          "nif": "NIF",
+          "adresse": "Adresse",
+          "create": "Créer & sélectionner",
+          "cancel": "Annuler",
+          "success": "Société créée et sélectionnée."
+        }
+      },
+      "tarif": {
+        "calculating": "Calcul du tarif en cours…",
+        "totalNights": "Nuits",
+        "amountHt": "Montant HT",
+        "amountTtc": "Montant TTC",
+        "detail": "Détail jour par jour",
+        "origin": {
+          "tarif": "Tarif saisonnier",
+          "fallback": "Prix de base"
+        }
+      },
+      "payments": {
+        "title": "Paiements de la réservation",
+        "factures": "Factures",
+        "payments": "Paiements",
+        "totalGlobal": "Total global",
+        "paidGlobal": "Total payé",
+        "remainingGlobal": "Reste dû",
+        "viewFactureDetail": "Détail facture",
+        "empty": "Aucun élément à afficher.",
+        "selected": "Sélection",
+        "advanced": "Actions avancées",
+        "lignes": {
+          "description": "Description",
+          "date": "Date",
+          "sousTotal": "Sous-total",
+          "paye": "Payé",
+          "reste": "Reste",
+          "select": "Sélectionner la ligne"
+        },
+        "action": {
+          "payer": "Payer sélection",
+          "transferer": "Transférer des lignes",
+          "checkoutExpress": "Check-out express"
+        },
+        "details": {
+          "title": "Détails de la réservation",
+          "numero": "N° réservation",
+          "client": "Client",
+          "societe": "Société",
+          "periode": "Période",
+          "occupants": "Occupants",
+          "chambres": "Chambre(s)",
+          "statut": "Statut",
+          "total": "Montant total"
+        },
+        "folio": {
+          "title": "Folio — factures de la réservation",
+          "numero": "N° facture",
+          "date": "Date",
+          "statut": "Statut",
+          "total": "Total",
+          "paye": "Payé",
+          "balance": "Reste",
+          "empty": "Aucune facture pour cette réservation.",
+          "totalFactures": "Total factures",
+          "totalPaye": "Total payé",
+          "balanceGlobale": "Balance globale"
+        },
+        "global": {
+          "title": "Encaisser un paiement",
+          "montant": "Montant",
+          "mode": "Mode de paiement",
+          "motif": "Motif",
+          "description": "Description",
+          "partial": "Paiement partiel — il restera {amount} MRU à payer.",
+          "full": "Solde complet.",
+          "excess": "Excédent de {amount} MRU sera crédité au compte client.",
+          "confirm": "Confirmer l'encaissement ?",
+          "action": "Encaisser",
+          "success": "Paiement enregistré.",
+          "successFull": "Paiement intégral enregistré.",
+          "successExcess": "Paiement enregistré (excédent de {amount} MRU crédité au compte)."
+        },
+        "payer": {
+          "title": "Encaisser un paiement",
+          "amount": "Montant",
+          "mode": "Mode de paiement",
+          "motif": "Motif",
+          "description": "Description",
+          "dueReste": "Reste à payer",
+          "partial": "Paiement partiel enregistré.",
+          "full": "Paiement intégral enregistré.",
+          "excess": "Excédent crédité au compte client :"
+        },
+        "transferer": {
+          "title": "Transférer les lignes",
+          "targetFacture": "Facture cible",
+          "newFacture": "Créer une nouvelle facture",
+          "success": "Lignes transférées avec succès."
+        },
+        "checkoutExpress": {
+          "title": "Check-out express",
+          "confirm": "Reporter la facture sur le compte société puis clôturer ?",
+          "selectSociete": "Sélectionner la société",
+          "success": "Check-out express effectué."
+        }
+      },
+      "nuitees": {
+        "modify": {
+          "openButton": "Modifier les nuitées",
+          "title": "Modifier les nuitées",
+          "dateNuit": "Date",
+          "prixOriginal": "Prix original",
+          "nouveauMontant": "Nouveau montant",
+          "reset": "Reset",
+          "totalAvant": "Total avant",
+          "totalApres": "Total après",
+          "impact": "Impact",
+          "confirm": "L'impact financier va modifier la facture. Confirmer l'enregistrement ?",
+          "success": "Montants des nuitées mis à jour.",
+          "noChanges": "Aucune modification à enregistrer."
+        }
+      },
+      "changeRoom": {
+        "title": "Changer la chambre",
+        "newRoom": "Nouvelle chambre",
+        "reason": "Motif (facultatif)",
+        "action": "Changer la chambre",
+        "confirm": {
+          "title": "Confirmer le changement de chambre ?",
+          "message": "La nouvelle chambre sera affectée à la réservation et les nuitées non facturées seront déplacées."
+        },
+        "success": "Chambre changée avec succès."
+      },
+      "live": {
+        "syncToast": "Mise à jour synchronisée",
+        "disconnected": "Déconnecté du flux temps réel",
+        "reconnecting": "Reconnexion en cours…"
       }
     },
     "list": {
@@ -188,11 +441,11 @@
       "reductionPourcentage": "Réduction (%)"
     },
     "statut": {
-      "en_attente": "En attente",
-      "confirmee": "Confirmée",
+      "confirmee": "Non confirmée",
       "arrivee": "Arrivée",
       "partie": "Partie",
-      "annulee": "Annulée"
+      "annulee": "Annulée",
+      "no_show": "Non-présentation"
     },
     "errors": {
       "clientRequired": "Le client principal est obligatoire.",
@@ -208,13 +461,103 @@
       "cancelMotifRequired": "Le motif est obligatoire.",
       "cancelSuccess": "Réservation annulée",
       "cancelError": "Impossible d'annuler la réservation."
+    },
+    "nightAudit": {
+      "page": {
+        "title": "Night audit — Préparation",
+        "subtitle": "Date hôtelière : {{date}}",
+        "instructions": "Préparez la clôture en validant les opérations restantes. Une fois prêt, cliquez « Lancer la clôture ».",
+        "back": "Retour",
+        "refresh": "Rafraîchir",
+        "launch": "Lancer la clôture",
+        "error": "Erreur lors du night audit.",
+        "reportToast": "Reporté pour traitement ultérieur",
+        "launchConfirm": {
+          "title": "Lancer la clôture ?",
+          "text": "Cette action marquera les réservations non check-in en retard comme NO_SHOW et générera les nuitées manquantes.",
+          "confirm": "Lancer"
+        },
+        "result": {
+          "title": "Clôture effectuée",
+          "text": "{{nbNoShow}} réservation(s) NO_SHOW · {{nbNuitees}} nuitée(s) générée(s)"
+        },
+        "retard": {
+          "title": "Check-ins en retard",
+          "empty": "Aucun check-in en retard.",
+          "warning": "Réservations CONFIRMEE dont la date d'arrivée est passée. Si non traitées, elles passeront en NO_SHOW."
+        },
+        "arrivals": {
+          "title": "Arrivées du jour",
+          "empty": "Aucune arrivée prévue aujourd'hui.",
+          "subtitle": "Réservations attendues qui n'ont pas encore fait leur check-in."
+        },
+        "departs": {
+          "title": "Départs du jour",
+          "empty": "Aucun départ prévu aujourd'hui.",
+          "subtitle": "Réservations en cours avec date de départ aujourd'hui."
+        },
+        "cols": {
+          "numero": "N° réservation",
+          "client": "Client",
+          "chambres": "Chambre(s)",
+          "dateArrivee": "Date d'arrivée",
+          "dateDepart": "Date de départ",
+          "actions": "Actions"
+        },
+        "action": {
+          "checkin": "Check-in",
+          "checkout": "Check-out",
+          "cancel": "Annuler",
+          "report": "Reporter",
+          "prolong": "Prolonger",
+          "payCheckout": "Payer & sortir"
+        },
+        "notifier": {
+          "start": "Démarrer",
+          "snooze": "Reporter",
+          "snoozed": "Night audit reporté pour aujourd'hui"
+        }
+      }
+    }
+  },
+  "nightAudit": {
+    "alert": {
+      "title": "Night audit imminent",
+      "message": "Le night audit va commencer dans 3 minutes. Veuillez terminer vos opérations en cours."
+    },
+    "modal": {
+      "title": "Lancement du night audit",
+      "subtitle": "Date hôtelière : {{date}}",
+      "actions": {
+        "title": "Actions qui vont être effectuées",
+        "noShow": "Réservations en retard → NO_SHOW",
+        "nuitees": "Génération des nuitées manquantes pour les séjours en cours"
+      },
+      "cancel": "Annuler",
+      "launch": "Lancer maintenant",
+      "confirm": "Confirmer le lancement du night audit ?"
+    },
+    "result": {
+      "title": "Night audit terminé",
+      "summary": "{{nbNoShow}} réservation(s) marquée(s) NO_SHOW, {{nbNuitees}} nuitée(s) générée(s)"
+    },
+    "error": {
+      "title": "Erreur night audit"
     }
   },
   "inventory": {
     "actions": {
       "save": "Enregistrer",
       "cancel": "Annuler",
-      "close": "Fermer"
+      "close": "Fermer",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "view": "Voir",
+      "back": "Retour"
+    },
+    "detail": {
+      "dateCreation": "Date de création",
+      "utilisateur": "Utilisateur"
     },
     "produit": {
       "list": {
@@ -275,6 +618,11 @@
         "deleteConfirm": "Supprimer ce produit ?",
         "deleteError": "Impossible de supprimer ce produit.",
         "saveError": "Impossible d'enregistrer le produit."
+      },
+      "detail": {
+        "title": "Détail du produit",
+        "mouvementsTitle": "Historique des mouvements de stock",
+        "valeurStock": "Valeur stock"
       }
     },
     "bonCommande": {
@@ -298,7 +646,10 @@
         "edit": "Modifier",
         "cancel": "Annuler",
         "valider": "Valider",
-        "receptionner": "Réceptionner"
+        "receptionner": "Réceptionner",
+        "envoyer": "Envoyer",
+        "confirmer": "Confirmer",
+        "annuler": "Annuler"
       },
       "fields": {
         "numeroBon": "N° bon",
@@ -340,7 +691,22 @@
       "messages": {
         "createSuccess": "Bon de commande créé avec succès",
         "updateSuccess": "Bon de commande modifié avec succès",
-        "saveError": "Impossible d'enregistrer le bon de commande."
+        "saveError": "Impossible d'enregistrer le bon de commande.",
+        "envoyerConfirm": "Envoyer ce bon de commande au fournisseur ?",
+        "envoyerSuccess": "Bon de commande envoyé",
+        "envoyerError": "Impossible d'envoyer le bon de commande.",
+        "confirmerConfirm": "Confirmer la réception de ce bon ?",
+        "confirmerSuccess": "Bon de commande confirmé",
+        "confirmerError": "Impossible de confirmer le bon de commande.",
+        "annulerConfirm": "Annuler ce bon de commande ?",
+        "annulerSuccess": "Bon de commande annulé",
+        "annulerError": "Impossible d'annuler le bon de commande."
+      },
+      "detail": {
+        "title": "Détail du bon de commande",
+        "pourcentageReception": "Pourcentage de réception",
+        "quantiteRecue": "Quantité reçue",
+        "lignesEmpty": "Aucune ligne sur ce bon de commande."
       }
     },
     "stock": {
@@ -364,6 +730,320 @@
         "alerte": "Alerte",
         "critique": "Critique",
         "unknown": "Indéterminé"
+      }
+    },
+    "statut": {
+      "actif": "Actif",
+      "inactif": "Inactif"
+    },
+    "categories": {
+      "list": {
+        "title": "Catégories de produits",
+        "search": "Rechercher une catégorie",
+        "empty": "Aucune catégorie trouvée",
+        "error": "Impossible de charger les catégories.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des catégories"
+      },
+      "form": {
+        "titleCreate": "Nouvelle catégorie",
+        "titleEdit": "Modifier la catégorie",
+        "loadError": "Impossible de charger cette catégorie."
+      },
+      "actions": {
+        "create": "Nouvelle catégorie"
+      },
+      "fields": {
+        "codeCategorie": "Code",
+        "nomCategorie": "Nom",
+        "description": "Description",
+        "nombreProduits": "Produits",
+        "actif": "Actif"
+      },
+      "errors": {
+        "codeRequired": "Le code est obligatoire.",
+        "codePattern": "Le code doit contenir 2 à 10 caractères alphanumériques.",
+        "nomRequired": "Le nom est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Catégorie créée avec succès",
+        "updateSuccess": "Catégorie modifiée avec succès",
+        "deleteSuccess": "Catégorie supprimée",
+        "deleteConfirm": "Supprimer cette catégorie ?",
+        "deleteError": "Impossible de supprimer cette catégorie.",
+        "saveError": "Impossible d'enregistrer la catégorie."
+      },
+      "detail": {
+        "title": "Détail de la catégorie"
+      }
+    },
+    "fournisseurs": {
+      "list": {
+        "title": "Fournisseurs",
+        "search": "Rechercher un fournisseur",
+        "empty": "Aucun fournisseur trouvé",
+        "error": "Impossible de charger les fournisseurs.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des fournisseurs"
+      },
+      "form": {
+        "titleCreate": "Nouveau fournisseur",
+        "titleEdit": "Modifier le fournisseur",
+        "loadError": "Impossible de charger ce fournisseur."
+      },
+      "actions": {
+        "create": "Nouveau fournisseur"
+      },
+      "fields": {
+        "nomFournisseur": "Nom",
+        "contactPrincipal": "Contact",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "pays": "Pays",
+        "conditionsPaiement": "Conditions de paiement",
+        "actif": "Actif"
+      },
+      "errors": {
+        "nomRequired": "Le nom du fournisseur est obligatoire.",
+        "emailInvalid": "L'email est invalide."
+      },
+      "messages": {
+        "createSuccess": "Fournisseur créé avec succès",
+        "updateSuccess": "Fournisseur modifié avec succès",
+        "deleteSuccess": "Fournisseur supprimé",
+        "deleteConfirm": "Supprimer ce fournisseur ?",
+        "deleteError": "Impossible de supprimer ce fournisseur.",
+        "saveError": "Impossible d'enregistrer le fournisseur."
+      },
+      "detail": {
+        "title": "Détail du fournisseur",
+        "nombreBonsCommande": "Nombre de bons de commande",
+        "montantTotalCommandes": "Montant total commandes"
+      }
+    },
+    "bonsSortie": {
+      "list": {
+        "title": "Bons de sortie",
+        "search": "Rechercher (n° bon, destination...)",
+        "empty": "Aucun bon de sortie trouvé",
+        "error": "Impossible de charger les bons de sortie.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des bons",
+        "filterAll": "Tous les statuts"
+      },
+      "form": {
+        "titleCreate": "Nouveau bon de sortie",
+        "titleEdit": "Modifier le bon de sortie",
+        "loadError": "Impossible de charger ce bon de sortie."
+      },
+      "actions": {
+        "create": "Nouveau bon de sortie",
+        "valider": "Valider",
+        "livrer": "Livrer",
+        "annuler": "Annuler"
+      },
+      "fields": {
+        "numeroBon": "N° bon",
+        "numeroBonAuto": "Auto-généré",
+        "destination": "Destination",
+        "dateSortie": "Date sortie",
+        "statut": "Statut",
+        "commentaires": "Commentaires",
+        "nombreLignes": "Lignes"
+      },
+      "statut": {
+        "brouillon": "Brouillon",
+        "valide": "Validé",
+        "livre": "Livré",
+        "annule": "Annulé"
+      },
+      "lignes": {
+        "title": "Lignes du bon",
+        "add": "Ajouter une ligne",
+        "remove": "Supprimer la ligne",
+        "produit": "Produit",
+        "quantite": "Quantité",
+        "quantiteServie": "Quantité servie",
+        "empty": "Aucune ligne. Cliquez sur \"Ajouter une ligne\"."
+      },
+      "errors": {
+        "destinationRequired": "La destination est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Bon de sortie créé avec succès",
+        "updateSuccess": "Bon de sortie modifié avec succès",
+        "saveError": "Impossible d'enregistrer le bon de sortie.",
+        "validerConfirm": "Valider ce bon de sortie ?",
+        "validerSuccess": "Bon de sortie validé",
+        "validerError": "Impossible de valider le bon de sortie.",
+        "livrerConfirm": "Livrer ce bon de sortie ?",
+        "livrerWarning": "Cette opération génère un mouvement de stock SORTIE et est irréversible.",
+        "livrerSuccess": "Bon de sortie livré",
+        "livrerError": "Impossible de livrer le bon de sortie.",
+        "annulerTitle": "Annuler ce bon de sortie",
+        "annulerMotifLabel": "Motif d'annulation",
+        "annulerMotifPlaceholder": "Saisir un motif (obligatoire)...",
+        "annulerMotifRequired": "Le motif d'annulation est obligatoire.",
+        "annulerSuccess": "Bon de sortie annulé",
+        "annulerError": "Impossible d'annuler le bon de sortie."
+      },
+      "detail": {
+        "title": "Détail du bon de sortie",
+        "pourcentageLivraison": "Pourcentage de livraison"
+      }
+    },
+    "mouvements": {
+      "list": {
+        "title": "Mouvements de stock",
+        "empty": "Aucun mouvement trouvé",
+        "error": "Impossible de charger les mouvements.",
+        "retry": "Réessayer",
+        "filterAll": "Tous les types",
+        "pagination": "Pagination des mouvements"
+      },
+      "fields": {
+        "dateMouvement": "Date",
+        "produit": "Produit",
+        "typeMouvement": "Type",
+        "quantite": "Quantité",
+        "stockAvant": "Stock avant",
+        "stockApres": "Stock après",
+        "referenceDocument": "Référence"
+      },
+      "type": {
+        "entree": "Entrée",
+        "sortie": "Sortie",
+        "ajustement": "Ajustement",
+        "perte": "Perte"
+      }
+    },
+    "services": {
+      "list": {
+        "title": "Services hôteliers",
+        "search": "Rechercher un service",
+        "empty": "Aucun service trouvé",
+        "error": "Impossible de charger les services.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des services",
+        "filterAllTypes": "Tous les types"
+      },
+      "form": {
+        "titleCreate": "Nouveau service hôtelier",
+        "titleEdit": "Modifier le service",
+        "loadError": "Impossible de charger ce service."
+      },
+      "actions": {
+        "create": "Nouveau service"
+      },
+      "fields": {
+        "codeService": "Code",
+        "nomService": "Nom",
+        "description": "Description",
+        "type": "Type",
+        "uniteMesure": "Unité",
+        "prixUnitaire": "Prix unitaire",
+        "estFacturable": "Facturable",
+        "actif": "Actif"
+      },
+      "unites": {
+        "forfait": "Forfait",
+        "heure": "Heure",
+        "jour": "Jour",
+        "nuit": "Nuit"
+      },
+      "errors": {
+        "codeRequired": "Le code est obligatoire.",
+        "codePattern": "Le code doit contenir 2 à 20 caractères alphanumériques.",
+        "nomRequired": "Le nom est obligatoire.",
+        "typeRequired": "Le type est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Service créé avec succès",
+        "updateSuccess": "Service modifié avec succès",
+        "deleteSuccess": "Service supprimé",
+        "deleteConfirm": "Supprimer ce service ?",
+        "deleteError": "Impossible de supprimer ce service.",
+        "saveError": "Impossible d'enregistrer le service."
+      },
+      "detail": {
+        "title": "Détail du service hôtelier"
+      }
+    },
+    "typesServices": {
+      "list": {
+        "title": "Types de services",
+        "search": "Rechercher un type",
+        "empty": "Aucun type trouvé",
+        "error": "Impossible de charger les types.",
+        "retry": "Réessayer",
+        "actions": "Actions",
+        "pagination": "Pagination des types"
+      },
+      "form": {
+        "titleCreate": "Nouveau type de service",
+        "titleEdit": "Modifier le type",
+        "loadError": "Impossible de charger ce type."
+      },
+      "actions": {
+        "create": "Nouveau type"
+      },
+      "fields": {
+        "codeType": "Code",
+        "nomType": "Nom",
+        "description": "Description",
+        "nombreServices": "Services",
+        "actif": "Actif"
+      },
+      "errors": {
+        "codeRequired": "Le code est obligatoire.",
+        "codePattern": "Le code doit contenir 2 à 10 caractères alphanumériques.",
+        "nomRequired": "Le nom est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Type créé avec succès",
+        "updateSuccess": "Type modifié avec succès",
+        "deleteSuccess": "Type supprimé",
+        "deleteConfirm": "Supprimer ce type ?",
+        "deleteError": "Impossible de supprimer ce type.",
+        "saveError": "Impossible d'enregistrer le type."
+      },
+      "detail": {
+        "title": "Détail du type de service"
+      }
+    },
+    "bridgeService": {
+      "title": "Ajouter un service à une facture",
+      "subtitle": "Sélectionnez une réservation en cours et le service à facturer.",
+      "actions": {
+        "open": "Ajouter à une facture",
+        "submit": "Ajouter à la facture"
+      },
+      "fields": {
+        "reservation": "Réservation",
+        "service": "Service hôtelier",
+        "quantite": "Quantité",
+        "prixUnitaire": "Prix unitaire",
+        "libelle": "Libellé",
+        "libellePlaceholder": "Libellé affiché sur la facture (laisser vide pour utiliser le nom du service)",
+        "datePrestation": "Date de prestation",
+        "optional": "optionnel"
+      },
+      "errors": {
+        "reservationRequired": "La réservation est obligatoire.",
+        "serviceRequired": "Le service est obligatoire.",
+        "quantiteMin": "La quantité doit être supérieure à 0."
+      },
+      "messages": {
+        "success": "Service ajouté à la facture",
+        "error": "Impossible d'ajouter le service à la facture.",
+        "loadError": "Impossible de charger les données initiales.",
+        "noReservations": "Aucune réservation en cours."
       }
     }
   },
@@ -503,6 +1183,7 @@
         "title": "Réservations en cours",
         "noActive": "Aucune réservation en cours pour ce client.",
         "statut": "Statut",
+        "chambre": "Chambre",
         "clear": "Désélectionner la réservation"
       },
       "articles": {
@@ -524,7 +1205,11 @@
         "remove": "Retirer la ligne",
         "clear": "Vider le panier",
         "checkout": "Encaisser comptant",
-        "reportChambre": "Reporter sur chambre"
+        "reportChambre": "Reporter sur chambre",
+        "checkoutSuccess": "Commande encaissée",
+        "orderNumber": "N° commande",
+        "invoiceNumber": "N° facture",
+        "newOrder": "Nouvelle commande"
       },
       "payment": {
         "title": "Encaissement",
@@ -567,7 +1252,10 @@
         "invalidPayload": "La commande est incomplète.",
         "encaissement": "L'encaissement a échoué. Réessayez.",
         "reportChambre": "Le report sur chambre a échoué.",
-        "reservationRequired": "Sélectionnez d'abord une réservation."
+        "reservationRequired": "Sélectionnez d'abord une réservation.",
+        "ticketCaisse": "Impossible d'imprimer le ticket caisse.",
+        "ticketCuisine": "Impossible d'imprimer le ticket cuisine.",
+        "ticketDecode": "Impossible d'afficher le ticket (PDF invalide)."
       },
       "messages": {
         "encaissementSuccess": "Commande encaissée avec succès.",
@@ -614,7 +1302,8 @@
         "view": "Voir le détail",
         "emettre": "Émettre",
         "annuler": "Annuler la facture",
-        "encaisser": "Encaisser"
+        "encaisser": "Encaisser",
+        "downloadPdf": "Télécharger PDF"
       },
       "fields": {
         "numeroFacture": "N° facture",
@@ -685,7 +1374,8 @@
         "emettreError": "Impossible d'émettre la facture.",
         "cancelConfirm": "Annuler cette facture ?",
         "cancelSuccess": "Facture annulée",
-        "cancelError": "Impossible d'annuler la facture."
+        "cancelError": "Impossible d'annuler la facture.",
+        "pdfError": "Impossible de télécharger le PDF de la facture."
       }
     },
     "paiement": {
@@ -1009,6 +1699,102 @@
       "empty": "Aucun personnel actif disponible."
     }
   },
+  "profile": {
+    "tabs": {
+      "profile": "Profil",
+      "security": "Sécurité",
+      "preferences": "Préférences"
+    },
+    "sections": {
+      "personalInfo": "Informations personnelles",
+      "changePassword": "Changer le mot de passe",
+      "preferences": "Préférences"
+    },
+    "fields": {
+      "prenom": "Prénom",
+      "prenomPlaceholder": "Votre prénom",
+      "nom": "Nom",
+      "nomPlaceholder": "Votre nom",
+      "email": "Adresse email",
+      "emailReadonlyHint": "L'adresse email est gérée par votre administrateur.",
+      "telephone": "Téléphone",
+      "poste": "Poste",
+      "postePlaceholder": "Votre poste",
+      "currentPassword": "Mot de passe actuel",
+      "currentPasswordPlaceholder": "Saisissez votre mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "Saisissez votre nouveau mot de passe",
+      "newPasswordHint": "Le mot de passe doit contenir au moins 8 caractères.",
+      "confirmPassword": "Confirmer le nouveau mot de passe",
+      "confirmPasswordPlaceholder": "Confirmez votre nouveau mot de passe"
+    },
+    "actions": {
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "cancel": "Annuler",
+      "changePassword": "Modifier le mot de passe",
+      "passwordSaving": "Modification...",
+      "togglePassword": "Afficher / masquer le mot de passe"
+    },
+    "avatar": {
+      "change": "Changer la photo",
+      "delete": "Supprimer la photo",
+      "deleteConfirm": "Supprimer votre photo de profil ?",
+      "uploadSuccess": "Avatar mis à jour",
+      "uploadError": "Impossible de téléverser l'avatar.",
+      "deleteSuccess": "Avatar supprimé",
+      "deleteError": "Impossible de supprimer l'avatar.",
+      "errors": {
+        "type": "Format non supporté. Utilisez JPG, PNG ou WebP.",
+        "size": "Fichier trop volumineux (max 2 Mo)."
+      }
+    },
+    "security": {
+      "tipsTitle": "Conseils de sécurité",
+      "tip1": "Au moins 8 caractères",
+      "tip2": "Majuscules et minuscules",
+      "tip3": "Au moins un chiffre",
+      "tip4": "Caractères spéciaux recommandés",
+      "tip5": "Évitez les mots communs"
+    },
+    "preferences": {
+      "language": "Langue de l'interface",
+      "session": "Informations de session",
+      "lastLogin": "Dernière connexion",
+      "role": "Rôle",
+      "unavailable": "Non disponible"
+    },
+    "lastConnection": "Dernière connexion",
+    "messages": {
+      "loadError": "Impossible de charger votre profil.",
+      "updateSuccess": "Profil mis à jour avec succès",
+      "updateError": "Impossible de mettre à jour le profil.",
+      "passwordSuccess": "Mot de passe modifié avec succès",
+      "passwordError": "Impossible de modifier le mot de passe."
+    },
+    "errors": {
+      "required": "Ce champ est obligatoire",
+      "minLength": "Caractères insuffisants",
+      "maxLength": "Trop de caractères",
+      "email": "Format d'email invalide",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "invalid": "Champ invalide"
+    }
+  },
+  "hotelAdmin": {
+    "users": {
+      "list": {
+        "title": "Utilisateurs de mon hôtel",
+        "you": "Vous"
+      },
+      "fields": {
+        "poste": "Poste"
+      },
+      "form": {
+        "roleHint": "Les rôles SUPERADMIN et ADMIN ne sont pas attribuables depuis cette interface."
+      }
+    }
+  },
   "admin": {
     "title": "Administration",
     "subtitle": "Gestion centralisée des hôtels, utilisateurs, rôles et paramètres",
@@ -1254,6 +2040,543 @@
     },
     "server": {
       "unavailable": "Le serveur est temporairement indisponible."
+    },
+    "reservation": {
+      "chambre": {
+        "conflict": "La chambre est déjà réservée sur la plage demandée."
+      },
+      "checkin": {
+        "invalidStatus": "Cette réservation n'est pas dans un état permettant le check-in.",
+        "tooEarly": "Le check-in n'est possible qu'à partir de la date d'arrivée."
+      },
+      "checkout": {
+        "invalidStatus": "Cette réservation n'est pas dans un état permettant le check-out (statut ARRIVEE requis)."
+      },
+      "cancel": {
+        "alreadyTerminated": "Cette réservation est déjà partie ou annulée, elle ne peut plus être annulée."
+      },
+      "update": {
+        "terminated": "Cette réservation est terminée, ses informations ne peuvent plus être modifiées."
+      },
+      "dates": {
+        "invalid": "La date de départ doit être postérieure à la date d'arrivée."
+      },
+      "notFound": "Réservation introuvable.",
+      "changerChambre": {
+        "terminated": "Cette réservation est terminée ou annulée, son changement de chambre est interdit.",
+        "identique": "Vous devez choisir une chambre différente.",
+        "ancienneChambre": {
+          "notFound": "Ancienne chambre introuvable sur cette réservation.",
+          "required": "Ancienne chambre obligatoire (la réservation a plusieurs chambres)."
+        },
+        "aucuneChambre": "Aucune chambre allouée à cette réservation.",
+        "nouvelleChambre": {
+          "required": "La nouvelle chambre est obligatoire."
+        },
+        "raison": {
+          "tooLong": "Le motif est trop long (500 caractères maximum)."
+        }
+      }
+    },
+    "tarifChambre": {
+      "calcul": {
+        "dates": {
+          "invalid": "Dates invalides pour le calcul.",
+          "required": "Dates de calcul obligatoires."
+        }
+      },
+      "dateFin": {
+        "beforeDebut": "La date de fin doit être postérieure à la date de début."
+      }
+    },
+    "facture": {
+      "reservation": {
+        "dejaFacturee": "Cette réservation a déjà une facture.",
+        "aucuneNuitee": "Aucune nuitée à facturer pour cette réservation."
+      },
+      "transfert": {
+        "payee": "La facture source est déjà payée, transfert impossible.",
+        "factureSourceTerminated": "La facture source est clôturée ou annulée.",
+        "factureCibleTerminated": "La facture cible est clôturée ou annulée."
+      },
+      "notFound": "Facture introuvable.",
+      "pdfFailed": "Échec de la génération du PDF."
+    },
+    "nuitee": {
+      "facture": {
+        "payee": "Une des nuitées est rattachée à une facture déjà payée."
+      },
+      "statut": {
+        "closed": "Cette nuitée est verrouillée (ligne facture fermée)."
+      }
+    },
+    "checkoutExpress": {
+      "statut": {
+        "invalid": "La réservation n'est pas dans un état permettant le check-out express."
+      },
+      "societe": {
+        "required": "Une société est requise pour le check-out express."
+      }
+    },
+    "paiement": {
+      "global": {
+        "reservationRequired": "La réservation est obligatoire pour le paiement global.",
+        "aucuneLigne": "Aucune ligne facturée à régler pour cette réservation.",
+        "clientRequired": "Le client principal est obligatoire pour le paiement global.",
+        "montantInvalid": "Montant de paiement invalide."
+      }
+    },
+    "client": {
+      "notFound": "Client introuvable.",
+      "inactif": "Ce client est inactif et ne peut pas être affecté à une réservation."
+    },
+    "societe": {
+      "notFound": "Société introuvable.",
+      "inactive": "Cette société est inactive et ne peut pas être affectée à une réservation."
+    },
+    "user": {
+      "unknown": "Utilisateur inconnu.",
+      "notFound": "Utilisateur introuvable.",
+      "username": {
+        "exists": "Ce nom d'utilisateur est déjà utilisé."
+      },
+      "email": {
+        "exists": "Cette adresse email est déjà utilisée."
+      },
+      "role": {
+        "escalation": {
+          "forbidden": "Vous n'êtes pas autorisé à attribuer ce rôle."
+        }
+      },
+      "self": {
+        "action": {
+          "forbidden": "Vous ne pouvez pas effectuer cette action sur votre propre compte."
+        }
+      },
+      "password": {
+        "invalid": "Le mot de passe actuel est incorrect.",
+        "mismatch": "Le nouveau mot de passe et sa confirmation ne correspondent pas.",
+        "unchanged": "Le nouveau mot de passe doit être différent de l'ancien.",
+        "weak": "Le mot de passe ne respecte pas la politique de sécurité.",
+        "wrong": "Le mot de passe actuel est incorrect."
+      },
+      "avatar": {
+        "tooLarge": "Le fichier est trop volumineux (max 2 Mo).",
+        "invalidType": "Format de fichier non supporté (JPG, PNG ou WebP uniquement)."
+      }
+    },
+    "exercice": {
+      "cloture": "Impossible : l'exercice est clôturé ou en clôture.",
+      "ouvert": "L'exercice doit être ouvert pour cette opération.",
+      "notFound": "Exercice introuvable.",
+      "alreadyClosed": "Cet exercice est déjà clôturé."
+    },
+    "ecriture": {
+      "unbalanced": "Écriture déséquilibrée — la somme des débits doit égaler la somme des crédits.",
+      "unbalancedDetail": "Tolérance : 0,01 MRU.",
+      "notValidated": "L'écriture n'est pas validée.",
+      "alreadyContrePassed": "Cette écriture a déjà été contre-passée.",
+      "minLines": "Une écriture doit comporter au moins 2 lignes.",
+      "motifRequired": "Le motif de contre-passation est obligatoire (min. 3 caractères).",
+      "compteUnknown": "Le compte référencé n'existe pas dans le PCG.",
+      "compteNotUsable": "Le compte n'est pas un compte de mouvement.",
+      "exerciceClosed": "L'exercice contenant la date comptable n'est pas ouvert.",
+      "journalInactive": "Le journal référencé n'est pas actif.",
+      "formInvalid": "Le formulaire contient des erreurs.",
+      "contrepasserFailed": "Échec de la contre-passation.",
+      "createFailed": "Échec de la création de l'écriture."
+    },
+    "journal": {
+      "notFound": "Journal introuvable.",
+      "codeRequired": "Le code du journal est obligatoire.",
+      "codeFormat": "Le code doit faire 1-5 caractères alphanumériques majuscules.",
+      "libelleRequired": "Le libellé est obligatoire.",
+      "codeExists": "Ce code de journal existe déjà.",
+      "toggleFailed": "Échec de la modification du statut du journal.",
+      "createFailed": "Échec de la création du journal.",
+      "updateFailed": "Échec de la mise à jour du journal."
+    },
+    "mapping": {
+      "notFound": "Mapping introuvable.",
+      "compteCodeRequired": "Le code compte est obligatoire.",
+      "compteNotFound": "Le code compte référencé n'existe pas dans le PCG.",
+      "compteNotUsable": "Le compte référencé n'est pas un compte de mouvement.",
+      "updateFailed": "Échec de la mise à jour du mapping."
+    },
+    "plancomptable": {
+      "notFound": "Compte introuvable.",
+      "notUsable": "Ce compte n'est pas un compte de mouvement.",
+      "archived": "Ce compte est archivé."
+    },
+    "tva": {
+      "config": {
+        "notFound": "Configuration TVA introuvable."
+      },
+      "taux": {
+        "negatif": "Le taux doit être positif.",
+        "trop": {
+          "eleve": "Le taux ne peut pas dépasser 99,99 %."
+        },
+        "invalid": "Le taux doit être compris entre 0 et 99,99."
+      },
+      "updateFailed": "Échec de la mise à jour de la configuration TVA."
+    },
+    "declaration": {
+      "notFound": "Déclaration TVA introuvable.",
+      "periodeInvalid": "La date de fin doit être postérieure ou égale à la date de début.",
+      "alreadyValidated": "Cette déclaration est déjà validée.",
+      "validerFailed": "Échec de la validation de la déclaration.",
+      "createFailed": "Échec de la création de la déclaration."
+    },
+    "etat": {
+      "fetchFailed": "Échec de la génération de l'état.",
+      "exportFailed": "Échec de l'export.",
+      "exerciceRequired": "L'exercice est obligatoire.",
+      "datesInvalid": "Les dates fournies sont invalides."
+    },
+    "ligneEcriture": {
+      "montantPositif": "Le montant doit être strictement positif."
+    },
+    "unknown": "Une erreur inattendue est survenue."
+  },
+  "comptabilite": {
+    "exercice": {
+      "list": {
+        "title": "Exercices comptables",
+        "empty": "Aucun exercice trouvé.",
+        "error": "Impossible de charger les exercices."
+      },
+      "fields": {
+        "code": "Code",
+        "dateDebut": "Début",
+        "dateFin": "Fin",
+        "statut": "Statut",
+        "dateCloture": "Date de clôture",
+        "clotureBy": "Clôturé par"
+      },
+      "statut": {
+        "OUVERT": "Ouvert",
+        "EN_CLOTURE": "En clôture",
+        "CLOTURE": "Clôturé"
+      },
+      "actions": {
+        "cloturer": "Clôturer"
+      },
+      "messages": {
+        "cloturerConfirm": "Clôturer cet exercice ?",
+        "cloturerWarning": "Action irréversible — aucune écriture ne pourra plus être enregistrée.",
+        "cloturerSuccess": "Exercice clôturé avec succès."
+      }
+    },
+    "planComptable": {
+      "list": {
+        "title": "Plan Comptable Général",
+        "empty": "Aucun compte trouvé.",
+        "error": "Impossible de charger le plan comptable.",
+        "filterAllClasses": "Toutes les classes"
+      },
+      "fields": {
+        "compteCode": "Code",
+        "libelle": "Libellé",
+        "classe": "Classe",
+        "nature": "Nature",
+        "sensNormal": "Sens normal",
+        "utilisable": "Utilisable",
+        "statut": "Statut"
+      },
+      "classe": "Classe",
+      "nature": {
+        "ACTIF": "Actif",
+        "PASSIF": "Passif",
+        "CHARGE": "Charge",
+        "PRODUIT": "Produit",
+        "MIXTE": "Mixte"
+      },
+      "sens": {
+        "DEBITEUR": "Débiteur",
+        "CREDITEUR": "Créditeur",
+        "MIXTE": "Mixte"
+      },
+      "statut": {
+        "ACTIF": "Actif",
+        "ARCHIVE": "Archivé"
+      }
+    },
+    "mapping": {
+      "list": {
+        "title": "Mapping comptable",
+        "subtitle": "Associez chaque type d'événement à un compte du PCG.",
+        "empty": "Aucun mapping disponible.",
+        "error": "Impossible de charger les mappings."
+      },
+      "fields": {
+        "typeEvenement": "Type d'événement",
+        "compteCode": "Code compte",
+        "compteLibelle": "Libellé du compte",
+        "actif": "Actif",
+        "defaut": "Origine"
+      },
+      "defaut": "Défaut",
+      "custom": "Personnalisé",
+      "type": {
+        "VENTE_NUITEE_HEBERGEMENT": "Vente nuitée hébergement",
+        "VENTE_RESTAURATION": "Vente restauration",
+        "VENTE_BAR": "Vente bar",
+        "VENTE_SERVICE_CHAMBRE": "Vente service en chambre",
+        "VENTE_BLANCHISSERIE": "Vente blanchisserie",
+        "VENTE_AUTRE_SERVICE": "Autre vente de service",
+        "CLIENT_PARTICULIER": "Client particulier",
+        "CLIENT_SOCIETE": "Client société",
+        "CLIENT_DOUTEUX": "Client douteux",
+        "FOURNISSEUR_ORDINAIRE": "Fournisseur ordinaire",
+        "TRESORERIE_ESPECES": "Trésorerie — Espèces",
+        "TRESORERIE_BANQUE": "Trésorerie — Banque",
+        "TRESORERIE_CHEQUE": "Trésorerie — Chèque",
+        "TRESORERIE_CARTE_BANCAIRE": "Trésorerie — Carte bancaire",
+        "TRESORERIE_BANKILY": "Trésorerie — Bankily",
+        "TRESORERIE_MASRIVI": "Trésorerie — Masrivi",
+        "TRESORERIE_SEDAD": "Trésorerie — Sedad",
+        "TRESORERIE_CLICK": "Trésorerie — Click",
+        "TRESORERIE_AMANETY": "Trésorerie — Amanety",
+        "TRESORERIE_BFI_CASH": "Trésorerie — BFI Cash",
+        "TRESORERIE_MOOV_MONEY": "Trésorerie — Moov Money",
+        "TRESORERIE_GAZAPAY": "Trésorerie — Gazapay",
+        "TRESORERIE_VIREMENT": "Trésorerie — Virement",
+        "TVA_COLLECTEE": "TVA collectée",
+        "TVA_DEDUCTIBLE": "TVA déductible",
+        "TVA_A_DECAISSER": "TVA à décaisser",
+        "REDUCTION_ACCORDEE": "Réduction accordée",
+        "ACHAT_MARCHANDISES": "Achat de marchandises",
+        "STOCK_MARCHANDISES": "Stock de marchandises"
+      },
+      "messages": {
+        "updateSuccess": "Mapping mis à jour."
+      }
+    },
+    "journal": {
+      "list": {
+        "title": "Journaux comptables",
+        "empty": "Aucun journal trouvé.",
+        "error": "Impossible de charger les journaux."
+      },
+      "fields": {
+        "code": "Code",
+        "libelle": "Libellé",
+        "type": "Type",
+        "actif": "Actif"
+      },
+      "actif": "Actif",
+      "inactif": "Inactif",
+      "type": {
+        "VENTE": "Ventes",
+        "ACHAT": "Achats",
+        "TRESORERIE": "Trésorerie",
+        "OPERATION_DIVERSE": "Opérations diverses",
+        "AVOIR": "Avoirs"
+      },
+      "actions": {
+        "create": "Nouveau journal",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver"
+      },
+      "form": {
+        "titleCreate": "Nouveau journal",
+        "titleEdit": "Éditer le journal"
+      },
+      "messages": {
+        "createSuccess": "Journal créé.",
+        "updateSuccess": "Journal mis à jour.",
+        "toggleSuccess": "Statut du journal modifié.",
+        "deactivateConfirm": "Désactiver ce journal ?",
+        "reactivateConfirm": "Réactiver ce journal ?",
+        "loadError": "Impossible de charger le journal."
+      }
+    },
+    "ecriture": {
+      "list": {
+        "title": "Écritures comptables",
+        "empty": "Aucune écriture trouvée.",
+        "error": "Impossible de charger les écritures.",
+        "filterAll": "Tous les statuts"
+      },
+      "fields": {
+        "numero": "Numéro",
+        "dateComptable": "Date comptable",
+        "datePiece": "Date pièce",
+        "journal": "Journal",
+        "exercice": "Exercice",
+        "libelle": "Libellé",
+        "reference": "Référence",
+        "statut": "Statut",
+        "totalDebit": "Total débit",
+        "totalCredit": "Total crédit",
+        "motif": "Motif",
+        "motifPlaceholder": "Motif détaillé de la contre-passation...",
+        "contrePasseePar": "Contre-passée par",
+        "ecritureSource": "Écriture source"
+      },
+      "statut": {
+        "BROUILLON": "Brouillon",
+        "VALIDEE": "Validée",
+        "CONTRE_PASSEE": "Contre-passée"
+      },
+      "sens": {
+        "DEBIT": "Débit",
+        "CREDIT": "Crédit"
+      },
+      "actions": {
+        "create": "Nouvelle écriture",
+        "contrepasser": "Contre-passer"
+      },
+      "lignes": {
+        "title": "Lignes de l'écriture",
+        "compteCode": "Compte",
+        "libelle": "Libellé",
+        "sens": "Sens",
+        "debit": "Débit",
+        "credit": "Crédit",
+        "montant": "Montant",
+        "auxiliaire": "Auxiliaire",
+        "add": "Ajouter une ligne"
+      },
+      "form": {
+        "title": "Nouvelle écriture comptable"
+      },
+      "detail": {
+        "title": "Détail de l'écriture",
+        "notFound": "Écriture introuvable.",
+        "error": "Impossible de charger l'écriture."
+      },
+      "messages": {
+        "createSuccess": "Écriture enregistrée.",
+        "contrepasserConfirm": "Contre-passer cette écriture ?",
+        "contrepasserWarning": "Une nouvelle écriture inverse sera générée pour annuler celle-ci.",
+        "contrepasserSuccess": "Écriture contre-passée."
+      }
+    },
+    "tvaConfig": {
+      "list": {
+        "title": "Configuration TVA",
+        "subtitle": "Taux par type de service hôtelier.",
+        "empty": "Aucune configuration TVA disponible.",
+        "error": "Impossible de charger les configurations TVA."
+      },
+      "fields": {
+        "typeService": "Type de service",
+        "taux": "Taux",
+        "actif": "Actif",
+        "libelle": "Libellé",
+        "defaut": "Origine"
+      },
+      "defaut": "Défaut",
+      "custom": "Personnalisé",
+      "type": {
+        "HEBERGEMENT_NUITEE": "Hébergement (nuitées)",
+        "RESTAURATION": "Restauration",
+        "BAR": "Bar",
+        "SERVICE_CHAMBRE": "Service en chambre",
+        "BLANCHISSERIE": "Blanchisserie",
+        "AUTRE_SERVICE_HOTELIER": "Autre service hôtelier",
+        "ACHAT_MARCHANDISES": "Achats de marchandises"
+      },
+      "messages": {
+        "updateSuccess": "Configuration TVA mise à jour."
+      }
+    },
+    "declarationTva": {
+      "list": {
+        "title": "Déclarations TVA",
+        "empty": "Aucune déclaration trouvée.",
+        "error": "Impossible de charger les déclarations."
+      },
+      "fields": {
+        "periode": "Période",
+        "dateDebut": "Début",
+        "dateFin": "Fin",
+        "totalCollectee": "Collectée",
+        "totalDeductible": "Déductible",
+        "totalADecaisser": "À décaisser",
+        "statut": "Statut",
+        "valideePar": "Validée par"
+      },
+      "statut": {
+        "BROUILLON": "Brouillon",
+        "VALIDEE": "Validée"
+      },
+      "actions": {
+        "create": "Nouvelle déclaration",
+        "valider": "Valider"
+      },
+      "form": {
+        "title": "Nouvelle déclaration TVA",
+        "info": "Le système calculera automatiquement les totaux TVA collectée / déductible / à décaisser sur la période et créera une déclaration en brouillon."
+      },
+      "messages": {
+        "createSuccess": "Déclaration créée.",
+        "validerConfirm": "Valider cette déclaration TVA ?",
+        "validerWarning": "Une écriture de liquidation sera générée automatiquement. Cette action est irréversible.",
+        "validerSuccess": "Déclaration validée."
+      }
+    },
+    "balance": {
+      "title": "Balance comptable",
+      "empty": "Aucune ligne pour les filtres sélectionnés.",
+      "exerciceCode": "Exercice",
+      "periode": "Période",
+      "totalDebit": "Total débit",
+      "totalCredit": "Total crédit",
+      "soldeDebiteur": "Solde débiteur",
+      "soldeCrediteur": "Solde créditeur"
+    },
+    "grandLivre": {
+      "title": "Grand Livre",
+      "empty": "Aucune écriture pour les filtres sélectionnés.",
+      "reportInitial": "Report initial",
+      "soldeFinal": "Solde final",
+      "lignes": {
+        "date": "Date",
+        "numero": "N° écriture",
+        "journal": "Journal",
+        "libelle": "Libellé écriture",
+        "reference": "Référence",
+        "soldeProgressif": "Solde progressif"
+      }
+    },
+    "journalEdition": {
+      "title": "Édition du journal",
+      "empty": "Aucune écriture pour les filtres sélectionnés."
+    },
+    "bilan": {
+      "title": "Bilan",
+      "dateArrete": "Date d'arrêté",
+      "actif": "ACTIF",
+      "passif": "PASSIF",
+      "totalActif": "Total Actif",
+      "totalPassif": "Total Passif",
+      "resultatNet": "Résultat net"
+    },
+    "compteResultat": {
+      "title": "Compte de résultat",
+      "produits": "PRODUITS",
+      "charges": "CHARGES",
+      "totalProduits": "Total Produits",
+      "totalCharges": "Total Charges",
+      "margeBrute": "Marge brute",
+      "resultatNet": "Résultat net"
+    },
+    "etats": {
+      "fields": {
+        "exerciceId": "ID exercice",
+        "dateDebut": "Date début",
+        "dateFin": "Date fin",
+        "classe": "Classe",
+        "classeAll": "Toutes",
+        "compteCode": "Code compte",
+        "journalId": "Journal"
+      },
+      "actions": {
+        "generate": "Générer"
+      }
     }
   }
 }

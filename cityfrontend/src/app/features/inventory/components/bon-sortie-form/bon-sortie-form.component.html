@@ -1,0 +1,172 @@
+<section class="bon-sortie-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      {{ (isEditing ? 'inventory.bonsSortie.form.titleEdit' : 'inventory.bonsSortie.form.titleCreate') | translate }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.bonsSortie.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="numeroBon" class="form-label">{{ 'inventory.bonsSortie.fields.numeroBon' | translate }}</label>
+          <input id="numeroBon" type="text" class="form-control" formControlName="numeroBon"
+            [placeholder]="'inventory.bonsSortie.fields.numeroBonAuto' | translate" />
+        </div>
+
+        <div class="col-md-4">
+          <label for="dateSortie" class="form-label">{{ 'inventory.bonsSortie.fields.dateSortie' | translate }}</label>
+          <input id="dateSortie" type="date" class="form-control" formControlName="dateSortie" />
+        </div>
+
+        <div class="col-md-4">
+          <label for="statut" class="form-label">{{ 'inventory.bonsSortie.fields.statut' | translate }}</label>
+          <select id="statut" class="form-select" formControlName="statut">
+            @for (s of statuts; track s) {
+              <option [value]="s">{{ ('inventory.bonsSortie.statut.' + s) | translate }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-12">
+          <label for="destination" class="form-label">{{ 'inventory.bonsSortie.fields.destination' | translate }}</label>
+          <input id="destination" type="text" class="form-control" formControlName="destination"
+            [class.is-invalid]="form.get('destination')?.invalid && form.get('destination')?.touched" />
+          @if (form.get('destination')?.touched && form.get('destination')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.bonsSortie.errors.destinationRequired' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="commentaires" class="form-label">{{ 'inventory.bonsSortie.fields.commentaires' | translate }}</label>
+          <textarea id="commentaires" class="form-control" rows="2" formControlName="commentaires"></textarea>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h3 class="h6 m-0">{{ 'inventory.bonsSortie.lignes.title' | translate }}</h3>
+          <button type="button" class="btn btn-sm btn-outline-primary" (click)="addLigne()">
+            <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+            {{ 'inventory.bonsSortie.lignes.add' | translate }}
+          </button>
+        </div>
+
+        <div class="table-responsive" formArrayName="lignes">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'inventory.bonsSortie.lignes.produit' | translate }}</th>
+                <th class="text-end" style="width: 140px;">{{ 'inventory.bonsSortie.lignes.quantite' | translate }}</th>
+                <th>{{ 'inventory.bonsSortie.fields.commentaires' | translate }}</th>
+                <th style="width: 60px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (lg of lignesArray.controls; track $index; let i = $index) {
+                <tr [formGroupName]="i">
+                  <td>
+                    <select class="form-select form-select-sm" formControlName="produitId">
+                      <option [ngValue]="null">--</option>
+                      @for (p of produits; track p.produitId) {
+                        <option [ngValue]="p.produitId">{{ p.nomProduit }} ({{ p.codeProduit }})</option>
+                      }
+                    </select>
+                  </td>
+                  <td>
+                    <input type="number" class="form-control form-control-sm text-end" min="0" step="0.01" formControlName="quantiteDemandee" />
+                  </td>
+                  <td>
+                    <input type="text" class="form-control form-control-sm" formControlName="commentaires" />
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" (click)="removeLigne(i)" [attr.aria-label]="'inventory.bonsSortie.lignes.remove' | translate">
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (lignesArray.length === 0) {
+                <tr>
+                  <td colspan="4" class="text-center text-muted py-3">{{ 'inventory.bonsSortie.lignes.empty' | translate }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center gap-2 mt-4 flex-wrap">
+        <div class="d-flex gap-2 flex-wrap">
+          @if (canValider) {
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="valider()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonsSortie.actions.valider' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonsSortie.actions.valider' | translate }}
+            </button>
+          }
+          @if (canLivrer) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="livrer()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonsSortie.actions.livrer' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-truck me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonsSortie.actions.livrer' | translate }}
+            </button>
+          }
+          @if (canAnnuler) {
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="annuler()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonsSortie.actions.annuler' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonsSortie.actions.annuler' | translate }}
+            </button>
+          }
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">{{ 'inventory.actions.cancel' | translate }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="state === 'submitting' || transitioning">
+            @if (state === 'submitting') {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            }
+            {{ 'inventory.actions.save' | translate }}
+          </button>
+        </div>
+      </div>
+    </form>
+  }
+</section>

@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.controller.inventory;
 
+import com.cityprojects.citybackend.dto.inventory.AnnulationBonSortieDto;
 import com.cityprojects.citybackend.dto.inventory.BonSortieCreateDto;
 import com.cityprojects.citybackend.dto.inventory.BonSortieDto;
 import com.cityprojects.citybackend.entity.inventory.StatutBonSortie;
@@ -63,9 +64,16 @@ public class BonSortieController {
         return ResponseEntity.ok(service.livrer(id));
     }
 
+    /**
+     * Tour 51bis : annulation avec motif obligatoire.
+     *
+     * <p>Refus si le BS est deja {@code LIVRE} (faire un mouvement de
+     * regularisation a la place).</p>
+     */
     @PostMapping("/{id}/annuler")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
-    public ResponseEntity<BonSortieDto> annuler(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(service.annuler(id));
+    public ResponseEntity<BonSortieDto> annuler(@PathVariable("id") Long id,
+                                                @Valid @RequestBody AnnulationBonSortieDto dto) {
+        return ResponseEntity.ok(service.annuler(id, dto.motif()));
     }
 }

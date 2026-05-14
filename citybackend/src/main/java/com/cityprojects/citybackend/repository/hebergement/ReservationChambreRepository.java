@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -25,6 +26,12 @@ public interface ReservationChambreRepository
 
     /** Liste les chambres rattachees a une reservation. */
     List<ReservationChambre> findByReservationIdOrderByDateDebutAsc(Long reservationId);
+
+    /**
+     * Liste batch les pivots pour plusieurs reservations. Utilise pour
+     * enrichir une page de {@code ReservationDto} sans tomber en N+1.
+     */
+    List<ReservationChambre> findByReservationIdInOrderByDateDebutAsc(Collection<Long> reservationIds);
 
     /**
      * Conflits sur une chambre : retourne les pivots qui chevauchent la periode

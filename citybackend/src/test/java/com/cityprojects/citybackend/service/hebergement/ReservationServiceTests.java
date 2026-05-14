@@ -116,7 +116,17 @@ class ReservationServiceTests {
         currentYear = LocalDate.now().getYear();
 
         // Cleanup ordonne (FK : nuitees -> reservations -> chambres -> types_chambres ;
-        // reservations -> clients/dbusers/hotels/societes ; nbusers -> hotels/roles)
+        // reservations -> clients/dbusers/hotels/societes ; nbusers -> hotels/roles).
+        // Tour 44 Phase 1 : create() genere desormais aussi Facture +
+        // LigneFacture + OperationCompte + Compte client - on purge cote
+        // finance AVANT de toucher hebergement (FK lignes_factures.nuitee_id
+        // et factures.reservation_id).
+        jdbcTemplate.update("DELETE FROM finance.affectations_paiements");
+        jdbcTemplate.update("DELETE FROM finance.operations_comptes");
+        jdbcTemplate.update("DELETE FROM finance.paiements");
+        jdbcTemplate.update("DELETE FROM finance.lignes_factures");
+        jdbcTemplate.update("DELETE FROM finance.factures");
+        jdbcTemplate.update("DELETE FROM finance.comptes");
         jdbcTemplate.update("DELETE FROM hebergement.nuitees");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_clients");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_chambres");

@@ -115,6 +115,14 @@ public class BonCommande extends AuditableEntity implements TenantAware {
     @Column(name = "facture_fournisseur_id")
     private Long factureFournisseurId;
 
+    /**
+     * Id de l'ecriture comptable ACH generee a la reception du BC (Bloc B3).
+     * Nullable tant qu'aucune reception n'a eu lieu (le BC peut etre
+     * BROUILLON / ENVOYE / CONFIRME / ANNULE sans avoir genere d'ecriture).
+     */
+    @Column(name = "ecriture_reception_id")
+    private Long ecritureReceptionId;
+
     /** Constructeur JPA - initialise dateCommande a aujourd'hui. */
     public BonCommande() {
         this.dateCommande = LocalDate.now();
@@ -224,5 +232,13 @@ public class BonCommande extends AuditableEntity implements TenantAware {
 
     public void setFactureFournisseurId(Long factureFournisseurId) {
         this.factureFournisseurId = factureFournisseurId;
+    }
+
+    public Long getEcritureReceptionId() {
+        return ecritureReceptionId;
+    }
+
+    public void setEcritureReceptionId(Long ecritureReceptionId) {
+        this.ecritureReceptionId = ecritureReceptionId;
     }
 }

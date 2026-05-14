@@ -25,7 +25,8 @@
     "housekeeping": "Housekeeping",
     "reporting": "Reporting",
     "profile": "Profile",
-    "admin": "Administration"
+    "admin": "Administration",
+    "hotelAdmin": "My hotel"
   },
   "submenu": {
     "products": {
@@ -45,6 +46,9 @@
       "users": "Users",
       "roles": "Roles",
       "parametres": "Settings"
+    },
+    "hotelAdmin": {
+      "users": "Users"
     }
   },
   "common": {
@@ -57,7 +61,17 @@
     "search": "Search",
     "close": "Close",
     "language": "Language",
-    "comingSoon": "This feature is coming with the Finance module."
+    "previous": "Previous",
+    "next": "Next",
+    "comingSoon": "This feature is coming with the Finance module.",
+    "actions": "Actions",
+    "view": "View",
+    "back": "Back",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "remove": "Remove",
+    "select": "Select",
+    "total": "Total"
   },
   "header": {
     "notifications": "Notifications",
@@ -69,7 +83,20 @@
     "minimize": "Minimize",
     "restore": "Restore",
     "expand": "Expand",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "comptabilite": "Accounting",
+    "comptabilite.exercices": "Fiscal years",
+    "comptabilite.planComptable": "Chart of accounts",
+    "comptabilite.mapping": "Account mapping",
+    "comptabilite.journaux": "Journals",
+    "comptabilite.ecritures": "Entries",
+    "comptabilite.tvaConfig": "VAT configuration",
+    "comptabilite.tvaDeclarations": "VAT declarations",
+    "comptabilite.balance": "Trial balance",
+    "comptabilite.grandLivre": "General ledger",
+    "comptabilite.journal": "Journal print",
+    "comptabilite.bilan": "Balance sheet",
+    "comptabilite.compteResultat": "Income statement"
   },
   "clients": {
     "list": {
@@ -122,11 +149,22 @@
   "hebergement": {
     "calendar": {
       "title": "Reservations calendar",
-      "previous": "Previous month",
-      "next": "Next month",
+      "previous": "Previous period",
+      "next": "Next period",
       "today": "Today",
+      "currentMonth": "Current month",
+      "rooms": "Rooms",
+      "refresh": "Refresh calendar",
+      "dragHint": "Click and drag to create a reservation",
+      "empty": "No room to display.",
       "error": "Unable to load the calendar.",
       "retry": "Retry",
+      "confirmCheckIn": "Confirm check-in for this reservation?",
+      "confirmCheckOut": "Confirm check-out for this reservation?",
+      "checkInSuccess": "Check-in completed.",
+      "checkInError": "Unable to perform check-in.",
+      "checkOutSuccess": "Check-out completed.",
+      "checkOutError": "Unable to perform check-out.",
       "weekday": {
         "mon": "Mon",
         "tue": "Tue",
@@ -135,6 +173,221 @@
         "fri": "Fri",
         "sat": "Sat",
         "sun": "Sun"
+      },
+      "range": {
+        "openPicker": "Select date range",
+        "selectStart": "Pick the start date",
+        "selectEnd": "Pick the end date"
+      },
+      "menu": {
+        "consult": "View",
+        "modify": "Edit / Move",
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "payments": "Payments",
+        "modifyNuitees": "Edit nights",
+        "cancel": "Cancel reservation"
+      },
+      "create": {
+        "title": "New reservation",
+        "room": "Room",
+        "period": "Period"
+      },
+      "consult": {
+        "title": "Reservation details",
+        "rooms": "Rooms",
+        "fullDetail": "View / edit full details",
+        "client": {
+          "label": "Client"
+        },
+        "section": {
+          "dates": "Dates & guests",
+          "tarif": "Pricing",
+          "notes": "Notes"
+        }
+      },
+      "edit": {
+        "title": "Edit reservation",
+        "client": {
+          "label": "Reservation for",
+          "changeLabel": "Change the client",
+          "help": "You can replace the main client of this reservation."
+        },
+        "societe": {
+          "changeLabel": "Change the company"
+        }
+      },
+      "groups": {
+        "chambres": {
+          "title": "Rooms"
+        },
+        "salles": {
+          "title": "Halls"
+        }
+      },
+      "cancel": {
+        "title": "Cancel reservation",
+        "motifPlaceholder": "Enter the cancellation reason…",
+        "motifRequired": "Reason is required.",
+        "confirm": "Cancel reservation",
+        "success": "Reservation cancelled."
+      },
+      "client": {
+        "add": "New client",
+        "quickCreate": {
+          "title": "Quick client creation",
+          "firstName": "First name",
+          "lastName": "Last name",
+          "phone": "Phone",
+          "email": "Email",
+          "cni": "ID document",
+          "create": "Create & select",
+          "cancel": "Cancel",
+          "success": "Client created and selected."
+        }
+      },
+      "societe": {
+        "quickCreate": {
+          "open": "New company",
+          "title": "Quick company creation",
+          "nom": "Name",
+          "telephone": "Phone",
+          "nif": "TIN (NIF)",
+          "adresse": "Address",
+          "create": "Create & select",
+          "cancel": "Cancel",
+          "success": "Company created and selected."
+        }
+      },
+      "tarif": {
+        "calculating": "Computing rate…",
+        "totalNights": "Nights",
+        "amountHt": "Net amount",
+        "amountTtc": "Gross amount",
+        "detail": "Day-by-day detail",
+        "origin": {
+          "tarif": "Seasonal rate",
+          "fallback": "Base price"
+        }
+      },
+      "payments": {
+        "title": "Reservation payments",
+        "factures": "Invoices",
+        "payments": "Payments",
+        "totalGlobal": "Total",
+        "paidGlobal": "Total paid",
+        "remainingGlobal": "Remaining",
+        "viewFactureDetail": "Invoice detail",
+        "empty": "No item to display.",
+        "selected": "Selected",
+        "advanced": "Advanced actions",
+        "lignes": {
+          "description": "Description",
+          "date": "Date",
+          "sousTotal": "Subtotal",
+          "paye": "Paid",
+          "reste": "Remaining",
+          "select": "Select line"
+        },
+        "action": {
+          "payer": "Pay selection",
+          "transferer": "Transfer lines",
+          "checkoutExpress": "Express check-out"
+        },
+        "details": {
+          "title": "Reservation details",
+          "numero": "Reservation #",
+          "client": "Client",
+          "societe": "Company",
+          "periode": "Period",
+          "occupants": "Occupants",
+          "chambres": "Room(s)",
+          "statut": "Status",
+          "total": "Total amount"
+        },
+        "folio": {
+          "title": "Folio — reservation invoices",
+          "numero": "Invoice #",
+          "date": "Date",
+          "statut": "Status",
+          "total": "Total",
+          "paye": "Paid",
+          "balance": "Balance",
+          "empty": "No invoice for this reservation.",
+          "totalFactures": "Total invoices",
+          "totalPaye": "Total paid",
+          "balanceGlobale": "Overall balance"
+        },
+        "global": {
+          "title": "Record a payment",
+          "montant": "Amount",
+          "mode": "Payment mode",
+          "motif": "Reason",
+          "description": "Description",
+          "partial": "Partial payment — {amount} MRU will remain due.",
+          "full": "Full balance.",
+          "excess": "Excess of {amount} MRU will be credited to client account.",
+          "confirm": "Confirm payment?",
+          "action": "Record payment",
+          "success": "Payment recorded.",
+          "successFull": "Full payment recorded.",
+          "successExcess": "Payment recorded (excess of {amount} MRU credited to account)."
+        },
+        "payer": {
+          "title": "Record a payment",
+          "amount": "Amount",
+          "mode": "Payment mode",
+          "motif": "Reason",
+          "description": "Description",
+          "dueReste": "Remaining due",
+          "partial": "Partial payment recorded.",
+          "full": "Full payment recorded.",
+          "excess": "Excess credited to client account:"
+        },
+        "transferer": {
+          "title": "Transfer lines",
+          "targetFacture": "Target invoice",
+          "newFacture": "Create new invoice",
+          "success": "Lines transferred successfully."
+        },
+        "checkoutExpress": {
+          "title": "Express check-out",
+          "confirm": "Move the invoice to the company account then close?",
+          "selectSociete": "Select the company",
+          "success": "Express check-out completed."
+        }
+      },
+      "nuitees": {
+        "modify": {
+          "openButton": "Edit nights",
+          "title": "Edit nights",
+          "dateNuit": "Date",
+          "prixOriginal": "Original price",
+          "nouveauMontant": "New amount",
+          "reset": "Reset",
+          "totalAvant": "Total before",
+          "totalApres": "Total after",
+          "impact": "Impact",
+          "confirm": "The financial impact will adjust the invoice. Confirm save?",
+          "success": "Night amounts updated.",
+          "noChanges": "No changes to save."
+        }
+      },
+      "changeRoom": {
+        "title": "Change room",
+        "newRoom": "New room",
+        "reason": "Reason (optional)",
+        "action": "Change room",
+        "confirm": {
+          "title": "Confirm room change?",
+          "message": "The new room will be allocated and unbilled nights will be moved over."
+        },
+        "success": "Room changed successfully."
+      },
+      "live": {
+        "syncToast": "Synced",
+        "disconnected": "Disconnected from live stream",
+        "reconnecting": "Reconnecting…"
       }
     },
     "list": {
@@ -188,11 +441,11 @@
       "reductionPourcentage": "Discount (%)"
     },
     "statut": {
-      "en_attente": "Pending",
-      "confirmee": "Confirmed",
+      "confirmee": "Not confirmed",
       "arrivee": "Arrived",
       "partie": "Departed",
-      "annulee": "Cancelled"
+      "annulee": "Cancelled",
+      "no_show": "No-show"
     },
     "errors": {
       "clientRequired": "Main client is required.",
@@ -208,13 +461,103 @@
       "cancelMotifRequired": "Reason is required.",
       "cancelSuccess": "Reservation cancelled",
       "cancelError": "Unable to cancel the reservation."
+    },
+    "nightAudit": {
+      "page": {
+        "title": "Night audit — Preparation",
+        "subtitle": "Hotel date: {{date}}",
+        "instructions": "Prepare the closing by validating the remaining operations. When ready, click \"Run closing\".",
+        "back": "Back",
+        "refresh": "Refresh",
+        "launch": "Run closing",
+        "error": "Night audit failed.",
+        "reportToast": "Postponed for later processing",
+        "launchConfirm": {
+          "title": "Run closing?",
+          "text": "This action will mark late non-checked-in reservations as NO_SHOW and generate the missing nights.",
+          "confirm": "Run"
+        },
+        "result": {
+          "title": "Closing completed",
+          "text": "{{nbNoShow}} NO_SHOW reservation(s) · {{nbNuitees}} night(s) generated"
+        },
+        "retard": {
+          "title": "Late check-ins",
+          "empty": "No late check-in.",
+          "warning": "CONFIRMEE reservations whose arrival date has passed. If not handled, they will become NO_SHOW."
+        },
+        "arrivals": {
+          "title": "Today's arrivals",
+          "empty": "No arrival scheduled today.",
+          "subtitle": "Expected reservations that have not yet checked in."
+        },
+        "departs": {
+          "title": "Today's departures",
+          "empty": "No departure scheduled today.",
+          "subtitle": "Ongoing reservations whose departure date is today."
+        },
+        "cols": {
+          "numero": "Reservation #",
+          "client": "Client",
+          "chambres": "Room(s)",
+          "dateArrivee": "Arrival date",
+          "dateDepart": "Departure date",
+          "actions": "Actions"
+        },
+        "action": {
+          "checkin": "Check-in",
+          "checkout": "Check-out",
+          "cancel": "Cancel",
+          "report": "Postpone",
+          "prolong": "Extend",
+          "payCheckout": "Pay & check-out"
+        },
+        "notifier": {
+          "start": "Start",
+          "snooze": "Postpone",
+          "snoozed": "Night audit postponed for today"
+        }
+      }
+    }
+  },
+  "nightAudit": {
+    "alert": {
+      "title": "Night audit imminent",
+      "message": "The night audit will start in 3 minutes. Please complete your ongoing operations."
+    },
+    "modal": {
+      "title": "Night audit launch",
+      "subtitle": "Hotel date: {{date}}",
+      "actions": {
+        "title": "Actions that will be performed",
+        "noShow": "Late reservations → NO_SHOW",
+        "nuitees": "Generate missing nights for ongoing stays"
+      },
+      "cancel": "Cancel",
+      "launch": "Launch now",
+      "confirm": "Confirm night audit launch?"
+    },
+    "result": {
+      "title": "Night audit completed",
+      "summary": "{{nbNoShow}} reservation(s) marked NO_SHOW, {{nbNuitees}} night(s) generated"
+    },
+    "error": {
+      "title": "Night audit error"
     }
   },
   "inventory": {
     "actions": {
       "save": "Save",
       "cancel": "Cancel",
-      "close": "Close"
+      "close": "Close",
+      "edit": "Edit",
+      "delete": "Delete",
+      "view": "View",
+      "back": "Back"
+    },
+    "detail": {
+      "dateCreation": "Created at",
+      "utilisateur": "User"
     },
     "produit": {
       "list": {
@@ -275,6 +618,11 @@
         "deleteConfirm": "Delete this product?",
         "deleteError": "Unable to delete this product.",
         "saveError": "Unable to save the product."
+      },
+      "detail": {
+        "title": "Product detail",
+        "mouvementsTitle": "Stock movements history",
+        "valeurStock": "Stock value"
       }
     },
     "bonCommande": {
@@ -298,7 +646,10 @@
         "edit": "Edit",
         "cancel": "Cancel",
         "valider": "Validate",
-        "receptionner": "Receive"
+        "receptionner": "Receive",
+        "envoyer": "Send",
+        "confirmer": "Confirm",
+        "annuler": "Cancel"
       },
       "fields": {
         "numeroBon": "Order #",
@@ -340,7 +691,22 @@
       "messages": {
         "createSuccess": "Purchase order created successfully",
         "updateSuccess": "Purchase order updated successfully",
-        "saveError": "Unable to save the purchase order."
+        "saveError": "Unable to save the purchase order.",
+        "envoyerConfirm": "Send this purchase order to the supplier?",
+        "envoyerSuccess": "Purchase order sent",
+        "envoyerError": "Unable to send the purchase order.",
+        "confirmerConfirm": "Confirm the reception of this order?",
+        "confirmerSuccess": "Purchase order confirmed",
+        "confirmerError": "Unable to confirm the purchase order.",
+        "annulerConfirm": "Cancel this purchase order?",
+        "annulerSuccess": "Purchase order cancelled",
+        "annulerError": "Unable to cancel the purchase order."
+      },
+      "detail": {
+        "title": "Purchase order detail",
+        "pourcentageReception": "Reception percentage",
+        "quantiteRecue": "Received quantity",
+        "lignesEmpty": "No line on this purchase order."
       }
     },
     "stock": {
@@ -364,6 +730,320 @@
         "alerte": "Alert",
         "critique": "Critical",
         "unknown": "Unknown"
+      }
+    },
+    "statut": {
+      "actif": "Active",
+      "inactif": "Inactive"
+    },
+    "categories": {
+      "list": {
+        "title": "Product categories",
+        "search": "Search a category",
+        "empty": "No category found",
+        "error": "Unable to load categories.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Categories pagination"
+      },
+      "form": {
+        "titleCreate": "New category",
+        "titleEdit": "Edit category",
+        "loadError": "Unable to load this category."
+      },
+      "actions": {
+        "create": "New category"
+      },
+      "fields": {
+        "codeCategorie": "Code",
+        "nomCategorie": "Name",
+        "description": "Description",
+        "nombreProduits": "Products",
+        "actif": "Active"
+      },
+      "errors": {
+        "codeRequired": "Code is required.",
+        "codePattern": "Code must be 2-10 alphanumeric characters.",
+        "nomRequired": "Name is required."
+      },
+      "messages": {
+        "createSuccess": "Category created successfully",
+        "updateSuccess": "Category updated successfully",
+        "deleteSuccess": "Category deleted",
+        "deleteConfirm": "Delete this category?",
+        "deleteError": "Unable to delete this category.",
+        "saveError": "Unable to save the category."
+      },
+      "detail": {
+        "title": "Category detail"
+      }
+    },
+    "fournisseurs": {
+      "list": {
+        "title": "Suppliers",
+        "search": "Search a supplier",
+        "empty": "No supplier found",
+        "error": "Unable to load suppliers.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Suppliers pagination"
+      },
+      "form": {
+        "titleCreate": "New supplier",
+        "titleEdit": "Edit supplier",
+        "loadError": "Unable to load this supplier."
+      },
+      "actions": {
+        "create": "New supplier"
+      },
+      "fields": {
+        "nomFournisseur": "Name",
+        "contactPrincipal": "Contact",
+        "telephone": "Phone",
+        "email": "Email",
+        "adresse": "Address",
+        "ville": "City",
+        "pays": "Country",
+        "conditionsPaiement": "Payment terms",
+        "actif": "Active"
+      },
+      "errors": {
+        "nomRequired": "Supplier name is required.",
+        "emailInvalid": "Email is invalid."
+      },
+      "messages": {
+        "createSuccess": "Supplier created successfully",
+        "updateSuccess": "Supplier updated successfully",
+        "deleteSuccess": "Supplier deleted",
+        "deleteConfirm": "Delete this supplier?",
+        "deleteError": "Unable to delete this supplier.",
+        "saveError": "Unable to save the supplier."
+      },
+      "detail": {
+        "title": "Supplier detail",
+        "nombreBonsCommande": "Number of purchase orders",
+        "montantTotalCommandes": "Total orders amount"
+      }
+    },
+    "bonsSortie": {
+      "list": {
+        "title": "Stock issue orders",
+        "search": "Search (order #, destination...)",
+        "empty": "No stock issue order found",
+        "error": "Unable to load stock issue orders.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Issue orders pagination",
+        "filterAll": "All statuses"
+      },
+      "form": {
+        "titleCreate": "New stock issue order",
+        "titleEdit": "Edit stock issue order",
+        "loadError": "Unable to load this stock issue order."
+      },
+      "actions": {
+        "create": "New issue order",
+        "valider": "Validate",
+        "livrer": "Deliver",
+        "annuler": "Cancel"
+      },
+      "fields": {
+        "numeroBon": "Order #",
+        "numeroBonAuto": "Auto-generated",
+        "destination": "Destination",
+        "dateSortie": "Issue date",
+        "statut": "Status",
+        "commentaires": "Comments",
+        "nombreLignes": "Lines"
+      },
+      "statut": {
+        "brouillon": "Draft",
+        "valide": "Validated",
+        "livre": "Delivered",
+        "annule": "Cancelled"
+      },
+      "lignes": {
+        "title": "Order lines",
+        "add": "Add line",
+        "remove": "Remove line",
+        "produit": "Product",
+        "quantite": "Quantity",
+        "quantiteServie": "Served quantity",
+        "empty": "No lines. Click \"Add line\"."
+      },
+      "errors": {
+        "destinationRequired": "Destination is required."
+      },
+      "messages": {
+        "createSuccess": "Stock issue order created successfully",
+        "updateSuccess": "Stock issue order updated successfully",
+        "saveError": "Unable to save the stock issue order.",
+        "validerConfirm": "Validate this stock issue order?",
+        "validerSuccess": "Stock issue order validated",
+        "validerError": "Unable to validate the stock issue order.",
+        "livrerConfirm": "Deliver this stock issue order?",
+        "livrerWarning": "This operation generates a stock OUT movement and is irreversible.",
+        "livrerSuccess": "Stock issue order delivered",
+        "livrerError": "Unable to deliver the stock issue order.",
+        "annulerTitle": "Cancel this stock issue order",
+        "annulerMotifLabel": "Cancellation reason",
+        "annulerMotifPlaceholder": "Enter a reason (required)...",
+        "annulerMotifRequired": "Cancellation reason is required.",
+        "annulerSuccess": "Stock issue order cancelled",
+        "annulerError": "Unable to cancel the stock issue order."
+      },
+      "detail": {
+        "title": "Stock issue order detail",
+        "pourcentageLivraison": "Delivery percentage"
+      }
+    },
+    "mouvements": {
+      "list": {
+        "title": "Stock movements",
+        "empty": "No movements found",
+        "error": "Unable to load movements.",
+        "retry": "Retry",
+        "filterAll": "All types",
+        "pagination": "Movements pagination"
+      },
+      "fields": {
+        "dateMouvement": "Date",
+        "produit": "Product",
+        "typeMouvement": "Type",
+        "quantite": "Quantity",
+        "stockAvant": "Stock before",
+        "stockApres": "Stock after",
+        "referenceDocument": "Reference"
+      },
+      "type": {
+        "entree": "In",
+        "sortie": "Out",
+        "ajustement": "Adjustment",
+        "perte": "Loss"
+      }
+    },
+    "services": {
+      "list": {
+        "title": "Hotel services",
+        "search": "Search a service",
+        "empty": "No service found",
+        "error": "Unable to load services.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Services pagination",
+        "filterAllTypes": "All types"
+      },
+      "form": {
+        "titleCreate": "New hotel service",
+        "titleEdit": "Edit service",
+        "loadError": "Unable to load this service."
+      },
+      "actions": {
+        "create": "New service"
+      },
+      "fields": {
+        "codeService": "Code",
+        "nomService": "Name",
+        "description": "Description",
+        "type": "Type",
+        "uniteMesure": "Unit",
+        "prixUnitaire": "Unit price",
+        "estFacturable": "Billable",
+        "actif": "Active"
+      },
+      "unites": {
+        "forfait": "Package",
+        "heure": "Hour",
+        "jour": "Day",
+        "nuit": "Night"
+      },
+      "errors": {
+        "codeRequired": "Code is required.",
+        "codePattern": "Code must be 2-20 alphanumeric characters.",
+        "nomRequired": "Name is required.",
+        "typeRequired": "Type is required."
+      },
+      "messages": {
+        "createSuccess": "Service created successfully",
+        "updateSuccess": "Service updated successfully",
+        "deleteSuccess": "Service deleted",
+        "deleteConfirm": "Delete this service?",
+        "deleteError": "Unable to delete this service.",
+        "saveError": "Unable to save the service."
+      },
+      "detail": {
+        "title": "Hotel service detail"
+      }
+    },
+    "typesServices": {
+      "list": {
+        "title": "Service types",
+        "search": "Search a type",
+        "empty": "No type found",
+        "error": "Unable to load types.",
+        "retry": "Retry",
+        "actions": "Actions",
+        "pagination": "Types pagination"
+      },
+      "form": {
+        "titleCreate": "New service type",
+        "titleEdit": "Edit type",
+        "loadError": "Unable to load this type."
+      },
+      "actions": {
+        "create": "New type"
+      },
+      "fields": {
+        "codeType": "Code",
+        "nomType": "Name",
+        "description": "Description",
+        "nombreServices": "Services",
+        "actif": "Active"
+      },
+      "errors": {
+        "codeRequired": "Code is required.",
+        "codePattern": "Code must be 2-10 alphanumeric characters.",
+        "nomRequired": "Name is required."
+      },
+      "messages": {
+        "createSuccess": "Type created successfully",
+        "updateSuccess": "Type updated successfully",
+        "deleteSuccess": "Type deleted",
+        "deleteConfirm": "Delete this type?",
+        "deleteError": "Unable to delete this type.",
+        "saveError": "Unable to save the type."
+      },
+      "detail": {
+        "title": "Service type detail"
+      }
+    },
+    "bridgeService": {
+      "title": "Add a service to an invoice",
+      "subtitle": "Pick an in-progress reservation and the service to bill.",
+      "actions": {
+        "open": "Add to an invoice",
+        "submit": "Add to invoice"
+      },
+      "fields": {
+        "reservation": "Reservation",
+        "service": "Hotel service",
+        "quantite": "Quantity",
+        "prixUnitaire": "Unit price",
+        "libelle": "Label",
+        "libellePlaceholder": "Label shown on invoice (leave empty to use service name)",
+        "datePrestation": "Service date",
+        "optional": "optional"
+      },
+      "errors": {
+        "reservationRequired": "Reservation is required.",
+        "serviceRequired": "Service is required.",
+        "quantiteMin": "Quantity must be greater than 0."
+      },
+      "messages": {
+        "success": "Service added to invoice",
+        "error": "Unable to add the service to the invoice.",
+        "loadError": "Unable to load initial data.",
+        "noReservations": "No reservation in progress."
       }
     }
   },
@@ -503,6 +1183,7 @@
         "title": "Active reservations",
         "noActive": "No active reservation for this customer.",
         "statut": "Status",
+        "chambre": "Room",
         "clear": "Unselect reservation"
       },
       "articles": {
@@ -524,7 +1205,11 @@
         "remove": "Remove line",
         "clear": "Clear cart",
         "checkout": "Cash checkout",
-        "reportChambre": "Charge to room"
+        "reportChambre": "Charge to room",
+        "checkoutSuccess": "Order checked out",
+        "orderNumber": "Order #",
+        "invoiceNumber": "Invoice #",
+        "newOrder": "New order"
       },
       "payment": {
         "title": "Checkout",
@@ -567,7 +1252,10 @@
         "invalidPayload": "The order is incomplete.",
         "encaissement": "Checkout failed. Please retry.",
         "reportChambre": "Charging to room failed.",
-        "reservationRequired": "Select a reservation first."
+        "reservationRequired": "Select a reservation first.",
+        "ticketCaisse": "Unable to print cash receipt.",
+        "ticketCuisine": "Unable to print kitchen ticket.",
+        "ticketDecode": "Unable to display ticket (invalid PDF)."
       },
       "messages": {
         "encaissementSuccess": "Order checked out successfully.",
@@ -614,7 +1302,8 @@
         "view": "View detail",
         "emettre": "Issue",
         "annuler": "Cancel invoice",
-        "encaisser": "Collect payment"
+        "encaisser": "Collect payment",
+        "downloadPdf": "Download PDF"
       },
       "fields": {
         "numeroFacture": "Invoice #",
@@ -685,7 +1374,8 @@
         "emettreError": "Unable to issue the invoice.",
         "cancelConfirm": "Cancel this invoice?",
         "cancelSuccess": "Invoice cancelled",
-        "cancelError": "Unable to cancel the invoice."
+        "cancelError": "Unable to cancel the invoice.",
+        "pdfError": "Unable to download the invoice PDF."
       }
     },
     "paiement": {
@@ -1009,6 +1699,102 @@
       "empty": "No active staff available."
     }
   },
+  "profile": {
+    "tabs": {
+      "profile": "Profile",
+      "security": "Security",
+      "preferences": "Preferences"
+    },
+    "sections": {
+      "personalInfo": "Personal information",
+      "changePassword": "Change password",
+      "preferences": "Preferences"
+    },
+    "fields": {
+      "prenom": "First name",
+      "prenomPlaceholder": "Your first name",
+      "nom": "Last name",
+      "nomPlaceholder": "Your last name",
+      "email": "Email address",
+      "emailReadonlyHint": "Your email address is managed by your administrator.",
+      "telephone": "Phone",
+      "poste": "Position",
+      "postePlaceholder": "Your position",
+      "currentPassword": "Current password",
+      "currentPasswordPlaceholder": "Enter your current password",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "Enter your new password",
+      "newPasswordHint": "Password must be at least 8 characters.",
+      "confirmPassword": "Confirm new password",
+      "confirmPasswordPlaceholder": "Confirm your new password"
+    },
+    "actions": {
+      "save": "Save",
+      "saving": "Saving...",
+      "cancel": "Cancel",
+      "changePassword": "Change password",
+      "passwordSaving": "Updating...",
+      "togglePassword": "Show / hide password"
+    },
+    "avatar": {
+      "change": "Change photo",
+      "delete": "Delete photo",
+      "deleteConfirm": "Delete your profile photo?",
+      "uploadSuccess": "Avatar updated",
+      "uploadError": "Unable to upload the avatar.",
+      "deleteSuccess": "Avatar deleted",
+      "deleteError": "Unable to delete the avatar.",
+      "errors": {
+        "type": "Unsupported format. Use JPG, PNG or WebP.",
+        "size": "File too large (2 MB max)."
+      }
+    },
+    "security": {
+      "tipsTitle": "Security tips",
+      "tip1": "At least 8 characters",
+      "tip2": "Upper and lower case letters",
+      "tip3": "At least one digit",
+      "tip4": "Special characters recommended",
+      "tip5": "Avoid common words"
+    },
+    "preferences": {
+      "language": "Interface language",
+      "session": "Session information",
+      "lastLogin": "Last login",
+      "role": "Role",
+      "unavailable": "Not available"
+    },
+    "lastConnection": "Last login",
+    "messages": {
+      "loadError": "Unable to load your profile.",
+      "updateSuccess": "Profile updated successfully",
+      "updateError": "Unable to update the profile.",
+      "passwordSuccess": "Password changed successfully",
+      "passwordError": "Unable to change the password."
+    },
+    "errors": {
+      "required": "This field is required",
+      "minLength": "Not enough characters",
+      "maxLength": "Too many characters",
+      "email": "Invalid email format",
+      "passwordMismatch": "Passwords do not match",
+      "invalid": "Invalid field"
+    }
+  },
+  "hotelAdmin": {
+    "users": {
+      "list": {
+        "title": "Users of my hotel",
+        "you": "You"
+      },
+      "fields": {
+        "poste": "Position"
+      },
+      "form": {
+        "roleHint": "SUPERADMIN and ADMIN roles cannot be assigned from this interface."
+      }
+    }
+  },
   "admin": {
     "title": "Administration",
     "subtitle": "Centralized management of hotels, users, roles and settings",
@@ -1254,6 +2040,543 @@
     },
     "server": {
       "unavailable": "Server temporarily unavailable."
+    },
+    "reservation": {
+      "chambre": {
+        "conflict": "The room is already booked for the requested date range."
+      },
+      "checkin": {
+        "invalidStatus": "This reservation is not in a state that allows check-in.",
+        "tooEarly": "Check-in is only possible from the arrival date onwards."
+      },
+      "checkout": {
+        "invalidStatus": "This reservation cannot be checked out (ARRIVEE status required)."
+      },
+      "cancel": {
+        "alreadyTerminated": "This reservation has already departed or been cancelled."
+      },
+      "update": {
+        "terminated": "This reservation is terminated and can no longer be edited."
+      },
+      "dates": {
+        "invalid": "Departure date must be after arrival date."
+      },
+      "notFound": "Reservation not found.",
+      "changerChambre": {
+        "terminated": "This reservation is terminated or cancelled, room change forbidden.",
+        "identique": "You must choose a different room.",
+        "ancienneChambre": {
+          "notFound": "Previous room not found on this reservation.",
+          "required": "Previous room is required (the reservation has multiple rooms)."
+        },
+        "aucuneChambre": "No room allocated to this reservation.",
+        "nouvelleChambre": {
+          "required": "The new room is required."
+        },
+        "raison": {
+          "tooLong": "Reason is too long (500 characters max)."
+        }
+      }
+    },
+    "tarifChambre": {
+      "calcul": {
+        "dates": {
+          "invalid": "Invalid dates for rate computation.",
+          "required": "Computation dates are required."
+        }
+      },
+      "dateFin": {
+        "beforeDebut": "End date must be after start date."
+      }
+    },
+    "facture": {
+      "reservation": {
+        "dejaFacturee": "This reservation already has an invoice.",
+        "aucuneNuitee": "No night to invoice for this reservation."
+      },
+      "transfert": {
+        "payee": "The source invoice is already paid, transfer not possible.",
+        "factureSourceTerminated": "The source invoice is closed or cancelled.",
+        "factureCibleTerminated": "The target invoice is closed or cancelled."
+      },
+      "notFound": "Invoice not found.",
+      "pdfFailed": "Failed to generate the PDF."
+    },
+    "nuitee": {
+      "facture": {
+        "payee": "One of the nights is linked to an already-paid invoice."
+      },
+      "statut": {
+        "closed": "This night is locked (invoice line closed)."
+      }
+    },
+    "checkoutExpress": {
+      "statut": {
+        "invalid": "Reservation is not in a state allowing express check-out."
+      },
+      "societe": {
+        "required": "A company is required for express check-out."
+      }
+    },
+    "paiement": {
+      "global": {
+        "reservationRequired": "Reservation is required for global payment.",
+        "aucuneLigne": "No invoice line to settle for this reservation.",
+        "clientRequired": "Main client is required for global payment.",
+        "montantInvalid": "Invalid payment amount."
+      }
+    },
+    "client": {
+      "notFound": "Client not found.",
+      "inactif": "This client is inactive and cannot be assigned to a reservation."
+    },
+    "societe": {
+      "notFound": "Company not found.",
+      "inactive": "This company is inactive and cannot be assigned to a reservation."
+    },
+    "user": {
+      "unknown": "Unknown user.",
+      "notFound": "User not found.",
+      "username": {
+        "exists": "This username is already taken."
+      },
+      "email": {
+        "exists": "This email address is already in use."
+      },
+      "role": {
+        "escalation": {
+          "forbidden": "You are not allowed to assign this role."
+        }
+      },
+      "self": {
+        "action": {
+          "forbidden": "You cannot perform this action on your own account."
+        }
+      },
+      "password": {
+        "invalid": "Current password is incorrect.",
+        "mismatch": "New password and confirmation do not match.",
+        "unchanged": "New password must be different from the previous one.",
+        "weak": "Password does not meet the security policy.",
+        "wrong": "Current password is incorrect."
+      },
+      "avatar": {
+        "tooLarge": "File too large (max 2 MB).",
+        "invalidType": "Unsupported file format (JPG, PNG or WebP only)."
+      }
+    },
+    "exercice": {
+      "cloture": "Operation rejected: the fiscal year is closed or being closed.",
+      "ouvert": "The fiscal year must be open for this operation.",
+      "notFound": "Fiscal year not found.",
+      "alreadyClosed": "This fiscal year is already closed."
+    },
+    "ecriture": {
+      "unbalanced": "Unbalanced entry — total debits must equal total credits.",
+      "unbalancedDetail": "Tolerance: 0.01 MRU.",
+      "notValidated": "The entry is not validated.",
+      "alreadyContrePassed": "This entry has already been reversed.",
+      "minLines": "An entry must have at least 2 lines.",
+      "motifRequired": "A reversal reason is required (min. 3 characters).",
+      "compteUnknown": "The referenced account does not exist in the chart of accounts.",
+      "compteNotUsable": "This account is not a movement account.",
+      "exerciceClosed": "The fiscal year containing the accounting date is not open.",
+      "journalInactive": "The referenced journal is not active.",
+      "formInvalid": "The form contains errors.",
+      "contrepasserFailed": "Reversal failed.",
+      "createFailed": "Entry creation failed."
+    },
+    "journal": {
+      "notFound": "Journal not found.",
+      "codeRequired": "Journal code is required.",
+      "codeFormat": "Code must be 1-5 uppercase alphanumeric characters.",
+      "libelleRequired": "Label is required.",
+      "codeExists": "A journal with this code already exists.",
+      "toggleFailed": "Failed to toggle journal status.",
+      "createFailed": "Journal creation failed.",
+      "updateFailed": "Journal update failed."
+    },
+    "mapping": {
+      "notFound": "Mapping not found.",
+      "compteCodeRequired": "Account code is required.",
+      "compteNotFound": "The referenced account does not exist in the chart of accounts.",
+      "compteNotUsable": "The referenced account is not a movement account.",
+      "updateFailed": "Mapping update failed."
+    },
+    "plancomptable": {
+      "notFound": "Account not found.",
+      "notUsable": "This account is not a movement account.",
+      "archived": "This account is archived."
+    },
+    "tva": {
+      "config": {
+        "notFound": "VAT configuration not found."
+      },
+      "taux": {
+        "negatif": "Rate must be positive.",
+        "trop": {
+          "eleve": "Rate cannot exceed 99.99%."
+        },
+        "invalid": "Rate must be between 0 and 99.99."
+      },
+      "updateFailed": "Failed to update VAT configuration."
+    },
+    "declaration": {
+      "notFound": "VAT declaration not found.",
+      "periodeInvalid": "End date must be greater than or equal to start date.",
+      "alreadyValidated": "This declaration is already validated.",
+      "validerFailed": "Failed to validate the declaration.",
+      "createFailed": "Failed to create the declaration."
+    },
+    "etat": {
+      "fetchFailed": "Failed to generate the report.",
+      "exportFailed": "Export failed.",
+      "exerciceRequired": "Fiscal year is required.",
+      "datesInvalid": "Provided dates are invalid."
+    },
+    "ligneEcriture": {
+      "montantPositif": "Amount must be strictly positive."
+    },
+    "unknown": "An unexpected error occurred."
+  },
+  "comptabilite": {
+    "exercice": {
+      "list": {
+        "title": "Fiscal years",
+        "empty": "No fiscal year found.",
+        "error": "Unable to load fiscal years."
+      },
+      "fields": {
+        "code": "Code",
+        "dateDebut": "Start",
+        "dateFin": "End",
+        "statut": "Status",
+        "dateCloture": "Closure date",
+        "clotureBy": "Closed by"
+      },
+      "statut": {
+        "OUVERT": "Open",
+        "EN_CLOTURE": "Closing",
+        "CLOTURE": "Closed"
+      },
+      "actions": {
+        "cloturer": "Close"
+      },
+      "messages": {
+        "cloturerConfirm": "Close this fiscal year?",
+        "cloturerWarning": "Irreversible action — no further entries will be allowed.",
+        "cloturerSuccess": "Fiscal year closed successfully."
+      }
+    },
+    "planComptable": {
+      "list": {
+        "title": "Chart of Accounts",
+        "empty": "No account found.",
+        "error": "Unable to load the chart of accounts.",
+        "filterAllClasses": "All classes"
+      },
+      "fields": {
+        "compteCode": "Code",
+        "libelle": "Label",
+        "classe": "Class",
+        "nature": "Nature",
+        "sensNormal": "Normal direction",
+        "utilisable": "Usable",
+        "statut": "Status"
+      },
+      "classe": "Class",
+      "nature": {
+        "ACTIF": "Asset",
+        "PASSIF": "Liability",
+        "CHARGE": "Expense",
+        "PRODUIT": "Income",
+        "MIXTE": "Mixed"
+      },
+      "sens": {
+        "DEBITEUR": "Debit",
+        "CREDITEUR": "Credit",
+        "MIXTE": "Mixed"
+      },
+      "statut": {
+        "ACTIF": "Active",
+        "ARCHIVE": "Archived"
+      }
+    },
+    "mapping": {
+      "list": {
+        "title": "Account mapping",
+        "subtitle": "Map each event type to a chart-of-accounts account.",
+        "empty": "No mapping available.",
+        "error": "Unable to load mappings."
+      },
+      "fields": {
+        "typeEvenement": "Event type",
+        "compteCode": "Account code",
+        "compteLibelle": "Account label",
+        "actif": "Active",
+        "defaut": "Source"
+      },
+      "defaut": "Default",
+      "custom": "Custom",
+      "type": {
+        "VENTE_NUITEE_HEBERGEMENT": "Accommodation night sale",
+        "VENTE_RESTAURATION": "Restaurant sale",
+        "VENTE_BAR": "Bar sale",
+        "VENTE_SERVICE_CHAMBRE": "Room service sale",
+        "VENTE_BLANCHISSERIE": "Laundry sale",
+        "VENTE_AUTRE_SERVICE": "Other service sale",
+        "CLIENT_PARTICULIER": "Individual client",
+        "CLIENT_SOCIETE": "Corporate client",
+        "CLIENT_DOUTEUX": "Doubtful client",
+        "FOURNISSEUR_ORDINAIRE": "Ordinary supplier",
+        "TRESORERIE_ESPECES": "Cash treasury",
+        "TRESORERIE_BANQUE": "Bank treasury",
+        "TRESORERIE_CHEQUE": "Cheque treasury",
+        "TRESORERIE_CARTE_BANCAIRE": "Card treasury",
+        "TRESORERIE_BANKILY": "Treasury — Bankily",
+        "TRESORERIE_MASRIVI": "Treasury — Masrivi",
+        "TRESORERIE_SEDAD": "Treasury — Sedad",
+        "TRESORERIE_CLICK": "Treasury — Click",
+        "TRESORERIE_AMANETY": "Treasury — Amanety",
+        "TRESORERIE_BFI_CASH": "Treasury — BFI Cash",
+        "TRESORERIE_MOOV_MONEY": "Treasury — Moov Money",
+        "TRESORERIE_GAZAPAY": "Treasury — Gazapay",
+        "TRESORERIE_VIREMENT": "Wire transfer treasury",
+        "TVA_COLLECTEE": "Collected VAT",
+        "TVA_DEDUCTIBLE": "Deductible VAT",
+        "TVA_A_DECAISSER": "VAT payable",
+        "REDUCTION_ACCORDEE": "Discount granted",
+        "ACHAT_MARCHANDISES": "Goods purchase",
+        "STOCK_MARCHANDISES": "Goods stock"
+      },
+      "messages": {
+        "updateSuccess": "Mapping updated."
+      }
+    },
+    "journal": {
+      "list": {
+        "title": "Accounting journals",
+        "empty": "No journal found.",
+        "error": "Unable to load journals."
+      },
+      "fields": {
+        "code": "Code",
+        "libelle": "Label",
+        "type": "Type",
+        "actif": "Active"
+      },
+      "actif": "Active",
+      "inactif": "Inactive",
+      "type": {
+        "VENTE": "Sales",
+        "ACHAT": "Purchases",
+        "TRESORERIE": "Treasury",
+        "OPERATION_DIVERSE": "Miscellaneous",
+        "AVOIR": "Credit notes"
+      },
+      "actions": {
+        "create": "New journal",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate"
+      },
+      "form": {
+        "titleCreate": "New journal",
+        "titleEdit": "Edit journal"
+      },
+      "messages": {
+        "createSuccess": "Journal created.",
+        "updateSuccess": "Journal updated.",
+        "toggleSuccess": "Journal status changed.",
+        "deactivateConfirm": "Deactivate this journal?",
+        "reactivateConfirm": "Reactivate this journal?",
+        "loadError": "Unable to load journal."
+      }
+    },
+    "ecriture": {
+      "list": {
+        "title": "Accounting entries",
+        "empty": "No entry found.",
+        "error": "Unable to load entries.",
+        "filterAll": "All statuses"
+      },
+      "fields": {
+        "numero": "Number",
+        "dateComptable": "Accounting date",
+        "datePiece": "Document date",
+        "journal": "Journal",
+        "exercice": "Fiscal year",
+        "libelle": "Label",
+        "reference": "Reference",
+        "statut": "Status",
+        "totalDebit": "Total debit",
+        "totalCredit": "Total credit",
+        "motif": "Reason",
+        "motifPlaceholder": "Detailed reason for the reversal...",
+        "contrePasseePar": "Reversed by",
+        "ecritureSource": "Source entry"
+      },
+      "statut": {
+        "BROUILLON": "Draft",
+        "VALIDEE": "Validated",
+        "CONTRE_PASSEE": "Reversed"
+      },
+      "sens": {
+        "DEBIT": "Debit",
+        "CREDIT": "Credit"
+      },
+      "actions": {
+        "create": "New entry",
+        "contrepasser": "Reverse"
+      },
+      "lignes": {
+        "title": "Entry lines",
+        "compteCode": "Account",
+        "libelle": "Label",
+        "sens": "Direction",
+        "debit": "Debit",
+        "credit": "Credit",
+        "montant": "Amount",
+        "auxiliaire": "Auxiliary",
+        "add": "Add line"
+      },
+      "form": {
+        "title": "New accounting entry"
+      },
+      "detail": {
+        "title": "Entry detail",
+        "notFound": "Entry not found.",
+        "error": "Unable to load entry."
+      },
+      "messages": {
+        "createSuccess": "Entry saved.",
+        "contrepasserConfirm": "Reverse this entry?",
+        "contrepasserWarning": "A new reversed entry will be generated to cancel this one.",
+        "contrepasserSuccess": "Entry reversed."
+      }
+    },
+    "tvaConfig": {
+      "list": {
+        "title": "VAT configuration",
+        "subtitle": "Rate by type of hotel service.",
+        "empty": "No VAT configuration available.",
+        "error": "Unable to load VAT configurations."
+      },
+      "fields": {
+        "typeService": "Service type",
+        "taux": "Rate",
+        "actif": "Active",
+        "libelle": "Label",
+        "defaut": "Source"
+      },
+      "defaut": "Default",
+      "custom": "Custom",
+      "type": {
+        "HEBERGEMENT_NUITEE": "Accommodation (nights)",
+        "RESTAURATION": "Restaurant",
+        "BAR": "Bar",
+        "SERVICE_CHAMBRE": "Room service",
+        "BLANCHISSERIE": "Laundry",
+        "AUTRE_SERVICE_HOTELIER": "Other hotel service",
+        "ACHAT_MARCHANDISES": "Goods purchases"
+      },
+      "messages": {
+        "updateSuccess": "VAT configuration updated."
+      }
+    },
+    "declarationTva": {
+      "list": {
+        "title": "VAT declarations",
+        "empty": "No declaration found.",
+        "error": "Unable to load declarations."
+      },
+      "fields": {
+        "periode": "Period",
+        "dateDebut": "Start",
+        "dateFin": "End",
+        "totalCollectee": "Collected",
+        "totalDeductible": "Deductible",
+        "totalADecaisser": "Payable",
+        "statut": "Status",
+        "valideePar": "Validated by"
+      },
+      "statut": {
+        "BROUILLON": "Draft",
+        "VALIDEE": "Validated"
+      },
+      "actions": {
+        "create": "New declaration",
+        "valider": "Validate"
+      },
+      "form": {
+        "title": "New VAT declaration",
+        "info": "The system will automatically compute collected / deductible / payable VAT totals over the period and create a draft declaration."
+      },
+      "messages": {
+        "createSuccess": "Declaration created.",
+        "validerConfirm": "Validate this VAT declaration?",
+        "validerWarning": "A liquidation entry will be generated automatically. This action is irreversible.",
+        "validerSuccess": "Declaration validated."
+      }
+    },
+    "balance": {
+      "title": "Trial balance",
+      "empty": "No data for selected filters.",
+      "exerciceCode": "Fiscal year",
+      "periode": "Period",
+      "totalDebit": "Total debit",
+      "totalCredit": "Total credit",
+      "soldeDebiteur": "Debit balance",
+      "soldeCrediteur": "Credit balance"
+    },
+    "grandLivre": {
+      "title": "General ledger",
+      "empty": "No entry for selected filters.",
+      "reportInitial": "Opening balance",
+      "soldeFinal": "Closing balance",
+      "lignes": {
+        "date": "Date",
+        "numero": "Entry #",
+        "journal": "Journal",
+        "libelle": "Entry label",
+        "reference": "Reference",
+        "soldeProgressif": "Running balance"
+      }
+    },
+    "journalEdition": {
+      "title": "Journal print",
+      "empty": "No entry for selected filters."
+    },
+    "bilan": {
+      "title": "Balance sheet",
+      "dateArrete": "Cut-off date",
+      "actif": "ASSETS",
+      "passif": "LIABILITIES",
+      "totalActif": "Total assets",
+      "totalPassif": "Total liabilities",
+      "resultatNet": "Net result"
+    },
+    "compteResultat": {
+      "title": "Income statement",
+      "produits": "REVENUES",
+      "charges": "EXPENSES",
+      "totalProduits": "Total revenues",
+      "totalCharges": "Total expenses",
+      "margeBrute": "Gross margin",
+      "resultatNet": "Net result"
+    },
+    "etats": {
+      "fields": {
+        "exerciceId": "Fiscal year ID",
+        "dateDebut": "Start date",
+        "dateFin": "End date",
+        "classe": "Class",
+        "classeAll": "All",
+        "compteCode": "Account code",
+        "journalId": "Journal"
+      },
+      "actions": {
+        "generate": "Generate"
+      }
     }
   }
 }

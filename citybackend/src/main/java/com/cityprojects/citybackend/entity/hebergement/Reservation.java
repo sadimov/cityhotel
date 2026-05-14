@@ -122,6 +122,10 @@ public class Reservation extends AuditableEntity implements TenantAware {
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "statut", nullable = false, length = 20)
+    // Statut initial : CONFIRMEE = "réservation créée, non encore arrivée".
+    // Côté grille calendar, ce statut est affiché en rouge (cf. mapping front
+    // STATUT_RESERVATION_CHIP_MAP — réservation non confirmée par check-in).
+    // Workflow : CONFIRMEE -> ARRIVEE (check-in) -> PARTIE (check-out).
     private StatutReservation statut = StatutReservation.CONFIRMEE;
 
     @Size(max = 100)
@@ -149,6 +153,16 @@ public class Reservation extends AuditableEntity implements TenantAware {
      */
     @Column(name = "facture_id")
     private Long factureId;
+
+    /**
+     * Canal de distribution / source de la reservation (Tour 41, R-HEB-004).
+     * Champ libre VARCHAR(50) ; valeurs indicatives : DIRECT_HOTEL, WEBSITE,
+     * BOOKING_COM, EXPEDIA, AIRBNB, AGENCE_VOYAGE, WALK_IN, TELEPHONE, EMAIL, AUTRE.
+     * Nullable ; legacy = NULL signifie source non renseignee.
+     */
+    @Size(max = 50)
+    @Column(name = "source_canal", length = 50)
+    private String sourceCanal;
 
     /** Constructeur JPA. */
     public Reservation() {
@@ -302,5 +316,13 @@ public class Reservation extends AuditableEntity implements TenantAware {
 
     public void setFactureId(Long factureId) {
         this.factureId = factureId;
+    }
+
+    public String getSourceCanal() {
+        return sourceCanal;
+    }
+
+    public void setSourceCanal(String sourceCanal) {
+        this.sourceCanal = sourceCanal;
     }
 }

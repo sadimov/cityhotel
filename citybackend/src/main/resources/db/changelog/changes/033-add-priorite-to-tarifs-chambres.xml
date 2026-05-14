@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 44 Phase 1 : ajout colonne 'priorite' sur hebergement.tarifs_chambres.
+
+    Permet de departager plusieurs tarifs actifs applicables a la meme date
+    (ex. "haute saison" prio=10, "promotion 1er mai" prio=100). Le service
+    TarifChambreServiceImpl trie ORDER BY priorite DESC et prend le premier.
+
+    Defaut 0 : tarifs existants restent comparables (selectionnes par
+    dateDebut DESC en cas d'egalite).
+    ============================================================================
+    -->
+
+    <changeSet id="033-add-priorite-tarifs-chambres" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="hebergement" tableName="tarifs_chambres" columnName="priorite"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="hebergement" tableName="tarifs_chambres">
+            <column name="priorite" type="INT" defaultValueNumeric="0">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <!-- Backfill explicite des lignes existantes a 0. -->
+        <update schemaName="hebergement" tableName="tarifs_chambres">
+            <column name="priorite" valueNumeric="0"/>
+            <where>priorite IS NULL</where>
+        </update>
+
+        <addNotNullConstraint
+                schemaName="hebergement"
+                tableName="tarifs_chambres"
+                columnName="priorite"
+                defaultNullValue="0"
+                columnDataType="INT"/>
+
+        <createIndex schemaName="hebergement" tableName="tarifs_chambres"
+                     indexName="ix_tarifs_chambres_type_priorite_active">
+            <column name="hotel_id"/>
+            <column name="type_id"/>
+            <column name="actif"/>
+            <column name="priorite"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="hebergement" tableName="tarifs_chambres"
+                       indexName="ix_tarifs_chambres_type_priorite_active"/>
+            <dropColumn schemaName="hebergement" tableName="tarifs_chambres" columnName="priorite"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

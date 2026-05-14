@@ -77,9 +77,25 @@ public class BonSortie extends AuditableEntity implements TenantAware {
     @Column(name = "commentaires", columnDefinition = "TEXT")
     private String commentaires;
 
+    /**
+     * Motif d'annulation (Tour 51bis). Renseigne uniquement quand
+     * {@link #statut} = {@link StatutBonSortie#ANNULE}. Obligatoire au DTO
+     * d'annulation pour audit inventaire / contradictoire stock.
+     */
+    @Size(max = 500)
+    @Column(name = "motif_annulation", length = 500)
+    private String motifAnnulation;
+
     @NotNull
     @Column(name = "user_id", nullable = false)
     private Long userId;
+
+    /**
+     * Id de l'ecriture comptable OD generee a la livraison du BS (Bloc B3).
+     * Nullable tant que le BS n'est pas livre (BROUILLON / VALIDE / ANNULE).
+     */
+    @Column(name = "ecriture_sortie_id")
+    private Long ecritureSortieId;
 
     /** Constructeur JPA - initialise dateSortie a aujourd'hui. */
     public BonSortie() {
@@ -144,11 +160,27 @@ public class BonSortie extends AuditableEntity implements TenantAware {
         this.commentaires = commentaires;
     }
 
+    public String getMotifAnnulation() {
+        return motifAnnulation;
+    }
+
+    public void setMotifAnnulation(String motifAnnulation) {
+        this.motifAnnulation = motifAnnulation;
+    }
+
     public Long getUserId() {
         return userId;
     }
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getEcritureSortieId() {
+        return ecritureSortieId;
+    }
+
+    public void setEcritureSortieId(Long ecritureSortieId) {
+        this.ecritureSortieId = ecritureSortieId;
     }
 }

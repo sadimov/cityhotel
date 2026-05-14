@@ -1,0 +1,93 @@
+<section class="declarations-tva-list">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.declarationTva.list.title' | translate }}</h2>
+    <button type="button" class="btn btn-primary" (click)="createNew()">
+      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+      {{ 'comptabilite.declarationTva.actions.create' | translate }}
+    </button>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'comptabilite.declarationTva.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">
+      {{ 'comptabilite.declarationTva.list.empty' | translate }}
+    </div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'comptabilite.declarationTva.fields.periode' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.declarationTva.fields.totalCollectee' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.declarationTva.fields.totalDeductible' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.declarationTva.fields.totalADecaisser' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.declarationTva.fields.statut' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.declarationTva.fields.valideePar' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'common.actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (d of declarations; track d.id) {
+            <tr>
+              <td><code>#{{ d.id }}</code></td>
+              <td>{{ d.dateDebut }} → {{ d.dateFin }}</td>
+              <td class="text-end">{{ d.totalTvaCollectee | number:'1.2-2' }}</td>
+              <td class="text-end">{{ d.totalTvaDeductible | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold">{{ d.totalTvaADecaisser | number:'1.2-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeMap[d.statut]">
+                  {{ statutKey(d.statut) | translate }}
+                </span>
+              </td>
+              <td>{{ d.valideePar || '-' }}</td>
+              <td class="text-end">
+                @if (d.statut === StatutDeclarationTva.BROUILLON) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-success"
+                    (click)="valider(d)"
+                    [disabled]="validatingId === d.id"
+                  >
+                    <i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    {{ 'comptabilite.declarationTva.actions.valider' | translate }}
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav>
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

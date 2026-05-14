@@ -1,0 +1,130 @@
+<section class="bon-commande-detail">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'inventory.bonCommande.detail.title' | translate }}</h2>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.back' | translate }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="edit()" [disabled]="!entity">
+        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.edit' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.bonCommande.form.loadError' | translate }}
+    </div>
+  } @else if (entity) {
+    <div class="card shadow-sm mb-3">
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.numeroBon' | translate }}</dt>
+          <dd class="col-sm-8"><code>{{ entity.numeroBon }}</code></dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.fournisseur' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.nomFournisseur || ('#' + entity.fournisseurId) }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.dateCommande' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.dateCommande }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.dateLivraisonPrevue' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.dateLivraisonPrevue || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.dateLivraisonReelle' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.dateLivraisonReelle || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.statut' | translate }}</dt>
+          <dd class="col-sm-8">
+            <span class="badge" [ngClass]="badgeClass(entity.statut)">
+              {{ statutKey(entity.statut) | translate }}
+            </span>
+          </dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.montantTotal' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.montantTotal | number:'1.2-2' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.bonCommande.fields.commentaires' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.commentaires || '-' }}</dd>
+
+          @if (entity.nomUtilisateur) {
+            <dt class="col-sm-4">{{ 'inventory.detail.utilisateur' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.nomUtilisateur }}</dd>
+          }
+
+          @if (entity.dateCreation) {
+            <dt class="col-sm-4">{{ 'inventory.detail.dateCreation' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.dateCreation }}</dd>
+          }
+
+          @if (entity.pourcentageReception != null) {
+            <dt class="col-sm-4">{{ 'inventory.bonCommande.detail.pourcentageReception' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.pourcentageReception | number:'1.0-2' }} %</dd>
+          }
+        </dl>
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">
+        <h3 class="h6 m-0">{{ 'inventory.bonCommande.lignes.title' | translate }}</h3>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'inventory.bonCommande.lignes.produit' | translate }}</th>
+                <th class="text-end">{{ 'inventory.bonCommande.lignes.quantite' | translate }}</th>
+                <th class="text-end">{{ 'inventory.bonCommande.detail.quantiteRecue' | translate }}</th>
+                <th class="text-end">{{ 'inventory.bonCommande.lignes.prixUnitaire' | translate }}</th>
+                <th class="text-end">{{ 'inventory.bonCommande.lignes.sousTotal' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of entity.lignes ?? []; track l.ligneId) {
+                <tr>
+                  <td>
+                    @if (l.nomProduit) {
+                      {{ l.nomProduit }}
+                      @if (l.codeProduit) {
+                        <small class="text-muted">({{ l.codeProduit }})</small>
+                      }
+                    } @else {
+                      <code>#{{ l.produitId }}</code>
+                    }
+                  </td>
+                  <td class="text-end">{{ l.quantiteCommandee | number:'1.0-2' }}</td>
+                  <td class="text-end">{{ (l.quantiteRecue ?? 0) | number:'1.0-2' }}</td>
+                  <td class="text-end">{{ l.prixUnitaire | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ (l.sousTotal ?? (l.quantiteCommandee * l.prixUnitaire)) | number:'1.2-2' }}</td>
+                </tr>
+              }
+              @if ((entity.lignes ?? []).length === 0) {
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-3">
+                    {{ 'inventory.bonCommande.detail.lignesEmpty' | translate }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot>
+              <tr>
+                <th colspan="4" class="text-end">{{ 'inventory.bonCommande.lignes.total' | translate }}</th>
+                <th class="text-end">{{ entity.montantTotal | number:'1.2-2' }}</th>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+</section>

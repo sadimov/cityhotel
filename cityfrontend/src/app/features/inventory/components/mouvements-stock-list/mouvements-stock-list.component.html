@@ -1,0 +1,82 @@
+<section class="mouvements-stock-list">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'inventory.mouvements.list.title' | translate }}</h2>
+  </header>
+
+  <div class="row g-2 mb-3">
+    <div class="col-md-3">
+      <select class="form-select" [value]="selectedType" (change)="onTypeChange($any($event.target).value)">
+        <option value="">{{ 'inventory.mouvements.list.filterAll' | translate }}</option>
+        @for (t of types; track t) {
+          <option [value]="t">{{ ('inventory.mouvements.type.' + t) | translate }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.mouvements.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">{{ 'inventory.mouvements.list.retry' | translate }}</button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">{{ 'inventory.mouvements.list.empty' | translate }}</div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'inventory.mouvements.fields.dateMouvement' | translate }}</th>
+            <th>{{ 'inventory.mouvements.fields.produit' | translate }}</th>
+            <th>{{ 'inventory.mouvements.fields.typeMouvement' | translate }}</th>
+            <th class="text-end">{{ 'inventory.mouvements.fields.quantite' | translate }}</th>
+            <th class="text-end">{{ 'inventory.mouvements.fields.stockAvant' | translate }}</th>
+            <th class="text-end">{{ 'inventory.mouvements.fields.stockApres' | translate }}</th>
+            <th>{{ 'inventory.mouvements.fields.referenceDocument' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (m of page.content; track m.mouvementId) {
+            <tr>
+              <td>{{ m.dateMouvement }}</td>
+              <td>{{ m.nomProduit || m.produitId }}</td>
+              <td>
+                <span class="badge" [ngClass]="badgeClass(m.typeMouvement)">
+                  {{ ('inventory.mouvements.type.' + m.typeMouvement) | translate }}
+                </span>
+              </td>
+              <td class="text-end">{{ m.quantite | number:'1.0-2' }}</td>
+              <td class="text-end">{{ m.stockAvant | number:'1.0-2' }}</td>
+              <td class="text-end">{{ m.stockApres | number:'1.0-2' }}</td>
+              <td>{{ m.referenceDocument || '-' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav [attr.aria-label]="'inventory.mouvements.list.pagination' | translate">
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

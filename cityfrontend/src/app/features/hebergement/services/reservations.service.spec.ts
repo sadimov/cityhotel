@@ -112,6 +112,16 @@ describe('ReservationsService', () => {
     req.flush({ success: true, data: {} as Reservation });
   });
 
+  it('checkOutExpress() POST /check-out-express avec body { societeId, clientId } (Tour 45)', () => {
+    service.checkOutExpress(42, { societeId: 5, clientId: 7 }).subscribe();
+    const req = httpMock.expectOne(
+      `${environment.apiUrl}/api/hebergement/reservations/42/check-out-express`,
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ societeId: 5, clientId: 7 });
+    req.flush({ success: true, data: {} as Reservation });
+  });
+
   it('rechercherDisponibilite() POST avec body { dateDebut, dateFin, nbPersonnes }', () => {
     service
       .rechercherDisponibilite({

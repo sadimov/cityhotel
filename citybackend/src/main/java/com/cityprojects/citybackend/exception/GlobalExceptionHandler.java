@@ -273,6 +273,44 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Tour 40 : parametre HTTP obligatoire absent. 400. DEBUG.
+     * Couvre @RequestParam(required=true) sans valeur fournie (ex. /night-audit sans from).
+     */
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingRequestParam(
+            org.springframework.web.bind.MissingServletRequestParameterException ex, WebRequest request) {
+
+        logger.debug("Missing request parameter: {}", ex.getMessage());
+
+        ApiResponse<Void> response = ApiResponse.error(
+            "error.request.param.missing",
+            HttpStatus.BAD_REQUEST.value()
+        );
+        response.setPath(request.getDescription(false));
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
+     * Tour 40 : type de parametre HTTP invalide (ex. "not-a-date" sur un @RequestParam LocalDate).
+     * 400. DEBUG.
+     */
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleArgumentTypeMismatch(
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, WebRequest request) {
+
+        logger.debug("Argument type mismatch on {}: {}", ex.getName(), ex.getMessage());
+
+        ApiResponse<Void> response = ApiResponse.error(
+            "error.request.param.invalidType",
+            HttpStatus.BAD_REQUEST.value()
+        );
+        response.setPath(request.getDescription(false));
+
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    /**
      * Erreurs d'arguments illegaux : 400. DEBUG.
      */
     @ExceptionHandler(IllegalArgumentException.class)

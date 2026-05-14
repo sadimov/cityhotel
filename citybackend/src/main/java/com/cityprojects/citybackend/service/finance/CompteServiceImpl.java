@@ -17,16 +17,13 @@ import java.util.Optional;
 /**
  * Implementation de {@link CompteService}.
  *
- * <p><b>⚠️ Justification du {@code @SuppressWarnings("deprecation")}.</b>
- * L'entite {@link Compte} est annotee {@code @Deprecated(forRemoval=false)}
- * (Tour 20bis) parce que son nom prete a confusion (sera renommee en
- * {@code CompteClient}/{@code CompteAuxiliaire} lors d'un tour de cleanup).
- * La fonction reste valide et utile : audit trail auxiliaire client. La
- * dependance est donc volontaire et le warning supprime au niveau classe.</p>
+ * <p>Gere le grand-livre auxiliaire client : recherche / creation idempotente
+ * (par {@code clientId} ou {@code societeId}) des comptes auxiliaires
+ * referencees par les factures et les paiements. Le solde {@link Compte#getSoldeActuel()}
+ * est mis a jour de facon synchrone par {@link OperationCompteService}.</p>
  *
  * @see CompteService
  */
-@SuppressWarnings("deprecation")
 @Service
 @RequireTenant
 @Transactional(readOnly = true)

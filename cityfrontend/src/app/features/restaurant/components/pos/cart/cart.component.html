@@ -18,8 +18,78 @@
   </div>
 
   @let lines = (cart$ | async) ?? [];
+  @let lastCmd = (lastCommande$ | async);
+  @let printing = (printingTicket$ | async) ?? false;
 
-  @if (lines.length === 0) {
+  @if (lines.length === 0 && lastCmd) {
+    <!-- Panneau post-encaissement : tickets + nouvelle commande.
+         Reproduit la modale d'impression de l'ancien `point-de-vente`,
+         mais avec le PDF rendu par le backend (`TicketController`). -->
+    <div class="post-checkout flex-grow-1 d-flex flex-column">
+      <div class="alert alert-success py-3 mb-3">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+          <strong>
+            {{ 'restaurant.pos.cart.checkoutSuccess' | translate }}
+          </strong>
+        </div>
+        <div class="small text-muted">
+          {{ 'restaurant.pos.cart.orderNumber' | translate }} :
+          <strong>{{ lastCmd.numeroCommande || ('#' + lastCmd.commandeId) }}</strong>
+        </div>
+        @if (lastCmd.numeroFacture) {
+          <div class="small text-muted">
+            {{ 'restaurant.pos.cart.invoiceNumber' | translate }} :
+            <strong>{{ lastCmd.numeroFacture }}</strong>
+          </div>
+        }
+        <div class="small text-muted">
+          {{ 'restaurant.pos.cart.total' | translate }} :
+          <strong>
+            {{ lastCmd.montantTotal | number:'1.2-2' }}
+            {{ 'restaurant.pos.currency' | translate }}
+          </strong>
+        </div>
+      </div>
+
+      <div class="d-grid gap-2">
+        <button
+          type="button"
+          class="btn btn-info text-white"
+          [disabled]="printing || lastCmd.commandeId == null"
+          (click)="onPrintCaisse(lastCmd.commandeId!)"
+        >
+          @if (printing) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            <i class="bi bi-printer me-1" aria-hidden="true"></i>
+          }
+          {{ 'restaurant.pos.ticket.print' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-info"
+          [disabled]="printing || lastCmd.commandeId == null"
+          (click)="onPrintCuisine(lastCmd.commandeId!)"
+        >
+          @if (printing) {
+            <span class="spinner-border spinner-border-sm me-1"></span>
+          } @else {
+            <i class="bi bi-printer me-1" aria-hidden="true"></i>
+          }
+          {{ 'restaurant.pos.ticket.printKitchen' | translate }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="onStartNewOrder()"
+        >
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          {{ 'restaurant.pos.cart.newOrder' | translate }}
+        </button>
+      </div>
+    </div>
+  } @else if (lines.length === 0) {
     <div class="text-center text-muted py-4 small flex-grow-1">
       {{ 'restaurant.pos.cart.empty' | translate }}
     </div>

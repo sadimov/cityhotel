@@ -73,6 +73,18 @@ const routes: Routes = [
         data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC'] }
       },
 
+      // Module Comptabilité (Exercices, PCG, mapping, journaux, écritures,
+      // TVA, états de synthèse) — feature lazy (Tour B7, 2026-05-08).
+      // RoleGuard fin appliqué dans le routing du module : lecture
+      // SUPERADMIN/ADMIN/GERANT, écriture SUPERADMIN/ADMIN.
+      {
+        path: 'comptabilite',
+        loadChildren: () =>
+          import('./features/comptabilite/comptabilite.module').then(m => m.ComptabiliteModule),
+        canActivate: [RoleGuard],
+        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT'] }
+      },
+
       // Module Restaurant (catalogue articles + catégories) — feature lazy
       // (Tour 23, 2026-05-05). Périmètre catalogue uniquement ; le POS et
       // la gestion des commandes seront ajoutés au Tour 24+ (cf. CARTOGRAPHIE_MODULES.md).
@@ -117,6 +129,19 @@ const routes: Routes = [
         canActivate: [AuthGuard, SuperAdminGuard],
         loadChildren: () =>
           import('./features/admin/admin.module').then(m => m.AdminModule),
+      },
+
+      // Module Hotel-Admin (gestion users par ADMIN du tenant courant) — Tour B
+      // (2026-05-13). Périmètre : `/hotel-admin/users` (liste + CRUD + actions
+      // verrou/reset/désactiver). Le tenant est résolu côté serveur via JWT
+      // (`@PreAuthorize("hasRole('ADMIN')")` sur `HotelUserController`).
+      // Pas de SUPERADMIN ici — SUPERADMIN passe par `/admin/users` (cross-tenant).
+      {
+        path: 'hotel-admin',
+        loadChildren: () =>
+          import('./features/hotel-admin/hotel-admin.module').then(m => m.HotelAdminModule),
+        canActivate: [RoleGuard],
+        data: { roles: ['ADMIN'] }
       },
 
       // Module Produits & Catégories (ADMIN, GERANT, SUPERADMIN)
@@ -173,8 +198,11 @@ const routes: Routes = [
     ]
   },
   
-  // Route de fallback
-  { path: '**', redirectTo: '/login' }
+  // Route de fallback — redirige vers /dashboard. L'AuthGuard se chargera de
+  // rediriger vers /login si l'utilisateur n'est pas authentifié. Évite la
+  // boucle login → dashboard pour les utilisateurs déjà connectés qui suivent
+  // un lien cassé.
+  { path: '**', redirectTo: '/dashboard' }
 ];
 
 @NgModule({

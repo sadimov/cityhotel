@@ -1,0 +1,142 @@
+<section class="ecriture-detail">
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'notfound') {
+    <div class="alert alert-warning" role="alert">
+      {{ 'comptabilite.ecriture.detail.notFound' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="goBack()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'comptabilite.ecriture.detail.error' | translate }}
+    </div>
+  } @else if (ecriture) {
+    <header class="d-flex justify-content-between align-items-start mb-3">
+      <div>
+        <h2 class="h4 m-0">
+          {{ 'comptabilite.ecriture.detail.title' | translate }}
+          <code class="ms-2">{{ ecriture.numero }}</code>
+        </h2>
+        <small class="text-muted">{{ ecriture.dateComptable }}</small>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="goBack()">
+          <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+          {{ 'common.back' | translate }}
+        </button>
+        @if (peutContrepasser) {
+          <button
+            type="button"
+            class="btn btn-outline-warning"
+            (click)="contrepasser()"
+            [disabled]="contrepassing"
+          >
+            <i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>
+            {{ 'comptabilite.ecriture.actions.contrepasser' | translate }}
+          </button>
+        }
+      </div>
+    </header>
+
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.journal' | translate }}</dt>
+          <dd class="col-7"><code>{{ ecriture.journalCode }}</code> — {{ ecriture.journalLibelle }}</dd>
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.exercice' | translate }}</dt>
+          <dd class="col-7"><code>{{ ecriture.exerciceCode }}</code></dd>
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.statut' | translate }}</dt>
+          <dd class="col-7">
+            <span class="badge" [ngClass]="badgeMap[ecriture.statut]">
+              {{ statutKey(ecriture.statut) | translate }}
+            </span>
+          </dd>
+        </dl>
+      </div>
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.dateComptable' | translate }}</dt>
+          <dd class="col-7">{{ ecriture.dateComptable }}</dd>
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.datePiece' | translate }}</dt>
+          <dd class="col-7">{{ ecriture.datePiece || '-' }}</dd>
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.reference' | translate }}</dt>
+          <dd class="col-7">{{ ecriture.reference || '-' }}</dd>
+        </dl>
+      </div>
+      <div class="col-md-4">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.totalDebit' | translate }}</dt>
+          <dd class="col-7">{{ ecriture.totalDebit | number:'1.2-2' }}</dd>
+          <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.totalCredit' | translate }}</dt>
+          <dd class="col-7">{{ ecriture.totalCredit | number:'1.2-2' }}</dd>
+          @if (ecriture.contrePasseeParId) {
+            <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.contrePasseePar' | translate }}</dt>
+            <dd class="col-7"><code>#{{ ecriture.contrePasseeParId }}</code></dd>
+          }
+          @if (ecriture.ecritureSourceId) {
+            <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.ecritureSource' | translate }}</dt>
+            <dd class="col-7"><code>#{{ ecriture.ecritureSourceId }}</code></dd>
+          }
+        </dl>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <strong>{{ 'comptabilite.ecriture.fields.libelle' | translate }}:</strong>
+      <p class="m-0">{{ ecriture.libelle }}</p>
+    </div>
+
+    <h3 class="h6 mt-4 mb-2">{{ 'comptabilite.ecriture.lignes.title' | translate }}</h3>
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.compteCode' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.libelle' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.ecriture.lignes.auxiliaire' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.ecriture.lignes.debit' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.ecriture.lignes.credit' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of ecriture.lignes; track l.id || $index) {
+            <tr>
+              <td>{{ l.ordre }}</td>
+              <td><code>{{ l.compteCode }}</code></td>
+              <td>{{ l.libelle || '-' }}</td>
+              <td>{{ l.compteAuxiliaireRef || '-' }}</td>
+              <td class="text-end">
+                @if (l.sens === SensLigne.DEBIT) {
+                  {{ l.montant | number:'1.2-2' }}
+                } @else {
+                  -
+                }
+              </td>
+              <td class="text-end">
+                @if (l.sens === SensLigne.CREDIT) {
+                  {{ l.montant | number:'1.2-2' }}
+                } @else {
+                  -
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="4" class="text-end">{{ 'common.total' | translate }}</td>
+            <td class="text-end">{{ ecriture.totalDebit | number:'1.2-2' }}</td>
+            <td class="text-end">{{ ecriture.totalCredit | number:'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+</section>

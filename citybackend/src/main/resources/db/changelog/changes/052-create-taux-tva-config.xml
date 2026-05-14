@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B4 (compta native - TVA hoteliere mauritanienne) - configuration TVA
+  par hotel et par type de service.
+
+  Cadre fiscal mauritanien : taux standard 16% (Code General des Impots).
+  Hebergement nuitee = exonere de fait (defaut 0%), peut etre surcharge a 16%
+  par l'admin pour les regimes touristiques conventionnes.
+
+  Seed des defauts par hotel via TauxTvaConfigInitializer cote service
+  (a la creation d'un hotel par HotelAdminService).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="052-1-create-table-taux-tva-config" author="cityprojects">
+        <comment>
+            Configuration TVA par hotel : (hotel_id, type_service) -> taux.
+            Tenant-aware (CHECK hotel_id > 0). Pas de FK vers une referentielle
+            externe : taux purement applicatif.
+        </comment>
+
+        <createTable tableName="taux_tva_config" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_taux_tva_config" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_service" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="taux" type="DECIMAL(5,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="libelle" type="VARCHAR(200)"/>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="taux_tva_config" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_taux_tva_config_hotel"/>
+
+        <addUniqueConstraint
+                tableName="taux_tva_config" schemaName="finance"
+                columnNames="hotel_id, type_service"
+                constraintName="uk_taux_tva_config_hotel_type"/>
+
+        <sql>
+            ALTER TABLE finance.taux_tva_config
+            ADD CONSTRAINT chk_taux_tva_config_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE finance.taux_tva_config
+            ADD CONSTRAINT chk_taux_tva_config_taux_range CHECK (taux &gt;= 0 AND taux &lt; 100)
+        </sql>
+
+        <createIndex tableName="taux_tva_config" schemaName="finance"
+                     indexName="ix_taux_tva_config_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="taux_tva_config" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

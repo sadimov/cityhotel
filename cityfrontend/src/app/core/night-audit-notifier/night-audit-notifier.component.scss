@@ -1,0 +1,9 @@
+/*
+ * Le composant lui-même ne doit pas occuper d'espace dans le layout : seule
+ * la modale Bootstrap (gérée par .modal{display:none} de Bootstrap) est
+ * rendue dans le DOM, mais le `<app-night-audit-notifier>` hôte ne doit
+ * rien afficher de visible.
+ */
+:host {
+  display: contents;
+}

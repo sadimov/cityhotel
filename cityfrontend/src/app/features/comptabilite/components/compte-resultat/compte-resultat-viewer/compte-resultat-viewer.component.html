@@ -1,0 +1,125 @@
+<section class="compte-resultat-viewer">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.compteResultat.title' | translate }}</h2>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="generate()" novalidate class="mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-2">
+        <label for="exerciceId" class="form-label">{{ 'comptabilite.etats.fields.exerciceId' | translate }}</label>
+        <input id="exerciceId" type="number" class="form-control" formControlName="exerciceId" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateDebut" class="form-label">{{ 'comptabilite.etats.fields.dateDebut' | translate }}</label>
+        <input id="dateDebut" type="date" class="form-control" formControlName="dateDebut" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateFin" class="form-label">{{ 'comptabilite.etats.fields.dateFin' | translate }}</label>
+        <input id="dateFin" type="date" class="form-control" formControlName="dateFin" />
+      </div>
+      <div class="col-md-6 d-flex gap-2">
+        <button type="submit" class="btn btn-primary" [disabled]="form.invalid">
+          <i class="bi bi-play-fill me-1" aria-hidden="true"></i>
+          {{ 'comptabilite.etats.actions.generate' | translate }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="exportXlsx()" [disabled]="exporting || form.invalid">
+          <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i> XLSX
+        </button>
+        <button type="button" class="btn btn-outline-danger" (click)="exportPdf()" [disabled]="exporting || form.invalid">
+          <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i> PDF
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">{{ 'error.etat.fetchFailed' | translate }}</div>
+  } @else if (state === 'ready' && resultat) {
+    <div class="row mb-3">
+      <div class="col-md-3"><strong>{{ 'comptabilite.balance.exerciceCode' | translate }}:</strong> <code>{{ resultat.exerciceCode }}</code></div>
+      <div class="col-md-3"><strong>{{ 'comptabilite.balance.periode' | translate }}:</strong> {{ resultat.dateDebut }} → {{ resultat.dateFin }}</div>
+      <div class="col-md-3"><strong>{{ 'comptabilite.compteResultat.margeBrute' | translate }}:</strong>
+        <span class="fw-bold">{{ resultat.margeBrute | number:'1.2-2' }}</span>
+      </div>
+      <div class="col-md-3"><strong>{{ 'comptabilite.compteResultat.resultatNet' | translate }}:</strong>
+        <span class="fw-bold" [class.text-success]="resultat.resultatNet >= 0" [class.text-danger]="resultat.resultatNet < 0">
+          {{ resultat.resultatNet | number:'1.2-2' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <strong>{{ 'comptabilite.compteResultat.produits' | translate }}</strong>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <tbody>
+                @for (r of resultat.produits; track r.code) {
+                  <tr class="table-light">
+                    <td colspan="2"><strong>{{ r.libelle }}</strong></td>
+                    <td class="text-end fw-bold">{{ r.montant | number:'1.2-2' }}</td>
+                  </tr>
+                  @for (l of r.lignes; track l.compteCode) {
+                    <tr>
+                      <td class="ps-4"><code>{{ l.compteCode }}</code></td>
+                      <td>{{ l.compteLibelle }}</td>
+                      <td class="text-end">{{ l.montant | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+              <tfoot>
+                <tr class="table-success fw-bold">
+                  <td colspan="2">{{ 'comptabilite.compteResultat.totalProduits' | translate }}</td>
+                  <td class="text-end">{{ resultat.totalProduits | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-danger text-white">
+            <strong>{{ 'comptabilite.compteResultat.charges' | translate }}</strong>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm mb-0">
+              <tbody>
+                @for (r of resultat.charges; track r.code) {
+                  <tr class="table-light">
+                    <td colspan="2"><strong>{{ r.libelle }}</strong></td>
+                    <td class="text-end fw-bold">{{ r.montant | number:'1.2-2' }}</td>
+                  </tr>
+                  @for (l of r.lignes; track l.compteCode) {
+                    <tr>
+                      <td class="ps-4"><code>{{ l.compteCode }}</code></td>
+                      <td>{{ l.compteLibelle }}</td>
+                      <td class="text-end">{{ l.montant | number:'1.2-2' }}</td>
+                    </tr>
+                  }
+                }
+              </tbody>
+              <tfoot>
+                <tr class="table-danger fw-bold">
+                  <td colspan="2">{{ 'comptabilite.compteResultat.totalCharges' | translate }}</td>
+                  <td class="text-end">{{ resultat.totalCharges | number:'1.2-2' }}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</section>

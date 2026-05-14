@@ -29,5 +29,11 @@ public interface BonSortieService {
 
     BonSortieDto livrer(Long bonSortieId);
 
-    BonSortieDto annuler(Long bonSortieId);
+    /**
+     * Annule un bon de sortie avec motif obligatoire (Tour 51bis).
+     *
+     * <p>Refus si statut = {@code LIVRE} ({@code error.bonSortie.annulation.statutInvalide}).
+     * Le motif est persiste pour audit inventaire / contradictoire stock.</p>
+     */
+    BonSortieDto annuler(Long bonSortieId, String motif);
 }

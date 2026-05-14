@@ -16,6 +16,7 @@ public record BonSortieDto(
         StatutBonSortie statut,
         LocalDate dateSortie,
         String commentaires,
+        String motifAnnulation,
         Long userId,
         List<LigneBonSortieDto> lignes,
         Instant createdAt,

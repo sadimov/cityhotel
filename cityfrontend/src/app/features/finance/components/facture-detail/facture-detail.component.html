@@ -30,6 +30,15 @@
           <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
           {{ 'finance.actions.back' | translate }}
         </button>
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          (click)="downloadPdf()"
+          [disabled]="downloadingPdf"
+        >
+          <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>
+          {{ 'finance.facture.actions.downloadPdf' | translate }}
+        </button>
         @if (peutEmettre) {
           <button
             type="button"

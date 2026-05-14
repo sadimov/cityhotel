@@ -26,6 +26,7 @@ City Hotel est une application web SaaS de gestion hôtelière **multi-tenant**.
 ├── RESTAURANT/                         # idem
 │
 ├── CARTOGRAPHIE_MODULES.md             # mapping fichier source → domaine réel (à produire au Tour 7.5)
+├── REPORTING_SCOPE.md                  # catalogue 20 rapports + roadmap P0/P1/P2 (Tour 40)
 │
 ├── Tech_DevOPS/                        # spécifications techniques et DevOps cibles
 │   └── TECHNOLOGIES_DEVOPS_A_UTILISER.md
@@ -146,7 +147,7 @@ Claude Code charge automatiquement le `CLAUDE.md` du répertoire courant + paren
   locking) + Planning + Historique + AOP `@AuditAction` (Tour 30 hardening) + workflows event-driven Spring Events (Tour 30 events) + `MenagePlanningScheduler` cron 12:05 |
   | admin        | ✅      | ✅       | Tour 31          | livré | SUPERADMIN-only. CRUD Hotel + DBUser (mode ROOT via `TenantScope.runAs`) + Role read-only + Parametre
   globaux. Endpoint exception : `POST /api/admin/hotels/{hotelId}/users` (hotelId path-positioned, seule exception au principe §10) |
-  | reporting    | ❌      | ❌       | —                | Vague 3 | from-scratch — Chart.js + JasperReports + KPIs métier |
+  | reporting    | ✅      | ❌       | Tours 40-41      | complet | 20 rapports livrés (5 P0 Tour 40 + 15 P1/P2 Tour 41) : R-HEB-001..005, R-FIN-001..004, R-INV-001..003, R-NA-001, R-CLI-001, R-RES-001..003, R-MEN-001..002, R-DIR-001. Read-only via JPQL + projections + cache `@Cacheable` ConcurrentMapCacheManager (clé `TenantContext.get()` obligatoire). Exports PDF (JasperReports 6.21.3) + XLSX (POI 5.3.0). Controller scindés par module sous `/api/reports/{hebergement,finance,inventory,restaurant,menage,direction}`. Cf. `REPORTING_SCOPE.md` 100 %. |
   | profile      | ❌      | 🟡 composant front seul | — | Vague 3 | back from-scratch (changement mdp + photo + préférences) |
   | notification | ❌      | ❌       | —                | Vague 3 | from-scratch — Mail Thymeleaf + Kafka mode dégradé Spring Events |
   | dolibarr     | ❌      | —        | —                | Vague 3 | scaffolder via skill `dolibarr` — Feign + Resilience4j (déjà au pom) + bridge Facture/Paiement →

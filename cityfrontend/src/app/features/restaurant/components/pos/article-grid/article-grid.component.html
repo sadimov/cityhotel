@@ -63,6 +63,16 @@
               [disabled]="a.disponible === false"
               (click)="onAddArticle(a)"
             >
+              @if (a.imageUrl) {
+                <div class="article-tile__image mb-2">
+                  <img
+                    [src]="a.imageUrl"
+                    [alt]="a.nomArticle"
+                    loading="lazy"
+                    class="img-fluid rounded"
+                  />
+                </div>
+              }
               <div class="fw-semibold text-truncate">{{ a.nomArticle }}</div>
               <div class="text-info small fw-medium">
                 {{ a.prix | number:'1.2-2' }} {{ 'restaurant.pos.currency' | translate }}

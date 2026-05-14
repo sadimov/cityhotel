@@ -1,0 +1,1 @@
+vérifie, contrôle et corrige le fonctionnement du module finance: compète tout les manquements de façon définitive

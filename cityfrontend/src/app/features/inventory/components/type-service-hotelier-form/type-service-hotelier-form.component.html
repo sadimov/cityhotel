@@ -1,0 +1,66 @@
+<section class="type-service-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      {{ (isEditing ? 'inventory.typesServices.form.titleEdit' : 'inventory.typesServices.form.titleCreate') | translate }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.typesServices.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label for="codeType" class="form-label">{{ 'inventory.typesServices.fields.codeType' | translate }}</label>
+          <input id="codeType" type="text" class="form-control" formControlName="codeType"
+            [class.is-invalid]="form.get('codeType')?.invalid && form.get('codeType')?.touched" />
+          @if (form.get('codeType')?.touched && form.get('codeType')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.typesServices.errors.codeRequired' | translate }}</div>
+          }
+          @if (form.get('codeType')?.touched && form.get('codeType')?.errors?.['pattern']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.typesServices.errors.codePattern' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-md-8">
+          <label for="nomType" class="form-label">{{ 'inventory.typesServices.fields.nomType' | translate }}</label>
+          <input id="nomType" type="text" class="form-control" formControlName="nomType"
+            [class.is-invalid]="form.get('nomType')?.invalid && form.get('nomType')?.touched" />
+          @if (form.get('nomType')?.touched && form.get('nomType')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.typesServices.errors.nomRequired' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="description" class="form-label">{{ 'inventory.typesServices.fields.description' | translate }}</label>
+          <textarea id="description" class="form-control" rows="2" formControlName="description"></textarea>
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center gap-3 pt-3">
+          <div class="form-check">
+            <input id="actif" type="checkbox" class="form-check-input" formControlName="actif" />
+            <label for="actif" class="form-check-label">{{ 'inventory.typesServices.fields.actif' | translate }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">{{ 'inventory.actions.cancel' | translate }}</button>
+        <button type="submit" class="btn btn-primary" [disabled]="state === 'submitting'">
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'inventory.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

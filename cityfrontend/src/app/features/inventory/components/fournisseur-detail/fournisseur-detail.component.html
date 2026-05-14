@@ -1,0 +1,79 @@
+<section class="fournisseur-detail">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'inventory.fournisseurs.detail.title' | translate }}</h2>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="back()">
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.back' | translate }}
+      </button>
+      <button type="button" class="btn btn-primary" (click)="edit()" [disabled]="!entity">
+        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+        {{ 'inventory.actions.edit' | translate }}
+      </button>
+    </div>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.fournisseurs.form.loadError' | translate }}
+    </div>
+  } @else if (entity) {
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.nomFournisseur' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.nomFournisseur }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.contactPrincipal' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.contactPrincipal || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.telephone' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.telephone || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.email' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.email || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.adresse' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.adresse || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.ville' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.ville || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.pays' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.pays || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.conditionsPaiement' | translate }}</dt>
+          <dd class="col-sm-8">{{ entity.conditionsPaiement || '-' }}</dd>
+
+          <dt class="col-sm-4">{{ 'inventory.fournisseurs.fields.actif' | translate }}</dt>
+          <dd class="col-sm-8">
+            <span class="badge" [ngClass]="entity.actif !== false ? 'text-bg-success' : 'text-bg-secondary'">
+              {{ (entity.actif !== false ? 'inventory.statut.actif' : 'inventory.statut.inactif') | translate }}
+            </span>
+          </dd>
+
+          @if (entity.nombreBonsCommande != null) {
+            <dt class="col-sm-4">{{ 'inventory.fournisseurs.detail.nombreBonsCommande' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.nombreBonsCommande }}</dd>
+          }
+
+          @if (entity.montantTotalCommandes != null) {
+            <dt class="col-sm-4">{{ 'inventory.fournisseurs.detail.montantTotalCommandes' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.montantTotalCommandes | number:'1.2-2' }}</dd>
+          }
+
+          @if (entity.dateCreation) {
+            <dt class="col-sm-4">{{ 'inventory.detail.dateCreation' | translate }}</dt>
+            <dd class="col-sm-8">{{ entity.dateCreation }}</dd>
+          }
+        </dl>
+      </div>
+    </div>
+  }
+</section>

@@ -51,6 +51,8 @@ export class BonCommandeFormComponent implements OnInit, OnDestroy {
   produits: Produit[] = [];
   totalCalcule = 0;
   currentStatut: StatutBonCommande = 'brouillon';
+  /** Lock générique pendant une transition (envoyer/confirmer/annuler). */
+  transitioning = false;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -185,6 +187,152 @@ export class BonCommandeFormComponent implements OnInit, OnDestroy {
 
   cancelEdit(): void {
     this.router.navigate(['/inventory/bons-commande']);
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Transitions de statut (Tour 51bis)
+  // ────────────────────────────────────────────────────────────────────────
+
+  get canEnvoyer(): boolean {
+    return this.isEditing && this.currentStatut === 'brouillon';
+  }
+
+  get canConfirmer(): boolean {
+    return this.isEditing && this.currentStatut === 'envoye';
+  }
+
+  get canAnnuler(): boolean {
+    return (
+      this.isEditing &&
+      this.currentStatut !== 'annule' &&
+      this.currentStatut !== 'recu_complet'
+    );
+  }
+
+  envoyer(): void {
+    if (!this.editingId || !this.canEnvoyer) {
+      return;
+    }
+    Swal.fire({
+      icon: 'question',
+      title: this.i18n.translate('inventory.bonCommande.messages.envoyerConfirm'),
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.bonCommande.actions.envoyer'),
+      cancelButtonText: this.i18n.translate('inventory.actions.cancel'),
+      reverseButtons: true,
+    }).then((res) => {
+      if (!res.isConfirmed) {
+        return;
+      }
+      this.transitioning = true;
+      this.bonsCommandeService
+        .envoyer(this.editingId!)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => (this.transitioning = false)),
+        )
+        .subscribe({
+          next: (b) => {
+            this.hydrateForm(b);
+            Swal.fire({
+              icon: 'success',
+              title: this.i18n.translate('inventory.bonCommande.messages.envoyerSuccess'),
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          error: () => {
+            Swal.fire({
+              icon: 'error',
+              title: this.i18n.translate('inventory.bonCommande.messages.envoyerError'),
+            });
+          },
+        });
+    });
+  }
+
+  confirmer(): void {
+    if (!this.editingId || !this.canConfirmer) {
+      return;
+    }
+    Swal.fire({
+      icon: 'question',
+      title: this.i18n.translate('inventory.bonCommande.messages.confirmerConfirm'),
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.bonCommande.actions.confirmer'),
+      cancelButtonText: this.i18n.translate('inventory.actions.cancel'),
+      reverseButtons: true,
+    }).then((res) => {
+      if (!res.isConfirmed) {
+        return;
+      }
+      this.transitioning = true;
+      this.bonsCommandeService
+        .confirmer(this.editingId!)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => (this.transitioning = false)),
+        )
+        .subscribe({
+          next: (b) => {
+            this.hydrateForm(b);
+            Swal.fire({
+              icon: 'success',
+              title: this.i18n.translate('inventory.bonCommande.messages.confirmerSuccess'),
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          error: () => {
+            Swal.fire({
+              icon: 'error',
+              title: this.i18n.translate('inventory.bonCommande.messages.confirmerError'),
+            });
+          },
+        });
+    });
+  }
+
+  annuler(): void {
+    if (!this.editingId || !this.canAnnuler) {
+      return;
+    }
+    Swal.fire({
+      icon: 'warning',
+      title: this.i18n.translate('inventory.bonCommande.messages.annulerConfirm'),
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.bonCommande.actions.annuler'),
+      cancelButtonText: this.i18n.translate('inventory.actions.cancel'),
+      reverseButtons: true,
+    }).then((res) => {
+      if (!res.isConfirmed) {
+        return;
+      }
+      this.transitioning = true;
+      this.bonsCommandeService
+        .annuler(this.editingId!)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => (this.transitioning = false)),
+        )
+        .subscribe({
+          next: (b) => {
+            this.hydrateForm(b);
+            Swal.fire({
+              icon: 'success',
+              title: this.i18n.translate('inventory.bonCommande.messages.annulerSuccess'),
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          error: () => {
+            Swal.fire({
+              icon: 'error',
+              title: this.i18n.translate('inventory.bonCommande.messages.annulerError'),
+            });
+          },
+        });
+    });
   }
 
   // ────────────────────────────────────────────────────────────────────────

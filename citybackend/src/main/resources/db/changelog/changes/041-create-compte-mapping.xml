@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B1 (compta native) - mapping comptable par hotel.
+
+  Table finance.compte_mapping : associe un TypeEvenementComptable (declencheur
+  metier - vente nuitee, encaissement Bankily, TVA collectee, etc.) a un code
+  compte du Plan Comptable General. Tenant-aware (hotel_id) : chaque hotel
+  peut surcharger les codes par defaut.
+
+  Le seed des defauts par hotel est realise cote service via
+  CompteMappingInitializer (a la creation d'un hotel par HotelAdminService).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="040-1-create-table-compte-mapping" author="cityprojects">
+        <comment>
+            Mapping comptable hotel : (hotel_id, type_evenement) -> compte_code.
+            FK logique vers finance.plan_comptable_general (compte_code).
+        </comment>
+
+        <createTable tableName="compte_mapping" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_compte_mapping" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type_evenement" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="compte_code" type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="actif" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="compte_mapping" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_compte_mapping_hotel"/>
+
+        <addForeignKeyConstraint
+                baseTableName="compte_mapping" baseTableSchemaName="finance"
+                baseColumnNames="compte_code"
+                referencedTableName="plan_comptable_general" referencedTableSchemaName="finance"
+                referencedColumnNames="compte_code"
+                constraintName="fk_compte_mapping_pcg"
+                onDelete="RESTRICT"/>
+
+        <addUniqueConstraint
+                tableName="compte_mapping" schemaName="finance"
+                columnNames="hotel_id, type_evenement"
+                constraintName="uk_compte_mapping_hotel_type"/>
+
+        <sql>
+            ALTER TABLE finance.compte_mapping
+            ADD CONSTRAINT chk_compte_mapping_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="compte_mapping" schemaName="finance"
+                     indexName="ix_compte_mapping_hotel_actif">
+            <column name="hotel_id"/>
+            <column name="actif"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="compte_mapping" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

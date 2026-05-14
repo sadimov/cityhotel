@@ -143,6 +143,13 @@ export class BonsCommandeListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/inventory/bons-commande', bon.bonCommandeId]);
   }
 
+  view(bon: BonCommande): void {
+    if (bon.bonCommandeId == null) {
+      return;
+    }
+    this.router.navigate(['/inventory/bons-commande', bon.bonCommandeId, 'view']);
+  }
+
   get pagesArray(): number[] {
     if (!this.page) {
       return [];

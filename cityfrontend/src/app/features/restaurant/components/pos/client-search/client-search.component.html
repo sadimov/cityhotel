@@ -90,15 +90,35 @@
               [class.btn-light]="selectedReservation?.reservationId !== r.reservationId"
               (click)="onSelectReservation(r)"
             >
-              <div class="fw-semibold">
-                #{{ r.numeroReservation || r.reservationId }}
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="fw-semibold">
+                  #{{ r.numeroReservation || r.reservationId }}
+                </div>
+                <span class="badge" [ngClass]="statutBadgeClass(r.statut)">
+                  {{ statutKey(r.statut) | translate }}
+                </span>
               </div>
+              @if (chambreLabel(r); as chambres) {
+                @if (chambres) {
+                  <div class="small fw-medium">
+                    {{ 'restaurant.pos.reservation.chambre' | translate }} :
+                    {{ chambres }}
+                    @if (typeLabel(r); as types) {
+                      @if (types) {
+                        <span class="text-muted"> — {{ types }}</span>
+                      }
+                    }
+                  </div>
+                }
+              }
               <div class="small">
                 {{ r.dateArrivee }} → {{ r.dateDepart }}
               </div>
-              <div class="small">
-                {{ 'restaurant.pos.reservation.statut' | translate }} : {{ r.statut }}
-              </div>
+              @if (r.nomClientPrincipal) {
+                <div class="small text-muted text-truncate">
+                  {{ r.nomClientPrincipal }}
+                </div>
+              }
             </button>
           }
           @if (selectedReservation) {

@@ -76,6 +76,26 @@
   min-height: calc(100vh - 200px);
 }
 
+// ─── Mode plein écran (calendrier réservations, etc.) ───────────────────────
+// Neutralise le padding du wrapper et la min-height de la route-content
+// pour libérer toute la surface disponible. Le composant gère sa propre
+// hauteur via calc(100vh - var(--header-height)).
+.main-layout.is-fullscreen {
+  .content-wrapper {
+    padding: 0;
+    max-width: none;
+  }
+
+  .route-content {
+    min-height: 0;
+    animation: none;
+  }
+
+  .main-content {
+    overflow: hidden;
+  }
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -124,12 +144,13 @@
   .breadcrumb-nav .breadcrumb { padding: 0.5rem 0.75rem; font-size: 0.8rem; }
 }
 
-// La sidebar est *frère* du main-content via le HTML : on peut donc utiliser
-// le sélecteur ::ng-deep n'est pas nécessaire — Angular n'isole pas les
-// classes globales `.sidebar`. On gère via les variables/sélecteur descendant.
-.sidebar.collapsed ~ .main-content { margin-left: 0; }
+// La <nav class="sidebar"> à l'intérieur de <app-sidebar> est position fixed,
+// donc ne peut pas être ciblée via le combinator `~` (pas frère de main).
+// SidebarComponent expose ses états via @HostBinding sur l'élément <app-sidebar>
+// (`is-collapsed`, `is-minimized`), qui lui est frère direct de <main>.
+app-sidebar.is-collapsed ~ .main-content { margin-left: 0; }
 
-.sidebar.minimized ~ .main-content {
+app-sidebar.is-minimized ~ .main-content {
   margin-left: var(--sidebar-width-min);
 
   @media (max-width: 768px) { margin-left: 0; }
@@ -144,8 +165,8 @@
     @media (max-width: 768px) { margin-right: 0; }
   }
 
-  .sidebar.collapsed ~ .main-content { margin-right: 0; }
-  .sidebar.minimized ~ .main-content {
+  app-sidebar.is-collapsed ~ .main-content { margin-right: 0; }
+  app-sidebar.is-minimized ~ .main-content {
     margin-right: var(--sidebar-width-min);
 
     @media (max-width: 768px) { margin-right: 0; }

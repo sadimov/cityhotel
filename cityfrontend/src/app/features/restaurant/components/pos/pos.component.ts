@@ -38,6 +38,7 @@ export class PosComponent implements OnInit, OnDestroy {
   readonly canCheckoutComptant$ = this.store.canCheckoutComptant$;
   readonly canReportChambre$ = this.store.canReportChambre$;
   readonly lastCommande$ = this.store.lastCommande$;
+  readonly printingTicket$ = this.store.printingTicket$;
 
   paymentModalOpen = false;
   paymentModalTotal = 0;
@@ -123,5 +124,17 @@ export class PosComponent implements OnInit, OnDestroy {
         this.store.submitOrderReportChambre();
       }
     });
+  }
+
+  onPrintCaisse(commandeId: number): void {
+    this.store.imprimerTicketCaisse(commandeId);
+  }
+
+  onPrintCuisine(commandeId: number): void {
+    this.store.imprimerTicketCuisine(commandeId);
+  }
+
+  onStartNewOrder(): void {
+    this.store.startNewOrder();
   }
 }

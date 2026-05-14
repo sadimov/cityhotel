@@ -21,15 +21,15 @@ import java.util.Optional;
  * <p>
  * Cle primaire technique {@code Long id} (cf. doc de l'entite : la PK
  * composite hotel/type/exercice est interdite par Hibernate 6 sur un champ
- * @TenantId, on a donc une cle technique + un UNIQUE INDEX metier).
+ * &#64;TenantId, on a donc une cle technique + un UNIQUE INDEX metier).
  */
 @Repository
 public interface NumerotationSequenceRepository
         extends JpaRepository<NumerotationSequence, Long> {
 
     /**
-     * Recupere le compteur actif pour le couple (type, exercice) en posant un
-     * verrou pessimiste en ecriture.
+     * Recupere le compteur actif pour le quadruplet (type, exercice,
+     * discriminant) en posant un verrou pessimiste en ecriture.
      * <p>
      * Comportement attendu :
      * <ul>
@@ -39,16 +39,31 @@ public interface NumerotationSequenceRepository
      *   <li>H2 implemente egalement un verrou compatible en mode
      *       {@code MODE=PostgreSQL} (sequentialise les acces).</li>
      * </ul>
-     * Combine avec @Transactional et le filtre auto par tenant, c'est le
+     * Combine avec &#64;Transactional et le filtre auto par tenant, c'est le
      * mecanisme qui garantit l'unicite de {@code last_value} en concurrence.
      *
-     * @param type     famille de numerotation
-     * @param exercice annee comptable
-     * @return le compteur ou {@code Optional.empty()} s'il n'existe pas encore
+     * @param type         famille de numerotation
+     * @param exercice     annee comptable
+     * @param discriminant discriminant (chaine vide si non applicable - JAMAIS null)
+     * @return le compteur ou {@link Optional#empty()} s'il n'existe pas encore
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT n FROM NumerotationSequence n WHERE n.type = :type AND n.exercice = :exercice")
-    Optional<NumerotationSequence> findByTypeAndExerciceForUpdate(
+    @Query("SELECT n FROM NumerotationSequence n "
+            + "WHERE n.type = :type AND n.exercice = :exercice "
+            + "AND n.discriminant = :discriminant")
+    Optional<NumerotationSequence> findByTypeExerciceAndDiscriminantForUpdate(
             @Param("type") TypeNumerotation type,
-            @Param("exercice") Integer exercice);
+            @Param("exercice") Integer exercice,
+            @Param("discriminant") String discriminant);
+
+    /**
+     * Variante retro-compatible (cas standard sans discriminant). Delegue a
+     * {@link #findByTypeExerciceAndDiscriminantForUpdate} avec discriminant
+     * {@link NumerotationSequence#NO_DISCRIMINANT}.
+     */
+    default Optional<NumerotationSequence> findByTypeAndExerciceForUpdate(
+            TypeNumerotation type, Integer exercice) {
+        return findByTypeExerciceAndDiscriminantForUpdate(
+                type, exercice, NumerotationSequence.NO_DISCRIMINANT);
+    }
 }

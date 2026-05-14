@@ -189,20 +189,72 @@
         }
       </div>
 
-      <div class="bon-commande-form__actions d-flex justify-content-end gap-2 mt-4">
-        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
-          {{ 'inventory.actions.cancel' | translate }}
-        </button>
-        <button
-          type="submit"
-          class="btn btn-primary"
-          [disabled]="state === 'submitting'"
-        >
-          @if (state === 'submitting') {
-            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      <div class="bon-commande-form__actions d-flex justify-content-between align-items-center gap-2 mt-4 flex-wrap">
+        <div class="d-flex gap-2 flex-wrap">
+          @if (canEnvoyer) {
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="envoyer()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonCommande.actions.envoyer' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-send me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonCommande.actions.envoyer' | translate }}
+            </button>
           }
-          {{ 'inventory.actions.save' | translate }}
-        </button>
+          @if (canConfirmer) {
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="confirmer()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonCommande.actions.confirmer' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonCommande.actions.confirmer' | translate }}
+            </button>
+          }
+          @if (canAnnuler) {
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="annuler()"
+              [disabled]="transitioning"
+              [attr.aria-label]="'inventory.bonCommande.actions.annuler' | translate"
+            >
+              @if (transitioning) {
+                <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+              } @else {
+                <i class="bi bi-x-circle me-1" aria-hidden="true"></i>
+              }
+              {{ 'inventory.bonCommande.actions.annuler' | translate }}
+            </button>
+          }
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">
+            {{ 'inventory.actions.cancel' | translate }}
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="state === 'submitting' || transitioning"
+          >
+            @if (state === 'submitting') {
+              <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            }
+            {{ 'inventory.actions.save' | translate }}
+          </button>
+        </div>
       </div>
     </form>
   }

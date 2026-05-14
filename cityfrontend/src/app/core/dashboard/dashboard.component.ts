@@ -44,7 +44,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icon: 'fas fa-calendar-check',
       color: 'primary',
       trend: { value: 8, isPositive: true },
-      route: '/reservations',
+      route: '/hebergement/reservations/list',
       roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
     },
     {
@@ -53,7 +53,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icon: 'fas fa-bed',
       color: 'success',
       trend: { value: 5, isPositive: true },
-      route: '/hotels/rooms',
+      route: '/hebergement/calendar',
       roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
     },
     {
@@ -62,7 +62,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icon: 'fas fa-coins',
       color: 'warning',
       trend: { value: 12, isPositive: true },
-      route: '/payments',
+      route: '/finance/paiements',
       roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
     },
     {
@@ -89,7 +89,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icon: 'fas fa-broom',
       color: 'secondary',
       trend: { value: 2, isPositive: false },
-      route: '/housekeeping',
+      route: '/menage/dashboard',
       roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
     },
     {
@@ -98,17 +98,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
       icon: 'fas fa-boxes',
       color: 'primary',
       trend: { value: 4, isPositive: false },
-      route: '/products',
-      roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
-    },
-    {
-      title: 'Alertes Stock',
-      value: 3,
-      icon: 'fas fa-exclamation-triangle',
-      color: 'warning',
-      route: '/reporting/stock-alerts',
+      route: '/inventory/produits',
       roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
     }
+    // TODO 33B : réintégrer la carte "Alertes Stock" après livraison frontend reporting
   ];
 
   // Actions rapides
@@ -118,7 +111,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       description: 'Créer une nouvelle réservation de chambre',
       icon: 'fas fa-plus-circle',
       color: 'primary',
-      route: '/reservations/add',
+      route: '/hebergement/reservations/new',
       roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
     },
     {
@@ -126,7 +119,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       description: 'Enregistrer l\'arrivée d\'un client',
       icon: 'fas fa-sign-in-alt',
       color: 'success',
-      route: '/reservations/checkin',
+      route: '/hebergement/check-in',
       roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
     },
     {
@@ -134,7 +127,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       description: 'Ajouter un nouveau client',
       icon: 'fas fa-user-plus',
       color: 'info',
-      route: '/clients/add',
+      route: '/clients/new',
       roles: ['RECEPTION', 'GERANT', 'RESREC', 'SUPERADMIN']
     },
     {
@@ -150,7 +143,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       description: 'Créer un bon de commande',
       icon: 'fas fa-shopping-cart',
       color: 'secondary',
-      route: '/orders/purchase/add',
+      route: '/inventory/bons-commande/new',
       roles: ['MAGASIN', 'GERANT', 'SUPERADMIN']
     },
     {
@@ -158,7 +151,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       description: 'Assigner une tâche de ménage',
       icon: 'fas fa-tasks',
       color: 'primary',
-      route: '/housekeeping/tasks/add',
+      route: '/menage/taches/new',
       roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
     }
   ];

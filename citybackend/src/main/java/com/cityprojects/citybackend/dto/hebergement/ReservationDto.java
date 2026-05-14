@@ -5,6 +5,7 @@ import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * DTO de sortie pour
@@ -29,5 +30,13 @@ public record ReservationDto(
         BigDecimal montantTotal,
         Long userId,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /**
+         * Pivots {@code reservation_chambres} associés. Liste vide si non
+         * hydratée. Indispensable au front (calendrier) pour positionner les
+         * rectangles de réservation sur la bonne ligne chambre.
+         */
+        List<ReservationChambreDto> chambres,
+        /** Canal de distribution (Tour 41, R-HEB-004). Place en dernier. */
+        String sourceCanal) {
 }

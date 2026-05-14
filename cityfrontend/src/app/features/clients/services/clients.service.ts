@@ -13,6 +13,7 @@ import {
   PageResponse,
   StatistiquesClient,
 } from '../models/client.model';
+import { Societe, SocieteCreate } from '../models/societe.model';
 
 /**
  * Service HTTP du module `clients`.
@@ -86,6 +87,41 @@ export class ClientsService {
     return this.http
       .get<ApiResponse<StatistiquesClient>>(`${this.base}/statistiques`)
       .pipe(map((r) => r.data as StatistiquesClient));
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Sociétés — Tour 45 (quick-create dans la modale création réservation)
+  // ────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Liste paginée des sociétés de l'hôtel courant.
+   *
+   * Spec : `GET /api/clients/societes` (filtre tenant côté serveur).
+   * Utilisé par le calendar pour alimenter le select société des modales.
+   */
+  pageSocietes(req: PageRequest = {}): Observable<PageResponse<Societe>> {
+    const params = this.toHttpParams(req);
+    return this.http
+      .get<ApiResponse<PageResponse<Societe>>>(`${this.base}/societes`, {
+        params,
+      })
+      .pipe(map((r) => r.data as PageResponse<Societe>));
+  }
+
+  /**
+   * Création rapide d'une société depuis la modale réservation (quick-create
+   * panel). Le `hotelId` est extrait du JWT côté backend.
+   *
+   * Spec backend Phase A (Tour 45) : `POST /api/clients/societes`,
+   * body `{nom: string, telephone?, nif?, adresse?}` — la signature TS reste
+   * volontairement permissive (`SocieteCreate`) pour rester compatible avec
+   * d'éventuels futurs champs (`email`, `siret`, etc.) ; le consommateur du
+   * service décide quels champs il envoie.
+   */
+  createSociete(dto: SocieteCreate): Observable<Societe> {
+    return this.http
+      .post<ApiResponse<Societe>>(`${this.base}/societes`, dto)
+      .pipe(map((r) => r.data as Societe));
   }
 
   // ────────────────────────────────────────────────────────────────────────

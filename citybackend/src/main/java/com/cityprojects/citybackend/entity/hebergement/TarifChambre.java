@@ -65,6 +65,15 @@ public class TarifChambre extends AuditableEntity implements TenantAware {
     @Column(name = "prix_weekend", precision = 10, scale = 2)
     private BigDecimal prixWeekend;
 
+    /**
+     * Priorite de selection en cas de chevauchement (Tour 44 Phase 1). Plus la
+     * valeur est haute, plus le tarif est prioritaire pour une date donnee.
+     * Defaut 0 (tarif standard). Permet de gerer "promotion 1er mai" qui ecrase
+     * "haute saison" sur la meme journee.
+     */
+    @Column(name = "priorite", nullable = false)
+    private Integer priorite = 0;
+
     @Column(name = "actif", nullable = false)
     private Boolean actif = Boolean.TRUE;
 
@@ -136,6 +145,14 @@ public class TarifChambre extends AuditableEntity implements TenantAware {
 
     public void setPrixWeekend(BigDecimal prixWeekend) {
         this.prixWeekend = prixWeekend;
+    }
+
+    public Integer getPriorite() {
+        return priorite;
+    }
+
+    public void setPriorite(Integer priorite) {
+        this.priorite = priorite;
     }
 
     public Boolean getActif() {

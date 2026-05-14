@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.service.inventory;
 
+import com.cityprojects.citybackend.common.audit.AuditFinanceAction;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.inventory.BonCommandeCreateDto;
 import com.cityprojects.citybackend.dto.inventory.BonCommandeDto;
@@ -23,6 +24,8 @@ import com.cityprojects.citybackend.repository.inventory.LigneBonCommandeReposit
 import com.cityprojects.citybackend.repository.inventory.MouvementStockRepository;
 import com.cityprojects.citybackend.repository.inventory.ProduitRepository;
 import com.cityprojects.citybackend.security.UserPrincipal;
+import com.cityprojects.citybackend.service.finance.EcritureComptableService;
+import com.cityprojects.citybackend.service.finance.EcritureGenerationService;
 import com.cityprojects.citybackend.service.finance.NumerotationService;
 import com.cityprojects.citybackend.service.finance.TypeNumerotation;
 import org.slf4j.Logger;
@@ -66,6 +69,8 @@ public class BonCommandeServiceImpl implements BonCommandeService {
     private final MouvementStockRepository mouvementRepository;
     private final BonCommandeMapper mapper;
     private final NumerotationService numerotationService;
+    private final EcritureGenerationService ecritureGenerationService;
+    private final EcritureComptableService ecritureComptableService;
 
     public BonCommandeServiceImpl(BonCommandeRepository bcRepository,
                                   LigneBonCommandeRepository ligneRepository,
@@ -73,7 +78,9 @@ public class BonCommandeServiceImpl implements BonCommandeService {
                                   ProduitRepository produitRepository,
                                   MouvementStockRepository mouvementRepository,
                                   BonCommandeMapper mapper,
-                                  NumerotationService numerotationService) {
+                                  NumerotationService numerotationService,
+                                  EcritureGenerationService ecritureGenerationService,
+                                  EcritureComptableService ecritureComptableService) {
         this.bcRepository = bcRepository;
         this.ligneRepository = ligneRepository;
         this.fournisseurRepository = fournisseurRepository;
@@ -81,6 +88,8 @@ public class BonCommandeServiceImpl implements BonCommandeService {
         this.mouvementRepository = mouvementRepository;
         this.mapper = mapper;
         this.numerotationService = numerotationService;
+        this.ecritureGenerationService = ecritureGenerationService;
+        this.ecritureComptableService = ecritureComptableService;
     }
 
     @Override
@@ -167,6 +176,7 @@ public class BonCommandeServiceImpl implements BonCommandeService {
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "BON_COMMANDE_RECEPTION", entityType = "BON_COMMANDE")
     public BonCommandeDto receptionner(Long bonCommandeId, ReceptionBonCommandeDto reception) {
         logger.info("Reception BC id={}, lignes={}", bonCommandeId, reception.lignes().size());
 
@@ -190,6 +200,11 @@ public class BonCommandeServiceImpl implements BonCommandeService {
         Long userId = currentUserId();
         LocalDate today = LocalDate.now();
 
+        // Bloc B3 : on cumule la valorisation des lignes effectivement
+        // receptionnees sur CETTE reception pour generer une ecriture
+        // ACH equivalente (311 D / 401 C).
+        BigDecimal montantReception = BigDecimal.ZERO;
+
         for (ReceptionLigneDto rl : reception.lignes()) {
             if (rl.quantiteRecue() == 0) {
                 continue;
@@ -208,6 +223,10 @@ public class BonCommandeServiceImpl implements BonCommandeService {
             ligne.setQuantiteRecue(dejaRecu + rl.quantiteRecue());
             ligne.setDateReception(today);
             ligneRepository.save(ligne);
+
+            // Cumule la valeur de cette reception (qte * prix unitaire)
+            BigDecimal pu = ligne.getPrixUnitaire() != null ? ligne.getPrixUnitaire() : BigDecimal.ZERO;
+            montantReception = montantReception.add(pu.multiply(BigDecimal.valueOf(rl.quantiteRecue())));
 
             // Met a jour le stock du produit + audit trail
             Produit produit = produitRepository.findById(ligne.getProduitId())
@@ -249,19 +268,49 @@ public class BonCommandeServiceImpl implements BonCommandeService {
         }
         bcRepository.save(bc);
 
+        // Bloc B3 : ecriture ACH si une reception effective a eu lieu.
+        // Note : reception multi-passage -> on cree 1 ecriture par passage
+        // (la regle est "1 mouvement physique = 1 ecriture"). On stocke
+        // l'id de la DERNIERE ecriture sur bc.ecritureReceptionId (la
+        // colonne est destinee a indexer rapidement les annulations totales
+        // ulterieures ; pour l'historique complet on a audit_finance_log
+        // + l'ecriture porte reference = numeroBc).
+        if (montantReception.signum() > 0) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureReceptionBC(bc, montantReception);
+            if (ecritureId != null) {
+                bc.setEcritureReceptionId(ecritureId);
+                bcRepository.save(bc);
+            }
+        }
+
         return toDtoWithLignes(bc);
     }
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "BON_COMMANDE_ANNULATION", entityType = "BON_COMMANDE")
     public BonCommandeDto annuler(Long bonCommandeId) {
         BonCommande bc = bcRepository.findById(bonCommandeId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.bonCommande.notFound"));
         if (!StatutBonCommande.peutEtreAnnule(bc.getStatut())) {
             throw new BusinessException("error.bonCommande.annulation.statutInvalide");
         }
+        boolean avaitEcriture = bc.getEcritureReceptionId() != null;
         bc.setStatut(StatutBonCommande.ANNULE);
         bcRepository.save(bc);
+
+        // Bloc B3 : contre-passation si une ecriture de reception avait
+        // ete generee (cas RECU_PARTIEL -> ANNULE, rare en pratique mais
+        // possible). Le stock physique a deja ete decremente en amont
+        // par MouvementStock SORTIE manuel ; la compta suit.
+        if (avaitEcriture) {
+            ecritureComptableService.contrePasser(
+                    bc.getEcritureReceptionId(),
+                    "Annulation BC " + bc.getNumeroBc());
+        }
+
+        logger.info("BC annule : id={}, numero={}, contrePassation={}",
+                bc.getBonCommandeId(), bc.getNumeroBc(), avaitEcriture);
         return toDtoWithLignes(bc);
     }
 

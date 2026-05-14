@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.repository.hebergement;
 
+import com.cityprojects.citybackend.dto.reporting.projection.TypeChambreCountProjection;
 import com.cityprojects.citybackend.entity.hebergement.Chambre;
 import com.cityprojects.citybackend.entity.hebergement.StatutChambre;
 import org.springframework.data.domain.Page;
@@ -81,4 +82,26 @@ public interface ChambreRepository
     List<Chambre> findDisponiblesAvecCapacite(@Param("dateDebut") LocalDate dateDebut,
                                               @Param("dateFin") LocalDate dateFin,
                                               @Param("minPersonnes") Integer minPersonnes);
+
+    // ============================================================================
+    // Tour 40 — Reporting MVP : agregats pour R-HEB-001 (occupation).
+    // Filtre tenant ajoute automatiquement par Hibernate via @TenantId.
+    // ============================================================================
+
+    /** Compte les chambres actives du tenant courant (R-HEB-001 total). */
+    long countByActifTrue();
+
+    /**
+     * Compte les chambres actives par type (R-HEB-001 breakdown).
+     *
+     * <p>Jointure avec {@code TypeChambre} pour exposer le code et le nom du type
+     * directement dans la projection.</p>
+     */
+    @Query("SELECT t.typeId AS typeId, t.typeCode AS typeCode, t.typeNom AS typeNom, "
+            + " COUNT(c) AS nbChambres "
+            + "FROM Chambre c, com.cityprojects.citybackend.entity.hebergement.TypeChambre t "
+            + "WHERE c.typeId = t.typeId AND c.actif = true "
+            + "GROUP BY t.typeId, t.typeCode, t.typeNom "
+            + "ORDER BY t.typeCode ASC")
+    List<TypeChambreCountProjection> countActivesGroupedByType();
 }

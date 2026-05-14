@@ -225,13 +225,30 @@ class FactureFromReservationServiceTests {
                 null);
         ReservationDto created = transactionTemplate.execute(s -> reservationService.create(dto));
 
-        // Bascule les 3 nuitees en CONSOMMEE via JPA (simule check-in + nuit passee)
+        // Tour 44 Phase 1 : create() genere desormais une facture previsionnelle.
+        // Ce test cible fromReservation() (workflow historique post-checkout) :
+        // on reset reservation.factureId + nuitee.factureId/ligneFactureId
+        // pour simuler un scenario "pas de facture prevue" et tester
+        // l'enchainement classique. La facture previsionnelle reste en DB
+        // (audit comptable, sera nettoyee par tearDown).
+        transactionTemplate.execute(s -> {
+            var r = reservationRepository.findById(created.reservationId()).orElseThrow();
+            r.setFactureId(null);
+            reservationRepository.save(r);
+            return null;
+        });
+
+        // Bascule les 3 nuitees en CONSOMMEE via JPA (simule check-in + nuit passee).
+        // Reset aussi factureId/ligneFactureId de la prevision pour que
+        // fromReservation() retraite ces nuitees comme "non encore facturees".
         List<NuiteeDto> nuitees = transactionTemplate.execute(s ->
                 nuiteeService.findByReservation(created.reservationId()));
         for (NuiteeDto n : nuitees) {
             transactionTemplate.execute(s -> {
                 var nuitee = nuiteeRepository.findById(n.id()).orElseThrow();
                 nuitee.setStatut(StatutNuitee.CONSOMMEE);
+                nuitee.setFactureId(null);
+                nuitee.setLigneFactureId(null);
                 nuiteeRepository.save(nuitee);
                 return null;
             });

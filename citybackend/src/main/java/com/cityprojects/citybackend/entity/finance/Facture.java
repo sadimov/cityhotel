@@ -151,6 +151,13 @@ public class Facture extends AuditableEntity implements TenantAware {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    /**
+     * Id de l'ecriture comptable VTE generee a l'emission (Bloc B3).
+     * Nullable tant que la facture n'a pas ete emise.
+     */
+    @Column(name = "ecriture_emission_id")
+    private Long ecritureEmissionId;
+
     /** Constructeur JPA - initialise dateFacture a aujourd'hui. */
     public Facture() {
         this.dateFacture = LocalDate.now();
@@ -326,5 +333,13 @@ public class Facture extends AuditableEntity implements TenantAware {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getEcritureEmissionId() {
+        return ecritureEmissionId;
+    }
+
+    public void setEcritureEmissionId(Long ecritureEmissionId) {
+        this.ecritureEmissionId = ecritureEmissionId;
     }
 }

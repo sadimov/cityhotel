@@ -81,4 +81,17 @@ export class FacturesService {
       {},
     );
   }
+
+  /**
+   * Télécharge la facture au format PDF (B7, 2026-05-08).
+   *
+   * Endpoint back : GET /api/finance/factures/{id}/pdf (Content-Type: pdf).
+   * Le composant appelant orchestre le download navigateur via
+   * `FileDownloadUtil.saveBlob`.
+   */
+  downloadPdf(factureId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${factureId}/pdf`, {
+      responseType: 'blob',
+    });
+  }
 }

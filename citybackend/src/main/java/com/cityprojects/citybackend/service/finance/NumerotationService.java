@@ -25,7 +25,8 @@ package com.cityprojects.citybackend.service.finance;
 public interface NumerotationService {
 
     /**
-     * Genere le prochain numero pour le type donne.
+     * Genere le prochain numero pour le type donne, sans discriminant
+     * additionnel (cas standard FACT, PAY, BC, BS, etc.).
      *
      * @param type famille de numerotation (cf. {@link TypeNumerotation})
      * @return numero formate, jamais {@code null}
@@ -34,4 +35,29 @@ public interface NumerotationService {
      *                               ou si l'hotel courant n'existe plus
      */
     String next(TypeNumerotation type);
+
+    /**
+     * Genere le prochain numero pour un type donne, avec un discriminant
+     * supplementaire qui segmente la sequence.
+     *
+     * <p>Cas d'usage principal : {@link TypeNumerotation#JRN} (ecriture
+     * comptable) ou la sequence doit etre segmentee par code de journal
+     * (VTE, ACH, BAN, ...). Le format produit dans ce cas est :</p>
+     * <pre>JRN-{discriminant}-{exercice}-{codePays}-{6 chiffres}</pre>
+     *
+     * <p>Pour les types qui n'utilisent pas de discriminant (FACT, PAY, ...),
+     * le format reste {@code TYPE-{exercice}-{codePays}-{6 chiffres}} et le
+     * discriminant fourni (s'il l'est) est ignore.</p>
+     *
+     * @param type         famille de numerotation
+     * @param discriminant discriminant additionnel (peut etre {@code null}
+     *                     pour les types qui n'en ont pas). Pour JRN, c'est
+     *                     le code journal et il est obligatoire.
+     * @return numero formate, jamais {@code null}
+     * @throws IllegalStateException    si TenantContext est vide ou si l'hotel
+     *                                  courant n'existe plus
+     * @throws IllegalArgumentException si {@code type == null}, ou si JRN est
+     *                                  passe sans discriminant
+     */
+    String next(TypeNumerotation type, String discriminant);
 }

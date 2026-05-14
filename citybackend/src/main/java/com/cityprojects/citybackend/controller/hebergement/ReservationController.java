@@ -1,12 +1,16 @@
 package com.cityprojects.citybackend.controller.hebergement;
 
+import com.cityprojects.citybackend.dto.finance.RecapPaiementsReservationDto;
 import com.cityprojects.citybackend.dto.hebergement.CancelReservationDto;
 import com.cityprojects.citybackend.dto.hebergement.ChambreDto;
+import com.cityprojects.citybackend.dto.hebergement.ChangerChambreRequest;
+import com.cityprojects.citybackend.dto.hebergement.CheckOutExpressRequest;
 import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
 import com.cityprojects.citybackend.dto.hebergement.RechercheDisponibiliteRequest;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
+import com.cityprojects.citybackend.service.finance.ReservationFinanceService;
 import com.cityprojects.citybackend.service.hebergement.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -16,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -50,9 +55,12 @@ import java.util.List;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final ReservationFinanceService reservationFinanceService;
 
-    public ReservationController(ReservationService reservationService) {
+    public ReservationController(ReservationService reservationService,
+                                  ReservationFinanceService reservationFinanceService) {
         this.reservationService = reservationService;
+        this.reservationFinanceService = reservationFinanceService;
     }
 
     @GetMapping("/{id}")
@@ -139,8 +147,12 @@ public class ReservationController {
         return ResponseEntity.ok(reservationService.update(id, dto));
     }
 
+    /**
+     * Annulation logique (soft-delete). Règle métier : seul ADMIN/SUPERADMIN
+     * peut annuler une réservation (cf. règle hébergement).
+     */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
     public ResponseEntity<ReservationDto> delete(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.delete(id));
     }
@@ -157,10 +169,47 @@ public class ReservationController {
         return ResponseEntity.ok(reservationService.checkOut(id));
     }
 
-    @PostMapping("/{id}/cancel")
+    /**
+     * Tour 45 : check-out express avec transfert du reste-a-payer sur le
+     * compte d'une societe (la societe assume la dette).
+     */
+    @PostMapping("/{id}/check-out-express")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    public ResponseEntity<ReservationDto> checkOutExpress(@PathVariable("id") Long id,
+                                                           @Valid @RequestBody CheckOutExpressRequest request) {
+        return ResponseEntity.ok(reservationService.checkOutExpress(id, request));
+    }
+
+    /**
+     * Annulation explicite avec motif. Règle métier : seul ADMIN/SUPERADMIN
+     * peut annuler une réservation (cf. règle hébergement).
+     */
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
     public ResponseEntity<ReservationDto> cancel(@PathVariable("id") Long id,
                                                   @Valid @RequestBody CancelReservationDto dto) {
         return ResponseEntity.ok(reservationService.cancel(id, dto.motif()));
+    }
+
+    /**
+     * Tour 44 Phase 1 : recap factures + paiements pour une reservation.
+     * Sert l'onglet "Paiements" du calendrier des reservations.
+     */
+    @GetMapping("/{id}/paiements-recap")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    public ResponseEntity<RecapPaiementsReservationDto> paiementsRecap(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(reservationFinanceService.getRecapForReservation(id));
+    }
+
+    /**
+     * Tour 44 Phase 1 : changement de chambre pour une reservation existante.
+     * Verifie l'absence de conflit sur la nouvelle chambre, met a jour les
+     * pivots et les nuitees non-facturees, libere l'ancienne chambre.
+     */
+    @PatchMapping("/{id}/chambre")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    public ResponseEntity<ReservationDto> changerChambre(@PathVariable("id") Long id,
+                                                          @Valid @RequestBody ChangerChambreRequest request) {
+        return ResponseEntity.ok(reservationService.changerChambre(id, request));
     }
 }

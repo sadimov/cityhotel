@@ -1,14 +1,18 @@
 package com.cityprojects.citybackend.service.hebergement;
 
+import com.cityprojects.citybackend.common.event.ReservationCalendarMutationEvent;
 import com.cityprojects.citybackend.common.event.ReservationCheckedOutEvent;
 import com.cityprojects.citybackend.common.paging.PageableUtils;
 import com.cityprojects.citybackend.common.security.SecurityUtils;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.hebergement.ChambreDto;
+import com.cityprojects.citybackend.dto.hebergement.ChangerChambreRequest;
+import com.cityprojects.citybackend.dto.hebergement.CheckOutExpressRequest;
 import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
 import com.cityprojects.citybackend.dto.hebergement.RechercheDisponibiliteRequest;
 import com.cityprojects.citybackend.dto.hebergement.ReservationChambreCreateDto;
+import com.cityprojects.citybackend.dto.hebergement.ReservationChambreDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationClientCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
@@ -33,12 +37,15 @@ import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationClientRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
+import com.cityprojects.citybackend.service.finance.FactureService;
 import com.cityprojects.citybackend.service.finance.NumerotationService;
+import com.cityprojects.citybackend.service.finance.ReservationFinanceService;
 import com.cityprojects.citybackend.service.finance.TypeNumerotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -113,10 +120,26 @@ public class ReservationServiceImpl implements ReservationService {
     private final ChambreMapper chambreMapper;
     private final NumerotationService numerotationService;
     /**
+     * Service finance utilise pour la chaine create complete (Tour 44 Phase 1) :
+     * Reservation + Nuitees + Facture previsionnelle + Lignes + DEBIT compte
+     * client en une seule transaction.
+     */
+    private final FactureService factureService;
+    /**
+     * Service cross-module hebergement-finance (Tour 44 Phase 1, etendu Tour 45)
+     * - sert pour le check-out express qui doit ajuster les comptes auxiliaires.
+     */
+    private final ReservationFinanceService reservationFinanceService;
+    /**
      * Publisher Spring d'evenements applicatifs (Tour 30, couplage event-driven
      * vers le module ménage). Voir
      * {@link com.cityprojects.citybackend.common.event.ReservationCheckedOutEvent}
      * et {@link com.cityprojects.citybackend.service.menage.MenagePlanningEventListener}.
+     *
+     * <p>Tour 44 Phase 1 : sert aussi a publier les evenements
+     * {@code ReservationCreatedEvent} / {@code ReservationUpdatedEvent} /
+     * {@code ReservationDeletedEvent} consommes par
+     * {@code CalendarEventListener} (refresh WebSocket du calendrier).</p>
      */
     private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -131,6 +154,8 @@ public class ReservationServiceImpl implements ReservationService {
                                   ReservationMapper reservationMapper,
                                   ChambreMapper chambreMapper,
                                   NumerotationService numerotationService,
+                                  FactureService factureService,
+                                  ReservationFinanceService reservationFinanceService,
                                   ApplicationEventPublisher applicationEventPublisher) {
         this.reservationRepository = reservationRepository;
         this.reservationChambreRepository = reservationChambreRepository;
@@ -143,6 +168,8 @@ public class ReservationServiceImpl implements ReservationService {
         this.reservationMapper = reservationMapper;
         this.chambreMapper = chambreMapper;
         this.numerotationService = numerotationService;
+        this.factureService = factureService;
+        this.reservationFinanceService = reservationFinanceService;
         this.applicationEventPublisher = applicationEventPublisher;
     }
 
@@ -163,9 +190,39 @@ public class ReservationServiceImpl implements ReservationService {
         saved.setMontantTotal(montantNet);
         reservationRepository.save(saved);
 
+        // Tour 44 Phase 1 : chaine atomique - cree immediatement la facture
+        // previsionnelle EMISE + 1 ligne par nuitee + DEBIT compte client.
+        // En cas d'echec, la TX rollback toute la creation reservation.
+        // flush() garantit que les nuitees sont visibles par previsionFromReservation
+        // (FactureServiceImpl execute findByReservationIdOrderByDateNuitAsc).
+        nuiteeRepository.flush();
+        factureService.previsionFromReservation(saved.getReservationId());
+
         logger.info("Reservation creee : id={}, numero={}, montant={}",
                 saved.getReservationId(), saved.getNumeroReservation(), montantNet);
-        return reservationMapper.toDto(saved);
+
+        // Tour 44 Phase 1 : notification calendrier temps reel via WebSocket.
+        // Snapshot TenantContext (le filtre JWT clear le ThreadLocal en finally,
+        // le listener AFTER_COMMIT peut donc s'executer apres clear).
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.CREATED, saved.getReservationId());
+
+        return enrichDto(saved);
+    }
+
+    /**
+     * Helper : publie un evenement de mutation calendrier vers le topic WebSocket
+     * de l'hotel courant. Snapshot du TenantContext au moment du publish car le
+     * listener tourne apres COMMIT (potentiellement apres le clear du filtre).
+     */
+    private void publishCalendarEvent(ReservationCalendarMutationEvent.Type type, Long reservationId) {
+        Long hotelId = TenantContext.getOrNull();
+        if (hotelId == null) {
+            logger.warn("publishCalendarEvent: pas de TenantContext, event {} ignore (reservationId={})",
+                    type, reservationId);
+            return;
+        }
+        applicationEventPublisher.publishEvent(
+                ReservationCalendarMutationEvent.of(type, reservationId, hotelId));
     }
 
     /**
@@ -234,6 +291,9 @@ public class ReservationServiceImpl implements ReservationService {
         // (cf. Reservation#recalcNbNuits, Tour 12bis finding codeC-1).
         reservation.setNbAdultes(dto.nbAdultes() != null ? dto.nbAdultes() : 1);
         reservation.setNbEnfants(dto.nbEnfants() != null ? dto.nbEnfants() : 0);
+        // Statut initial = CONFIRMEE = "créée, non encore arrivée".
+        // Côté grille calendar ce statut est affiché en rouge (le mapping
+        // couleur est porté côté front, cf. STATUT_RESERVATION_CHIP_MAP).
         reservation.setStatut(StatutReservation.CONFIRMEE);
         reservation.setMotifSejour(dto.motifSejour());
         reservation.setCommentaires(dto.commentaires());
@@ -241,6 +301,8 @@ public class ReservationServiceImpl implements ReservationService {
                 dto.reductionPourcentage() != null ? dto.reductionPourcentage() : BigDecimal.ZERO);
         reservation.setMontantTotal(BigDecimal.ZERO);
         reservation.setUserId(userId);
+        // Tour 41 R-HEB-004 : canal de distribution (optionnel, retro-compat = null).
+        reservation.setSourceCanal(dto.sourceCanal());
         // Numero genere par hotel/exercice (RES-2026-MR-000123)
         reservation.setNumeroReservation(numerotationService.next(TypeNumerotation.RES));
         return reservation;
@@ -336,14 +398,14 @@ public class ReservationServiceImpl implements ReservationService {
     public ReservationDto findById(Long reservationId) {
         Reservation entity = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
-        return reservationMapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
     public ReservationDto findByNumero(String numeroReservation) {
         Reservation entity = reservationRepository.findByNumeroReservation(numeroReservation)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
-        return reservationMapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
@@ -361,14 +423,13 @@ public class ReservationServiceImpl implements ReservationService {
         Page<Reservation> page = (statut != null)
                 ? reservationRepository.findByStatut(statut, stable)
                 : reservationRepository.findAll(stable);
-        return page.map(reservationMapper::toDto);
+        return enrichPage(page);
     }
 
     @Override
     public Page<ReservationDto> findByClient(Long clientId, Pageable pageable) {
-        return reservationRepository
-                .findByClientPrincipalIdOrderByDateArriveeDesc(clientId, pageable)
-                .map(reservationMapper::toDto);
+        return enrichPage(reservationRepository
+                .findByClientPrincipalIdOrderByDateArriveeDesc(clientId, pageable));
     }
 
     @Override
@@ -409,7 +470,7 @@ public class ReservationServiceImpl implements ReservationService {
         Pageable remapped = PageableUtils.remapSort(pageable, Map.of("dateCreation", "createdAt"));
         Sort defaultSort = Sort.by(Sort.Order.desc("dateArrivee"));
         Pageable stable = PageableUtils.stable(remapped, defaultSort, "reservationId");
-        return reservationRepository.rechercher(terme.trim(), stable).map(reservationMapper::toDto);
+        return enrichPage(reservationRepository.rechercher(terme.trim(), stable));
     }
 
     @Override
@@ -462,7 +523,9 @@ public class ReservationServiceImpl implements ReservationService {
         }
         // Marquer les nuitees du jour CONSOMMEES (maxDate = today : pas plus loin)
         markNuiteesConsommees(reservationId, LocalDate.now());
-        return reservationMapper.toDto(reservation);
+        // Tour 44 Phase 1 : notification calendrier temps reel.
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.UPDATED, reservationId);
+        return enrichDto(reservation);
     }
 
     @Override
@@ -496,7 +559,10 @@ public class ReservationServiceImpl implements ReservationService {
         applicationEventPublisher.publishEvent(new ReservationCheckedOutEvent(
                 reservationId, TenantContext.get(), LocalDate.now(NOUAKCHOTT), chambreIds));
 
-        return reservationMapper.toDto(reservation);
+        // Tour 44 Phase 1 : notification calendrier temps reel.
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.UPDATED, reservationId);
+
+        return enrichDto(reservation);
     }
 
     @Override
@@ -515,6 +581,35 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BusinessException("error.reservation.dates.invalid");
         }
 
+        // Tour 49 : autoriser changement du client principal et de la societe
+        // (les ReservationClient additionnels NE sont PAS impactes ici - on
+        // modifie uniquement le payeur principal de la reservation).
+        if (dto.clientPrincipalId() != null
+                && !dto.clientPrincipalId().equals(reservation.getClientPrincipalId())) {
+            Client newClient = clientRepository.findById(dto.clientPrincipalId())
+                    .orElseThrow(() -> new ResourceNotFoundException("error.client.notFound"));
+            if (!Boolean.TRUE.equals(newClient.getActif())) {
+                throw new BusinessException("error.client.inactif");
+            }
+            reservation.setClientPrincipalId(dto.clientPrincipalId());
+        }
+        // societeId : un dto.societeId == null signifie ici "ne pas toucher".
+        // Pour DETACHER la societe, le front envoie explicitement la valeur
+        // -1L (sentinelle conventionnelle) - sinon on validerait l'existence.
+        if (dto.societeId() != null
+                && !dto.societeId().equals(reservation.getSocieteId())) {
+            if (dto.societeId() == -1L) {
+                reservation.setSocieteId(null);
+            } else {
+                Societe newSociete = societeRepository.findById(dto.societeId())
+                        .orElseThrow(() -> new ResourceNotFoundException("error.societe.notFound"));
+                if (!Boolean.TRUE.equals(newSociete.getActif())) {
+                    throw new BusinessException("error.societe.inactive");
+                }
+                reservation.setSocieteId(dto.societeId());
+            }
+        }
+
         // Champs editables (les chambres / nuitees / pivots ne sont PAS modifiables ici).
         reservation.setDateArrivee(dto.dateArrivee());
         reservation.setDateDepart(dto.dateDepart());
@@ -525,8 +620,13 @@ public class ReservationServiceImpl implements ReservationService {
         if (dto.reductionPourcentage() != null) {
             reservation.setReductionPourcentage(dto.reductionPourcentage());
         }
+        // Tour 41 R-HEB-004 : canal de distribution editable (null permis = effacer).
+        reservation.setSourceCanal(dto.sourceCanal());
         // nbNuits sera recalcule par @PreUpdate (cf. Reservation.recalcNbNuits).
-        return reservationMapper.toDto(reservationRepository.save(reservation));
+        Reservation persisted = reservationRepository.save(reservation);
+        // Tour 44 Phase 1 : notification calendrier temps reel.
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.UPDATED, reservationId);
+        return enrichDto(persisted);
     }
 
     @Override
@@ -559,15 +659,204 @@ public class ReservationServiceImpl implements ReservationService {
         String previous = (reservation.getCommentaires() != null) ? reservation.getCommentaires() : "";
         reservation.setCommentaires(previous + "\nANNULEE le "
                 + LocalDate.now() + " - Motif: " + motifTrim);
-        return reservationMapper.toDto(reservationRepository.save(reservation));
+        Reservation persisted = reservationRepository.save(reservation);
+        // Tour 44 Phase 1 : notification calendrier temps reel.
+        // DELETED car cote calendrier la reservation disparait (filtre statut !=ANNULEE).
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.DELETED, reservationId);
+        return enrichDto(persisted);
     }
 
     /**
-     * Helper i/o : convertit une liste d'entites Reservation en liste de DTO.
-     * Tour 40bis (refactor H5).
+     * Helper i/o : convertit une liste d'entites Reservation en liste de DTO
+     * enrichis avec leurs pivots {@code reservation_chambres}.
+     * Tour 40bis (refactor H5) + Tour 44 (enrichissement chambres).
      */
     private List<ReservationDto> mapToDto(List<Reservation> entities) {
-        return entities.stream().map(reservationMapper::toDto).collect(Collectors.toList());
+        return enrichDtos(entities);
+    }
+
+    /**
+     * Enrichit un DTO unitaire avec ses pivots {@code reservation_chambres}.
+     * 1 SELECT supplementaire. Pour les listes / pages, preferer
+     * {@link #enrichDtos(List)} ou {@link #enrichPage(Page)} (batch).
+     */
+    private ReservationDto enrichDto(Reservation entity) {
+        List<ReservationChambre> pivots = reservationChambreRepository
+                .findByReservationIdOrderByDateDebutAsc(entity.getReservationId());
+        List<ReservationChambreDto> chambres = pivots.stream()
+                .map(reservationMapper::toDto)
+                .collect(Collectors.toList());
+        return withChambres(reservationMapper.toDto(entity), chambres);
+    }
+
+    /**
+     * Enrichit une liste de DTOs en batch (1 SELECT groupe via WHERE IN).
+     * Indispensable pour le calendrier (jusqu'a 500 reservations / page).
+     */
+    private List<ReservationDto> enrichDtos(List<Reservation> entities) {
+        if (entities.isEmpty()) return List.of();
+        List<Long> ids = entities.stream()
+                .map(Reservation::getReservationId)
+                .collect(Collectors.toList());
+        Map<Long, List<ReservationChambreDto>> byReservation = reservationChambreRepository
+                .findByReservationIdInOrderByDateDebutAsc(ids)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        ReservationChambre::getReservationId,
+                        Collectors.mapping(reservationMapper::toDto, Collectors.toList())));
+        return entities.stream()
+                .map(e -> withChambres(
+                        reservationMapper.toDto(e),
+                        byReservation.getOrDefault(e.getReservationId(), List.of())))
+                .collect(Collectors.toList());
+    }
+
+    /** Variante {@code Page<>} de {@link #enrichDtos(List)}. */
+    private Page<ReservationDto> enrichPage(Page<Reservation> page) {
+        List<ReservationDto> enriched = enrichDtos(page.getContent());
+        return new PageImpl<>(enriched, page.getPageable(), page.getTotalElements());
+    }
+
+    /**
+     * Recopie immutable d'un {@link ReservationDto} en injectant la liste de
+     * chambres. Necessaire car le record est immutable.
+     */
+    private static ReservationDto withChambres(ReservationDto base, List<ReservationChambreDto> chambres) {
+        return new ReservationDto(
+                base.reservationId(),
+                base.numeroReservation(),
+                base.clientPrincipalId(),
+                base.societeId(),
+                base.dateArrivee(),
+                base.dateDepart(),
+                base.nbNuits(),
+                base.nbAdultes(),
+                base.nbEnfants(),
+                base.statut(),
+                base.motifSejour(),
+                base.commentaires(),
+                base.reductionPourcentage(),
+                base.montantTotal(),
+                base.userId(),
+                base.createdAt(),
+                base.updatedAt(),
+                chambres,
+                base.sourceCanal());
+    }
+
+    @Override
+    @Transactional
+    public ReservationDto changerChambre(Long reservationId, ChangerChambreRequest request) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+        // Refus de changer la chambre d'une reservation terminee.
+        if (reservation.getStatut() == StatutReservation.PARTIE
+                || reservation.getStatut() == StatutReservation.ANNULEE
+                || reservation.getStatut() == StatutReservation.NO_SHOW) {
+            throw new BusinessException("error.reservation.changerChambre.terminated");
+        }
+
+        // Identifier le pivot a modifier.
+        List<ReservationChambre> pivots =
+                reservationChambreRepository.findByReservationIdOrderByDateDebutAsc(reservationId);
+        if (pivots.isEmpty()) {
+            throw new BusinessException("error.reservation.changerChambre.aucuneChambre");
+        }
+        ReservationChambre pivot;
+        if (request.ancienneChambreId() != null) {
+            pivot = pivots.stream()
+                    .filter(p -> request.ancienneChambreId().equals(p.getChambreId()))
+                    .findFirst()
+                    .orElseThrow(() -> new BusinessException(
+                            "error.reservation.changerChambre.ancienneChambre.notFound"));
+        } else {
+            if (pivots.size() > 1) {
+                throw new BusinessException(
+                        "error.reservation.changerChambre.ancienneChambre.required");
+            }
+            pivot = pivots.get(0);
+        }
+
+        Long ancienneChambreId = pivot.getChambreId();
+        Long nouvelleChambreId = request.nouvelleChambreId();
+
+        if (ancienneChambreId.equals(nouvelleChambreId)) {
+            throw new BusinessException("error.reservation.changerChambre.identique");
+        }
+
+        // Verifier que la nouvelle chambre existe et est active dans le tenant.
+        Chambre nouvelle = chambreRepository.findById(nouvelleChambreId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.chambre.notFound"));
+        if (!Boolean.TRUE.equals(nouvelle.getActif())) {
+            throw new BusinessException("error.reservation.chambre.inactive");
+        }
+
+        // Verifier qu'il n'y a pas de conflit (lock pessimiste, exclut le pivot
+        // courant via filtrage en memoire pour eviter de se compter soi-meme
+        // sur l'ancienne chambre - sans interet ici puisque la nouvelle chambre
+        // est differente, mais defense en profondeur).
+        List<ReservationChambre> conflits = reservationChambreRepository
+                .findConflictsForUpdate(nouvelleChambreId, pivot.getDateDebut(), pivot.getDateFin());
+        boolean conflitReel = conflits.stream()
+                .anyMatch(c -> !c.getReservationChambreId().equals(pivot.getReservationChambreId()));
+        if (conflitReel) {
+            throw new BusinessException("error.reservation.chambre.conflict");
+        }
+
+        // Mise a jour du pivot.
+        pivot.setChambreId(nouvelleChambreId);
+        reservationChambreRepository.save(pivot);
+
+        // Mise a jour des nuitees PREVUES pour cette chambre.
+        // Tour 44 Phase 1 : depuis la chaine atomique create(), les nuitees
+        // ont deja un factureId (facture previsionnelle EMISE) mais restent
+        // en PREVUE jusqu'au check-in. On rebascule donc TOUTES les PREVUES
+        // sur la nouvelle chambre - la facture previsionnelle est juste mise
+        // a jour cote presentation (libelle ligne contient l'ancienne chambre,
+        // mais l'audit reste tracable via Historique).
+        // Les nuitees CONSOMMEES/FACTUREES (effectivement vecues) restent
+        // rattachees a l'ancienne chambre (audit comptable - on ne reecrit pas
+        // le passe).
+        for (Nuitee n : nuiteeRepository.findByReservationIdOrderByDateNuitAsc(reservationId)) {
+            if (n.getChambreId().equals(ancienneChambreId)
+                    && n.getStatut() == StatutNuitee.PREVUE) {
+                n.setChambreId(nouvelleChambreId);
+                nuiteeRepository.save(n);
+            }
+        }
+
+        // Liberation/occupation des chambres si la reservation est en cours.
+        if (reservation.getStatut() == StatutReservation.ARRIVEE) {
+            // Ancienne chambre liberee -> NETTOYAGE (workflow menage standard).
+            chambreService.changerStatut(ancienneChambreId, StatutChambre.NETTOYAGE);
+            // Nouvelle chambre OCCUPEE.
+            chambreService.changerStatut(nouvelleChambreId, StatutChambre.OCCUPEE);
+        }
+
+        // Trace dans le commentaire de la reservation.
+        String previous = (reservation.getCommentaires() != null) ? reservation.getCommentaires() : "";
+        String raison = (request.raison() != null && !request.raison().isBlank())
+                ? request.raison().trim() : "(non specifiee)";
+        reservation.setCommentaires(previous + "\nCHANGEMENT CHAMBRE le "
+                + LocalDate.now() + " : " + ancienneChambreId + " -> " + nouvelleChambreId
+                + " - Raison: " + raison);
+        Reservation persisted = reservationRepository.save(reservation);
+
+        logger.info("Changement chambre reservation {} : {} -> {} (par user {})",
+                reservationId, ancienneChambreId, nouvelleChambreId, currentUserIdSafe());
+
+        // Tour 44 Phase 1 : notification calendrier temps reel.
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.UPDATED, reservationId);
+        return enrichDto(persisted);
+    }
+
+    /**
+     * Variante "safe" de {@link #currentUserId()} qui retourne null en
+     * l'absence d'authentification (utilise pour les logs uniquement).
+     */
+    private Long currentUserIdSafe() {
+        return SecurityUtils.currentUserIdOrNull();
     }
 
     /**
@@ -614,5 +903,55 @@ public class ReservationServiceImpl implements ReservationService {
             throw new BusinessException("error.reservation.user.unknown");
         }
         return userId;
+    }
+
+    @Override
+    @Transactional
+    public ReservationDto checkOutExpress(Long reservationId, CheckOutExpressRequest request) {
+        if (request == null || request.societeId() == null) {
+            throw new BusinessException("error.checkoutExpress.societe.required");
+        }
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+        if (reservation.getStatut() != StatutReservation.ARRIVEE) {
+            throw new BusinessException("error.checkoutExpress.statut.invalid");
+        }
+
+        // 1) Transfert comptable : DEBIT compte societe + CREDIT compte client.
+        //    Le service finance verifie aussi l'existence d'une facture.
+        Long clientResolved = request.clientId() != null
+                ? request.clientId() : reservation.getClientPrincipalId();
+        reservationFinanceService.applyCheckOutExpressTransfer(
+                reservationId, clientResolved, request.societeId());
+
+        // 2) Workflow check-out standard : reservation -> PARTIE, chambres -> NETTOYAGE.
+        reservation.setStatut(StatutReservation.PARTIE);
+        // Trace
+        String previous = reservation.getCommentaires() != null ? reservation.getCommentaires() : "";
+        reservation.setCommentaires(previous + "\nCHECK-OUT EXPRESS le " + LocalDate.now()
+                + " - Transfert vers societe " + request.societeId());
+        reservationRepository.save(reservation);
+
+        List<Long> chambreIds = new ArrayList<>();
+        for (ReservationChambre rc :
+                reservationChambreRepository.findByReservationIdOrderByDateDebutAsc(reservationId)) {
+            chambreService.changerStatut(rc.getChambreId(), StatutChambre.NETTOYAGE);
+            chambreIds.add(rc.getChambreId());
+        }
+
+        // 3) Marquer toutes les nuitees PREVUEs en CONSOMMEES (idem checkOut standard).
+        markNuiteesConsommees(reservationId, null);
+
+        // 4) Publier l'event menage (workflow A - generation taches QUOTIDIEN).
+        applicationEventPublisher.publishEvent(new ReservationCheckedOutEvent(
+                reservationId, TenantContext.get(), LocalDate.now(NOUAKCHOTT), chambreIds));
+
+        // 5) Notification calendrier
+        publishCalendarEvent(ReservationCalendarMutationEvent.Type.UPDATED, reservationId);
+
+        logger.info("checkOutExpress Tour 45 : reservation={} -> PARTIE, societe={}, client={}",
+                reservationId, request.societeId(), clientResolved);
+        return enrichDto(reservation);
     }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, HostBinding, OnInit, OnDestroy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject, takeUntil, filter } from 'rxjs';
 import { AuthService, UserInfo } from '../../services/auth.service';
@@ -27,6 +27,30 @@ export class SidebarComponent implements OnInit, OnDestroy {
   currentRoute = '';
   isCollapsed = false;
   isMinimized = false;
+
+  // Le <nav class="sidebar"> à l'intérieur du composant est en position fixed,
+  // donc le sélecteur `.sidebar.minimized ~ .main-content` ne match jamais
+  // (sidebar et main-content ne sont pas frères dans le DOM). On fait remonter
+  // l'état sur l'élément host <app-sidebar> qui, lui, est frère de <main>.
+  @HostBinding('class.is-minimized') get hostMinimized(): boolean { return this.isMinimized; }
+  @HostBinding('class.is-collapsed') get hostCollapsed(): boolean { return this.isCollapsed; }
+
+  /**
+   * Routes qui exigent un sidebar minimisé (icônes seules) pour libérer
+   * l'espace écran. Le calendrier des réservations occupe toute la largeur
+   * (cf. `correction-calendar/Cahier de charges définitif.txt`).
+   */
+  private static readonly FULLSCREEN_ROUTES: readonly string[] = [
+    '/hebergement/calendar',
+    '/hebergement/reservations',
+    '/hebergement',
+  ];
+
+  /**
+   * Snapshot de la préférence utilisateur avant un forçage par route
+   * fullscreen. `null` = pas de forçage en cours.
+   */
+  private preferredMinimizeBeforeForce: boolean | null = null;
 
   menuItems: MenuItem[] = [
     {
@@ -77,6 +101,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
           icon: 'fas fa-key',
           route: '/hebergement/check-in',
           roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+        },
+        {
+          // Tour 48 — page Night Audit (préparation de la clôture)
+          id: 'night-audit',
+          label: 'Night audit',
+          icon: 'fas fa-moon',
+          route: '/hebergement/night-audit',
+          roles: ['ADMIN', 'GERANT', 'NIGHTAUDIT', 'SUPERADMIN']
         }
       ]
     },
@@ -94,6 +126,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
           roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
         },
         {
+          id: 'categories-produits',
+          label: 'Catégories produits',
+          icon: 'fas fa-tags',
+          route: '/inventory/categories',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'fournisseurs',
+          label: 'Fournisseurs',
+          icon: 'fas fa-truck',
+          route: '/inventory/fournisseurs',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
           id: 'bons-commande',
           label: 'Bons de commande',
           icon: 'fas fa-shopping-bag',
@@ -101,10 +147,38 @@ export class SidebarComponent implements OnInit, OnDestroy {
           roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
         },
         {
+          id: 'bons-sortie',
+          label: 'Bons de sortie',
+          icon: 'fas fa-sign-out-alt',
+          route: '/inventory/bons-sortie',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
           id: 'stocks',
           label: 'Niveaux de stock',
           icon: 'fas fa-layer-group',
           route: '/inventory/stocks',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'mouvements-stock',
+          label: 'Mouvements stock',
+          icon: 'fas fa-exchange-alt',
+          route: '/inventory/mouvements-stock',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'services-hoteliers',
+          label: 'Services hôteliers',
+          icon: 'fas fa-concierge-bell',
+          route: '/inventory/services-hoteliers',
+          roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
+        },
+        {
+          id: 'types-services-hoteliers',
+          label: 'Types de services',
+          icon: 'fas fa-list-ul',
+          route: '/inventory/types-services-hoteliers',
           roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
         }
       ]
@@ -128,6 +202,102 @@ export class SidebarComponent implements OnInit, OnDestroy {
           icon: 'fas fa-money-bill-wave',
           route: '/finance/paiements',
           roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+        }
+      ]
+    },
+    // Module Comptabilité — feature lazy (Bloc B7, 2026-05-08). Périmètre
+    // restreint SUPERADMIN/ADMIN/GERANT — alignement back. Les écritures
+    // automatiques générées par finance (paiements/factures) sont gérées
+    // côté serveur ; ce menu expose uniquement l'analyse / configuration.
+    {
+      id: 'comptabilite',
+      label: 'sidebar.comptabilite',
+      icon: 'fas fa-calculator',
+      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
+      children: [
+        {
+          id: 'comptabilite-exercices',
+          label: 'sidebar.comptabilite.exercices',
+          icon: 'fas fa-calendar-day',
+          route: '/comptabilite/exercices',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-plan',
+          label: 'sidebar.comptabilite.planComptable',
+          icon: 'fas fa-list-ol',
+          route: '/comptabilite/plan-comptable',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-mapping',
+          label: 'sidebar.comptabilite.mapping',
+          icon: 'fas fa-link',
+          route: '/comptabilite/compte-mapping',
+          roles: ['ADMIN', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-journaux',
+          label: 'sidebar.comptabilite.journaux',
+          icon: 'fas fa-book',
+          route: '/comptabilite/journaux',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-ecritures',
+          label: 'sidebar.comptabilite.ecritures',
+          icon: 'fas fa-pen-fancy',
+          route: '/comptabilite/ecritures',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-tva-config',
+          label: 'sidebar.comptabilite.tvaConfig',
+          icon: 'fas fa-percentage',
+          route: '/comptabilite/tva/config',
+          roles: ['ADMIN', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-tva-declarations',
+          label: 'sidebar.comptabilite.tvaDeclarations',
+          icon: 'fas fa-file-invoice-dollar',
+          route: '/comptabilite/tva/declarations',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-balance',
+          label: 'sidebar.comptabilite.balance',
+          icon: 'fas fa-balance-scale',
+          route: '/comptabilite/etats/balance',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-grand-livre',
+          label: 'sidebar.comptabilite.grandLivre',
+          icon: 'fas fa-book-open',
+          route: '/comptabilite/etats/grand-livre',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-journal-edition',
+          label: 'sidebar.comptabilite.journal',
+          icon: 'fas fa-newspaper',
+          route: '/comptabilite/etats/journal',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-bilan',
+          label: 'sidebar.comptabilite.bilan',
+          icon: 'fas fa-chart-pie',
+          route: '/comptabilite/etats/bilan',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'comptabilite-compte-resultat',
+          label: 'sidebar.comptabilite.compteResultat',
+          icon: 'fas fa-chart-line',
+          route: '/comptabilite/etats/compte-resultat',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
         }
       ]
     },
@@ -203,6 +373,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
       route: '/profile',
       roles: ['ADMIN', 'GERANT', 'SUPERADMIN', 'RECEPTION', 'RESTAURANT', 'RESREC', 'MENAGE', 'MAGASIN']
     },
+    // Administration tenant-scoped (ADMIN d'hôtel uniquement) — Tour B
+    // (2026-05-13). Sépare de l'item 'admin' SUPERADMIN ci-dessous : un ADMIN
+    // gère les users de SON hôtel via /hotel-admin/..., un SUPERADMIN gère
+    // tous les hôtels via /admin/...
+    {
+      id: 'hotel-admin',
+      label: 'menu.hotelAdmin',
+      icon: 'fas fa-user-cog',
+      roles: ['ADMIN'],
+      children: [
+        {
+          id: 'hotel-admin-users',
+          label: 'submenu.hotelAdmin.users',
+          icon: 'fas fa-users',
+          route: '/hotel-admin/users',
+          roles: ['ADMIN']
+        }
+      ]
+    },
     // Administration cross-tenant (SUPERADMIN uniquement) — Tour 31.
     // Le SuperAdminGuard interne au module admin double cette restriction
     // côté routing ; ici la liste `roles` filtre uniquement l'affichage
@@ -269,10 +458,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
       .subscribe((event: NavigationEnd) => {
         this.currentRoute = event.url;
         this.updateActiveItems();
+        this.applyFullscreenRouteMinimize();
       });
 
     // Charger l'état du sidebar depuis localStorage
     this.loadSidebarState();
+
+    // Si on démarre déjà sur une route fullscreen (refresh F5, deep-link),
+    // appliquer la minimisation sans attendre un NavigationEnd.
+    this.currentRoute = this.router.url;
+    this.applyFullscreenRouteMinimize();
   }
 
   ngOnDestroy(): void {
@@ -289,10 +484,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Basculer l'état minimisé (icônes seulement)
+   * Basculer l'état minimisé (icônes seulement). Un toggle manuel sur une
+   * route fullscreen libère le snapshot (l'utilisateur reprend le contrôle).
    */
   toggleMinimize(): void {
     this.isMinimized = !this.isMinimized;
+    this.preferredMinimizeBeforeForce = null;
     this.saveSidebarState();
   }
 
@@ -397,15 +594,41 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Sauvegarder l'état du sidebar
+   * Sauvegarder l'état du sidebar. Quand un forçage est actif (route
+   * fullscreen comme `/hebergement/calendar`), on persiste la préférence
+   * utilisateur initiale plutôt que la valeur forcée, pour ne pas écraser
+   * son choix au prochain démarrage.
    */
   private saveSidebarState(): void {
     if (typeof localStorage !== 'undefined') {
+      const minimizedToPersist = this.preferredMinimizeBeforeForce !== null
+        ? this.preferredMinimizeBeforeForce
+        : this.isMinimized;
       const state = {
         isCollapsed: this.isCollapsed,
-        isMinimized: this.isMinimized
+        isMinimized: minimizedToPersist
       };
       localStorage.setItem('sidebar_state', JSON.stringify(state));
+    }
+  }
+
+  /**
+   * Sur une route fullscreen, force `isMinimized = true` et mémorise la
+   * préférence utilisateur précédente. À la sortie, restaure la préférence.
+   */
+  private applyFullscreenRouteMinimize(): void {
+    const onFullscreen = SidebarComponent.FULLSCREEN_ROUTES.some(prefix =>
+      this.currentRoute === prefix || this.currentRoute.startsWith(prefix + '/') || this.currentRoute.startsWith(prefix + '?')
+    );
+
+    if (onFullscreen) {
+      if (this.preferredMinimizeBeforeForce === null) {
+        this.preferredMinimizeBeforeForce = this.isMinimized;
+        this.isMinimized = true;
+      }
+    } else if (this.preferredMinimizeBeforeForce !== null) {
+      this.isMinimized = this.preferredMinimizeBeforeForce;
+      this.preferredMinimizeBeforeForce = null;
     }
   }
 

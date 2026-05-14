@@ -175,6 +175,67 @@ export class ReservationsService {
       .pipe(map((r) => r.data as DisponibiliteChambreDto));
   }
 
+  /**
+   * Changement de chambre — Tour 44 Phase 1 backend, Phase 2 frontend.
+   *
+   * Spec : `PATCH /api/hebergement/reservations/{id}/chambre`
+   * Body : `ChangerChambreRequest { ancienneChambreId?, nouvelleChambreId, raison? }`
+   *
+   * Le service backend :
+   *  - vérifie l'absence de conflit sur la nouvelle chambre,
+   *  - met à jour le pivot `ReservationChambre`,
+   *  - réaffecte les nuitées non-facturées,
+   *  - libère l'ancienne chambre.
+   *
+   * Lève (codes i18n) :
+   *  - `error.reservation.chambre.conflict` (409)
+   *  - `error.reservation.changerChambre.terminated`
+   *  - `error.reservation.changerChambre.identique`
+   *  - `error.reservation.changerChambre.ancienneChambre.{notFound,required}`
+   *  - `error.reservation.changerChambre.aucuneChambre`
+   */
+  changerChambre(
+    reservationId: number,
+    body: {
+      ancienneChambreId?: number;
+      nouvelleChambreId: number;
+      raison?: string;
+    },
+  ): Observable<Reservation> {
+    return this.http
+      .patch<ApiResponse<Reservation>>(
+        `${this.base}/${reservationId}/chambre`,
+        body,
+      )
+      .pipe(map((r) => r.data as Reservation));
+  }
+
+  /**
+   * Check-out express — Tour 45 Phase A.
+   *
+   * Spec : `POST /api/hebergement/reservations/{id}/check-out-express`
+   * Body : `{societeId, clientId}`
+   *
+   * Le backend :
+   *  - bascule la facture restante sur le compte société indiqué,
+   *  - bascule la réservation en `PARTIE`.
+   *
+   * Codes d'erreur (i18n) :
+   *  - `error.checkoutExpress.statut.invalid`
+   *  - `error.checkoutExpress.societe.required`
+   */
+  checkOutExpress(
+    reservationId: number,
+    body: { societeId: number; clientId: number },
+  ): Observable<Reservation> {
+    return this.http
+      .post<ApiResponse<Reservation>>(
+        `${this.base}/${reservationId}/check-out-express`,
+        body,
+      )
+      .pipe(map((r) => r.data as Reservation));
+  }
+
   // ────────────────────────────────────────────────────────────────────────
   // NOTE : `facturerNuitees(id)` retiré (Tour audit B1+B2, 2026-05-07).
   // Cette transition appartient au module `finance` (POST /reservations/{id}

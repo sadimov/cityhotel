@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { NavigationEnd, Router } from '@angular/router';
+import { Subject, filter, takeUntil } from 'rxjs';
 import { AuthService, UserInfo } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
 
@@ -13,10 +14,23 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   currentUser: UserInfo | null = null;
   isLoading = true;
+  isFullscreenRoute = false;
+
+  /**
+   * Routes plein-écran : padding/maxWidth du wrapper neutralisés pour
+   * libérer toute la place horizontale et verticale. Cohérent avec le
+   * sidebar qui passe en mode minimisé sur ces routes.
+   */
+  private static readonly FULLSCREEN_ROUTES: readonly string[] = [
+    '/hebergement/calendar',
+    '/hebergement/reservations',
+    '/hebergement',
+  ];
 
   constructor(
     private authService: AuthService,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -37,6 +51,21 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
     // Initialiser la direction du document
     this.updateDocumentDirection(this.translationService.getCurrentLanguage());
+
+    // Détecter les routes fullscreen pour neutraliser padding/min-height
+    this.updateFullscreenFlag(this.router.url);
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(event => this.updateFullscreenFlag(event.url));
+  }
+
+  private updateFullscreenFlag(url: string): void {
+    this.isFullscreenRoute = MainLayoutComponent.FULLSCREEN_ROUTES.some(prefix =>
+      url === prefix || url.startsWith(prefix + '/') || url.startsWith(prefix + '?')
+    );
   }
 
   ngOnDestroy(): void {

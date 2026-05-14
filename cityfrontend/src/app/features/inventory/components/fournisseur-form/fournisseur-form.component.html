@@ -1,0 +1,88 @@
+<section class="fournisseur-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      {{ (isEditing ? 'inventory.fournisseurs.form.titleEdit' : 'inventory.fournisseurs.form.titleCreate') | translate }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'inventory.fournisseurs.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label for="nomFournisseur" class="form-label">{{ 'inventory.fournisseurs.fields.nomFournisseur' | translate }}</label>
+          <input id="nomFournisseur" type="text" class="form-control" formControlName="nomFournisseur"
+            [class.is-invalid]="form.get('nomFournisseur')?.invalid && form.get('nomFournisseur')?.touched" />
+          @if (form.get('nomFournisseur')?.touched && form.get('nomFournisseur')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.fournisseurs.errors.nomRequired' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="contactPrincipal" class="form-label">{{ 'inventory.fournisseurs.fields.contactPrincipal' | translate }}</label>
+          <input id="contactPrincipal" type="text" class="form-control" formControlName="contactPrincipal" />
+        </div>
+
+        <div class="col-md-4">
+          <label for="telephone" class="form-label">{{ 'inventory.fournisseurs.fields.telephone' | translate }}</label>
+          <input id="telephone" type="tel" class="form-control" formControlName="telephone" />
+        </div>
+
+        <div class="col-md-8">
+          <label for="email" class="form-label">{{ 'inventory.fournisseurs.fields.email' | translate }}</label>
+          <input id="email" type="email" class="form-control" formControlName="email"
+            [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched" />
+          @if (form.get('email')?.touched && form.get('email')?.errors?.['email']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.fournisseurs.errors.emailInvalid' | translate }}</div>
+          }
+        </div>
+
+        <div class="col-12">
+          <label for="adresse" class="form-label">{{ 'inventory.fournisseurs.fields.adresse' | translate }}</label>
+          <input id="adresse" type="text" class="form-control" formControlName="adresse" />
+        </div>
+
+        <div class="col-md-6">
+          <label for="ville" class="form-label">{{ 'inventory.fournisseurs.fields.ville' | translate }}</label>
+          <input id="ville" type="text" class="form-control" formControlName="ville" />
+        </div>
+
+        <div class="col-md-6">
+          <label for="pays" class="form-label">{{ 'inventory.fournisseurs.fields.pays' | translate }}</label>
+          <input id="pays" type="text" class="form-control" formControlName="pays" />
+        </div>
+
+        <div class="col-12">
+          <label for="conditionsPaiement" class="form-label">{{ 'inventory.fournisseurs.fields.conditionsPaiement' | translate }}</label>
+          <input id="conditionsPaiement" type="text" class="form-control" formControlName="conditionsPaiement" />
+        </div>
+
+        <div class="col-md-6 d-flex align-items-center gap-3 pt-3">
+          <div class="form-check">
+            <input id="actif" type="checkbox" class="form-check-input" formControlName="actif" />
+            <label for="actif" class="form-check-label">{{ 'inventory.fournisseurs.fields.actif' | translate }}</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="cancelEdit()">{{ 'inventory.actions.cancel' | translate }}</button>
+        <button type="submit" class="btn btn-primary" [disabled]="state === 'submitting'">
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+          }
+          {{ 'inventory.actions.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

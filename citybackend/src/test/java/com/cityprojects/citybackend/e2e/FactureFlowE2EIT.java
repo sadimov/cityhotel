@@ -72,19 +72,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *       CREDIT, dernier soldeApres = 0.</li>
  * </ol>
  *
- * <h3>Doctrine Tour 20bis</h3>
- * <p>Les entites {@link Compte}/{@link OperationCompte} sont
- * {@code @Deprecated} (renommage prevu : audit trail auxiliaire client, pas
- * de partie double SYSCOHADA). La doctrine actée Tour 20bis stipule que la
- * compta generale est externalisee vers Dolibarr (bridge a venir tour
- * ulterieur). Ce test valide donc UNIQUEMENT l'audit trail auxiliaire client.
- * Le {@code @SuppressWarnings("deprecation")} sur la classe est volontaire.</p>
+ * <h3>Compta native B1</h3>
+ * <p>Les entites {@link Compte}/{@link OperationCompte} sont les comptes
+ * auxiliaires client/societe du grand-livre (B1, 2026-05-08) : audit trail
+ * du solde client, rattache via mapping comptable au compte collectif 411xxx
+ * du Plan Comptable General. Ce test valide le flow facture - paiement -
+ * verification du folio auxiliaire.</p>
  *
  * <h3>Pas de @Transactional sur la classe</h3>
  * <p>Pattern identique a {@code InventoryFlowE2EIT} et {@code ReservationFlowE2EIT}.
  * Cleanup explicite en {@link #setUp()} / {@link #tearDown()}.</p>
  */
-@SuppressWarnings("deprecation")
 @SpringBootTest
 @ActiveProfiles("test")
 class FactureFlowE2EIT {

@@ -1,6 +1,8 @@
 package com.cityprojects.citybackend.service.hebergement;
 
 import com.cityprojects.citybackend.dto.hebergement.ChambreDto;
+import com.cityprojects.citybackend.dto.hebergement.ChangerChambreRequest;
+import com.cityprojects.citybackend.dto.hebergement.CheckOutExpressRequest;
 import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
 import com.cityprojects.citybackend.dto.hebergement.RechercheDisponibiliteRequest;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
@@ -133,4 +135,41 @@ public interface ReservationService {
      * {@code ANNULEE} pour la tracabilite. Pas de DELETE physique.</p>
      */
     ReservationDto delete(Long reservationId);
+
+    /**
+     * Change la chambre d'une reservation existante (Tour 44 Phase 1).
+     *
+     * <p>Verifie l'absence de conflit de reservation sur la nouvelle chambre
+     * pour la periode du sejour, met a jour le pivot
+     * {@link com.cityprojects.citybackend.entity.hebergement.ReservationChambre}
+     * et les nuitees non-facturees, met a jour le statut des chambres
+     * (ancienne -&gt; DISPONIBLE/NETTOYAGE selon contexte, nouvelle -&gt; OCCUPEE
+     * si reservation ARRIVEE).</p>
+     *
+     * @throws com.cityprojects.citybackend.exception.BusinessException
+     *         si conflit de reservation ou statut interdit
+     * @throws com.cityprojects.citybackend.exception.ResourceNotFoundException
+     *         si la reservation, l'ancienne ou la nouvelle chambre n'existent pas
+     */
+    ReservationDto changerChambre(Long reservationId, ChangerChambreRequest request);
+
+    /**
+     * Tour 45 : check-out express d'une reservation avec transfert du
+     * reste-a-payer sur le compte d'une societe.
+     *
+     * <p>Workflow :</p>
+     * <ol>
+     *   <li>Verifier statut reservation = {@code ARRIVEE} (sinon
+     *       {@code error.checkoutExpress.statut.invalid}).</li>
+     *   <li>Verifier {@code societeId} non null (sinon
+     *       {@code error.checkoutExpress.societe.required}).</li>
+     *   <li>Recuperer la facture liee a la reservation (1 unique).</li>
+     *   <li>Pour le {@code montantRestant} de la facture : DEBIT sur le compte
+     *       societe + CREDIT sur le compte client (pour boucler).</li>
+     *   <li>Marquer facture {@code PARTIELLEMENT_PAYEE} ou {@code PAYEE}.</li>
+     *   <li>Reservation -&gt; {@code PARTIE}, chambres -&gt; {@code NETTOYAGE}.</li>
+     *   <li>Publier {@code ReservationCalendarMutationEvent.UPDATED}.</li>
+     * </ol>
+     */
+    ReservationDto checkOutExpress(Long reservationId, CheckOutExpressRequest request);
 }

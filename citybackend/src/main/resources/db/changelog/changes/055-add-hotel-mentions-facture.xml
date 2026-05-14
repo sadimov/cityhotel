@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B6 (compta) - Mentions legales et identifiant fiscal hotel pour le
+  rendu PDF des factures clients (conformite Mauritanie).
+
+  Ajoute 3 colonnes optionnelles sur core.hotels :
+    - nif (VARCHAR(50)) : Numero d'Identification Fiscale de l'hotel
+      (impression obligatoire sur les factures clients en Mauritanie).
+    - mentions_conditions_paiement (TEXT) : libelle paramatrable affiche en
+      pied de facture (defaut applicatif : "A reception de facture, sauf
+      accord ecrit.").
+    - mentions_penalites_retard (TEXT) : libelle paramatrable (defaut
+      applicatif : "Penalites de retard : taux legal applicable en cas de
+      non-paiement a echeance.").
+
+  Pourquoi ne PAS reutiliser core.parametres (changeset 029) : la table
+  core.parametres est explicitement NON tenant-scoped (cf. JavaDoc + commentaire
+  Liquibase 029). Les mentions doivent varier par hotel (multi-tenant SaaS).
+  Solution : colonnes additionnelles sur core.hotels (visibles, auditables,
+  faciles a editer via le module admin hotel).
+
+  Toutes les colonnes sont nullable : pas de migration de donnees existantes,
+  les valeurs par defaut sont gerees cote applicatif dans FacturePdfHelper.
+  ============================================================================
+-->
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="055-add-hotel-mentions-facture" author="cityprojects">
+        <comment>
+            Bloc B6 : ajout colonnes nif + mentions_conditions_paiement +
+            mentions_penalites_retard sur core.hotels pour le rendu PDF des
+            factures clients (conformite Mauritanie). Toutes nullable.
+        </comment>
+
+        <addColumn tableName="hotels" schemaName="core">
+            <column name="nif" type="VARCHAR(50)"/>
+        </addColumn>
+
+        <addColumn tableName="hotels" schemaName="core">
+            <column name="mentions_conditions_paiement" type="TEXT"/>
+        </addColumn>
+
+        <addColumn tableName="hotels" schemaName="core">
+            <column name="mentions_penalites_retard" type="TEXT"/>
+        </addColumn>
+
+        <rollback>
+            <dropColumn tableName="hotels" schemaName="core" columnName="mentions_penalites_retard"/>
+            <dropColumn tableName="hotels" schemaName="core" columnName="mentions_conditions_paiement"/>
+            <dropColumn tableName="hotels" schemaName="core" columnName="nif"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

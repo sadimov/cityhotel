@@ -32,6 +32,14 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ReservationMapper {
 
+    /**
+     * Le champ {@code chambres} (liste de pivots) est ignoré : l'entité
+     * {@link Reservation} ne possède pas de relation {@code @OneToMany} vers
+     * {@link ReservationChambre} (pattern projet — FK stockée en {@code Long}).
+     * Le service enrichit le DTO après mapping via une requête batch
+     * {@code findByReservationIdIn(...)} pour éviter le N+1.
+     */
+    @Mapping(target = "chambres", ignore = true)
     ReservationDto toDto(Reservation entity);
 
     ReservationChambreDto toDto(ReservationChambre entity);

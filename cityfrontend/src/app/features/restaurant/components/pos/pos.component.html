@@ -15,6 +15,9 @@
       <app-pos-cart
         (checkoutComptant)="openPaymentModal()"
         (reportChambre)="onReportChambre()"
+        (printCaisse)="onPrintCaisse($event.commandeId)"
+        (printCuisine)="onPrintCuisine($event.commandeId)"
+        (startNewOrder)="onStartNewOrder()"
       ></app-pos-cart>
     </div>
   </div>

@@ -1,0 +1,72 @@
+Super, j’ai tout lu. Voici comment fonctionne ton composant “calendrier de réservations”, de bout en bout.
+
+# Vue d’ensemble
+
+* Le composant affiche un **tableau calendrier** (une colonne “chambres”, puis une colonne par jour de la période visible). Les jours s’affichent sur deux lignes d’en-tête, avec mise en avant du week-end et du “aujourd’hui”. Les lignes sont **regroupées par type de chambre**. Chaque réservation occupe un **bloc fusionné (colspan)** sur la largeur correspondant à sa durée. Les cellules vides servent à créer de nouvelles réservations par **glisser-déposer**.  &#x20;
+
+# Données & état (TS)
+
+* Le composant maintient : la liste des chambres, leurs **types** et un mapping `roomsByType`, la **grille de jours** (`days`, `viewStart`, `viewEnd`), la liste de **ReservationClient**, l’utilisateur, et les états de **drag**/sélection, ainsi que la réservation ciblée par le **menu contextuel**. Détection de changement en **OnPush**.   &#x20;
+
+# Construction visuelle du calendrier
+
+* L’en-tête affiche la date et le jour formaté (`getFormattedDay`), avec classes `weekend` / `today-header` via `isWeekend`/`isToday`. &#x20;
+* Les chambres sont **groupées par type**, chaque groupe précédé d’une rangée “type de chambre”. &#x20;
+* Pour chaque chambre et jour rendu, on teste si **une réservation démarre ce jour-là** : si oui, on affiche une cellule fusionnée avec un `colspan` égal à la **durée** de la réservation (`getReservationSpanDays`). Sinon, on affiche une cellule “jour” cliquable/“draggable”.  &#x20;
+* Pour éviter la “sur-itération” des jours recouverts par un `colspan`, le template ne rend que les **jours “têtes de bloc”** calculés par `getRenderedDays`.&#x20;
+
+# Logique de dates & styles d’état
+
+* Aides : “weekend”, “past”, “today”, et mise en exergue si la date de début/fin est **proche (aujourd’hui/demain)** (`isStartDateNear`, `isEndDateNear`). Ces flags pilotent les classes `start-near`/`end-near` dans la cellule de réservation.  &#x20;
+
+# Création par glisser-déposer
+
+* **Démarrage** : `startDrag(room, day)` s’assure qu’on ne commence pas dans le passé ni sur une date déjà couverte par une réservation (pas de double booking). Il initialise la sélection.&#x20;
+* **Survol** : `onDragOver` étend la sélection au fil des jours (si on reste dans la même chambre et sans collision). **Fin** : `endDrag` fixe l’intervalle et ouvre le **modal de création**. (La suite déclenche l’affichage via jQuery/Bootstrap.) &#x20;
+
+# Modal de création (“Réservation”)
+
+* Le modal montre la période choisie, le(s) client(s) à associer, la chambre, une **réduction** et le **total** recalculé (`changeReduction`). Actions **Annuler** / **Réserver**.   &#x20;
+* L’ouverture se fait ainsi : les dates/chambre sont injectées dans le DOM, puis `$('#reservModal').modal('show')`.&#x20;
+
+# Orchestrations métier lors de “Réserver”
+
+* `createReservation()` crée successivement :
+
+  1. la **réservation** (dates, réduction, user, hôtel),
+  2. la **facture** principale (statut “UNPAID”),
+  3. pour **chaque nuitée** du séjour : la **nuitée**, la **ligne de facture** (état “C” clos si dans le passé, “P” provisoire sinon), et une **opération de compte (débit)** correspondante,
+     puis associe **client ↔ réservation ↔ chambre** via `ReservationClient`, et **marque la chambre** comme “booked”.    &#x20;
+
+# Consultation d’une réservation
+
+* Clic sur une réservation → `openReservationDetails(res)` ouvre le **modal de consultation**, charge la **première facture** liée et calcule les **sommes** : total des lignes **closes** (C), total des **affectations** (paiements) et **montant restant**.   &#x20;
+* Le modal affiche l’ID de réservation, le client, la facture, et un panneau de **récapitulatif** (Total, Payé, Balance). &#x20;
+
+# Modification d’une réservation
+
+* Clic droit → **Modifier** : ouvre le **modal de modification** et préremplit `modifyReservationForm` avec client/chambre/société/réduction courants. **Valider** déclenche la mise à jour puis ferme le modal.  &#x20;
+
+# Menu contextuel (clic droit)
+
+* `openContextMenu` positionne et affiche un **menu contextuel** custom (paiements, check-in, modifier, check-out), en ignorant les réservations “annulées/fermées”. Les actions naviguent vers **paiements** ou exécutent **check-in** puis navigation.   &#x20;
+
+# Changement de plage de dates
+
+* Un **date-range input** est prévu dans l’en-tête. Quand la plage change, `changeDateRange(start,end)` recalcule `viewStart/viewEnd`, régénère `days` et regroupe les chambres par type. &#x20;
+
+# Petits détails utiles
+
+* **Sommaire caché** : plusieurs `<p id="...">` invisibles servent à stocker/relire des valeurs (dates courantes, ids, etc.) pour les modales et la création.&#x20;
+* Bouton “**Modifier les nuitées**” depuis la consultation → navigation vers la page dédiée. &#x20;
+
+---
+
+## En clair, le flux utilisateur
+
+1. **Glisser** sur des cases vides d’une chambre pour choisir une période → modal “Réservation”. &#x20;
+2. **Sélectionner** client(s), vérifier **montant**/**réduction**, **Réserver** → la chaîne de persistance crée réservation, facture, nuitées, lignes et opérations, puis associe chambre+client. &#x20;
+3. **Cliquer** une réservation pour la **consulter** (détails, totaux, facture, bouton pour **modifier les nuitées**). &#x20;
+4. **Clic droit** sur une réservation pour **paiements / check-in / modifier / check-out**. &#x20;
+
+Si tu veux, je peux ensuite te proposer un petit refactor (suppression du jQuery, menu contextuel Material/CDK, services “unitaires” pour la création, et guards côté calendrier pour éviter toute collision).

@@ -24,6 +24,7 @@ import { DashboardComponent } from './core/dashboard/dashboard.component';
 import { HeaderComponent } from './core/header/header.component';
 import { SidebarComponent } from './core/sidebar/sidebar.component';
 import { MainLayoutComponent } from './core/main-layout/main-layout.component';
+import { NightAuditNotifierComponent } from './core/night-audit-notifier/night-audit-notifier.component';
 
 // Profile components
 import { ProfileComponent } from './profile/profile/profile.component';
@@ -66,6 +67,7 @@ import { uiReducer, UI_FEATURE_KEY, UiEffects } from './store/ui';
     HeaderComponent,
     SidebarComponent,
     MainLayoutComponent,
+    NightAuditNotifierComponent,
 
     // Profile components
     ProfileComponent,

@@ -100,6 +100,13 @@ public class Paiement extends AuditableEntity implements TenantAware {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    /**
+     * Id de l'ecriture comptable CAI/BAN generee a la creation du paiement
+     * (Bloc B3). Nullable tant que le paiement n'a pas declenche d'ecriture.
+     */
+    @Column(name = "ecriture_encaissement_id")
+    private Long ecritureEncaissementId;
+
     /** Constructeur JPA - initialise datePaiement a aujourd'hui. */
     public Paiement() {
         this.datePaiement = LocalDate.now();
@@ -201,5 +208,13 @@ public class Paiement extends AuditableEntity implements TenantAware {
 
     public void setUserId(Long userId) {
         this.userId = userId;
+    }
+
+    public Long getEcritureEncaissementId() {
+        return ecritureEncaissementId;
+    }
+
+    public void setEcritureEncaissementId(Long ecritureEncaissementId) {
+        this.ecritureEncaissementId = ecritureEncaissementId;
     }
 }

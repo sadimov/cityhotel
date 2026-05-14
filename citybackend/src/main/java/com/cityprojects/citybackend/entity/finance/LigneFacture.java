@@ -13,6 +13,9 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.annotations.TenantId;
+
+import com.cityprojects.citybackend.common.tenant.TenantAware;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,10 +24,13 @@ import java.time.LocalDate;
 /**
  * Ligne detaillee d'une {@link Facture}.
  *
- * <p>Pas de {@code hotelId} sur la ligne : l'isolation tenant est portee par la
- * facture parent ({@code factureId}). La coherence cross-tenant est garantie
- * par la FK vers {@code finance.factures} (qui porte le hotel_id) et par les
- * services qui valident l'appartenance via la facture.</p>
+ * <p><b>Isolation multi-tenant native</b> (B1, 2026-05-08) : porte
+ * {@code @TenantId hotelId} pour garantir que toute requete Spring Data
+ * (incluant {@code existsByNuiteeId}, {@code findByReservationId}, etc.)
+ * est filtree automatiquement par Hibernate. Le hotelId est positionne
+ * automatiquement par Hibernate via le resolver a l'INSERT, et doit toujours
+ * coincider avec celui de la facture parente (garantie cote service +
+ * trigger PL/pgSQL en Postgres).</p>
  *
  * <h3>Calcul des montants</h3>
  * <p>Recalcule automatiquement par Hibernate via {@link PrePersist} et
@@ -48,12 +54,16 @@ import java.time.LocalDate;
  */
 @Entity
 @Table(name = "lignes_factures", schema = "finance")
-public class LigneFacture {
+public class LigneFacture implements TenantAware {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ligne_facture_id")
     private Long ligneFactureId;
+
+    @TenantId
+    @Column(name = "hotel_id", nullable = false, updatable = false)
+    private Long hotelId;
 
     @NotNull
     @Column(name = "facture_id", nullable = false)
@@ -139,6 +149,16 @@ public class LigneFacture {
 
     public void setLigneFactureId(Long ligneFactureId) {
         this.ligneFactureId = ligneFactureId;
+    }
+
+    @Override
+    public Long getHotelId() {
+        return hotelId;
+    }
+
+    @Override
+    public void setHotelId(Long hotelId) {
+        this.hotelId = hotelId;
     }
 
     public Long getFactureId() {

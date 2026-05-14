@@ -55,5 +55,36 @@ public record ReservationCreateDto(
         List<ReservationChambreCreateDto> chambres,
 
         @Valid
-        List<ReservationClientCreateDto> clientsAdditionnels) {
+        List<ReservationClientCreateDto> clientsAdditionnels,
+
+        /**
+         * Canal de distribution (Tour 41, R-HEB-004). Optionnel. Valeurs indicatives :
+         * DIRECT_HOTEL, WEBSITE, BOOKING_COM, EXPEDIA, AIRBNB, AGENCE_VOYAGE,
+         * WALK_IN, TELEPHONE, EMAIL, AUTRE. Place en dernier pour preserver la
+         * compatibilite des appels positionnels existants (tests Tours 8+).
+         */
+        @Size(max = 50, message = "error.reservation.sourceCanal.tooLong")
+        String sourceCanal) {
+
+    /**
+     * Constructeur compact retro-compatible : permet d'instancier sans le champ
+     * {@code sourceCanal} ajoute au Tour 41 — evite la refactor en cascade des
+     * tests historiques. Equivalent a {@code sourceCanal = null}.
+     */
+    public ReservationCreateDto(
+            Long clientPrincipalId,
+            Long societeId,
+            LocalDate dateArrivee,
+            LocalDate dateDepart,
+            Integer nbAdultes,
+            Integer nbEnfants,
+            String motifSejour,
+            String commentaires,
+            BigDecimal reductionPourcentage,
+            List<ReservationChambreCreateDto> chambres,
+            List<ReservationClientCreateDto> clientsAdditionnels) {
+        this(clientPrincipalId, societeId, dateArrivee, dateDepart, nbAdultes,
+                nbEnfants, motifSejour, commentaires, reductionPourcentage,
+                chambres, clientsAdditionnels, null);
+    }
 }

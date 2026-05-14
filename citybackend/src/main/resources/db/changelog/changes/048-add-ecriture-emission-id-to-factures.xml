@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B3 (compta native, branchement automatique) - lien facture -> ecriture.
+
+  Ajoute la colonne ecriture_emission_id (nullable) sur finance.factures.
+  Pose une FK vers finance.ecriture_comptable(id). Backfill aucun (pas
+  d'historique d'ecritures comptables avant B3).
+
+  La colonne est renseignee par FactureServiceImpl.emettre() apres creation
+  de l'ecriture VTE associee (411xxx DEBIT / 706xxx CREDIT).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="048-1-add-ecriture-emission-id-to-factures" author="cityprojects">
+        <comment>
+            Bloc B3 - colonne nullable ecriture_emission_id sur factures.
+            Renseignee par FactureServiceImpl.emettre() apres creation
+            de l'ecriture VTE associee (411xxx DEBIT / 706xxx CREDIT).
+        </comment>
+
+        <addColumn schemaName="finance" tableName="factures">
+            <column name="ecriture_emission_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="factures" baseTableSchemaName="finance"
+                baseColumnNames="ecriture_emission_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_factures_ecriture_emission"/>
+
+        <createIndex tableName="factures" schemaName="finance"
+                     indexName="ix_factures_ecriture_emission">
+            <column name="ecriture_emission_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="factures" schemaName="finance"
+                       indexName="ix_factures_ecriture_emission"/>
+            <dropForeignKeyConstraint baseTableName="factures" baseTableSchemaName="finance"
+                                      constraintName="fk_factures_ecriture_emission"/>
+            <dropColumn tableName="factures" schemaName="finance" columnName="ecriture_emission_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

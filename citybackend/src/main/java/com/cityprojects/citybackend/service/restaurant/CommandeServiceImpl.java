@@ -432,6 +432,124 @@ public class CommandeServiceImpl implements CommandeService {
     }
 
     // ====================================================================
+    // Tour 50 : consultations par reservation / client + mutation lignes
+    // ====================================================================
+
+    @Override
+    public List<CommandeDto> findByReservation(Long reservationId) {
+        if (reservationId == null) {
+            throw new BusinessException("error.commande.reservationId.required");
+        }
+        // Hibernate applique automatiquement WHERE hotel_id = ? via @TenantId :
+        // une reservation d'un autre tenant ne renverra rien.
+        return commandeRepository
+                .findByReservationIdOrderByDateCommandeAsc(reservationId)
+                .stream().map(this::toDtoWithLignes).toList();
+    }
+
+    @Override
+    public Page<CommandeDto> findByClient(Long clientId, Pageable pageable) {
+        if (clientId == null) {
+            throw new BusinessException("error.commande.clientId.required");
+        }
+        return commandeRepository
+                .findByClientIdOrderByDateCommandeDesc(clientId, pageable)
+                .map(this::toDtoWithLignes);
+    }
+
+    @Override
+    @Transactional
+    public CommandeDto addLigne(Long commandeId, LigneCommandeCreateDto ligneDto) {
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
+        if (commande.getStatut() != StatutCommande.BROUILLON) {
+            throw new BusinessException("error.commande.ligne.ajoutInterdit");
+        }
+        if (commande.getFactureId() != null) {
+            throw new BusinessException("error.commande.encaissement.dejaFacturee");
+        }
+        creerLigne(commandeId, ligneDto);
+        recalcMontants(commandeId);
+
+        Commande refreshed = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new BusinessException("error.commande.notFound"));
+        logger.info("Commande {} : ligne ajoutee (article {}, qte {}). Nouveau total : {}",
+                commande.getNumeroCommande(), ligneDto.articleId(),
+                ligneDto.quantite(), refreshed.getMontantTtc());
+        return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    @Transactional
+    public CommandeDto removeLigne(Long commandeId, Long ligneId) {
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
+        if (commande.getStatut() != StatutCommande.BROUILLON) {
+            // Apres envoi cuisine, la suppression doit passer par annulerLigne avec motif
+            throw new BusinessException("error.commande.ligne.suppressionInterdite");
+        }
+        if (commande.getFactureId() != null) {
+            throw new BusinessException("error.commande.encaissement.dejaFacturee");
+        }
+        LigneCommande ligne = ligneCommandeRepository.findById(ligneId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.ligneCommande.notFound"));
+        if (!ligne.getCommandeId().equals(commandeId)) {
+            // Coherence ligne / commande : refus si la ligne appartient a une autre commande.
+            throw new BusinessException("error.ligneCommande.commandeMismatch");
+        }
+        long count = ligneCommandeRepository
+                .findByCommandeIdOrderByLigneIdAsc(commandeId).size();
+        if (count <= 1) {
+            throw new BusinessException("error.commande.ligne.derniereInterdite");
+        }
+        ligneCommandeRepository.delete(ligne);
+        recalcMontants(commandeId);
+
+        Commande refreshed = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new BusinessException("error.commande.notFound"));
+        logger.info("Commande {} : ligne {} retiree en BROUILLON. Nouveau total : {}",
+                commande.getNumeroCommande(), ligneId, refreshed.getMontantTtc());
+        return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    @Transactional
+    public CommandeDto annulerLigne(Long commandeId, Long ligneId, String motif) {
+        if (motif == null || motif.isBlank()) {
+            throw new BusinessException("error.ligneCommande.motif.required");
+        }
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
+        if (commande.getStatut() == StatutCommande.SERVIE
+                || commande.getStatut() == StatutCommande.ANNULEE) {
+            throw new BusinessException("error.commande.ligne.annulationInterdite");
+        }
+        if (commande.getFactureId() != null) {
+            throw new BusinessException("error.commande.encaissement.dejaFacturee");
+        }
+        LigneCommande ligne = ligneCommandeRepository.findById(ligneId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.ligneCommande.notFound"));
+        if (!ligne.getCommandeId().equals(commandeId)) {
+            throw new BusinessException("error.ligneCommande.commandeMismatch");
+        }
+        long count = ligneCommandeRepository
+                .findByCommandeIdOrderByLigneIdAsc(commandeId).size();
+        if (count <= 1) {
+            throw new BusinessException("error.commande.ligne.derniereInterdite");
+        }
+        // Audit (le delete est physique pour eviter de fausser les totaux). Trace
+        // dans le log avec libelle + motif.
+        logger.info("Commande {} : ligne {} ({}) annulee, motif: {}",
+                commande.getNumeroCommande(), ligneId, ligne.getLibelle(), motif);
+        ligneCommandeRepository.delete(ligne);
+        recalcMontants(commandeId);
+
+        Commande refreshed = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new BusinessException("error.commande.notFound"));
+        return toDtoWithLignes(refreshed);
+    }
+
+    // ====================================================================
     // Helpers prives
     // ====================================================================
 

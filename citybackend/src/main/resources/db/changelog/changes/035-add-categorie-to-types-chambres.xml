@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+    ============================================================================
+    Tour 49 : ajout colonne 'categorie' sur hebergement.types_chambres.
+
+    Distingue les types CHAMBRE (location nuitee) des types SALLE (location
+    journee). Reutilise toute la mecanique existante :
+      - Chambre  (une "salle physique" = Chambre.typeId -> TypeChambre.categorie=SALLE)
+      - Reservation + ReservationChambre + Nuitee + Facture
+
+    Default 'CHAMBRE' pour preserver le comportement existant (tous les types
+    crees avant Tour 49 restent des chambres).
+
+    CHECK constraint sur les valeurs CHAMBRE / SALLE pour eviter les valeurs
+    invalides cote BDD si quelqu'un bypass Hibernate.
+    ============================================================================
+    -->
+
+    <changeSet id="035-add-categorie-types-chambres" author="cityprojects">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="hebergement" tableName="types_chambres" columnName="categorie"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="hebergement" tableName="types_chambres">
+            <column name="categorie" type="VARCHAR(20)" defaultValue="CHAMBRE">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+
+        <!-- Backfill defensif des eventuelles lignes a NULL (Postgres
+             applique le defaut a l'ALTER, H2 aussi mais on securise). -->
+        <update schemaName="hebergement" tableName="types_chambres">
+            <column name="categorie" value="CHAMBRE"/>
+            <where>categorie IS NULL</where>
+        </update>
+
+        <sql>
+            ALTER TABLE hebergement.types_chambres
+                ADD CONSTRAINT chk_types_chambres_categorie
+                CHECK (categorie IN ('CHAMBRE', 'SALLE'));
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE hebergement.types_chambres
+                    DROP CONSTRAINT IF EXISTS chk_types_chambres_categorie;
+            </sql>
+            <dropColumn schemaName="hebergement" tableName="types_chambres" columnName="categorie"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

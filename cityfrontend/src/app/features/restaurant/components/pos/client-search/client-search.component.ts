@@ -4,7 +4,12 @@ import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operato
 
 import { Client } from '../../../../clients/models/client.model';
 import { ClientsService } from '../../../../clients/services/clients.service';
-import { Reservation } from '../../../../hebergement/models/reservation.model';
+import {
+  Reservation,
+  STATUT_RESERVATION_BADGE_MAP,
+  StatutReservation,
+  statutReservationKey,
+} from '../../../../hebergement/models/reservation.model';
 import { PosStore } from '../state/pos.store';
 
 /**
@@ -103,5 +108,46 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
     reservation: Reservation,
   ): number | string {
     return reservation.reservationId ?? _index;
+  }
+
+  /** Clé i18n du statut réservation (cf. hebergement.statut.*). */
+  statutKey(statut: StatutReservation | undefined): string {
+    return statutReservationKey(statut);
+  }
+
+  /** Classe Bootstrap pour le badge de statut. */
+  statutBadgeClass(statut: StatutReservation | undefined): string {
+    if (!statut) {
+      return 'text-bg-secondary';
+    }
+    return STATUT_RESERVATION_BADGE_MAP[statut] ?? 'text-bg-secondary';
+  }
+
+  /**
+   * Concatène les numéros de chambre d'une réservation pour affichage
+   * compact (ex. « 101, 102 ») — utile quand la réservation porte sur
+   * plusieurs chambres.
+   */
+  chambreLabel(reservation: Reservation): string {
+    const chambres = reservation.chambres;
+    if (!chambres || chambres.length === 0) {
+      return '';
+    }
+    const numeros = chambres
+      .map((c) => c.numeroChambre)
+      .filter((n): n is string => !!n);
+    return numeros.join(', ');
+  }
+
+  /** Liste les types de chambre distincts (« Standard, Suite »). */
+  typeLabel(reservation: Reservation): string {
+    const chambres = reservation.chambres;
+    if (!chambres || chambres.length === 0) {
+      return '';
+    }
+    const types = Array.from(
+      new Set(chambres.map((c) => c.typeNom).filter((t): t is string => !!t)),
+    );
+    return types.join(', ');
   }
 }

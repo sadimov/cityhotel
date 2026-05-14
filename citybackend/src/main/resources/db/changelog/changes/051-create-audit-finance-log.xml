@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B3 (compta native, audit) - table d'audit dediee aux flux financiers
+  et comptables.
+
+  L'aspect existant AuditActionAspect du module menage est fortement couple
+  a Tache/TacheDto/HistoriqueService et ne peut etre etendu sans casser
+  ses appelants. On introduit une table d'audit generique tenant-aware
+  pour les operations finance (creation/emission/annulation facture,
+  paiement, ecriture, exercice).
+
+  Le payload JSON est laisse libre (texte). L'aspect @AuditFinanceAction
+  remplit timestamp + user_id + action + entity_type + entity_id.
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="051-1-create-audit-finance-log" author="cityprojects">
+        <comment>
+            Bloc B3 - table finance.audit_finance_log : audit trail dedie
+            aux flux financiers (cree/emis/annule pour Facture, Paiement,
+            Ecriture, Exercice...). Tenant-aware (@TenantId + CHECK > 0).
+        </comment>
+
+        <createTable tableName="audit_finance_log" schemaName="finance">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_audit_finance_log" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="action" type="VARCHAR(60)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_type" type="VARCHAR(40)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="entity_id" type="BIGINT"/>
+            <column name="user_id" type="BIGINT"/>
+            <column name="event_at" type="TIMESTAMP WITH TIME ZONE" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="payload" type="VARCHAR(2000)"/>
+        </createTable>
+
+        <addForeignKeyConstraint
+                baseTableName="audit_finance_log" baseTableSchemaName="finance"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels" referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_audit_finance_log_hotel"/>
+
+        <sql>
+            ALTER TABLE finance.audit_finance_log
+            ADD CONSTRAINT chk_audit_finance_log_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <createIndex tableName="audit_finance_log" schemaName="finance"
+                     indexName="ix_audit_finance_log_hotel_event_at">
+            <column name="hotel_id"/>
+            <column name="event_at"/>
+        </createIndex>
+
+        <createIndex tableName="audit_finance_log" schemaName="finance"
+                     indexName="ix_audit_finance_log_entity">
+            <column name="entity_type"/>
+            <column name="entity_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropTable tableName="audit_finance_log" schemaName="finance"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

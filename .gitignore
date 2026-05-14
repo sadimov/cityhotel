@@ -69,3 +69,10 @@ carto.md
 /MENAGE/
 /RESTAURANT/
 
+
+# Reference ancienne implementation (contient un sous-repo .git, non trackable
+# tel quel). Sert de matiere premiere - lecture seule depuis les tours de refonte.
+/ancienne_implementation/
+
+# Fichiers de debug session
+/erreurs_console*.md

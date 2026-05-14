@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Bloc B3 (compta native, branchement automatique) - lien paiement -> ecriture.
+
+  Ajoute la colonne ecriture_encaissement_id (nullable) sur finance.paiements.
+  Pose une FK vers finance.ecriture_comptable(id).
+
+  La colonne est renseignee par PaiementServiceImpl.create() apres creation
+  de l'ecriture CAI ou BAN (5xxxxx DEBIT / 411xxx CREDIT).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="049-1-add-ecriture-encaissement-id-to-paiements" author="cityprojects">
+        <comment>
+            Bloc B3 - colonne nullable ecriture_encaissement_id sur paiements.
+            Renseignee par PaiementServiceImpl.create() apres creation
+            de l'ecriture de tresorerie associee.
+        </comment>
+
+        <addColumn schemaName="finance" tableName="paiements">
+            <column name="ecriture_encaissement_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <addForeignKeyConstraint
+                baseTableName="paiements" baseTableSchemaName="finance"
+                baseColumnNames="ecriture_encaissement_id"
+                referencedTableName="ecriture_comptable" referencedTableSchemaName="finance"
+                referencedColumnNames="id"
+                constraintName="fk_paiements_ecriture_encaissement"/>
+
+        <createIndex tableName="paiements" schemaName="finance"
+                     indexName="ix_paiements_ecriture_encaissement">
+            <column name="ecriture_encaissement_id"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex tableName="paiements" schemaName="finance"
+                       indexName="ix_paiements_ecriture_encaissement"/>
+            <dropForeignKeyConstraint baseTableName="paiements" baseTableSchemaName="finance"
+                                      constraintName="fk_paiements_ecriture_encaissement"/>
+            <dropColumn tableName="paiements" schemaName="finance"
+                        columnName="ecriture_encaissement_id"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

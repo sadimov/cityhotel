@@ -195,12 +195,16 @@ class FactureControllerIT {
                         .characterEncoding(StandardCharsets.UTF_8)
                         .content(body.getBytes(StandardCharsets.UTF_8)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.factureId").exists())
-                .andExpect(jsonPath("$.numeroFacture").exists())
-                .andExpect(jsonPath("$.statut").value("BROUILLON"))
-                .andExpect(jsonPath("$.devise").value("MRU"))
+                // Tour 39 : ApiResponseBodyAdvice wrappe toutes les reponses dans
+                // { success, message, data: { ... } }. Les anciennes assertions
+                // sur $.factureId sont remplacees par $.data.factureId.
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.factureId").exists())
+                .andExpect(jsonPath("$.data.numeroFacture").exists())
+                .andExpect(jsonPath("$.data.statut").value("BROUILLON"))
+                .andExpect(jsonPath("$.data.devise").value("MRU"))
                 // Pas de hotelId expose dans le DTO (regle CLAUDE.md)
-                .andExpect(jsonPath("$.hotelId").doesNotExist());
+                .andExpect(jsonPath("$.data.hotelId").doesNotExist());
     }
 
     @Test

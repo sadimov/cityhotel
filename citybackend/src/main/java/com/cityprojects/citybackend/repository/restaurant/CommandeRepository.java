@@ -7,8 +7,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -67,4 +70,38 @@ public interface CommandeRepository
      */
     long countByDateCommandeBetweenAndFactureIdIsNotNull(Instant startInclusive,
                                                          Instant endExclusive);
+
+    // ============================================================================
+    // Tour 41 — Reporting P2 : R-RES-001 / 002 / 003.
+    // Filtre tenant ajoute automatiquement par Hibernate via @TenantId.
+    // ============================================================================
+
+    /**
+     * Commandes encaissees a une date donnee (journee Nouakchott convertie en
+     * fenetre UTC). Statut != ANNULEE et {@code montantPaye > 0}.
+     */
+    @Query("SELECT c FROM Commande c "
+            + "WHERE c.dateCommande >= :startInclusive AND c.dateCommande < :endExclusive "
+            + "AND c.statut <> com.cityprojects.citybackend.entity.restaurant.StatutCommande.ANNULEE "
+            + "AND c.montantPaye > 0 "
+            + "ORDER BY c.dateCommande ASC")
+    List<Commande> findEncaisseesBetween(@Param("startInclusive") Instant startInclusive,
+                                         @Param("endExclusive") Instant endExclusive);
+
+    /**
+     * Aggregat ticket moyen (R-RES-003) sur la plage : {@code [nbCommandes, caTotal]}.
+     * Statut != ANNULEE.
+     */
+    @Query("SELECT COUNT(c), COALESCE(SUM(c.montantTtc), 0) FROM Commande c "
+            + "WHERE c.dateCommande >= :startInclusive AND c.dateCommande < :endExclusive "
+            + "AND c.statut <> com.cityprojects.citybackend.entity.restaurant.StatutCommande.ANNULEE")
+    Object[] aggregateTicketMoyen(@Param("startInclusive") Instant startInclusive,
+                                  @Param("endExclusive") Instant endExclusive);
+
+    /** Somme {@code montantPaye} des commandes encaissees sur la plage. */
+    @Query("SELECT COALESCE(SUM(c.montantPaye), 0) FROM Commande c "
+            + "WHERE c.dateCommande >= :startInclusive AND c.dateCommande < :endExclusive "
+            + "AND c.statut <> com.cityprojects.citybackend.entity.restaurant.StatutCommande.ANNULEE")
+    BigDecimal sumMontantPayeOnRange(@Param("startInclusive") Instant startInclusive,
+                                     @Param("endExclusive") Instant endExclusive);
 }

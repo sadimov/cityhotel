@@ -1,0 +1,100 @@
+<section class="balance-viewer">
+  <header class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 m-0">{{ 'comptabilite.balance.title' | translate }}</h2>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="generate()" novalidate class="mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-2">
+        <label for="exerciceId" class="form-label">{{ 'comptabilite.etats.fields.exerciceId' | translate }}</label>
+        <input id="exerciceId" type="number" class="form-control" formControlName="exerciceId" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateDebut" class="form-label">{{ 'comptabilite.etats.fields.dateDebut' | translate }}</label>
+        <input id="dateDebut" type="date" class="form-control" formControlName="dateDebut" />
+      </div>
+      <div class="col-md-2">
+        <label for="dateFin" class="form-label">{{ 'comptabilite.etats.fields.dateFin' | translate }}</label>
+        <input id="dateFin" type="date" class="form-control" formControlName="dateFin" />
+      </div>
+      <div class="col-md-2">
+        <label for="classe" class="form-label">{{ 'comptabilite.etats.fields.classe' | translate }}</label>
+        <select id="classe" class="form-select" formControlName="classe">
+          <option value="">{{ 'comptabilite.etats.fields.classeAll' | translate }}</option>
+          @for (c of classes; track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+          <i class="bi bi-play-fill me-1" aria-hidden="true"></i>
+          {{ 'comptabilite.etats.actions.generate' | translate }}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" (click)="exportXlsx()" [disabled]="exporting">
+          <i class="bi bi-file-earmark-spreadsheet me-1" aria-hidden="true"></i>
+          XLSX
+        </button>
+        <button type="button" class="btn btn-outline-danger" (click)="exportPdf()" [disabled]="exporting">
+          <i class="bi bi-file-earmark-pdf me-1" aria-hidden="true"></i>
+          PDF
+        </button>
+      </div>
+    </div>
+  </form>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">{{ 'error.etat.fetchFailed' | translate }}</div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info" role="status">{{ 'comptabilite.balance.empty' | translate }}</div>
+  } @else if (state === 'ready' && balance) {
+    <div class="row mb-3">
+      <div class="col-md-3"><strong>{{ 'comptabilite.balance.exerciceCode' | translate }}:</strong> <code>{{ balance.exerciceCode }}</code></div>
+      <div class="col-md-3"><strong>{{ 'comptabilite.balance.periode' | translate }}:</strong> {{ balance.dateDebut }} → {{ balance.dateFin }}</div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table table-sm table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.compteCode' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.libelle' | translate }}</th>
+            <th scope="col">{{ 'comptabilite.planComptable.fields.classe' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.balance.totalDebit' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.balance.totalCredit' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.balance.soldeDebiteur' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'comptabilite.balance.soldeCrediteur' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (l of balance.lignes; track l.compteCode) {
+            <tr>
+              <td><code>{{ l.compteCode }}</code></td>
+              <td>{{ l.compteLibelle }}</td>
+              <td>{{ l.classe }}</td>
+              <td class="text-end">{{ l.totalDebit | number:'1.2-2' }}</td>
+              <td class="text-end">{{ l.totalCredit | number:'1.2-2' }}</td>
+              <td class="text-end">{{ l.soldeDebiteur | number:'1.2-2' }}</td>
+              <td class="text-end">{{ l.soldeCrediteur | number:'1.2-2' }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr class="table-light fw-bold">
+            <td colspan="3" class="text-end">{{ 'common.total' | translate }}</td>
+            <td class="text-end">{{ balance.totalDebit | number:'1.2-2' }}</td>
+            <td class="text-end">{{ balance.totalCredit | number:'1.2-2' }}</td>
+            <td class="text-end">{{ balance.totalSoldeDebiteur | number:'1.2-2' }}</td>
+            <td class="text-end">{{ balance.totalSoldeCrediteur | number:'1.2-2' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  }
+</section>

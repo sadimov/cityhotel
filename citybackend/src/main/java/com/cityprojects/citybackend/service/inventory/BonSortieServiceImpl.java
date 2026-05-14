@@ -1,5 +1,6 @@
 package com.cityprojects.citybackend.service.inventory;
 
+import com.cityprojects.citybackend.common.audit.AuditFinanceAction;
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.inventory.BonSortieCreateDto;
 import com.cityprojects.citybackend.dto.inventory.BonSortieDto;
@@ -19,6 +20,8 @@ import com.cityprojects.citybackend.repository.inventory.LigneBonSortieRepositor
 import com.cityprojects.citybackend.repository.inventory.MouvementStockRepository;
 import com.cityprojects.citybackend.repository.inventory.ProduitRepository;
 import com.cityprojects.citybackend.security.UserPrincipal;
+import com.cityprojects.citybackend.service.finance.EcritureComptableService;
+import com.cityprojects.citybackend.service.finance.EcritureGenerationService;
 import com.cityprojects.citybackend.service.finance.NumerotationService;
 import com.cityprojects.citybackend.service.finance.TypeNumerotation;
 import org.slf4j.Logger;
@@ -30,6 +33,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -48,19 +52,25 @@ public class BonSortieServiceImpl implements BonSortieService {
     private final MouvementStockRepository mouvementRepository;
     private final BonSortieMapper mapper;
     private final NumerotationService numerotationService;
+    private final EcritureGenerationService ecritureGenerationService;
+    private final EcritureComptableService ecritureComptableService;
 
     public BonSortieServiceImpl(BonSortieRepository bsRepository,
                                 LigneBonSortieRepository ligneRepository,
                                 ProduitRepository produitRepository,
                                 MouvementStockRepository mouvementRepository,
                                 BonSortieMapper mapper,
-                                NumerotationService numerotationService) {
+                                NumerotationService numerotationService,
+                                EcritureGenerationService ecritureGenerationService,
+                                EcritureComptableService ecritureComptableService) {
         this.bsRepository = bsRepository;
         this.ligneRepository = ligneRepository;
         this.produitRepository = produitRepository;
         this.mouvementRepository = mouvementRepository;
         this.mapper = mapper;
         this.numerotationService = numerotationService;
+        this.ecritureGenerationService = ecritureGenerationService;
+        this.ecritureComptableService = ecritureComptableService;
     }
 
     @Override
@@ -138,6 +148,7 @@ public class BonSortieServiceImpl implements BonSortieService {
 
     @Override
     @Transactional
+    @AuditFinanceAction(value = "BON_SORTIE_LIVRAISON", entityType = "BON_SORTIE")
     public BonSortieDto livrer(Long bonSortieId) {
         logger.info("Livraison BS id={}", bonSortieId);
         BonSortie bs = bsRepository.findById(bonSortieId)
@@ -147,6 +158,10 @@ public class BonSortieServiceImpl implements BonSortieService {
         }
 
         Long userId = currentUserId();
+
+        // Bloc B3 : cumul de la valorisation pour ecriture OD
+        // (601 D / 311 C).
+        BigDecimal montantSortie = BigDecimal.ZERO;
 
         for (LigneBonSortie ligne : ligneRepository.findByBonSortieIdOrderByLigneIdAsc(bonSortieId)) {
             Produit produit = produitRepository.findById(ligne.getProduitId())
@@ -165,6 +180,10 @@ public class BonSortieServiceImpl implements BonSortieService {
             ligne.setQuantiteServie(aSortir);
             ligneRepository.save(ligne);
 
+            BigDecimal pu = produit.getPrixUnitaire() != null
+                    ? produit.getPrixUnitaire() : BigDecimal.ZERO;
+            montantSortie = montantSortie.add(pu.multiply(BigDecimal.valueOf(aSortir)));
+
             MouvementStock mouvement = new MouvementStock();
             mouvement.setProduitId(produit.getProduitId());
             mouvement.setTypeMouvement(TypeMouvementStock.SORTIE);
@@ -179,19 +198,35 @@ public class BonSortieServiceImpl implements BonSortieService {
 
         bs.setStatut(StatutBonSortie.LIVRE);
         bsRepository.save(bs);
+
+        // Bloc B3 : ecriture OD (consommation interne) une fois le stock decremente.
+        if (montantSortie.signum() > 0) {
+            Long ecritureId = ecritureGenerationService.emettreEcritureSortieBS(bs, montantSortie);
+            if (ecritureId != null) {
+                bs.setEcritureSortieId(ecritureId);
+                bsRepository.save(bs);
+            }
+        }
+
         return toDtoWithLignes(bs);
     }
 
     @Override
     @Transactional
-    public BonSortieDto annuler(Long bonSortieId) {
+    public BonSortieDto annuler(Long bonSortieId, String motif) {
+        if (motif == null || motif.isBlank()) {
+            throw new BusinessException("error.bonSortie.motif.required");
+        }
         BonSortie bs = bsRepository.findById(bonSortieId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.bonSortie.notFound"));
         if (!StatutBonSortie.peutEtreAnnule(bs.getStatut())) {
             throw new BusinessException("error.bonSortie.annulation.statutInvalide");
         }
         bs.setStatut(StatutBonSortie.ANNULE);
+        bs.setMotifAnnulation(motif.trim());
         bsRepository.save(bs);
+        logger.info("BS annule : id={}, numero={}, motif={}",
+                bs.getBonSortieId(), bs.getNumeroBs(), motif);
         return toDtoWithLignes(bs);
     }
 

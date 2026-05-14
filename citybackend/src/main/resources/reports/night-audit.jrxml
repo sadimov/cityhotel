@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Template Jasper minimal pour R-NA-001 (Tour 40 MVP).
+     Itere sur List<NightAuditRecapDto>. -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="night-audit" pageWidth="595" pageHeight="842"
+              columnWidth="555" leftMargin="20" rightMargin="20"
+              topMargin="20" bottomMargin="20" uuid="b1f1f1a1-0000-0000-0000-000000000002">
+
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="HOTEL_ID" class="java.lang.Long"/>
+    <parameter name="DATE_FROM" class="java.time.LocalDate"/>
+    <parameter name="DATE_TO" class="java.time.LocalDate"/>
+    <parameter name="NB_LIGNES" class="java.lang.Integer"/>
+
+    <field name="dateAudit" class="java.time.LocalDate"/>
+    <field name="nbReservationsActives" class="java.lang.Long"/>
+    <field name="nbNoShow" class="java.lang.Long"/>
+    <field name="nbNuiteesGenerees" class="java.lang.Long"/>
+    <field name="nbNuiteesConsommees" class="java.lang.Long"/>
+    <field name="ecarts" class="java.lang.Long"/>
+
+    <title>
+        <band height="70">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="30"/>
+                <textElement>
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="32" width="555" height="16"/>
+                <textFieldExpression><![CDATA["Hotel #" + $P{HOTEL_ID} + "  -  Du " + $P{DATE_FROM} + " au " + $P{DATE_TO} + " (exclus)"]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="0" y="50" width="555" height="16"/>
+                <textFieldExpression><![CDATA["Nombre de jours audites : " + $P{NB_LIGNES}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+
+    <columnHeader>
+        <band height="20">
+            <staticText><reportElement x="0" y="0" width="80" height="20"/><text><![CDATA[Date]]></text></staticText>
+            <staticText><reportElement x="80" y="0" width="90" height="20"/><text><![CDATA[Resa actives]]></text></staticText>
+            <staticText><reportElement x="170" y="0" width="80" height="20"/><text><![CDATA[No-show]]></text></staticText>
+            <staticText><reportElement x="250" y="0" width="100" height="20"/><text><![CDATA[Nuitees gen.]]></text></staticText>
+            <staticText><reportElement x="350" y="0" width="120" height="20"/><text><![CDATA[Nuitees consommees]]></text></staticText>
+            <staticText><reportElement x="470" y="0" width="85" height="20"/><text><![CDATA[Ecarts]]></text></staticText>
+        </band>
+    </columnHeader>
+
+    <detail>
+        <band height="18">
+            <textField><reportElement x="0" y="0" width="80" height="18"/><textFieldExpression><![CDATA[$F{dateAudit}]]></textFieldExpression></textField>
+            <textField><reportElement x="80" y="0" width="90" height="18"/><textFieldExpression><![CDATA[$F{nbReservationsActives}]]></textFieldExpression></textField>
+            <textField><reportElement x="170" y="0" width="80" height="18"/><textFieldExpression><![CDATA[$F{nbNoShow}]]></textFieldExpression></textField>
+            <textField><reportElement x="250" y="0" width="100" height="18"/><textFieldExpression><![CDATA[$F{nbNuiteesGenerees}]]></textFieldExpression></textField>
+            <textField><reportElement x="350" y="0" width="120" height="18"/><textFieldExpression><![CDATA[$F{nbNuiteesConsommees}]]></textFieldExpression></textField>
+            <textField><reportElement x="470" y="0" width="85" height="18"/><textFieldExpression><![CDATA[$F{ecarts}]]></textFieldExpression></textField>
+        </band>
+    </detail>
+
+    <pageFooter>
+        <band height="20">
+            <textField>
+                <reportElement x="0" y="0" width="555" height="20"/>
+                <textElement textAlignment="Right"><font size="8"/></textElement>
+                <textFieldExpression><![CDATA["Page " + $V{PAGE_NUMBER} + " - City Hotel reporting"]]></textFieldExpression>
+            </textField>
+        </band>
+    </pageFooter>
+</jasperReport>
