@@ -16,8 +16,26 @@ import java.util.List;
 public interface HistoriqueService {
 
     /**
-     * Enregistre une action dans l'historique. Appele depuis les autres
-     * services menage (TacheService) pour tracer chaque transition.
+     * <b>INTERNAL USE ONLY — ne pas invoquer directement.</b>
+     *
+     * <p>Enregistre une action dans l'historique. Appele <b>exclusivement</b>
+     * par {@link com.cityprojects.citybackend.common.audit.AuditActionAspect}
+     * (AOP) qui intercepte les methodes annotees
+     * {@code @AuditAction} dans les services menage (creation,
+     * assignation, debut, fin, modification, suppression, annulation).</p>
+     *
+     * <p><b>Pourquoi cette restriction</b> (sous-tour menage E2) : la
+     * methode n'effectue aucun controle metier propre (cible chambre/personnel,
+     * coherence statut, etc.), elle est conçue comme un sink de l'aspect
+     * d'audit. Un appel direct depuis un autre module pourrait inserer
+     * dans {@code menage.historique} avec des references arbitraires,
+     * polluant la piste d'audit. La methode reste exposee dans l'interface
+     * publique pour la facilite de l'injection Spring dans l'aspect, mais
+     * tout nouvel appelant doit etre justifie en revue de code.</p>
+     *
+     * <p>Multi-tenant : {@code hotelId} pose par Hibernate via
+     * {@link org.hibernate.annotations.TenantId} sur {@code Historique}.
+     * Aucun parametre {@code hotelId} dans la signature.</p>
      *
      * @param tacheId       FK tache (peut etre null si action systeme)
      * @param chambreId     FK chambre (obligatoire)

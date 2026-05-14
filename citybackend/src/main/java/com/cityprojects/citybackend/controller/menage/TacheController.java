@@ -51,14 +51,22 @@ public class TacheController {
         this.service = service;
     }
 
+    /**
+     * Sous-tour menage E3 : retrait du role {@code MENAGE} sur create/update.
+     * La spec {@code endpoints_module_menage.txt} §Taches.CRUD reserve la
+     * creation et la modification a {@code ADMIN, GERANT} (responsabilite
+     * hierarchique : le manager planifie, l'agent execute). {@code MENAGE}
+     * conserve l'acces operationnel terrain via les transitions
+     * {@code commencer}/{@code terminer}.
+     */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MENAGE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
     public ResponseEntity<TacheDto> create(@Valid @RequestBody TacheCreateDto dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(dto));
     }
 
     @PutMapping("/{tacheId}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MENAGE')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
     public ResponseEntity<TacheDto> update(@PathVariable("tacheId") Long tacheId,
                                            @Valid @RequestBody TacheCreateDto dto) {
         return ResponseEntity.ok(service.update(tacheId, dto));

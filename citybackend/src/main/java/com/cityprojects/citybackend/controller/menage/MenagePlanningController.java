@@ -21,12 +21,18 @@ import java.util.Map;
  * (cf. cron). Cet endpoint est utile pour rattraper apres incident ou pour
  * un declenchement manuel par un manager.</p>
  *
+ * <h3>Path (sous-tour menage E4)</h3>
+ * <p>Renomme {@code /api/menage/planning} -&gt; {@code /api/menage/planning-generation}
+ * pour eviter la collision avec {@link PlanningController} qui sert le
+ * CRUD des creneaux de planning. Endpoint hors spec
+ * {@code endpoints_module_menage.txt} (admin/exploitation interne).</p>
+ *
  * <h3>Roles autorises</h3>
  * <p>SUPERADMIN / ADMIN / GERANT / RECEPTION : la reception declenche
  * potentiellement des check-out manuels et peut vouloir forcer la generation.</p>
  */
 @RestController
-@RequestMapping("/api/menage/planning")
+@RequestMapping("/api/menage/planning-generation")
 public class MenagePlanningController {
 
     private final MenagePlanningService menagePlanningService;

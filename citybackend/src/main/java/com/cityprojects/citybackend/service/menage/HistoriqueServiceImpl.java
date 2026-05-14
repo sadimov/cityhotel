@@ -15,6 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -40,10 +41,14 @@ public class HistoriqueServiceImpl implements HistoriqueService {
 
     private final HistoriqueRepository repository;
     private final HistoriqueMapper mapper;
+    private final Clock clock;
 
-    public HistoriqueServiceImpl(HistoriqueRepository repository, HistoriqueMapper mapper) {
+    public HistoriqueServiceImpl(HistoriqueRepository repository,
+                                  HistoriqueMapper mapper,
+                                  Clock clock) {
         this.repository = repository;
         this.mapper = mapper;
+        this.clock = clock;
     }
 
     @Override
@@ -61,7 +66,8 @@ public class HistoriqueServiceImpl implements HistoriqueService {
         h.setNouveauStatut(nouveauStatut);
         h.setCommentaire(commentaire);
         h.setUserId(userId);
-        h.setTimestampAction(Instant.now());
+        h.setTimestampAction(Instant.now(clock)); // Sous-tour E1 : Clock injecte
+                                                  // (coherence avec les autres services menage)
         repository.save(h);
         logger.debug("Action menage '{}' enregistree pour tache={} chambre={}", action, tacheId, chambreId);
     }
@@ -98,7 +104,7 @@ public class HistoriqueServiceImpl implements HistoriqueService {
         if (joursConservation < MIN_RETENTION_DAYS) {
             throw new IllegalArgumentException("error.historique.retention.min");
         }
-        Instant avant = Instant.now().minus(joursConservation, ChronoUnit.DAYS);
+        Instant avant = Instant.now(clock).minus(joursConservation, ChronoUnit.DAYS);
         Long currentUser = currentUserId();
 
         // Tour 30 etape 7 : trace l'action en log applicatif AVANT la purge.
