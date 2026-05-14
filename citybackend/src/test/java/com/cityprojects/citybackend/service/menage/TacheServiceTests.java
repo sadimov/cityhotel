@@ -263,6 +263,25 @@ class TacheServiceTests {
         assertEquals(StatutTache.TERMINEE, done.statut());
         assertNotNull(done.heureFinReelle());
 
+        // Sous-tour F4 : verifier que noteQualite est bien persistee
+        // (chaine A1 -> A3 : DTO -> service.terminer -> entite -> DB -> mapper -> DTO).
+        assertEquals(Integer.valueOf(4), done.noteQualite(),
+                "noteQualite passee dans TerminerTacheDto doit etre stockee sur la tache");
+
+        // Sous-tour F4 : verifier aussi les autres champs du rapport de fin.
+        assertEquals("Tout OK", done.commentaires());
+        assertEquals("aspirateur,detergent", done.materielUtilise());
+
+        // Sous-tour F4 : verifier les champs derives renseignes par le mapper A2.
+        assertNotNull(done.codeStatut(), "codeStatut derive doit etre renseigne");
+        assertEquals("TERMINEE", done.codeStatut());
+        assertEquals("Terminée", done.libelleStatut(),
+                "libelleStatut derive (FR) doit etre 'Terminée'");
+        assertEquals(Boolean.TRUE, done.terminee(),
+                "flag derive terminee=true apres transition");
+        assertEquals(Boolean.FALSE, done.enCours(),
+                "flag derive enCours=false apres transition");
+
         // Audit : 4 entrees (creation, assignation, debut, fin)
         Long countHist = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM menage.historique WHERE tache_id = ?",
