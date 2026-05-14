@@ -46,6 +46,9 @@ public interface PersonnelRepository
     /** Liste des agents actifs tries par prenom puis nom. */
     List<Personnel> findByActifTrueOrderByPrenomAscNomAsc();
 
+    /** Nombre d'agents actifs (utilise par le Dashboard menage — sous-tour C). */
+    long countByActifTrue();
+
     /** Pagination filtree par actif. */
     Page<Personnel> findByActifOrderByPrenomAscNomAsc(Boolean actif, Pageable pageable);
 
