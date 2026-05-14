@@ -8,6 +8,7 @@ import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.menage.AssignerTacheDto;
 import com.cityprojects.citybackend.dto.menage.TacheCreateDto;
 import com.cityprojects.citybackend.dto.menage.TacheDto;
+import com.cityprojects.citybackend.dto.menage.TacheFiltres;
 import com.cityprojects.citybackend.dto.menage.TerminerTacheDto;
 import com.cityprojects.citybackend.entity.hebergement.Chambre;
 import com.cityprojects.citybackend.entity.menage.Personnel;
@@ -20,6 +21,7 @@ import com.cityprojects.citybackend.mapper.menage.TacheMapper;
 import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.menage.PersonnelRepository;
 import com.cityprojects.citybackend.repository.menage.TacheRepository;
+import com.cityprojects.citybackend.repository.menage.TacheSpecifications;
 import jakarta.persistence.OptimisticLockException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -340,6 +342,21 @@ public class TacheServiceImpl implements TacheService {
             return Page.empty(pageable);
         }
         return tacheRepository.rechercher(terme.trim(), pageable).map(mapper::toDto);
+    }
+
+    @Override
+    public Page<TacheDto> page(TacheFiltres filtres, Pageable pageable) {
+        // Pour les filtres enRetard, on a besoin de la date/heure courante
+        // (zone du Clock injecte). Calcul une seule fois pour eviter les
+        // valeurs incoherentes a cheval sur minuit.
+        java.time.LocalDate aujourdhui = java.time.LocalDate.now(clock);
+        java.time.LocalTime heureCourante = java.time.LocalTime.now(clock);
+
+        var spec = TacheSpecifications.byFiltres(filtres, aujourdhui, heureCourante);
+        Page<com.cityprojects.citybackend.entity.menage.Tache> result = (spec == null)
+                ? tacheRepository.findAll(pageable)
+                : tacheRepository.findAll(spec, pageable);
+        return result.map(mapper::toDto);
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -30,4 +31,20 @@ public interface BonCommandeRepository
 
     /** Page des BC d'un fournisseur donne (tous statuts), plus recents d'abord. */
     Page<BonCommande> findByFournisseurIdOrderByDateCommandeDesc(Long fournisseurId, Pageable pageable);
+
+    // ============================================================================
+    // Tour 41 — Reporting P1/P2 : R-INV-003 (BC pendants).
+    // Filtre tenant ajoute automatiquement par Hibernate via @TenantId.
+    // ============================================================================
+
+    /**
+     * Liste les BC pendants (statut != RECU_COMPLET et != ANNULE) ordonnes par
+     * date de commande croissante (plus ancien d'abord, vieillissement).
+     */
+    @Query("SELECT bc FROM BonCommande bc "
+            + "WHERE bc.statut NOT IN ("
+            + "  com.cityprojects.citybackend.entity.inventory.StatutBonCommande.RECU_COMPLET, "
+            + "  com.cityprojects.citybackend.entity.inventory.StatutBonCommande.ANNULE) "
+            + "ORDER BY bc.dateCommande ASC")
+    java.util.List<BonCommande> findPendants();
 }

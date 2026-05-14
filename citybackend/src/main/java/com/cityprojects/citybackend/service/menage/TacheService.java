@@ -3,6 +3,7 @@ package com.cityprojects.citybackend.service.menage;
 import com.cityprojects.citybackend.dto.menage.AssignerTacheDto;
 import com.cityprojects.citybackend.dto.menage.TacheCreateDto;
 import com.cityprojects.citybackend.dto.menage.TacheDto;
+import com.cityprojects.citybackend.dto.menage.TacheFiltres;
 import com.cityprojects.citybackend.dto.menage.TerminerTacheDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -56,6 +57,20 @@ public interface TacheService {
 
     /** Recherche textuelle pageable. */
     Page<TacheDto> search(String terme, Pageable pageable);
+
+    /**
+     * Liste paginee des taches avec filtres dynamiques (sous-tour B2).
+     *
+     * <p>Endpoint cible : {@code GET /api/menage/taches}. Si {@code filtres}
+     * est {@code null} ou que tous les criteres sont absents, retourne la
+     * page complete triee selon {@code pageable} (par defaut
+     * {@code datePlanifiee desc} cote service).</p>
+     *
+     * <p>Le tri Spring standard {@code sort=field,direction} est supporte
+     * directement via {@code pageable}. Aucun parametre custom
+     * {@code sortBy}/{@code sortDir}.</p>
+     */
+    Page<TacheDto> page(TacheFiltres filtres, Pageable pageable);
 
     /**
      * Annule une tache (transition PLANIFIEE/EN_COURS -&gt; ANNULEE).

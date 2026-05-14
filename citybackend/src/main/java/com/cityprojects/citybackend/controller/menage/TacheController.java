@@ -3,7 +3,10 @@ package com.cityprojects.citybackend.controller.menage;
 import com.cityprojects.citybackend.dto.menage.AssignerTacheDto;
 import com.cityprojects.citybackend.dto.menage.TacheCreateDto;
 import com.cityprojects.citybackend.dto.menage.TacheDto;
+import com.cityprojects.citybackend.dto.menage.TacheFiltres;
 import com.cityprojects.citybackend.dto.menage.TerminerTacheDto;
+import com.cityprojects.citybackend.entity.menage.StatutTache;
+import com.cityprojects.citybackend.entity.menage.TypeNettoyage;
 import com.cityprojects.citybackend.service.menage.TacheService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -65,6 +68,42 @@ public class TacheController {
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
     public ResponseEntity<TacheDto> findById(@PathVariable("tacheId") Long tacheId) {
         return ResponseEntity.ok(service.findById(tacheId));
+    }
+
+    /**
+     * Liste paginee des taches avec filtres dynamiques (sous-tour menage B2).
+     *
+     * <p>Tous les parametres sont optionnels — combines en AND par
+     * {@link com.cityprojects.citybackend.repository.menage.TacheSpecifications}.</p>
+     *
+     * <p>Tri Spring standard : {@code sort=field,direction} (ex.
+     * {@code sort=datePlanifiee,desc}). Pagination standard {@code page=}
+     * et {@code size=}.</p>
+     *
+     * <p>Les raccourcis booleens {@code enCours}/{@code enRetard}/{@code nonAssignees}
+     * ont priorite sur les filtres natifs equivalents ({@code statut},
+     * {@code personnelId}). Cf. {@link TacheFiltres} javadoc.</p>
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
+    public ResponseEntity<Page<TacheDto>> page(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+            @RequestParam(value = "personnelId", required = false) Long personnelId,
+            @RequestParam(value = "chambreId", required = false) Long chambreId,
+            @RequestParam(value = "statut", required = false) StatutTache statut,
+            @RequestParam(value = "typeNettoyage", required = false) TypeNettoyage typeNettoyage,
+            @RequestParam(value = "priorite", required = false) Integer priorite,
+            @RequestParam(value = "enCours", required = false) Boolean enCours,
+            @RequestParam(value = "enRetard", required = false) Boolean enRetard,
+            @RequestParam(value = "nonAssignees", required = false) Boolean nonAssignees,
+            Pageable pageable) {
+        TacheFiltres filtres = new TacheFiltres(
+                search, date, personnelId, chambreId,
+                statut, typeNettoyage, priorite,
+                enCours, enRetard, nonAssignees);
+        return ResponseEntity.ok(service.page(filtres, pageable));
     }
 
     @GetMapping("/date/{date}")
