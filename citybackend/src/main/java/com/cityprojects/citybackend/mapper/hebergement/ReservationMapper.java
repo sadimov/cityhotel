@@ -40,6 +40,8 @@ public interface ReservationMapper {
      * {@code findByReservationIdIn(...)} pour éviter le N+1.
      */
     @Mapping(target = "chambres", ignore = true)
+    @Mapping(target = "nomClientPrincipal", ignore = true)
+    @Mapping(target = "nomSociete", ignore = true)
     ReservationDto toDto(Reservation entity);
 
     ReservationChambreDto toDto(ReservationChambre entity);

@@ -55,4 +55,18 @@ public record ProduitCreateDto(
         Long fournisseurPrincipalId,
 
         Boolean estFacturable) {
+
+    /**
+     * Constructeur de compat retro 10-args (sans {@code stockActuel}, pose à null).
+     * Utilisé par les tests legacy et les call-sites externes qui n'ont pas encore
+     * migré vers la signature 11-args. {@code stockActuel = null} signifie "ne pas
+     * créer de mouvement initial".
+     */
+    public ProduitCreateDto(String codeProduit, String nomProduit, String description,
+                            Long categorieId, String uniteMesure, BigDecimal prixUnitaire,
+                            Integer seuilAlerte, Integer seuilCritique,
+                            Long fournisseurPrincipalId, Boolean estFacturable) {
+        this(codeProduit, nomProduit, description, categorieId, uniteMesure, prixUnitaire,
+                seuilAlerte, seuilCritique, null, fournisseurPrincipalId, estFacturable);
+    }
 }

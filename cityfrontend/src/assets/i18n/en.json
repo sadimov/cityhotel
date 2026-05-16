@@ -49,6 +49,14 @@
     },
     "hotelAdmin": {
       "users": "Users"
+    },
+    "reporting": {
+      "hebergement": "Hébergement",
+      "finance": "Finance",
+      "inventory": "Stocks",
+      "restaurant": "Restaurant",
+      "menage": "Ménage",
+      "direction": "Direction"
     }
   },
   "common": {
@@ -71,7 +79,9 @@
     "retry": "Retry",
     "remove": "Remove",
     "select": "Select",
-    "total": "Total"
+    "total": "Total",
+    "none": "Aucun",
+    "inactive": "Inactif"
   },
   "header": {
     "notifications": "Notifications",
@@ -144,6 +154,54 @@
       "deleteConfirm": "Delete this client?",
       "deleteError": "Unable to delete this client.",
       "saveError": "Unable to save this client."
+    },
+    "societes": {
+      "list": {
+        "title": "Sociétés",
+        "search": "Rechercher une société",
+        "empty": "Aucune société trouvée.",
+        "error": "Impossible de charger les sociétés.",
+        "actions": "Actions"
+      },
+      "form": {
+        "titleCreate": "Nouvelle société",
+        "titleEdit": "Modifier la société",
+        "loadError": "Impossible de charger cette société."
+      },
+      "actions": {
+        "create": "Nouvelle société",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver",
+        "delete": "Supprimer définitivement"
+      },
+      "fields": {
+        "nom": "Raison sociale",
+        "siret": "N° d'identification (NIF/SIRET)",
+        "contactPrincipal": "Contact principal",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "pays": "Pays",
+        "nombreClients": "Clients rattachés"
+      },
+      "errors": {
+        "nomRequired": "La raison sociale est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Société créée",
+        "updateSuccess": "Société modifiée",
+        "saveError": "Impossible d'enregistrer la société.",
+        "deactivateConfirm": "Désactiver cette société ?",
+        "deactivateSuccess": "Société désactivée",
+        "deactivateError": "Impossible de désactiver.",
+        "reactivateSuccess": "Société réactivée",
+        "reactivateError": "Impossible de réactiver.",
+        "deleteConfirm": "Supprimer définitivement cette société ?",
+        "deleteConfirmText": "Cette action est irréversible. Refusée si des clients sont rattachés.",
+        "deleteSuccess": "Société supprimée",
+        "deleteError": "Impossible de supprimer la société (clients rattachés ?)."
+      }
     }
   },
   "hebergement": {
@@ -444,7 +502,12 @@
       "montantTotal": "Total amount",
       "motifSejour": "Stay purpose",
       "commentaires": "Comments",
-      "reductionPourcentage": "Discount (%)"
+      "reductionPourcentage": "Discount (%)",
+      "chambres": "Chambres",
+      "chambre": "Chambre",
+      "prixNuit": "Prix / nuit",
+      "dateDebut": "Du",
+      "dateFin": "Au"
     },
     "statut": {
       "confirmee": "Not confirmed",
@@ -456,7 +519,8 @@
     "errors": {
       "clientRequired": "Main client is required.",
       "dateArriveeRequired": "Arrival date is required.",
-      "dateDepartRequired": "Departure date is required."
+      "dateDepartRequired": "Departure date is required.",
+      "chambreRequired": "Au moins une chambre doit être sélectionnée."
     },
     "messages": {
       "createSuccess": "Reservation created successfully",
@@ -1551,7 +1615,8 @@
         "specialites": "Specialties",
         "specialitesHint": "comma-separated",
         "specialitesPlaceholder": "rooms, halls",
-        "actif": "Active"
+        "actif": "Active",
+        "nonAssigne": "Non assigné"
       },
       "specialite": {
         "chambres": "Rooms",
@@ -1761,7 +1826,8 @@
       "choose": "Select the staff member to assign.",
       "validate": "Assign",
       "cancel": "Cancel",
-      "empty": "No active staff available."
+      "empty": "No active staff available.",
+      "unknown": "Personnel inconnu"
     }
   },
   "profile": {
@@ -2478,7 +2544,8 @@
         "motif": "Reason",
         "motifPlaceholder": "Detailed reason for the reversal...",
         "contrePasseePar": "Reversed by",
-        "ecritureSource": "Source entry"
+        "ecritureSource": "Source entry",
+        "voirEcriture": "Voir l'écriture liée"
       },
       "statut": {
         "BROUILLON": "Draft",
@@ -2642,6 +2709,61 @@
       "actions": {
         "generate": "Generate"
       }
+    }
+  },
+  "notifications": {
+    "arrivee": {
+      "title": "Arrivée du jour"
+    },
+    "depart": {
+      "title": "Départ du jour"
+    },
+    "checkinRetard": {
+      "title": "Check-in en retard"
+    },
+    "stockCritique": {
+      "title": "Stock critique"
+    }
+  },
+  "reporting": {
+    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
+    "empty": "Aucun rapport disponible pour ce module.",
+    "openEndpoint": "Ouvrir le rapport",
+    "hebergement": {
+      "title": "Rapports Hébergement",
+      "r001": "Taux d'occupation quotidien",
+      "r002": "RevPAR (revenu par chambre disponible)",
+      "r003": "ADR (prix moyen par nuitée)",
+      "r004": "Sources des réservations",
+      "r005": "ALOS (durée moyenne de séjour)"
+    },
+    "finance": {
+      "title": "Rapports Finance",
+      "r001": "Journal des ventes",
+      "r002": "Encaissements par mode",
+      "r003": "Clients débiteurs",
+      "r004": "Balance âgée des créances"
+    },
+    "inventory": {
+      "title": "Rapports Stocks",
+      "r001": "Stock actuel valorisé",
+      "r002": "Valorisation des mouvements",
+      "r003": "Rotation produits"
+    },
+    "restaurant": {
+      "title": "Rapports Restaurant",
+      "r001": "Ventes restaurant",
+      "r002": "Top articles vendus",
+      "r003": "Services poussés sur chambre"
+    },
+    "menage": {
+      "title": "Rapports Ménage",
+      "r001": "Productivité du personnel",
+      "r002": "Tâches en retard"
+    },
+    "direction": {
+      "title": "Rapports Direction",
+      "r001": "Synthèse direction"
     }
   }
 }

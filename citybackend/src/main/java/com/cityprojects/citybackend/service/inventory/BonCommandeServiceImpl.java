@@ -336,7 +336,12 @@ public class BonCommandeServiceImpl implements BonCommandeService {
         List<LigneBonCommandeDto> lignes = ligneRepository
                 .findByBonCommandeIdOrderByLigneIdAsc(bc.getBonCommandeId())
                 .stream().map(mapper::toLigneDto).toList();
-        return mapper.withLignes(base, lignes);
+        BonCommandeDto withLignes = mapper.withLignes(base, lignes);
+        String nomFournisseur = (bc.getFournisseurId() != null)
+                ? fournisseurRepository.findById(bc.getFournisseurId())
+                        .map(f -> f.getNomFournisseur()).orElse(null)
+                : null;
+        return withLignes.withResolvedNames(nomFournisseur);
     }
 
     private Long currentUserId() {

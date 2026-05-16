@@ -12,6 +12,11 @@ import java.util.List;
  * {@link com.cityprojects.citybackend.entity.hebergement.Reservation}.
  *
  * <p><b>NE CONTIENT PAS</b> {@code hotelId}.</p>
+ *
+ * <p>Champs {@code nomClientPrincipal} / {@code nomSociete} : enrichis
+ * par le service via batch lookup (anti-N+1). Permettent au front d'afficher
+ * directement le nom sans recharger Client/Societe — pattern à répliquer
+ * pour les autres DTOs avec FK numériques (Facture, BonCommande, etc.).</p>
  */
 public record ReservationDto(
         Long reservationId,
@@ -38,5 +43,22 @@ public record ReservationDto(
          */
         List<ReservationChambreDto> chambres,
         /** Canal de distribution (Tour 41, R-HEB-004). Place en dernier. */
-        String sourceCanal) {
+        String sourceCanal,
+        /** Nom complet du client principal (résolu côté service). */
+        String nomClientPrincipal,
+        /** Raison sociale de la société (résolue côté service). */
+        String nomSociete) {
+
+    /**
+     * Reconstruit un {@link ReservationDto} en injectant les noms résolus,
+     * sans dupliquer tous les autres champs. Utile pour anti-N+1 batch lookup.
+     */
+    public ReservationDto withResolvedNames(String nomClient, String nomSoc) {
+        return new ReservationDto(
+                reservationId, numeroReservation, clientPrincipalId, societeId,
+                dateArrivee, dateDepart, nbNuits, nbAdultes, nbEnfants,
+                statut, motifSejour, commentaires, reductionPourcentage, montantTotal,
+                userId, createdAt, updatedAt, chambres, sourceCanal,
+                nomClient, nomSoc);
+    }
 }

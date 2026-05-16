@@ -148,7 +148,7 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
   private buildForm(): FormGroup {
     return this.fb.group({
       categorieId: [null, [Validators.required]],
-      codeArticle: ['', [Validators.maxLength(20)]],
+      codeArticle: ['', [Validators.required, Validators.maxLength(30)]],
       nom: [
         '',
         [Validators.required, Validators.minLength(2), Validators.maxLength(150)],

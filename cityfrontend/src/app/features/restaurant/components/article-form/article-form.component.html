@@ -48,13 +48,20 @@
         <div class="col-md-3">
           <label for="codeArticle" class="form-label">
             {{ 'restaurant.article.fields.codeArticle' | translate }}
+            <span class="text-danger">*</span>
           </label>
           <input
             id="codeArticle"
             type="text"
             class="form-control"
             formControlName="codeArticle"
+            [class.is-invalid]="form.get('codeArticle')?.invalid && form.get('codeArticle')?.touched"
           />
+          @if (form.get('codeArticle')?.touched && form.get('codeArticle')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'restaurant.article.errors.codeRequired' | translate }}
+            </div>
+          }
         </div>
 
         <div class="col-md-5">

@@ -744,7 +744,25 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
         List<LigneFactureDto> lignes = ligneRepository
                 .findByFactureIdOrderByLigneFactureIdAsc(facture.getFactureId())
                 .stream().map(mapper::toLigneDto).toList();
-        return mapper.withLignes(base, lignes);
+        FactureDto withLignes = mapper.withLignes(base, lignes);
+        // Résolution des noms FK pour affichage front (anti-N+1 unitaire).
+        String nomClient = (facture.getClientId() != null)
+                ? clientRepository.findById(facture.getClientId())
+                        .map(c -> c.getNomComplet()).orElse(null)
+                : null;
+        String nomSociete = (facture.getSocieteId() != null)
+                ? societeRepository.findById(facture.getSocieteId())
+                        .map(s -> s.getSocieteNom()).orElse(null)
+                : null;
+        String nomFournisseur = (facture.getFournisseurId() != null)
+                ? fournisseurRepository.findById(facture.getFournisseurId())
+                        .map(f -> f.getNomFournisseur()).orElse(null)
+                : null;
+        String numeroRes = (facture.getReservationId() != null)
+                ? reservationRepository.findById(facture.getReservationId())
+                        .map(Reservation::getNumeroReservation).orElse(null)
+                : null;
+        return withLignes.withResolvedNames(nomClient, nomSociete, nomFournisseur, numeroRes);
     }
 
     private Long currentUserId() {

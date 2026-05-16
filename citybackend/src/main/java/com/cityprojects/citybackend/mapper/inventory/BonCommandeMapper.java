@@ -20,6 +20,7 @@ import java.util.List;
 public interface BonCommandeMapper {
 
     @Mapping(target = "lignes", ignore = true)
+    @Mapping(target = "nomFournisseur", ignore = true)
     BonCommandeDto toDto(BonCommande entity);
 
     @Mapping(target = "sousTotal", expression = "java(entity.getSousTotal())")
@@ -44,6 +45,7 @@ public interface BonCommandeMapper {
                 dto.userId(),
                 lignes,
                 dto.createdAt(),
-                dto.updatedAt());
+                dto.updatedAt(),
+                dto.nomFournisseur());
     }
 }

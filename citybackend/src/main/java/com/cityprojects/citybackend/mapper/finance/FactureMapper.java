@@ -21,6 +21,10 @@ public interface FactureMapper {
 
     @Mapping(target = "lignes", ignore = true)
     @Mapping(target = "montantRestant", expression = "java(entity.getMontantRestant())")
+    @Mapping(target = "nomClient", ignore = true)
+    @Mapping(target = "nomSociete", ignore = true)
+    @Mapping(target = "nomFournisseur", ignore = true)
+    @Mapping(target = "numeroReservation", ignore = true)
     FactureDto toDto(Facture entity);
 
     LigneFactureDto toLigneDto(LigneFacture entity);
@@ -52,6 +56,10 @@ public interface FactureMapper {
                 dto.userId(),
                 lignes,
                 dto.createdAt(),
-                dto.updatedAt());
+                dto.updatedAt(),
+                dto.nomClient(),
+                dto.nomSociete(),
+                dto.nomFournisseur(),
+                dto.numeroReservation());
     }
 }

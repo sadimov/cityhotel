@@ -27,5 +27,16 @@ public record BonCommandeDto(
         Long userId,
         List<LigneBonCommandeDto> lignes,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom du fournisseur (résolu côté service, anti-N+1). */
+        String nomFournisseur) {
+
+    /** Reconstruit le DTO en injectant le nom du fournisseur résolu. */
+    public BonCommandeDto withResolvedNames(String nomFour) {
+        return new BonCommandeDto(
+                bonCommandeId, numeroBc, fournisseurId, statut,
+                dateCommande, dateLivraisonPrevue, dateLivraisonReelle,
+                montantTotal, montantTva, commentaires, userId, lignes,
+                createdAt, updatedAt, nomFour);
+    }
 }

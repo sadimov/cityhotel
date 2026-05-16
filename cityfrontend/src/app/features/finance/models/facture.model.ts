@@ -142,6 +142,11 @@ export interface FactureDto {
   lignes: LigneFactureDto[];
   createdAt?: string;
   updatedAt?: string;
+  /** Champs dérivés renvoyés par le backend (read-only). */
+  nomClient?: string;
+  nomSociete?: string;
+  nomFournisseur?: string;
+  numeroReservation?: string;
 }
 
 /**

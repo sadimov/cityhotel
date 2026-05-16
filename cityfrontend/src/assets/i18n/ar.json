@@ -49,6 +49,14 @@
     },
     "hotelAdmin": {
       "users": "المستخدمون"
+    },
+    "reporting": {
+      "hebergement": "Hébergement",
+      "finance": "Finance",
+      "inventory": "Stocks",
+      "restaurant": "Restaurant",
+      "menage": "Ménage",
+      "direction": "Direction"
     }
   },
   "common": {
@@ -71,7 +79,9 @@
     "retry": "إعادة المحاولة",
     "remove": "حذف",
     "select": "اختر",
-    "total": "المجموع"
+    "total": "المجموع",
+    "none": "Aucun",
+    "inactive": "Inactif"
   },
   "header": {
     "notifications": "الإشعارات",
@@ -144,6 +154,54 @@
       "deleteConfirm": "هل تريد حذف هذا العميل؟",
       "deleteError": "تعذر حذف هذا العميل.",
       "saveError": "تعذر حفظ بيانات هذا العميل."
+    },
+    "societes": {
+      "list": {
+        "title": "Sociétés",
+        "search": "Rechercher une société",
+        "empty": "Aucune société trouvée.",
+        "error": "Impossible de charger les sociétés.",
+        "actions": "Actions"
+      },
+      "form": {
+        "titleCreate": "Nouvelle société",
+        "titleEdit": "Modifier la société",
+        "loadError": "Impossible de charger cette société."
+      },
+      "actions": {
+        "create": "Nouvelle société",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver",
+        "delete": "Supprimer définitivement"
+      },
+      "fields": {
+        "nom": "Raison sociale",
+        "siret": "N° d'identification (NIF/SIRET)",
+        "contactPrincipal": "Contact principal",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "pays": "Pays",
+        "nombreClients": "Clients rattachés"
+      },
+      "errors": {
+        "nomRequired": "La raison sociale est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Société créée",
+        "updateSuccess": "Société modifiée",
+        "saveError": "Impossible d'enregistrer la société.",
+        "deactivateConfirm": "Désactiver cette société ?",
+        "deactivateSuccess": "Société désactivée",
+        "deactivateError": "Impossible de désactiver.",
+        "reactivateSuccess": "Société réactivée",
+        "reactivateError": "Impossible de réactiver.",
+        "deleteConfirm": "Supprimer définitivement cette société ?",
+        "deleteConfirmText": "Cette action est irréversible. Refusée si des clients sont rattachés.",
+        "deleteSuccess": "Société supprimée",
+        "deleteError": "Impossible de supprimer la société (clients rattachés ?)."
+      }
     }
   },
   "hebergement": {
@@ -444,7 +502,12 @@
       "montantTotal": "المبلغ الإجمالي",
       "motifSejour": "سبب الإقامة",
       "commentaires": "ملاحظات",
-      "reductionPourcentage": "خصم (%)"
+      "reductionPourcentage": "خصم (%)",
+      "chambres": "Chambres",
+      "chambre": "Chambre",
+      "prixNuit": "Prix / nuit",
+      "dateDebut": "Du",
+      "dateFin": "Au"
     },
     "statut": {
       "confirmee": "غير مؤكد",
@@ -456,7 +519,8 @@
     "errors": {
       "clientRequired": "العميل الرئيسي مطلوب.",
       "dateArriveeRequired": "تاريخ الوصول مطلوب.",
-      "dateDepartRequired": "تاريخ المغادرة مطلوب."
+      "dateDepartRequired": "تاريخ المغادرة مطلوب.",
+      "chambreRequired": "Au moins une chambre doit être sélectionnée."
     },
     "messages": {
       "createSuccess": "تم إنشاء الحجز بنجاح",
@@ -1551,7 +1615,8 @@
         "specialites": "التخصصات",
         "specialitesHint": "مفصولة بفاصلة",
         "specialitesPlaceholder": "غرف، قاعات",
-        "actif": "نشط"
+        "actif": "نشط",
+        "nonAssigne": "Non assigné"
       },
       "specialite": {
         "chambres": "الغرف",
@@ -1761,7 +1826,8 @@
       "choose": "اختر الموظف لإسناد المهمة إليه.",
       "validate": "إسناد",
       "cancel": "إلغاء",
-      "empty": "لا يوجد موظف نشط متاح."
+      "empty": "لا يوجد موظف نشط متاح.",
+      "unknown": "Personnel inconnu"
     }
   },
   "profile": {
@@ -2478,7 +2544,8 @@
         "motif": "السبب",
         "motifPlaceholder": "سبب عكس القيد بالتفصيل...",
         "contrePasseePar": "تم عكسه بواسطة",
-        "ecritureSource": "القيد الأصلي"
+        "ecritureSource": "القيد الأصلي",
+        "voirEcriture": "Voir l'écriture liée"
       },
       "statut": {
         "BROUILLON": "مسودة",
@@ -2642,6 +2709,61 @@
       "actions": {
         "generate": "توليد"
       }
+    }
+  },
+  "notifications": {
+    "arrivee": {
+      "title": "Arrivée du jour"
+    },
+    "depart": {
+      "title": "Départ du jour"
+    },
+    "checkinRetard": {
+      "title": "Check-in en retard"
+    },
+    "stockCritique": {
+      "title": "Stock critique"
+    }
+  },
+  "reporting": {
+    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
+    "empty": "Aucun rapport disponible pour ce module.",
+    "openEndpoint": "Ouvrir le rapport",
+    "hebergement": {
+      "title": "Rapports Hébergement",
+      "r001": "Taux d'occupation quotidien",
+      "r002": "RevPAR (revenu par chambre disponible)",
+      "r003": "ADR (prix moyen par nuitée)",
+      "r004": "Sources des réservations",
+      "r005": "ALOS (durée moyenne de séjour)"
+    },
+    "finance": {
+      "title": "Rapports Finance",
+      "r001": "Journal des ventes",
+      "r002": "Encaissements par mode",
+      "r003": "Clients débiteurs",
+      "r004": "Balance âgée des créances"
+    },
+    "inventory": {
+      "title": "Rapports Stocks",
+      "r001": "Stock actuel valorisé",
+      "r002": "Valorisation des mouvements",
+      "r003": "Rotation produits"
+    },
+    "restaurant": {
+      "title": "Rapports Restaurant",
+      "r001": "Ventes restaurant",
+      "r002": "Top articles vendus",
+      "r003": "Services poussés sur chambre"
+    },
+    "menage": {
+      "title": "Rapports Ménage",
+      "r001": "Productivité du personnel",
+      "r002": "Tâches en retard"
+    },
+    "direction": {
+      "title": "Rapports Direction",
+      "r001": "Synthèse direction"
     }
   }
 }

@@ -59,12 +59,19 @@
         </div>
 
         <div class="col-md-4">
-          <label for="uniteMesure" class="form-label">{{ 'inventory.services.fields.uniteMesure' | translate }}</label>
-          <select id="uniteMesure" class="form-select" formControlName="uniteMesure">
+          <label for="uniteMesure" class="form-label">
+            {{ 'inventory.services.fields.uniteMesure' | translate }}
+            <span class="text-danger">*</span>
+          </label>
+          <select id="uniteMesure" class="form-select" formControlName="uniteMesure"
+            [class.is-invalid]="form.get('uniteMesure')?.invalid && form.get('uniteMesure')?.touched">
             @for (u of unites; track u.value) {
               <option [value]="u.value">{{ u.labelKey | translate }}</option>
             }
           </select>
+          @if (form.get('uniteMesure')?.touched && form.get('uniteMesure')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">{{ 'inventory.services.errors.uniteRequired' | translate }}</div>
+          }
         </div>
 
         <div class="col-md-4">

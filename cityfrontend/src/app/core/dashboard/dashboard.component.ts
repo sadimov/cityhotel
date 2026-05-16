@@ -3,9 +3,11 @@ import { forkJoin, of, Subject } from 'rxjs';
 import { catchError, takeUntil } from 'rxjs/operators';
 import { AuthService, UserInfo } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
+import { ReportingDashboardService } from '../../services/reporting-dashboard.service';
 import { ReservationsService } from '../../features/hebergement/services/reservations.service';
 import { ProduitsService } from '../../features/inventory/services/produits.service';
 import { DashboardMenageService } from '../../features/menage/services/dashboard-menage.service';
+import { CommandesService } from '../../features/restaurant/services/commandes.service';
 
 interface DashboardCard {
   title: string;
@@ -166,6 +168,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private reservationsService: ReservationsService,
     private produitsService: ProduitsService,
     private dashboardMenageService: DashboardMenageService,
+    private reportingDashboardService: ReportingDashboardService,
+    private commandesService: CommandesService,
   ) {}
 
   ngOnInit(): void {
@@ -186,18 +190,29 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /**
    * Charger les KPI dynamiques depuis les services HTTP réels. En cas d'échec
    * sur un appel, la valeur est marquée "—" (pas de chiffre décoratif).
+   *
+   * Sources des KPI :
+   *  - Réservations / Chambres / Produits / Tâches : services métier dédiés.
+   *  - Revenus du Jour : R-DIR-001 dashboard direction (CA jour caEmisTtc).
+   *  - Commandes Restaurant : commandesService.page filtré sur date du jour.
+   *  - Clients Nouveaux : aucun endpoint dédié → laissé en "—" (TODO).
    */
   private loadDashboardData(): void {
     this.isLoading = true;
+    const today = new Date().toISOString().slice(0, 10);
 
     forkJoin({
       arrivees: this.reservationsService.arriveesToday().pipe(catchError(() => of([] as unknown[]))),
       enCours: this.reservationsService.enCours().pipe(catchError(() => of([] as unknown[]))),
       produits: this.produitsService.findActifs().pipe(catchError(() => of([] as unknown[]))),
       menage: this.dashboardMenageService.getDashboard().pipe(catchError(() => of(null))),
+      direction: this.reportingDashboardService.getDashboard().pipe(catchError(() => of(null))),
+      commandesJour: this.commandesService
+        .page({ dateDebut: today, dateFin: today }, 0, 1)
+        .pipe(catchError(() => of(null))),
     })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(({ arrivees, enCours, produits, menage }) => {
+      .subscribe(({ arrivees, enCours, produits, menage, direction, commandesJour }) => {
         this.setCardValue("Réservations Aujourd'hui", arrivees.length);
         this.setCardValue('Chambres Occupées', enCours.length);
         this.setCardValue('Produits en Stock', produits.length);
@@ -206,12 +221,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
           'Tâches Ménage',
           menageData?.nombreTachesEnCours ?? menageData?.nombreTachesAujourdhui ?? '—',
         );
-        // KPI sans endpoint dédié — afficher "—" plutôt qu'un nombre décoratif.
-        this.setCardValue('Revenus du Jour', '—');
+        // CA Jour via R-DIR-001 (caEmisTtc en MRU)
+        const caTtc = direction?.caJour?.caEmisTtc;
+        this.setCardValue(
+          'Revenus du Jour',
+          caTtc != null ? `${this.formatMru(caTtc)} MRU` : '—',
+        );
+        // Commandes restaurant du jour (totalElements de la première page filtrée)
+        this.setCardValue('Commandes Restaurant', commandesJour?.totalElements ?? '—');
+        // Pas d'endpoint dédié — TODO créer GET /api/clients/nouveaux-du-jour.
         this.setCardValue('Clients Nouveaux', '—');
-        this.setCardValue('Commandes Restaurant', '—');
         this.isLoading = false;
       });
+  }
+
+  /** Format MRU : entier sans décimales, séparateurs milliers. */
+  private formatMru(montant: number): string {
+    return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(montant);
   }
 
   private setCardValue(title: string, value: string | number): void {

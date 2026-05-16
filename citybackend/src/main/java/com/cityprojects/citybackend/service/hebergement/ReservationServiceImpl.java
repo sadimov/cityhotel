@@ -696,9 +696,10 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     /**
-     * Enrichit un DTO unitaire avec ses pivots {@code reservation_chambres}.
-     * 1 SELECT supplementaire. Pour les listes / pages, preferer
-     * {@link #enrichDtos(List)} ou {@link #enrichPage(Page)} (batch).
+     * Enrichit un DTO unitaire avec ses pivots {@code reservation_chambres}
+     * et les noms client/société (résolus en 2 SELECTs supplémentaires).
+     * Pour les listes / pages, préférer {@link #enrichDtos(List)} ou
+     * {@link #enrichPage(Page)} (batch anti-N+1).
      */
     private ReservationDto enrichDto(Reservation entity) {
         List<ReservationChambre> pivots = reservationChambreRepository
@@ -706,11 +707,21 @@ public class ReservationServiceImpl implements ReservationService {
         List<ReservationChambreDto> chambres = pivots.stream()
                 .map(reservationMapper::toDto)
                 .collect(Collectors.toList());
-        return withChambres(reservationMapper.toDto(entity), chambres);
+        String nomClient = (entity.getClientPrincipalId() != null)
+                ? clientRepository.findById(entity.getClientPrincipalId())
+                        .map(Client::getNomComplet).orElse(null)
+                : null;
+        String nomSociete = (entity.getSocieteId() != null)
+                ? societeRepository.findById(entity.getSocieteId())
+                        .map(Societe::getSocieteNom).orElse(null)
+                : null;
+        return withChambres(reservationMapper.toDto(entity), chambres)
+                .withResolvedNames(nomClient, nomSociete);
     }
 
     /**
-     * Enrichit une liste de DTOs en batch (1 SELECT groupe via WHERE IN).
+     * Enrichit une liste de DTOs en batch (1 SELECT groupé via WHERE IN
+     * pour les pivots, puis 2 SELECTs batch pour les noms client/société).
      * Indispensable pour le calendrier (jusqu'a 500 reservations / page).
      */
     private List<ReservationDto> enrichDtos(List<Reservation> entities) {
@@ -724,10 +735,28 @@ public class ReservationServiceImpl implements ReservationService {
                 .collect(Collectors.groupingBy(
                         ReservationChambre::getReservationId,
                         Collectors.mapping(reservationMapper::toDto, Collectors.toList())));
+        // Batch anti-N+1 : noms client + société en 1 SELECT IN chacun
+        java.util.Set<Long> clientIds = entities.stream()
+                .map(Reservation::getClientPrincipalId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        java.util.Set<Long> societeIds = entities.stream()
+                .map(Reservation::getSocieteId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> nomsClients = clientIds.isEmpty() ? Map.of()
+                : clientRepository.findAllById(clientIds).stream()
+                        .collect(Collectors.toMap(Client::getClientId, Client::getNomComplet));
+        Map<Long, String> nomsSocietes = societeIds.isEmpty() ? Map.of()
+                : societeRepository.findAllById(societeIds).stream()
+                        .collect(Collectors.toMap(Societe::getSocieteId, Societe::getSocieteNom));
         return entities.stream()
                 .map(e -> withChambres(
                         reservationMapper.toDto(e),
-                        byReservation.getOrDefault(e.getReservationId(), List.of())))
+                        byReservation.getOrDefault(e.getReservationId(), List.of()))
+                        .withResolvedNames(
+                                nomsClients.get(e.getClientPrincipalId()),
+                                nomsSocietes.get(e.getSocieteId())))
                 .collect(Collectors.toList());
     }
 
@@ -739,7 +768,8 @@ public class ReservationServiceImpl implements ReservationService {
 
     /**
      * Recopie immutable d'un {@link ReservationDto} en injectant la liste de
-     * chambres. Necessaire car le record est immutable.
+     * chambres. Necessaire car le record est immutable. Les noms client/société
+     * sont injectés ensuite via {@link ReservationDto#withResolvedNames}.
      */
     private static ReservationDto withChambres(ReservationDto base, List<ReservationChambreDto> chambres) {
         return new ReservationDto(
@@ -761,7 +791,9 @@ public class ReservationServiceImpl implements ReservationService {
                 base.createdAt(),
                 base.updatedAt(),
                 chambres,
-                base.sourceCanal());
+                base.sourceCanal(),
+                base.nomClientPrincipal(),
+                base.nomSociete());
     }
 
     @Override

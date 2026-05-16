@@ -155,7 +155,7 @@ export class ServiceHotelierFormComponent implements OnInit, OnDestroy {
       nomService: ['', [Validators.required, Validators.maxLength(150)]],
       description: [''],
       typeServiceId: [null, [Validators.required]],
-      uniteMesure: ['unité'],
+      uniteMesure: ['unité', [Validators.required, Validators.maxLength(20)]],
       prixUnitaire: [0, [Validators.required, Validators.min(0)]],
       estFacturable: [true],
       actif: [true],

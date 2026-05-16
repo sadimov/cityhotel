@@ -41,5 +41,27 @@ public record FactureDto(
         Long userId,
         List<LigneFactureDto> lignes,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom complet du client (résolu côté service). */
+        String nomClient,
+        /** Raison sociale de la société (résolue côté service). */
+        String nomSociete,
+        /** Nom du fournisseur (résolu côté service, pour factures d'achat). */
+        String nomFournisseur,
+        /** Numéro réservation (résolu côté service, pour factures d'hébergement). */
+        String numeroReservation) {
+
+    /**
+     * Reconstruit un {@link FactureDto} avec les noms résolus injectés
+     * (pattern anti-N+1 via batch lookup côté service).
+     */
+    public FactureDto withResolvedNames(String nomCli, String nomSoc,
+                                        String nomFour, String numeroRes) {
+        return new FactureDto(
+                factureId, numeroFacture, typeFacture, compteId, clientId, societeId,
+                reservationId, fournisseurId, factureReferenceId, dateFacture, dateEcheance,
+                montantHt, montantTva, montantTtc, montantPaye, montantRestant, statut,
+                devise, commentaires, userId, lignes, createdAt, updatedAt,
+                nomCli, nomSoc, nomFour, numeroRes);
+    }
 }
