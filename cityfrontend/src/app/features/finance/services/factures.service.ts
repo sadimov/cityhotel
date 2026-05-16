@@ -1,8 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
+import { ApiResponse } from '../../../shared/models/api.model';
 import { FactureCreateDto, FactureDto } from '../models/facture.model';
 import { Page, PageRequest } from '../models/page.model';
 
@@ -18,14 +20,12 @@ import { Page, PageRequest } from '../models/page.model';
  *   - POST   /api/finance/factures/{id}/annuler                  → FactureDto
  *   - POST   /api/finance/factures/from-reservation/{resaId}     → FactureDto (201)
  *
- * Le backend retourne directement les DTO / `Page<T>` Spring Data — pas
- * d'enveloppe `ApiResponse<T>` côté finance (contrairement aux autres
- * features non encore alignées).
- *
- * Endpoints supprimés (n'existent pas côté back) : `/echues`, `/periode`,
- * `/numero/{n}`, `/compte/{id}`, `/statut/{s}`, `PUT /{id}`,
- * `PUT /{id}/annuler` (passé en POST), `PUT /{id}/recalculer`,
- * `POST /{id}/avoir`.
+ * ⚠️ `ApiResponseBodyAdvice` (post-v1.0.0) wrappe TOUTES les réponses
+ * controller en `{data, status, ...}`. On unwrap via `.pipe(map)` avec
+ * fallback `r.data ?? r` pour compat ascendante. La régression "paiements
+ * cassés" venait du fait que `findById` retournait `{data: FactureDto}` mais
+ * le composant lisait `f.montantRestant` direct → undefined → validator
+ * `min(0.01)` bloquait le bouton ENCAISSER.
  *
  * ⚠️ `hotelId` n'est jamais transmis (JWT côté serveur).
  */
@@ -36,15 +36,11 @@ export class FacturesService {
   constructor(private readonly http: HttpClient) {}
 
   findById(id: number): Observable<FactureDto> {
-    return this.http.get<FactureDto>(`${this.base}/${id}`);
+    return this.http
+      .get<ApiResponse<FactureDto>>(`${this.base}/${id}`)
+      .pipe(map((r) => (r?.data ?? (r as unknown as FactureDto))));
   }
 
-  /**
-   * Liste paginée des factures (filtre tenant côté serveur).
-   *
-   * `sort` : `champ,asc` ou `champ,desc` (Spring Data). Multi-tri possible
-   * en passant un tableau.
-   */
   page(req: PageRequest = {}): Observable<Page<FactureDto>> {
     let params = new HttpParams();
     if (req.page != null) params = params.set('page', String(req.page));
@@ -56,38 +52,41 @@ export class FacturesService {
         params = params.set('sort', req.sort);
       }
     }
-    return this.http.get<Page<FactureDto>>(this.base, { params });
+    return this.http
+      .get<ApiResponse<Page<FactureDto>>>(this.base, { params })
+      .pipe(map((r) => (r?.data ?? (r as unknown as Page<FactureDto>))));
   }
 
   create(dto: FactureCreateDto): Observable<FactureDto> {
-    return this.http.post<FactureDto>(this.base, dto);
+    return this.http
+      .post<ApiResponse<FactureDto>>(this.base, dto)
+      .pipe(map((r) => (r?.data ?? (r as unknown as FactureDto))));
   }
 
   emettre(id: number): Observable<FactureDto> {
-    return this.http.post<FactureDto>(`${this.base}/${id}/emettre`, {});
+    return this.http
+      .post<ApiResponse<FactureDto>>(`${this.base}/${id}/emettre`, {})
+      .pipe(map((r) => (r?.data ?? (r as unknown as FactureDto))));
   }
 
   annuler(id: number): Observable<FactureDto> {
-    return this.http.post<FactureDto>(`${this.base}/${id}/annuler`, {});
+    return this.http
+      .post<ApiResponse<FactureDto>>(`${this.base}/${id}/annuler`, {})
+      .pipe(map((r) => (r?.data ?? (r as unknown as FactureDto))));
   }
 
-  /**
-   * Génère une facture à partir d'une réservation existante : les nuitées
-   * sont automatiquement transformées en lignes de facture côté backend.
-   */
   fromReservation(reservationId: number): Observable<FactureDto> {
-    return this.http.post<FactureDto>(
-      `${this.base}/from-reservation/${reservationId}`,
-      {},
-    );
+    return this.http
+      .post<ApiResponse<FactureDto>>(
+        `${this.base}/from-reservation/${reservationId}`,
+        {},
+      )
+      .pipe(map((r) => (r?.data ?? (r as unknown as FactureDto))));
   }
 
   /**
-   * Télécharge la facture au format PDF (B7, 2026-05-08).
-   *
-   * Endpoint back : GET /api/finance/factures/{id}/pdf (Content-Type: pdf).
-   * Le composant appelant orchestre le download navigateur via
-   * `FileDownloadUtil.saveBlob`.
+   * Téléchargement PDF — `ApiResponseBodyAdvice` ne wrappe pas les binaires
+   * (cf. cas 4 byte[]/Resource). On garde le Blob brut.
    */
   downloadPdf(factureId: number): Observable<Blob> {
     return this.http.get(`${this.base}/${factureId}/pdf`, {

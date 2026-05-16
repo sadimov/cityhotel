@@ -1,0 +1,171 @@
+/* POS — Section A : détails client / réservation (bande horizontale).
+ *
+ * Hauteur compacte (~80-100px). Non collapsable.
+ * Affichage en row : avatar+identité | chip réservation | bouton changer.
+ */
+.pos-client-header {
+  width: 100%;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  &__select-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    color: #475569;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+    i {
+      font-size: 1rem;
+      color: #0ea5e9;
+    }
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #0ea5e9;
+      color: #0f172a;
+    }
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  &__client {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+
+  &__avatar {
+    font-size: 1.65rem;
+    color: #0ea5e9;
+  }
+
+  &__client-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    min-width: 0;
+  }
+
+  &__client-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__client-phone {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+
+  &__resa {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__resa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    background: #ecfeff;
+    border: 1px solid #67e8f9;
+    color: #0e7490;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.8rem;
+
+    i {
+      font-size: 0.85rem;
+    }
+  }
+
+  &__resa-num {
+    font-size: 0.8rem;
+    color: #64748b;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  &__resa-clear {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #fecaca;
+    }
+  }
+
+  &__resa-empty {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    font-style: italic;
+  }
+
+  &__change-btn {
+    margin-inline-start: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: transparent;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .pos-client-header__row {
+    gap: 10px;
+  }
+
+  .pos-client-header__change-btn {
+    margin-inline-start: 0;
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}

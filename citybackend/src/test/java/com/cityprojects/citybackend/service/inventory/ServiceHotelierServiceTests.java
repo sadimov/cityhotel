@@ -141,10 +141,10 @@ class ServiceHotelierServiceTests {
                 "Blanchisserie 5 kg", BigDecimal.valueOf(5000));
 
         assertNotNull(created.serviceId());
-        assertEquals("BLANCH5K", created.code());
-        assertEquals("Blanchisserie 5 kg", created.nom());
+        assertEquals("BLANCH5K", created.codeService());
+        assertEquals("Blanchisserie 5 kg", created.nomService());
         assertEquals(0, BigDecimal.valueOf(5000).compareTo(created.prixUnitaire()));
-        assertEquals("prestation", created.unite());
+        assertEquals("prestation", created.uniteMesure());
         assertTrue(Boolean.TRUE.equals(created.actif()));
         assertEquals(type.typeServiceId(), created.typeServiceId());
     }
@@ -198,8 +198,8 @@ class ServiceHotelierServiceTests {
         ServiceHotelierDto updated = transactionTemplate.execute(
                 s -> serviceHotelierService.update(created.serviceId(), updateDto));
 
-        assertEquals("PETITDEJ", updated.code(), "code immuable");
-        assertEquals("Petit dejeuner continental", updated.nom());
+        assertEquals("PETITDEJ", updated.codeService(), "code immuable");
+        assertEquals("Petit dejeuner continental", updated.nomService());
         assertEquals("Inclus le matin", updated.description());
         assertEquals(0, BigDecimal.valueOf(2000).compareTo(updated.prixUnitaire()));
     }
@@ -254,7 +254,7 @@ class ServiceHotelierServiceTests {
                 s -> serviceHotelierService.findAllActive());
         assertNotNull(activesFr);
         assertEquals(1, activesFr.size());
-        assertEquals("JACUZZI", activesFr.get(0).code());
+        assertEquals("JACUZZI", activesFr.get(0).codeService());
 
         // Search avec pagination depuis MR -> 2 resultats
         TenantContext.clear();

@@ -13,6 +13,16 @@
     "logout": "Déconnexion",
     "confirm_logout": "Êtes-vous sûr de vouloir vous déconnecter ?"
   },
+  "notifications": {
+    "arrivee": { "title": "Arrivée du jour" },
+    "depart": { "title": "Départ du jour" },
+    "checkinRetard": { "title": "Check-in en retard" },
+    "stockCritique": { "title": "Stock critique" }
+  },
+  "header": {
+    "notifications": "Notifications",
+    "notificationsEmpty": "Aucune notification active"
+  },
   "menu": {
     "dashboard": "Tableau de bord",
     "products": "Produits & Cat.",
@@ -49,6 +59,55 @@
     },
     "hotelAdmin": {
       "users": "Utilisateurs"
+    },
+    "reporting": {
+      "hebergement": "Hébergement",
+      "finance": "Finance",
+      "inventory": "Stocks",
+      "restaurant": "Restaurant",
+      "menage": "Ménage",
+      "direction": "Direction"
+    }
+  },
+  "reporting": {
+    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
+    "empty": "Aucun rapport disponible pour ce module.",
+    "openEndpoint": "Ouvrir le rapport",
+    "hebergement": {
+      "title": "Rapports Hébergement",
+      "r001": "Taux d'occupation quotidien",
+      "r002": "RevPAR (revenu par chambre disponible)",
+      "r003": "ADR (prix moyen par nuitée)",
+      "r004": "Sources des réservations",
+      "r005": "ALOS (durée moyenne de séjour)"
+    },
+    "finance": {
+      "title": "Rapports Finance",
+      "r001": "Journal des ventes",
+      "r002": "Encaissements par mode",
+      "r003": "Clients débiteurs",
+      "r004": "Balance âgée des créances"
+    },
+    "inventory": {
+      "title": "Rapports Stocks",
+      "r001": "Stock actuel valorisé",
+      "r002": "Valorisation des mouvements",
+      "r003": "Rotation produits"
+    },
+    "restaurant": {
+      "title": "Rapports Restaurant",
+      "r001": "Ventes restaurant",
+      "r002": "Top articles vendus",
+      "r003": "Services poussés sur chambre"
+    },
+    "menage": {
+      "title": "Rapports Ménage",
+      "r001": "Productivité du personnel",
+      "r002": "Tâches en retard"
+    },
+    "direction": {
+      "title": "Rapports Direction",
+      "r001": "Synthèse direction"
     }
   },
   "common": {
@@ -69,6 +128,11 @@
     "back": "Retour",
     "confirm": "Confirmer",
     "retry": "Réessayer",
+    "none": "Aucun",
+    "total": "Total",
+    "select": "Sélectionner",
+    "remove": "Retirer",
+    "inactive": "Inactif",
     "remove": "Supprimer",
     "select": "Sélectionner",
     "total": "Total"
@@ -99,6 +163,54 @@
     "comptabilite.compteResultat": "Compte de résultat"
   },
   "clients": {
+    "societes": {
+      "list": {
+        "title": "Sociétés",
+        "search": "Rechercher une société",
+        "empty": "Aucune société trouvée.",
+        "error": "Impossible de charger les sociétés.",
+        "actions": "Actions"
+      },
+      "form": {
+        "titleCreate": "Nouvelle société",
+        "titleEdit": "Modifier la société",
+        "loadError": "Impossible de charger cette société."
+      },
+      "actions": {
+        "create": "Nouvelle société",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver",
+        "delete": "Supprimer définitivement"
+      },
+      "fields": {
+        "nom": "Raison sociale",
+        "siret": "N° d'identification (NIF/SIRET)",
+        "contactPrincipal": "Contact principal",
+        "telephone": "Téléphone",
+        "email": "Email",
+        "adresse": "Adresse",
+        "ville": "Ville",
+        "pays": "Pays",
+        "nombreClients": "Clients rattachés"
+      },
+      "errors": {
+        "nomRequired": "La raison sociale est obligatoire."
+      },
+      "messages": {
+        "createSuccess": "Société créée",
+        "updateSuccess": "Société modifiée",
+        "saveError": "Impossible d'enregistrer la société.",
+        "deactivateConfirm": "Désactiver cette société ?",
+        "deactivateSuccess": "Société désactivée",
+        "deactivateError": "Impossible de désactiver.",
+        "reactivateSuccess": "Société réactivée",
+        "reactivateError": "Impossible de réactiver.",
+        "deleteConfirm": "Supprimer définitivement cette société ?",
+        "deleteConfirmText": "Cette action est irréversible. Refusée si des clients sont rattachés.",
+        "deleteSuccess": "Société supprimée",
+        "deleteError": "Impossible de supprimer la société (clients rattachés ?)."
+      }
+    },
     "list": {
       "title": "Liste des clients",
       "search": "Rechercher un client",
@@ -287,7 +399,13 @@
           "sousTotal": "Sous-total",
           "paye": "Payé",
           "reste": "Reste",
-          "select": "Sélectionner la ligne"
+          "select": "Sélectionner la ligne",
+          "selectAll": "Tout sélectionner"
+        },
+        "selection": {
+          "total": "Total sélection",
+          "payer": "Payer la sélection",
+          "success": "Lignes sélectionnées encaissées."
         },
         "action": {
           "payer": "Payer sélection",
@@ -427,8 +545,8 @@
     "fields": {
       "numeroReservation": "N° réservation",
       "client": "Client",
-      "clientId": "ID client principal",
-      "societeId": "ID société",
+      "clientId": "Client principal",
+      "societeId": "Société",
       "dateArrivee": "Date d'arrivée",
       "dateDepart": "Date de départ",
       "nbNuits": "Nuits",
@@ -438,7 +556,12 @@
       "montantTotal": "Montant total",
       "motifSejour": "Motif du séjour",
       "commentaires": "Commentaires",
-      "reductionPourcentage": "Réduction (%)"
+      "reductionPourcentage": "Réduction (%)",
+      "chambres": "Chambres",
+      "chambre": "Chambre",
+      "prixNuit": "Prix / nuit",
+      "dateDebut": "Du",
+      "dateFin": "Au"
     },
     "statut": {
       "confirmee": "Non confirmée",
@@ -450,7 +573,8 @@
     "errors": {
       "clientRequired": "Le client principal est obligatoire.",
       "dateArriveeRequired": "La date d'arrivée est obligatoire.",
-      "dateDepartRequired": "La date de départ est obligatoire."
+      "dateDepartRequired": "La date de départ est obligatoire.",
+      "chambreRequired": "Au moins une chambre doit être sélectionnée."
     },
     "messages": {
       "createSuccess": "Réservation créée avec succès",
@@ -577,10 +701,18 @@
       "actions": {
         "create": "Nouveau produit",
         "edit": "Modifier",
-        "delete": "Supprimer"
+        "delete": "Supprimer définitivement",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver"
+      },
+      "statut": {
+        "inactif": "Inactif"
       },
       "fields": {
         "codeProduit": "Code",
+        "codeProduitAuto": "Auto-généré",
+        "codeProduitAutoHint": "Le code sera généré automatiquement à l'enregistrement.",
+        "codeProduitImmutable": "Le code ne peut pas être modifié.",
         "nomProduit": "Nom",
         "description": "Description",
         "categorie": "Catégorie",
@@ -614,9 +746,19 @@
       "messages": {
         "createSuccess": "Produit créé avec succès",
         "updateSuccess": "Produit modifié avec succès",
-        "deleteSuccess": "Produit supprimé",
-        "deleteConfirm": "Supprimer ce produit ?",
+        "deleteSuccess": "Produit supprimé définitivement",
+        "deleteConfirm": "Supprimer définitivement ce produit ?",
+        "deleteConfirmText": "Cette action est irréversible. Le produit sera retiré de la base de données.",
         "deleteError": "Impossible de supprimer ce produit.",
+        "deleteRefused": "Suppression refusée",
+        "deleteRefusedSuggestion": "Ce produit a déjà été utilisé (mouvements de stock). Voulez-vous le désactiver à la place ?",
+        "deactivateConfirm": "Désactiver ce produit ?",
+        "deactivateConfirmText": "Le produit sera masqué des listes actives mais conservera son historique. Réversible.",
+        "deactivateSuccess": "Produit désactivé",
+        "deactivateError": "Impossible de désactiver ce produit.",
+        "reactivateConfirm": "Réactiver ce produit ?",
+        "reactivateSuccess": "Produit réactivé",
+        "reactivateError": "Impossible de réactiver ce produit.",
         "saveError": "Impossible d'enregistrer le produit."
       },
       "detail": {
@@ -1172,30 +1314,49 @@
     "pos": {
       "title": "Point de vente",
       "currency": "MRU",
+      "tab": {
+        "articles": "Articles",
+        "services": "Services"
+      },
+      "services": {
+        "search": "Rechercher un service…",
+        "empty": "Aucun service disponible.",
+        "emptyHint": "Créez des services dans /inventory/services-hoteliers."
+      },
       "client": {
         "title": "Client",
+        "modalTitle": "Sélectionner un client",
         "searchLabel": "Rechercher un client",
-        "searchPlaceholder": "Nom, prénom ou téléphone",
+        "searchPlaceholder": "Nom, prénom ou téléphone…",
         "noResults": "Aucun client trouvé.",
-        "change": "Changer"
+        "typeToSearch": "Tapez au moins 1 caractère pour rechercher.",
+        "change": "Changer",
+        "tabReservations": "Réservations en cours",
+        "tabClient": "Client direct",
+        "hintReservations": "Recherchez un client puis sélectionnez sa réservation en cours pour reporter sur la chambre.",
+        "hintDirect": "Sélectionnez un client pour une vente directe (sans réservation).",
+        "useDirect": "Utiliser ce client sans réservation"
       },
       "reservation": {
         "title": "Réservations en cours",
         "noActive": "Aucune réservation en cours pour ce client.",
+        "noneSelected": "Vente directe (sans réservation)",
         "statut": "Statut",
         "chambre": "Chambre",
         "clear": "Désélectionner la réservation"
       },
       "articles": {
         "title": "Articles",
-        "search": "Rechercher un article",
-        "allCategories": "Toutes",
+        "search": "Rechercher un article…",
+        "allCategories": "Tout",
         "empty": "Aucun article disponible.",
+        "emptyHint": "Vérifiez vos catégories ou créez des articles dans le catalogue.",
         "unavailable": "Indisponible"
       },
       "cart": {
         "title": "Panier",
-        "empty": "Le panier est vide. Sélectionnez des articles pour commencer.",
+        "empty": "Panier vide",
+        "emptyHint": "Ajoutez des articles depuis le catalogue.",
         "article": "Article",
         "quantity": "Qté",
         "subtotal": "Sous-total",
@@ -1204,12 +1365,20 @@
         "decrement": "Diminuer la quantité",
         "remove": "Retirer la ligne",
         "clear": "Vider le panier",
-        "checkout": "Encaisser comptant",
-        "reportChambre": "Reporter sur chambre",
+        "checkout": "Encaisser",
+        "reportChambre": "Mettre sur facture chambre",
         "checkoutSuccess": "Commande encaissée",
         "orderNumber": "N° commande",
         "invoiceNumber": "N° facture",
-        "newOrder": "Nouvelle commande"
+        "newOrder": "Nouvelle commande",
+        "selectClient": "Sélectionner client / réservation",
+        "selectClientHint": "Sélectionnez un client avant d'encaisser.",
+        "totalArticles": "Sous-total articles",
+        "totalServices": "Sous-total services",
+        "pushServicesToRoom": "Mettre services sur facture chambre",
+        "service": {
+          "suffix": "× {{unite}}"
+        }
       },
       "payment": {
         "title": "Encaissement",
@@ -1246,13 +1415,17 @@
       "errors": {
         "loadCategories": "Impossible de charger les catégories.",
         "loadArticles": "Impossible de charger les articles.",
+        "loadServices": "Impossible de charger les services hôteliers.",
         "loadReservations": "Impossible de charger les réservations du client.",
         "searchClients": "Erreur lors de la recherche des clients.",
         "invalidArticle": "Cet article ne peut pas être ajouté.",
+        "invalidService": "Ce service ne peut pas être ajouté.",
         "invalidPayload": "La commande est incomplète.",
         "encaissement": "L'encaissement a échoué. Réessayez.",
         "reportChambre": "Le report sur chambre a échoué.",
         "reservationRequired": "Sélectionnez d'abord une réservation.",
+        "servicesRequireReservation": "Sélectionnez une réservation pour facturer un service.",
+        "servicesPushFailed": "Impossible d'ajouter les services à la facture chambre.",
         "ticketCaisse": "Impossible d'imprimer le ticket caisse.",
         "ticketCuisine": "Impossible d'imprimer le ticket cuisine.",
         "ticketDecode": "Impossible d'afficher le ticket (PDF invalide)."
@@ -1261,7 +1434,13 @@
         "encaissementSuccess": "Commande encaissée avec succès.",
         "reportSuccess": "Commande reportée sur la chambre.",
         "reportConfirmTitle": "Reporter sur la chambre ?",
-        "reportConfirmText": "Les charges seront ajoutées au folio de la réservation et facturées au check-out."
+        "reportConfirmText": "Les charges seront ajoutées au folio de la réservation et facturées au check-out.",
+        "checkoutConfirmTitle": "Encaisser la commande ?",
+        "clearCartConfirmTitle": "Vider le panier ?",
+        "clearCartConfirmText": "Toutes les lignes seront supprimées. Cette action est irréversible.",
+        "pushServicesConfirmTitle": "Mettre les services sur la facture chambre ?",
+        "pushServicesConfirmText": "Les services seront ajoutés au folio de la réservation sélectionnée et facturés au check-out.",
+        "servicesPushed": "Services ajoutés à la facture chambre."
       },
       "ticket": {
         "print": "Imprimer ticket caisse",
@@ -1303,6 +1482,7 @@
         "emettre": "Émettre",
         "annuler": "Annuler la facture",
         "encaisser": "Encaisser",
+        "encaisserSelection": "Encaisser sélection",
         "downloadPdf": "Télécharger PDF"
       },
       "fields": {
@@ -1351,6 +1531,9 @@
         "total": "Total",
         "empty": "Aucune ligne sur cette facture.",
         "emptyAllowed": "Aucune ligne ajoutée — la facture sera créée en brouillon.",
+        "selectAll": "Tout sélectionner",
+        "selectLine": "Sélectionner cette ligne",
+        "selectedTotal": "Total sélection",
         "typeOption": {
           "NUITEE": "Nuitée",
           "PRODUIT": "Produit",
@@ -1486,7 +1669,8 @@
         "specialites": "Spécialités",
         "specialitesHint": "séparées par une virgule",
         "specialitesPlaceholder": "chambres, salles",
-        "actif": "Actif"
+        "actif": "Actif",
+        "nonAssigne": "Non assigné"
       },
       "specialite": {
         "chambres": "Chambres",
@@ -1696,7 +1880,8 @@
       "choose": "Sélectionnez le personnel à assigner.",
       "validate": "Assigner",
       "cancel": "Annuler",
-      "empty": "Aucun personnel actif disponible."
+      "empty": "Aucun personnel actif disponible.",
+      "unknown": "Personnel inconnu"
     }
   },
   "profile": {
@@ -2413,7 +2598,8 @@
         "motif": "Motif",
         "motifPlaceholder": "Motif détaillé de la contre-passation...",
         "contrePasseePar": "Contre-passée par",
-        "ecritureSource": "Écriture source"
+        "ecritureSource": "Écriture source",
+        "voirEcriture": "Voir l'écriture liée"
       },
       "statut": {
         "BROUILLON": "Brouillon",

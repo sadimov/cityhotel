@@ -1,0 +1,81 @@
+<!--
+  POS — Section A horizontale : détails client / réservation.
+  - État vide : bouton large « Sélectionner client / réservation ».
+  - État sélectionné : badge client + chip réservation/chambre + actions.
+-->
+<div class="pos-client-header">
+  @let selectedClient = (selectedClient$ | async);
+  @let selectedReservation = (selectedReservation$ | async);
+
+  @if (!selectedClient) {
+    <button
+      type="button"
+      class="pos-client-header__select-btn"
+      (click)="onOpenClientModal()"
+    >
+      <i class="bi bi-person-plus-fill" aria-hidden="true"></i>
+      <span>{{ 'restaurant.pos.cart.selectClient' | translate }}</span>
+      <i class="bi bi-chevron-right ms-auto" aria-hidden="true"></i>
+    </button>
+  } @else {
+    <div class="pos-client-header__row">
+      <div class="pos-client-header__client">
+        <i class="bi bi-person-circle pos-client-header__avatar" aria-hidden="true"></i>
+        <div class="pos-client-header__client-text">
+          <div class="pos-client-header__client-name">
+            {{ selectedClient.prenom }} {{ selectedClient.nom }}
+          </div>
+          @if (selectedClient.telephone) {
+            <div class="pos-client-header__client-phone">
+              <i class="bi bi-telephone-fill me-1" aria-hidden="true"></i>
+              {{ selectedClient.telephone }}
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (selectedReservation) {
+        <div class="pos-client-header__resa">
+          <span class="pos-client-header__resa-badge">
+            <i class="bi bi-door-open-fill" aria-hidden="true"></i>
+            @if (selectedReservation.chambres && selectedReservation.chambres.length > 0) {
+              {{ 'restaurant.pos.reservation.chambre' | translate }}
+              @for (c of selectedReservation.chambres; track c.chambreId; let last = $last) {
+                {{ c.numeroChambre }}{{ last ? '' : ', ' }}
+              }
+            } @else {
+              #{{ selectedReservation.numeroReservation || selectedReservation.reservationId }}
+            }
+          </span>
+          @if (selectedReservation.numeroReservation && selectedReservation.chambres?.length) {
+            <span class="pos-client-header__resa-num">
+              {{ selectedReservation.numeroReservation }}
+            </span>
+          }
+          <button
+            type="button"
+            class="pos-client-header__resa-clear"
+            (click)="onClearReservation()"
+            [attr.aria-label]="'restaurant.pos.reservation.clear' | translate"
+          >
+            <i class="bi bi-x" aria-hidden="true"></i>
+          </button>
+        </div>
+      } @else {
+        <div class="pos-client-header__resa-empty">
+          <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+          {{ 'restaurant.pos.reservation.noneSelected' | translate }}
+        </div>
+      }
+
+      <button
+        type="button"
+        class="pos-client-header__change-btn"
+        (click)="onOpenClientModal()"
+      >
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>
+        {{ 'restaurant.pos.client.change' | translate }}
+      </button>
+    </div>
+  }
+</div>

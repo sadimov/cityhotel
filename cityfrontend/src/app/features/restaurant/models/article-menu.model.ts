@@ -16,9 +16,10 @@ export interface ArticleMenu {
   hotelId?: number;
   categorieId: number;
   codeArticle?: string;
-  nomArticle: string;
-  nomArticleEn?: string;
-  nomArticleAr?: string;
+  /** Aligné sur ArticleMenuDto record backend : champ `nom` (pas `nomArticle`). */
+  nom: string;
+  nomEn?: string;
+  nomAr?: string;
   description?: string;
   descriptionEn?: string;
   descriptionAr?: string;
@@ -30,8 +31,9 @@ export interface ArticleMenu {
   imageUrl?: string;
   disponible?: boolean;
   actif?: boolean;
-  dateCreation?: string;
-  dateModification?: string;
+  statut?: 'ACTIF' | 'RUPTURE' | 'INACTIF';
+  createdAt?: string;
+  updatedAt?: string;
   /** Champ dérivé renvoyé par le backend (lecture seule). */
   nomCategorie?: string;
 }

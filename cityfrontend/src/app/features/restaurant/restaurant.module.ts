@@ -10,8 +10,8 @@ import { CategoriesListComponent } from './components/categories-list/categories
 import { CategoryFormComponent } from './components/category-form/category-form.component';
 import { ArticleGridComponent } from './components/pos/article-grid/article-grid.component';
 import { CartComponent } from './components/pos/cart/cart.component';
+import { ClientHeaderComponent } from './components/pos/client-header/client-header.component';
 import { ClientSearchComponent } from './components/pos/client-search/client-search.component';
-import { PaymentModalComponent } from './components/pos/payment-modal/payment-modal.component';
 import { PosComponent } from './components/pos/pos.component';
 import { RestaurantRoutingModule } from './restaurant-routing.module';
 
@@ -22,22 +22,22 @@ import { RestaurantRoutingModule } from './restaurant-routing.module';
  * sur les composants déclarés.
  *
  * `TranslateModule.forChild()` rejoint la chaîne de loaders ngx-translate
- * mise en place dans `CoreModule`. Pas besoin de réinjecter le `TranslateLoader`.
+ * mise en place dans `CoreModule`.
  *
  * Périmètre Tour 23 — CATALOGUE :
  *  - articles-list + article-form (CRUD articles du menu)
  *  - categories-list + category-form (CRUD catégories)
  *
  * Périmètre Tour 24 — POS avancé (NgRx Component Store local) :
- *  - pos (point d'entrée, 3 zones)
- *  - pos/client-search (recherche client + réservations actives)
- *  - pos/article-grid (grille tactile)
- *  - pos/cart (panier + actions)
- *  - pos/payment-modal (encaissement comptant)
+ *  - pos (point d'entrée, layout 2 zones plein-écran)
+ *  - pos/client-search (MODALE sélection client + réservation, 2 onglets)
+ *  - pos/article-grid (grille tactile + chips catégorie)
+ *  - pos/cart (panier + paiement inline + actions)
  *  - PosStore est `provided` au niveau du `PosComponent`, pas globalement.
  *
- * Périmètre différé (Tour 25+) :
- *  - commandes-list + commande-form (suivi cuisine, réimpressions)
+ * Note Tour 54 : `PaymentModalComponent` historique retiré au profit du
+ * panneau paiement inline intégré dans `CartComponent` (cohérence POS
+ * moderne — un seul écran encaissement, pas de modale flottante).
  */
 @NgModule({
   declarations: [
@@ -47,9 +47,9 @@ import { RestaurantRoutingModule } from './restaurant-routing.module';
     ArticleFormComponent,
     PosComponent,
     ClientSearchComponent,
+    ClientHeaderComponent,
     ArticleGridComponent,
     CartComponent,
-    PaymentModalComponent,
   ],
   imports: [
     CommonModule,

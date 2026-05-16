@@ -1,16 +1,28 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { Client } from '../../../clients/models/client.model';
+import { Societe } from '../../../clients/models/societe.model';
+import { ClientsService } from '../../../clients/services/clients.service';
+import { Chambre } from '../../models/chambre.model';
 import {
+  CreerReservationChambreRequest,
   CreerReservationRequest,
   ModifierReservationRequest,
   Reservation,
 } from '../../models/reservation.model';
+import { ChambresService } from '../../services/chambres.service';
 import { ReservationsService } from '../../services/reservations.service';
 
 type FormState = 'loading' | 'ready' | 'submitting' | 'error';
@@ -18,9 +30,13 @@ type FormState = 'loading' | 'ready' | 'submitting' | 'error';
 /**
  * Formulaire création / édition d'une réservation.
  *
- * Périmètre Tour 11 : informations principales (client, dates, occupants).
- * La sélection multi-chambres + tarification dynamique sera traitée dans une
- * itération ultérieure (UX dédiée + endpoint `rechercher-disponibilite`).
+ * - Selects par nom pour `clientPrincipalId` et `societeId` (chargement
+ *   ClientsService).
+ * - FormArray `chambres` avec au moins une chambre obligatoire à la création
+ *   (backend `ReservationCreateDto.chambres` est `@NotEmpty`).
+ * - Les chambres sont sélectionnées par numéro (lookup ChambresService.findActives).
+ * - En édition (`/:id`), les chambres sont laissées intactes côté backend si
+ *   `chambres` n'est pas modifié (envoyé `undefined`).
  */
 @Component({
   selector: 'app-reservation-form',
@@ -33,6 +49,10 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
   state: FormState = 'loading';
   editingId: number | null = null;
 
+  clients: Client[] = [];
+  societes: Societe[] = [];
+  chambresActives: Chambre[] = [];
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -40,11 +60,14 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly reservationsService: ReservationsService,
+    private readonly clientsService: ClientsService,
+    private readonly chambresService: ChambresService,
     private readonly i18n: TranslationService,
   ) {}
 
   ngOnInit(): void {
     this.form = this.buildForm();
+    this.loadReferentiels();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam && idParam !== 'new') {
@@ -56,6 +79,9 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
       this.editingId = id;
       this.loadExisting(id);
     } else {
+      // Mode création : pré-initialise une ligne chambre vide (au moins 1
+      // chambre obligatoire pour passer la validation backend).
+      this.addChambre();
       this.state = 'ready';
     }
   }
@@ -69,13 +95,45 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
     return this.editingId !== null;
   }
 
+  get chambresArray(): FormArray<FormGroup> {
+    return this.form.get('chambres') as FormArray<FormGroup>;
+  }
+
+  addChambre(): void {
+    this.chambresArray.push(this.buildChambreLigne());
+  }
+
+  removeChambre(index: number): void {
+    if (!this.isEditing && this.chambresArray.length <= 1) {
+      return; // Au moins 1 chambre requise en création
+    }
+    this.chambresArray.removeAt(index);
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.chambresArray.markAllAsTouched();
+      return;
+    }
+    if (!this.isEditing && this.chambresArray.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: this.i18n.translate('hebergement.errors.chambreRequired'),
+      });
       return;
     }
     this.state = 'submitting';
     const raw = this.form.getRawValue();
+
+    const chambres: CreerReservationChambreRequest[] = (raw.chambres || [])
+      .filter((c: { chambreId: number | null }) => c.chambreId != null)
+      .map((c: { chambreId: number; prixNuit: number; dateDebut?: string; dateFin?: string }) => ({
+        chambreId: Number(c.chambreId),
+        prixNuit: Number(c.prixNuit),
+        dateDebut: c.dateDebut || undefined,
+        dateFin: c.dateFin || undefined,
+      }));
 
     const payload: CreerReservationRequest | ModifierReservationRequest = {
       clientPrincipalId: Number(raw.clientPrincipalId),
@@ -90,9 +148,9 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
         raw.reductionPourcentage != null && raw.reductionPourcentage !== ''
           ? Number(raw.reductionPourcentage)
           : undefined,
-      // Le tableau `chambres` reste vide en Tour 11 — l'UX d'allocation
-      // multi-chambres viendra dans un tour dédié.
-      chambres: [],
+      chambres: this.isEditing
+        ? (chambres.length > 0 ? chambres : undefined as unknown as CreerReservationChambreRequest[])
+        : chambres,
     };
 
     const obs$ = this.editingId
@@ -121,10 +179,11 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
           });
           this.router.navigate(['/hebergement/reservations/list']);
         },
-        error: () => {
+        error: (err) => {
+          const key = err?.error?.error || 'hebergement.messages.saveError';
           Swal.fire({
             icon: 'error',
-            title: this.i18n.translate('hebergement.messages.saveError'),
+            title: this.i18n.translate(key),
           });
         },
       });
@@ -138,6 +197,30 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
   // Privé
   // ────────────────────────────────────────────────────────────────────────
 
+  private loadReferentiels(): void {
+    this.clientsService
+      .page({ page: 0, size: 300, sortBy: 'nom', sortDir: 'asc' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => (this.clients = p.content || []),
+        error: () => (this.clients = []),
+      });
+    this.clientsService
+      .pageSocietes({ page: 0, size: 300, sortBy: 'societeNom', sortDir: 'asc' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => (this.societes = p.content || []),
+        error: () => (this.societes = []),
+      });
+    this.chambresService
+      .findActives()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (list) => (this.chambresActives = list || []),
+        error: () => (this.chambresActives = []),
+      });
+  }
+
   private buildForm(): FormGroup {
     return this.fb.group({
       clientPrincipalId: [null, [Validators.required, Validators.min(1)]],
@@ -149,6 +232,21 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
       motifSejour: [''],
       commentaires: [''],
       reductionPourcentage: [null, [Validators.min(0), Validators.max(100)]],
+      chambres: this.fb.array<FormGroup>([]),
+    });
+  }
+
+  private buildChambreLigne(seed?: { chambreId?: number; prixNuit?: number; dateDebut?: string; dateFin?: string }): FormGroup {
+    return this.fb.group({
+      chambreId: new FormControl<number | null>(seed?.chambreId ?? null, {
+        validators: [Validators.required, Validators.min(1)],
+      }),
+      prixNuit: new FormControl<number>(seed?.prixNuit ?? 0, {
+        validators: [Validators.required, Validators.min(0)],
+        nonNullable: true,
+      }),
+      dateDebut: new FormControl<string | null>(seed?.dateDebut ?? null),
+      dateFin: new FormControl<string | null>(seed?.dateFin ?? null),
     });
   }
 
@@ -179,5 +277,20 @@ export class ReservationFormComponent implements OnInit, OnDestroy {
       commentaires: r.commentaires ?? '',
       reductionPourcentage: r.reductionPourcentage ?? null,
     });
+    // Hydrate les chambres existantes (lecture seule en édition — les
+    // modifications de chambres passent par d'autres flux dédiés).
+    if (r.chambres && r.chambres.length > 0) {
+      while (this.chambresArray.length > 0) {
+        this.chambresArray.removeAt(0);
+      }
+      for (const c of r.chambres) {
+        this.chambresArray.push(this.buildChambreLigne({
+          chambreId: c.chambreId,
+          prixNuit: c.prixNuit,
+          dateDebut: c.dateDebut,
+          dateFin: c.dateFin,
+        }));
+      }
+    }
   }
 }

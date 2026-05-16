@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { catchError, finalize, takeUntil } from 'rxjs/operators';
@@ -25,13 +25,13 @@ interface ArticlesPageRequest {
 }
 
 /**
- * Liste paginée des articles du menu (catalogue restaurant).
+ * Liste paginÃ©e des articles du menu (catalogue restaurant).
  *
- * Pattern aligné sur `produits-list` (Tour 16) et `factures-list` (Tour 19) :
- *  - table Bootstrap + pagination maison + états loading/error/empty/ready
+ * Pattern alignÃ© sur `produits-list` (Tour 16) et `factures-list` (Tour 19) :
+ *  - table Bootstrap + pagination maison + Ã©tats loading/error/empty/ready
  *  - recherche serveur avec debounce 300 ms
- *  - filtres : catégorie, disponibilité, statut actif
- *  - actions ligne : édition, suppression, bascule disponibilité
+ *  - filtres : catÃ©gorie, disponibilitÃ©, statut actif
+ *  - actions ligne : Ã©dition, suppression, bascule disponibilitÃ©
  */
 @Component({
   selector: 'app-articles-list',
@@ -45,7 +45,7 @@ export class ArticlesListComponent implements OnInit, OnDestroy {
   request: ArticlesPageRequest = {
     page: 0,
     size: 10,
-    sortBy: 'nomArticle',
+    sortBy: 'nom',
     sortDir: 'asc',
     filtres: {},
   };
@@ -216,7 +216,7 @@ export class ArticlesListComponent implements OnInit, OnDestroy {
     const id = article.articleId;
     Swal.fire({
       title: this.i18n.translate('restaurant.article.messages.deleteConfirm'),
-      text: article.nomArticle,
+      text: article.nom,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: this.i18n.translate('restaurant.article.actions.delete'),
@@ -263,22 +263,22 @@ export class ArticlesListComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Retrouve le nom de la catégorie pour affichage. Évite un join côté
-   * backend : on utilise les catégories actives chargées au montage.
-   * Si le backend renvoie déjà `nomCategorie` dans l'article, on
-   * l'utilise en priorité.
+   * Retrouve le nom de la catÃ©gorie pour affichage. Ã‰vite un join cÃ´tÃ©
+   * backend : on utilise les catÃ©gories actives chargÃ©es au montage.
+   * Si le backend renvoie dÃ©jÃ  `nomCategorie` dans l'article, on
+   * l'utilise en prioritÃ©.
    */
   categorieNom(article: ArticleMenu): string {
-    if (article.nomCategorie) {
-      return article.nomCategorie;
+    if (article.nom) {
+      return article.nom;
     }
     const found = this.categories.find((c) => c.categorieId === article.categorieId);
-    return found?.nomCategorie ?? '-';
+    return found?.nom ?? '-';
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Privé
-  // ────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // PrivÃ©
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private loadCategories(): void {
     this.categoriesService

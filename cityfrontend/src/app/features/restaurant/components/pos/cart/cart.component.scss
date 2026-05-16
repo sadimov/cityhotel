@@ -1,9 +1,532 @@
-/* Composant POS — panier en cours. */
-.cart-lines {
-  max-height: calc(100vh - 24rem);
-  min-height: 12rem;
+/* POS Restaurant — panier (Section C horizontale).
+ *
+ * Structure : 2 zones côte à côte
+ *  - lines-zone (gauche, flex 1) : titre + lignes (scroll vertical interne).
+ *  - recap (droite, ~360px) : totaux + modes paiement inline + actions.
+ *
+ * Sous 992px → stack vertical (lignes puis récap).
+ */
+$city-primary: #145e9b;
+$city-primary-dark: #0e4a7a;
+$city-primary-soft: #e8f1fb;
+$city-border: #dde6ee;
+$city-text: #1f2937;
+$city-text-muted: #647383;
+$city-success: #28a745;
+$city-success-dark: #1e7a36;
+$city-bg-soft: #f8fafc;
+
+:host {
+  display: block;
+  width: 100%;
 }
 
-.qty-input {
-  width: 3.25rem;
+.pos-cart {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid $city-border;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(20, 94, 155, 0.04);
+  padding: 12px;
+  min-height: 320px;
+
+  // ────────────────────────────────────────────────────────────────
+  // Zone GAUCHE : lignes du panier
+  // ────────────────────────────────────────────────────────────────
+  &__lines-zone {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid $city-border;
+    border-radius: 8px;
+    overflow: hidden;
+    max-height: 480px;
+  }
+
+  &__lines-header {
+    flex: 0 0 auto;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid $city-border;
+    background: $city-bg-soft;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: $city-text;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+      color: $city-primary;
+    }
+  }
+
+  &__count {
+    background: $city-primary;
+    color: #ffffff;
+    font-size: 0.7rem;
+    padding: 2px 7px;
+    border-radius: 999px;
+    margin-left: 4px;
+  }
+
+  &__clear {
+    background: transparent;
+    border: 0;
+    color: #c0392b;
+    font-size: 0.78rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    &:hover {
+      background: rgba(192, 57, 43, 0.08);
+    }
+  }
+
+  &__empty {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: $city-text-muted;
+    padding: 36px 24px;
+
+    > i {
+      font-size: 2.75rem;
+      color: rgba(20, 94, 155, 0.2);
+      margin-bottom: 12px;
+    }
+  }
+
+  &__empty-text {
+    font-weight: 600;
+    color: $city-text;
+    font-size: 0.95rem;
+  }
+
+  &__empty-hint {
+    font-size: 0.8rem;
+    color: $city-text-muted;
+    margin-top: 6px;
+  }
+
+  &__lines {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0;
+
+    scrollbar-width: thin;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba(20, 94, 155, 0.25);
+      border-radius: 3px;
+    }
+  }
+
+  // ────────────────────────────────────────────────────────────────
+  // Zone DROITE : récap totaux + modes paiement + actions
+  // ────────────────────────────────────────────────────────────────
+  &__recap {
+    flex: 0 0 360px;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+    background: $city-bg-soft;
+    border: 1px solid $city-border;
+    border-radius: 8px;
+  }
+
+  &__totals {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__total-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: $city-text-muted;
+
+    &--grand {
+      font-size: 0.9rem;
+      color: $city-text;
+      font-weight: 600;
+      border-top: 1px solid $city-border;
+      padding-top: 6px;
+      margin-top: 2px;
+    }
+  }
+
+  &__total-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: $city-primary;
+    line-height: 1;
+  }
+
+  &__total-currency {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: $city-text-muted;
+    margin-left: 2px;
+  }
+
+  &__modes {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  &__modes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  &__modes-other {
+    height: 32px;
+    font-size: 0.78rem;
+  }
+
+  &__ref {
+    margin-top: 2px;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  &__checkout {
+    background: $city-success;
+    border-color: $city-success;
+    color: #ffffff;
+    padding: 14px 16px;
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.25);
+    transition: background 0.15s ease, transform 0.1s ease;
+
+    &:hover:not(:disabled) {
+      background: $city-success-dark;
+      border-color: $city-success-dark;
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    &:disabled {
+      background: #b6c4cf;
+      border-color: #b6c4cf;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+  }
+
+  &__checkout-label {
+    flex: 1 1 auto;
+    text-align: left;
+  }
+
+  &__checkout-amount {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  &__report {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-color: $city-primary;
+    color: $city-primary;
+
+    &:hover:not(:disabled) {
+      background: $city-primary-soft;
+      color: $city-primary-dark;
+      border-color: $city-primary;
+    }
+  }
+
+  &__push-services {
+    padding: 12px 14px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #d99a2b;
+    border-color: #d99a2b;
+    color: #ffffff;
+
+    &:hover:not(:disabled) {
+      background: #b67e1f;
+      border-color: #b67e1f;
+      color: #ffffff;
+    }
+
+    &:disabled {
+      background: #d4c1a3;
+      border-color: #d4c1a3;
+    }
+  }
+
+  &__push-services-label {
+    flex: 1 1 auto;
+    text-align: left;
+  }
+
+  &__warn {
+    background: #fff8e1;
+    border: 1px solid #ffe7a1;
+    color: #8a6d11;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    text-align: center;
+  }
+}
+
+// Responsive : sous 992px, stack vertical (lignes puis récap).
+@media (max-width: 991.98px) {
+  .pos-cart {
+    flex-direction: column;
+
+    &__lines-zone {
+      max-height: 320px;
+    }
+
+    &__recap {
+      flex: 0 0 auto;
+      max-width: 100%;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Modes paiement (tuiles compactes)
+// ═══════════════════════════════════════════════════════════════════
+.pos-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 4px;
+  background: #ffffff;
+  border: 1px solid $city-border;
+  border-radius: 8px;
+  color: $city-text;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+  min-height: 56px;
+
+  i {
+    font-size: 1.15rem;
+    color: $city-text-muted;
+  }
+
+  span {
+    line-height: 1.1;
+  }
+
+  &:hover:not(.pos-mode--active) {
+    border-color: $city-primary;
+    background: $city-primary-soft;
+
+    i {
+      color: $city-primary;
+    }
+  }
+
+  &--active {
+    background: $city-primary-soft;
+    border-color: $city-primary;
+    color: $city-primary-dark;
+
+    i {
+      color: $city-primary;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// Lignes panier (custom — pas <table>)
+// ═══════════════════════════════════════════════════════════════════
+.pos-line {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid $city-border;
+  transition: background 0.12s ease;
+
+  &:hover {
+    background: rgba(232, 241, 251, 0.4);
+  }
+
+  // Variante service hôtelier (Tour 55) — léger accent ambre à gauche.
+  &--service {
+    border-left: 3px solid #d99a2b;
+    padding-left: 11px;
+  }
+
+  &__main {
+    min-width: 0;
+  }
+
+  &__name {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: $city-text;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__type-icon {
+    font-size: 0.85rem;
+    color: $city-primary;
+    flex: 0 0 auto;
+
+    &--service {
+      color: #d99a2b;
+    }
+  }
+
+  &__price {
+    font-size: 0.72rem;
+    color: $city-text-muted;
+    margin-top: 2px;
+  }
+
+  &__unit {
+    margin-left: 4px;
+    font-style: italic;
+    color: #a07020;
+  }
+
+  &__qty {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid $city-border;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  &__qty-btn {
+    width: 26px;
+    height: 28px;
+    background: transparent;
+    border: 0;
+    color: $city-primary;
+    cursor: pointer;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease;
+
+    &:hover {
+      background: $city-primary-soft;
+    }
+  }
+
+  &__qty-input {
+    width: 36px;
+    height: 28px;
+    border: 0;
+    border-left: 1px solid $city-border;
+    border-right: 1px solid $city-border;
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $city-text;
+    padding: 0;
+
+    &:focus {
+      outline: none;
+      background: $city-primary-soft;
+    }
+
+    /* hide spinners */
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  &__total {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: $city-primary;
+    text-align: right;
+    min-width: 56px;
+  }
+
+  &__remove {
+    background: transparent;
+    border: 0;
+    color: #b94f44;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, color 0.12s ease;
+
+    &:hover {
+      background: rgba(192, 57, 43, 0.1);
+      color: #c0392b;
+    }
+  }
 }

@@ -44,13 +44,13 @@ public class ServiceHotelierServiceImpl implements ServiceHotelierService {
     @Transactional
     public ServiceHotelierDto create(ServiceHotelierCreateDto dto) {
         logger.info("Creation service hotelier : code={}, nom={}, typeId={}",
-                dto.code(), dto.nom(), dto.typeServiceId());
+                dto.codeService(), dto.nomService(), dto.typeServiceId());
 
         // Verifier que le type existe dans le tenant courant (Hibernate filtre auto).
         if (typeRepository.findById(dto.typeServiceId()).isEmpty()) {
             throw new ResourceNotFoundException("error.typeServiceHotelier.notFound");
         }
-        if (serviceRepository.existsByCode(dto.code())) {
+        if (serviceRepository.existsByCode(dto.codeService())) {
             throw new BusinessException("error.serviceHotelier.code.alreadyExists");
         }
 
@@ -75,10 +75,10 @@ public class ServiceHotelierServiceImpl implements ServiceHotelierService {
         }
 
         // Code immuable apres creation (cle metier).
-        entity.setNom(dto.nom());
+        entity.setNom(dto.nomService());
         entity.setDescription(dto.description());
         entity.setPrixUnitaire(dto.prixUnitaire());
-        entity.setUnite(dto.unite());
+        entity.setUnite(dto.uniteMesure());
         return mapper.toDto(serviceRepository.save(entity));
     }
 

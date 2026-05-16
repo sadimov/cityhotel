@@ -7,6 +7,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { ClientsRoutingModule } from './clients-routing.module';
 import { ClientFormComponent } from './components/client-form/client-form.component';
 import { ClientsListComponent } from './components/clients-list/clients-list.component';
+import { SocieteFormComponent } from './components/societe-form/societe-form.component';
+import { SocietesListComponent } from './components/societes-list/societes-list.component';
 
 /**
  * Module feature `clients` — chargé en lazy depuis `app-routing.module.ts`.
@@ -18,7 +20,12 @@ import { ClientsListComponent } from './components/clients-list/clients-list.com
  * mise en place dans `CoreModule`. Pas besoin de réinjecter le `TranslateLoader`.
  */
 @NgModule({
-  declarations: [ClientsListComponent, ClientFormComponent],
+  declarations: [
+    ClientsListComponent,
+    ClientFormComponent,
+    SocietesListComponent,
+    SocieteFormComponent,
+  ],
   imports: [
     CommonModule,
     ReactiveFormsModule,

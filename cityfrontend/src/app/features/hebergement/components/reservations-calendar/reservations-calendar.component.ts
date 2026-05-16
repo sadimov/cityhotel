@@ -62,6 +62,7 @@ import {
 } from '../../models/paiements-recap.model';
 import {
   PaiementGlobalRequest,
+  PaiementLignesRequest,
   TransfererLignesRequest,
 } from '../../models/paiement-lignes.model';
 import { FolioDto } from '../../models/folio.model';
@@ -1657,6 +1658,7 @@ export class ReservationsCalendarComponent
       checkoutExpressPanelVisible: false,
       advancedActionsVisible: false,
     };
+    this.paymentSelectedLigneIds = new Set<number>();
   }
 
   // ── Tour 46 — Section "Détails réservation" (helpers template) ────────
@@ -1705,6 +1707,144 @@ export class ReservationsCalendarComponent
   get globalMontantSaisi(): number {
     const v = this.payerGlobalForm?.value?.montant;
     return Number(v) || 0;
+  }
+
+  // ── Tour 56 — Sélection de lignes pour paiement individuel/partiel ────
+  // (Restauration : checkboxes par ligne supprimées au Tour 46.)
+
+  /**
+   * Set des `ligneFactureId` sélectionnés dans la section "Lignes facture"
+   * de la modale paiements. Re-initialisé à chaque chargement du recap.
+   */
+  paymentSelectedLigneIds = new Set<number>();
+
+  /** Toggle d'une ligne dans la sélection paiement individuel. */
+  togglePaymentLigne(ligneId: number): void {
+    const next = new Set(this.paymentSelectedLigneIds);
+    if (next.has(ligneId)) next.delete(ligneId);
+    else next.add(ligneId);
+    this.paymentSelectedLigneIds = next;
+    this.cdr.markForCheck();
+  }
+
+  isPaymentLigneSelected(ligneId: number): boolean {
+    return this.paymentSelectedLigneIds.has(ligneId);
+  }
+
+  /** Toggle "tout sélectionner" — ne sélectionne que les lignes avec reste > 0. */
+  togglePaymentAllLignes(): void {
+    const lignes = this.paymentsModal.lignes ?? [];
+    const payables = lignes.filter((l) => Number(l.reste ?? 0) > 0);
+    if (this.paymentLignesAllSelected) {
+      this.paymentSelectedLigneIds = new Set<number>();
+    } else {
+      const next = new Set<number>();
+      for (const l of payables) next.add(l.ligneFactureId);
+      this.paymentSelectedLigneIds = next;
+    }
+    this.cdr.markForCheck();
+  }
+
+  get paymentLignesAllSelected(): boolean {
+    const payables = (this.paymentsModal.lignes ?? []).filter(
+      (l) => Number(l.reste ?? 0) > 0,
+    );
+    if (payables.length === 0) return false;
+    return payables.every((l) =>
+      this.paymentSelectedLigneIds.has(l.ligneFactureId),
+    );
+  }
+
+  get paymentLignesIndeterminate(): boolean {
+    const payables = (this.paymentsModal.lignes ?? []).filter(
+      (l) => Number(l.reste ?? 0) > 0,
+    );
+    if (payables.length === 0) return false;
+    const count = payables.filter((l) =>
+      this.paymentSelectedLigneIds.has(l.ligneFactureId),
+    ).length;
+    return count > 0 && count < payables.length;
+  }
+
+  /** Somme des restes des lignes cochées (= montant à payer pour la sélection). */
+  get paymentSelectedSum(): number {
+    return (this.paymentsModal.lignes ?? []).reduce((sum, l) => {
+      if (!this.paymentSelectedLigneIds.has(l.ligneFactureId)) return sum;
+      const reste = Number(l.reste ?? 0);
+      return sum + (Number.isFinite(reste) ? reste : 0);
+    }, 0);
+  }
+
+  get paymentSelectedCount(): number {
+    return this.paymentSelectedLigneIds.size;
+  }
+
+  /**
+   * Pré-remplit le formulaire de paiement global avec le montant total des
+   * lignes sélectionnées (raccourci utilisateur "payer juste ce que j'ai
+   * coché"). Le bouton "Payer" du form global reste utilisé tel quel.
+   */
+  applySelectionToGlobalForm(): void {
+    const sum = this.paymentSelectedSum;
+    if (sum <= 0) return;
+    this.payerGlobalForm.patchValue({ montant: sum });
+    this.payerGlobalForm.get('montant')?.updateValueAndValidity();
+    this.cdr.markForCheck();
+  }
+
+  /**
+   * Encaisse uniquement les lignes sélectionnées via `payerLignes` (ciblage
+   * back par `lignesIds`). Reprend `modePaiement` et `motif` du formulaire
+   * global pour ne pas dupliquer le formulaire.
+   */
+  submitPayerSelection(): void {
+    const lignesIds = Array.from(this.paymentSelectedLigneIds);
+    if (lignesIds.length === 0) return;
+    const reservation = this.paymentsModal.reservation;
+    if (!reservation?.reservationId || reservation.clientPrincipalId == null) {
+      this.toastError('hebergement.messages.saveError');
+      return;
+    }
+    const v = this.payerGlobalForm.value;
+    const montant = this.paymentSelectedSum;
+    const dto: PaiementLignesRequest = {
+      lignesIds,
+      montant,
+      modePaiement: v.modePaiement as ModePaiement,
+      motif: v.motif || undefined,
+      description: v.description || undefined,
+      idClient: reservation.clientPrincipalId,
+      idCompteClient: 0,
+    };
+    this.saving = true;
+    this.cdr.markForCheck();
+    this.paiementsService
+      .payerLignes(dto)
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.saving = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.toastSuccess('hebergement.calendar.payments.selection.success');
+          this.paymentSelectedLigneIds = new Set<number>();
+          this.payerGlobalForm.reset({
+            montant: 0,
+            modePaiement: 'ESPECES',
+            motif: '',
+            description: '',
+          });
+          if (this.paymentsModal.reservationId != null) {
+            this.loadPaymentsRecap(this.paymentsModal.reservationId);
+          }
+          this.loadReservations();
+        },
+        error: (err: HttpErrorResponse) =>
+          this.toastError(this.mapBackendError(err)),
+      });
   }
 
   /**

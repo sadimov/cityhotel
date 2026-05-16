@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
 import { catchError, finalize, takeUntil } from 'rxjs/operators';
@@ -23,14 +23,14 @@ interface CategoriesPageRequest {
 }
 
 /**
- * Liste paginée des catégories de menu (catalogue restaurant).
+ * Liste paginÃ©e des catÃ©gories de menu (catalogue restaurant).
  *
- * Pattern aligné sur `produits-list` (Tour 16) et `factures-list` (Tour 19) :
- *  - table Bootstrap + pagination maison + états loading/error/empty/ready
+ * Pattern alignÃ© sur `produits-list` (Tour 16) et `factures-list` (Tour 19) :
+ *  - table Bootstrap + pagination maison + Ã©tats loading/error/empty/ready
  *  - recherche serveur avec debounce 300 ms
- *  - tri par défaut : `ordreAffichage asc`
+ *  - tri par dÃ©faut : `ordreAffichage asc`
  *
- * NB : DataTables.net direct n'est pas utilisé ici (le wrapper
+ * NB : DataTables.net direct n'est pas utilisÃ© ici (le wrapper
  * `<app-data-table>` n'existe pas encore dans `shared/`). Migration
  * possible quand le wrapper sera disponible.
  */
@@ -46,7 +46,7 @@ export class CategoriesListComponent implements OnInit, OnDestroy {
   request: CategoriesPageRequest = {
     page: 0,
     size: 10,
-    sortBy: 'ordreAffichage',
+    sortBy: 'ordre',
     sortDir: 'asc',
     filtres: {},
   };
@@ -158,7 +158,7 @@ export class CategoriesListComponent implements OnInit, OnDestroy {
     const id = cat.categorieId;
     Swal.fire({
       title: this.i18n.translate('restaurant.categorie.messages.deleteConfirm'),
-      text: cat.nomCategorie,
+      text: cat.nom,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: this.i18n.translate('restaurant.categorie.actions.delete'),

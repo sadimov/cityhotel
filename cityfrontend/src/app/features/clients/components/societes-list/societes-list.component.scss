@@ -1,0 +1,13 @@
+:host {
+  display: block;
+}
+
+.societes-list {
+  padding: 12px 0;
+}
+
+.societe-inactif {
+  opacity: 0.55;
+  font-style: italic;
+  background-color: #f8f9fa !important;
+}

@@ -1,4 +1,4 @@
-<section class="category-form">
+﻿<section class="category-form">
   <header class="category-form__header mb-3">
     <h2 class="h4 m-0">
       {{
@@ -25,21 +25,21 @@
       <div class="row g-3">
         <div class="col-md-8">
           <label for="nomCategorie" class="form-label">
-            {{ 'restaurant.categorie.fields.nomCategorie' | translate }}
+            {{ 'restaurant.categorie.fields.nom' | translate }}
           </label>
           <input
             id="nomCategorie"
             type="text"
             class="form-control"
-            formControlName="nomCategorie"
-            [class.is-invalid]="form.get('nomCategorie')?.invalid && form.get('nomCategorie')?.touched"
+            formControlName="nom"
+            [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
           />
-          @if (form.get('nomCategorie')?.touched && form.get('nomCategorie')?.errors?.['required']) {
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['required']) {
             <div class="invalid-feedback d-block">
               {{ 'restaurant.categorie.errors.nomRequired' | translate }}
             </div>
           }
-          @if (form.get('nomCategorie')?.touched && form.get('nomCategorie')?.errors?.['minlength']) {
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['minlength']) {
             <div class="invalid-feedback d-block">
               {{ 'restaurant.categorie.errors.nomMinLength' | translate }}
             </div>
@@ -48,7 +48,7 @@
 
         <div class="col-md-4">
           <label for="ordreAffichage" class="form-label">
-            {{ 'restaurant.categorie.fields.ordreAffichage' | translate }}
+            {{ 'restaurant.categorie.fields.ordre' | translate }}
           </label>
           <input
             id="ordreAffichage"
@@ -56,10 +56,10 @@
             min="0"
             step="1"
             class="form-control"
-            formControlName="ordreAffichage"
-            [class.is-invalid]="form.get('ordreAffichage')?.invalid && form.get('ordreAffichage')?.touched"
+            formControlName="ordre"
+            [class.is-invalid]="form.get('ordre')?.invalid && form.get('ordre')?.touched"
           />
-          @if (form.get('ordreAffichage')?.touched && form.get('ordreAffichage')?.errors?.['min']) {
+          @if (form.get('ordre')?.touched && form.get('ordre')?.errors?.['min']) {
             <div class="invalid-feedback d-block">
               {{ 'restaurant.categorie.errors.ordreMin' | translate }}
             </div>
@@ -68,25 +68,25 @@
 
         <div class="col-md-6">
           <label for="nomCategorieEn" class="form-label">
-            {{ 'restaurant.categorie.fields.nomCategorieEn' | translate }}
+            {{ 'restaurant.categorie.fields.nomEn' | translate }}
           </label>
           <input
             id="nomCategorieEn"
             type="text"
             class="form-control"
-            formControlName="nomCategorieEn"
+            formControlName="nomEn"
           />
         </div>
 
         <div class="col-md-6">
           <label for="nomCategorieAr" class="form-label">
-            {{ 'restaurant.categorie.fields.nomCategorieAr' | translate }}
+            {{ 'restaurant.categorie.fields.nomAr' | translate }}
           </label>
           <input
             id="nomCategorieAr"
             type="text"
             class="form-control"
-            formControlName="nomCategorieAr"
+            formControlName="nomAr"
             dir="rtl"
           />
         </div>

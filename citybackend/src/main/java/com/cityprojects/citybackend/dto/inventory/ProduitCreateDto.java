@@ -11,11 +11,15 @@ import java.math.BigDecimal;
 /**
  * DTO d'entree pour la creation d'un produit.
  *
- * <p>Le {@code stockActuel} initial est positionne a 0 cote service - il evolue
- * uniquement via les flux BC (entree) et BS (sortie) ou ajustement manuel.</p>
+ * <p>Le {@code stockActuel} est optionnel a la creation (default 0). Si fourni
+ * et strictement positif, {@code ProduitServiceImpl.create()} pose ce stock
+ * initial ET genere un {@code MouvementStock} de type {@code AJUSTEMENT} pour
+ * traçabilite (audit trail). Apres la creation, le stock evolue uniquement
+ * via les flux BC (entree) / BS (sortie) / ajustement manuel.</p>
  */
 public record ProduitCreateDto(
-        @NotBlank(message = "error.produit.code.blank")
+        // codeProduit optionnel : si null/vide, ProduitServiceImpl.create() le
+        // genere automatiquement via NumerotationService (TypeNumerotation.PROD).
         @Size(max = 20, message = "error.produit.code.tooLong")
         String codeProduit,
 
@@ -40,6 +44,13 @@ public record ProduitCreateDto(
 
         @Min(value = 0, message = "error.produit.seuilCritique.negative")
         Integer seuilCritique,
+
+        /**
+         * Stock initial optionnel. Si fourni et > 0, genere un mouvement de
+         * stock AJUSTEMENT pour audit trail. Default = 0.
+         */
+        @Min(value = 0, message = "error.produit.stockActuel.negative")
+        Integer stockActuel,
 
         Long fournisseurPrincipalId,
 

@@ -63,6 +63,13 @@ export class PaiementFormComponent implements OnInit, OnDestroy {
     private readonly i18n: TranslationService,
   ) {}
 
+  /**
+   * Montant pré-rempli depuis le query param `?montant=XXX` (paiement
+   * individuel/partiel ciblé depuis facture-detail). `null` = aucun, on
+   * pré-remplira avec `montantRestant` total.
+   */
+  private prefilledAmount: number | null = null;
+
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = Number(idParam);
@@ -71,6 +78,15 @@ export class PaiementFormComponent implements OnInit, OnDestroy {
       return;
     }
     this.factureId = id;
+
+    const montantQp = this.route.snapshot.queryParamMap.get('montant');
+    if (montantQp != null) {
+      const v = Number(montantQp);
+      if (Number.isFinite(v) && v > 0) {
+        this.prefilledAmount = v;
+      }
+    }
+
     this.form = this.buildForm();
     this.loadFacture(id);
     this.subscribeModeChange();
@@ -213,8 +229,15 @@ export class PaiementFormComponent implements OnInit, OnDestroy {
           return;
         }
         this.facture = f;
-        // Pré-remplir le montant restant dû
-        this.form.patchValue({ montant: Number(f.montantRestant ?? 0) });
+        // Pré-remplir avec le montant transmis (paiement ciblé depuis la
+        // sélection de lignes), sinon avec le restant dû total. Plafonné au
+        // restant pour éviter une saisie incohérente.
+        const restant = Number(f.montantRestant ?? 0);
+        const target =
+          this.prefilledAmount != null
+            ? Math.min(this.prefilledAmount, restant)
+            : restant;
+        this.form.patchValue({ montant: target });
         this.form.get('montant')?.updateValueAndValidity();
         this.state = 'ready';
       });

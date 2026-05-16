@@ -86,10 +86,10 @@
                 @if (planning.nomPersonnel) {
                   {{ planning.nomPersonnel }}
                   @if (planning.numeroEmploye) {
-                    <small class="text-muted d-block">#{{ planning.numeroEmploye }}</small>
+                    <small class="text-muted d-block">{{ planning.numeroEmploye }}</small>
                   }
                 } @else {
-                  #{{ planning.personnelId }}
+                  <span class="text-muted">{{ 'menage.personnel.fields.nonAssigne' | translate }}</span>
                 }
               </td>
               <!-- Étage : non matérialisé backend → placeholder -->

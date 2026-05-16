@@ -9,6 +9,10 @@ import java.math.BigDecimal;
 
 /**
  * DTO d'entree pour la creation/modification d'un service hotelier.
+ *
+ * <p>Conventions de nommage alignees sur le frontend (Tour 55b) : le contrat
+ * JSON attend {@code codeService}, {@code nomService}, {@code uniteMesure}
+ * (pas {@code code}/{@code nom}/{@code unite}).</p>
  */
 public record ServiceHotelierCreateDto(
         @NotNull(message = "error.serviceHotelier.typeServiceId.required")
@@ -16,11 +20,11 @@ public record ServiceHotelierCreateDto(
 
         @NotBlank(message = "error.serviceHotelier.code.blank")
         @Size(max = 20, message = "error.serviceHotelier.code.tooLong")
-        String code,
+        String codeService,
 
         @NotBlank(message = "error.serviceHotelier.nom.blank")
         @Size(max = 255, message = "error.serviceHotelier.nom.tooLong")
-        String nom,
+        String nomService,
 
         String description,
 
@@ -31,5 +35,5 @@ public record ServiceHotelierCreateDto(
 
         @NotBlank(message = "error.serviceHotelier.unite.blank")
         @Size(max = 20, message = "error.serviceHotelier.unite.tooLong")
-        String unite) {
+        String uniteMesure) {
 }

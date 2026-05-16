@@ -287,7 +287,13 @@
           "sousTotal": "المجموع الفرعي",
           "paye": "المدفوع",
           "reste": "المتبقي",
-          "select": "تحديد السطر"
+          "select": "تحديد السطر",
+          "selectAll": "تحديد الكل"
+        },
+        "selection": {
+          "total": "إجمالي التحديد",
+          "payer": "دفع التحديد",
+          "success": "تم تحصيل السطور المحددة."
         },
         "action": {
           "payer": "دفع التحديد",
@@ -577,10 +583,18 @@
       "actions": {
         "create": "منتج جديد",
         "edit": "تعديل",
-        "delete": "حذف"
+        "delete": "حذف نهائي",
+        "deactivate": "تعطيل",
+        "reactivate": "إعادة تفعيل"
+      },
+      "statut": {
+        "inactif": "معطل"
       },
       "fields": {
         "codeProduit": "الرمز",
+        "codeProduitAuto": "توليد تلقائي",
+        "codeProduitAutoHint": "سيتم توليد الرمز تلقائياً عند الحفظ.",
+        "codeProduitImmutable": "لا يمكن تعديل الرمز.",
         "nomProduit": "الاسم",
         "description": "الوصف",
         "categorie": "الفئة",
@@ -614,9 +628,19 @@
       "messages": {
         "createSuccess": "تم إنشاء المنتج بنجاح",
         "updateSuccess": "تم تعديل المنتج بنجاح",
-        "deleteSuccess": "تم حذف المنتج",
-        "deleteConfirm": "هل تريد حذف هذا المنتج؟",
+        "deleteSuccess": "تم حذف المنتج نهائياً",
+        "deleteConfirm": "هل تريد حذف هذا المنتج نهائياً؟",
+        "deleteConfirmText": "لا يمكن التراجع عن هذا الإجراء. سيتم إزالة المنتج من قاعدة البيانات.",
         "deleteError": "تعذر حذف هذا المنتج.",
+        "deleteRefused": "تم رفض الحذف",
+        "deleteRefusedSuggestion": "هذا المنتج تم استخدامه (حركات مخزون). هل تريد تعطيله بدلاً من ذلك؟",
+        "deactivateConfirm": "هل تريد تعطيل هذا المنتج؟",
+        "deactivateConfirmText": "سيتم إخفاء المنتج من القوائم النشطة مع الحفاظ على سجله. عملية قابلة للعكس.",
+        "deactivateSuccess": "تم تعطيل المنتج",
+        "deactivateError": "تعذر تعطيل هذا المنتج.",
+        "reactivateConfirm": "هل تريد إعادة تفعيل هذا المنتج؟",
+        "reactivateSuccess": "تم إعادة تفعيل المنتج",
+        "reactivateError": "تعذر إعادة تفعيل هذا المنتج.",
         "saveError": "تعذر حفظ بيانات هذا المنتج."
       },
       "detail": {
@@ -1172,30 +1196,49 @@
     "pos": {
       "title": "نقطة البيع",
       "currency": "أوقية",
+      "tab": {
+        "articles": "الأطباق",
+        "services": "الخدمات"
+      },
+      "services": {
+        "search": "البحث عن خدمة…",
+        "empty": "لا توجد خدمة متاحة.",
+        "emptyHint": "أنشئ خدمات في /inventory/services-hoteliers."
+      },
       "client": {
         "title": "العميل",
+        "modalTitle": "اختيار العميل",
         "searchLabel": "البحث عن عميل",
-        "searchPlaceholder": "الاسم أو رقم الهاتف",
+        "searchPlaceholder": "الاسم أو رقم الهاتف…",
         "noResults": "لم يتم العثور على أي عميل.",
-        "change": "تغيير"
+        "typeToSearch": "اكتب حرفًا واحدًا على الأقل للبحث.",
+        "change": "تغيير",
+        "tabReservations": "الحجوزات الجارية",
+        "tabClient": "عميل مباشر",
+        "hintReservations": "ابحث عن عميل ثم اختر حجزه الحالي لتحميل الطلب على الغرفة.",
+        "hintDirect": "اختر عميلًا لبيع مباشر (بدون حجز).",
+        "useDirect": "استخدام هذا العميل بدون حجز"
       },
       "reservation": {
         "title": "الحجوزات الجارية",
         "noActive": "لا يوجد حجز جارٍ لهذا العميل.",
+        "noneSelected": "بيع مباشر (بدون حجز)",
         "statut": "الحالة",
         "chambre": "الغرفة",
         "clear": "إلغاء اختيار الحجز"
       },
       "articles": {
         "title": "الأصناف",
-        "search": "البحث عن صنف",
+        "search": "البحث عن صنف…",
         "allCategories": "الكل",
         "empty": "لا يوجد صنف متاح.",
+        "emptyHint": "تحقق من الفئات أو أنشئ أصنافًا في الكتالوج.",
         "unavailable": "غير متوفر"
       },
       "cart": {
         "title": "السلة",
-        "empty": "السلة فارغة. اختر أصنافًا للبدء.",
+        "empty": "السلة فارغة",
+        "emptyHint": "أضف أصنافًا من الكتالوج.",
         "article": "الصنف",
         "quantity": "الكمية",
         "subtotal": "الإجمالي الفرعي",
@@ -1204,12 +1247,20 @@
         "decrement": "تخفيض الكمية",
         "remove": "حذف السطر",
         "clear": "تفريغ السلة",
-        "checkout": "الدفع نقدًا",
-        "reportChambre": "تحميل على الغرفة",
+        "checkout": "تحصيل",
+        "reportChambre": "تحميل على فاتورة الغرفة",
         "checkoutSuccess": "تم تحصيل الطلب",
         "orderNumber": "رقم الطلب",
         "invoiceNumber": "رقم الفاتورة",
-        "newOrder": "طلب جديد"
+        "newOrder": "طلب جديد",
+        "selectClient": "اختيار العميل / الحجز",
+        "selectClientHint": "اختر عميلًا قبل التحصيل.",
+        "totalArticles": "الإجمالي الفرعي للأطباق",
+        "totalServices": "الإجمالي الفرعي للخدمات",
+        "pushServicesToRoom": "إضافة الخدمات إلى فاتورة الغرفة",
+        "service": {
+          "suffix": "× {{unite}}"
+        }
       },
       "payment": {
         "title": "الدفع",
@@ -1246,13 +1297,17 @@
       "errors": {
         "loadCategories": "تعذر تحميل الفئات.",
         "loadArticles": "تعذر تحميل الأصناف.",
+        "loadServices": "تعذر تحميل الخدمات الفندقية.",
         "loadReservations": "تعذر تحميل حجوزات العميل.",
         "searchClients": "فشل البحث عن العملاء.",
         "invalidArticle": "لا يمكن إضافة هذا الصنف.",
+        "invalidService": "لا يمكن إضافة هذه الخدمة.",
         "invalidPayload": "الطلب غير مكتمل.",
         "encaissement": "فشلت عملية الدفع. أعد المحاولة.",
         "reportChambre": "فشل التحميل على الغرفة.",
         "reservationRequired": "اختر حجزًا أولًا.",
+        "servicesRequireReservation": "اختر حجزًا لفوترة الخدمة.",
+        "servicesPushFailed": "تعذر إضافة الخدمات إلى فاتورة الغرفة.",
         "ticketCaisse": "تعذر طباعة إيصال الصندوق.",
         "ticketCuisine": "تعذر طباعة تذكرة المطبخ.",
         "ticketDecode": "تعذر عرض التذكرة (PDF غير صالح)."
@@ -1261,7 +1316,13 @@
         "encaissementSuccess": "تم تحصيل الطلب بنجاح.",
         "reportSuccess": "تم تحميل الطلب على الغرفة.",
         "reportConfirmTitle": "هل تريد التحميل على الغرفة؟",
-        "reportConfirmText": "ستضاف الرسوم إلى فاتورة الحجز وستُحصّل عند المغادرة."
+        "reportConfirmText": "ستضاف الرسوم إلى فاتورة الحجز وستُحصّل عند المغادرة.",
+        "checkoutConfirmTitle": "هل تريد تحصيل الطلب؟",
+        "clearCartConfirmTitle": "هل تريد تفريغ السلة؟",
+        "clearCartConfirmText": "سيتم حذف جميع السطور. لا يمكن التراجع عن هذا الإجراء.",
+        "pushServicesConfirmTitle": "هل تريد إضافة الخدمات إلى فاتورة الغرفة؟",
+        "pushServicesConfirmText": "ستضاف الخدمات إلى فاتورة الحجز المختار وستُحصّل عند المغادرة.",
+        "servicesPushed": "تمت إضافة الخدمات إلى فاتورة الغرفة."
       },
       "ticket": {
         "print": "طباعة إيصال الصندوق",
@@ -1303,6 +1364,7 @@
         "emettre": "إصدار",
         "annuler": "إلغاء الفاتورة",
         "encaisser": "تحصيل",
+        "encaisserSelection": "تحصيل المحدد",
         "downloadPdf": "تنزيل PDF"
       },
       "fields": {
@@ -1351,6 +1413,9 @@
         "total": "المجموع",
         "empty": "لا توجد بنود في هذه الفاتورة.",
         "emptyAllowed": "لم تتم إضافة أي بند — سيتم إنشاء الفاتورة كمسودة.",
+        "selectAll": "تحديد الكل",
+        "selectLine": "تحديد هذا البند",
+        "selectedTotal": "إجمالي المحدد",
         "typeOption": {
           "NUITEE": "ليلة إقامة",
           "PRODUIT": "منتج",

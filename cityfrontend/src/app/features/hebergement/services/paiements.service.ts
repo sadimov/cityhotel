@@ -51,7 +51,13 @@ export class PaiementsService {
         `${this.base}/paiement-lignes`,
         req,
       )
-      .pipe(map((r) => r.data as PaiementLignesResultat));
+      .pipe(
+        map(
+          (r) =>
+            (r?.data ?? (r as unknown as PaiementLignesResultat)) ??
+            ({} as PaiementLignesResultat),
+        ),
+      );
   }
 
   /**
@@ -66,7 +72,13 @@ export class PaiementsService {
         `${this.base}/transferer-lignes`,
         req,
       )
-      .pipe(map((r) => r.data as TransfererLignesResultat));
+      .pipe(
+        map(
+          (r) =>
+            (r?.data ?? (r as unknown as TransfererLignesResultat)) ??
+            ({} as TransfererLignesResultat),
+        ),
+      );
   }
 
   /**
@@ -80,6 +92,12 @@ export class PaiementsService {
         `${this.base}/paiement-global`,
         req,
       )
-      .pipe(map((r) => r.data as PaiementGlobalResultat));
+      .pipe(
+        map(
+          (r) =>
+            (r?.data ?? (r as unknown as PaiementGlobalResultat)) ??
+            ({} as PaiementGlobalResultat),
+        ),
+      );
   }
 }

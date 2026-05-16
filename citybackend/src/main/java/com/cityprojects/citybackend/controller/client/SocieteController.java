@@ -68,7 +68,7 @@ public class SocieteController {
         return ResponseEntity.ok(societeService.search(recherche, pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping({"/active", "/actives"})
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
     public ResponseEntity<List<SocieteDto>> findAllActive() {
         return ResponseEntity.ok(societeService.findAllActive());

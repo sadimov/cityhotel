@@ -114,6 +114,16 @@ const routes: Routes = [
         data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'MENAGE'] }
       },
 
+      // Module Reporting — landing pages par domaine pour les 20 rapports
+      // backend (Tour 40-41). Wrapper UI minimal sur `/api/reports/*`.
+      {
+        path: 'reporting',
+        loadChildren: () =>
+          import('./features/reporting/reporting.module').then(m => m.ReportingModule),
+        canActivate: [RoleGuard],
+        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT'] }
+      },
+
       // Module Administration (hôtels, utilisateurs, rôles, paramètres) —
       // feature lazy SUPERADMIN-only from-scratch (Tour 31, 2026-05-09).
       // Tour 38 (H7) — defense-in-depth : `AuthGuard` + `SuperAdminGuard` sont

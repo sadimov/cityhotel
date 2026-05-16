@@ -48,7 +48,7 @@ public class CategorieProduitController {
         return ResponseEntity.ok(service.search(recherche, pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping("/actives")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
     public ResponseEntity<List<CategorieProduitDto>> findAllActive() {
         return ResponseEntity.ok(service.findAllActive());

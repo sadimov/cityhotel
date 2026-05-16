@@ -29,14 +29,19 @@
           <label for="res-client" class="form-label">
             {{ 'hebergement.fields.clientId' | translate }} <span class="text-danger">*</span>
           </label>
-          <input
+          <select
             id="res-client"
-            type="number"
-            min="1"
-            class="form-control"
+            class="form-select"
             formControlName="clientPrincipalId"
             [class.is-invalid]="form.controls['clientPrincipalId'].invalid && form.controls['clientPrincipalId'].touched"
-          />
+          >
+            <option [ngValue]="null">— {{ 'common.select' | translate }} —</option>
+            @for (c of clients; track c.clientId) {
+              <option [ngValue]="c.clientId">
+                {{ c.prenom }} {{ c.nom }}@if (c.telephone) { · {{ c.telephone }} }
+              </option>
+            }
+          </select>
           @if (form.controls['clientPrincipalId'].invalid && form.controls['clientPrincipalId'].touched) {
             <div class="invalid-feedback">
               {{ 'hebergement.errors.clientRequired' | translate }}
@@ -48,13 +53,12 @@
           <label for="res-societe" class="form-label">
             {{ 'hebergement.fields.societeId' | translate }}
           </label>
-          <input
-            id="res-societe"
-            type="number"
-            min="1"
-            class="form-control"
-            formControlName="societeId"
-          />
+          <select id="res-societe" class="form-select" formControlName="societeId">
+            <option [ngValue]="null">— {{ 'common.none' | translate }} —</option>
+            @for (s of societes; track s.societeId) {
+              <option [ngValue]="s.societeId">{{ s.societeNom }}</option>
+            }
+          </select>
         </div>
 
         <div class="col-md-6">
@@ -158,6 +162,81 @@
           ></textarea>
         </div>
       </div>
+
+      <!-- ════════════════════════════════════════════════════════════════
+           Chambres allouées (au moins 1 obligatoire à la création)
+           ════════════════════════════════════════════════════════════════ -->
+      <h3 class="h6 mt-4 mb-2 d-flex justify-content-between align-items-center">
+        {{ 'hebergement.fields.chambres' | translate }} <span class="text-danger">*</span>
+        <button type="button" class="btn btn-sm btn-outline-primary" (click)="addChambre()">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          {{ 'common.add' | translate }}
+        </button>
+      </h3>
+
+      <div class="table-responsive">
+        <table class="table table-sm align-middle">
+          <thead class="table-light">
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">{{ 'hebergement.fields.chambre' | translate }}</th>
+              <th scope="col" class="text-end">{{ 'hebergement.fields.prixNuit' | translate }}</th>
+              <th scope="col">{{ 'hebergement.fields.dateDebut' | translate }}</th>
+              <th scope="col">{{ 'hebergement.fields.dateFin' | translate }}</th>
+              <th scope="col"></th>
+            </tr>
+          </thead>
+          <tbody formArrayName="chambres">
+            @for (lc of chambresArray.controls; track $index; let i = $index) {
+              <tr [formGroupName]="i">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <select class="form-select form-select-sm" formControlName="chambreId">
+                    <option [ngValue]="null">— {{ 'common.select' | translate }} —</option>
+                    @for (ch of chambresActives; track ch.chambreId) {
+                      <option [ngValue]="ch.chambreId">
+                        {{ ch.numeroChambre }}@if (ch.typeNom) { · {{ ch.typeNom }} }
+                      </option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    class="form-control form-control-sm text-end"
+                    formControlName="prixNuit"
+                    min="0"
+                    step="0.01"
+                  />
+                </td>
+                <td>
+                  <input type="date" class="form-control form-control-sm" formControlName="dateDebut" />
+                </td>
+                <td>
+                  <input type="date" class="form-control form-control-sm" formControlName="dateFin" />
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="removeChambre(i)"
+                    [disabled]="!isEditing && chambresArray.length <= 1"
+                    [attr.aria-label]="'common.remove' | translate"
+                  >
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (!isEditing && chambresArray.length === 0) {
+        <div class="alert alert-warning small">
+          <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+          {{ 'hebergement.errors.chambreRequired' | translate }}
+        </div>
+      }
 
       <div class="reservation-form__actions d-flex justify-content-end gap-2 mt-4">
         <button

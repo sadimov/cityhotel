@@ -60,10 +60,13 @@ public interface ReservationService {
     ReservationDto findByNumero(String numeroReservation);
 
     /**
-     * Page des reservations, eventuellement filtree par statut. Tri stable
-     * garanti (Tour 14 audit, finding I2).
+     * Page des reservations, eventuellement filtree par statut et/ou par
+     * client principal. Les deux filtres sont optionnels (null = ignore).
+     * Tri stable garanti (Tour 14 audit, finding I2).
      */
-    Page<ReservationDto> findAll(StatutReservation statut, Pageable pageable);
+    Page<ReservationDto> findAll(StatutReservation statut,
+                                 Long clientPrincipalId,
+                                 Pageable pageable);
 
     /**
      * Page des reservations d'un client donne.

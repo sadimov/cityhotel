@@ -27,6 +27,9 @@ public interface MouvementStockRepository
     /** Page des mouvements pour un produit donne. */
     Page<MouvementStock> findByProduitIdOrderByCreatedAtDesc(Long produitId, Pageable pageable);
 
+    /** Existe-t-il au moins un mouvement pour ce produit (tenant courant) ? */
+    boolean existsByProduitId(Long produitId);
+
     /** Page des mouvements d'un type donne (tenant courant). */
     Page<MouvementStock> findByTypeMouvementOrderByCreatedAtDesc(TypeMouvementStock typeMouvement,
                                                                   Pageable pageable);

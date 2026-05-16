@@ -44,6 +44,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     '/hebergement/calendar',
     '/hebergement/reservations',
     '/hebergement',
+    '/restaurant/pos',
   ];
 
   /**
@@ -71,6 +72,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
           label: 'Nouveau client',
           icon: 'fas fa-user-plus',
           route: '/clients/new',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'SUPERADMIN']
+        },
+        {
+          id: 'societes-list',
+          label: 'Sociétés',
+          icon: 'fas fa-building',
+          route: '/clients/societes',
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+        },
+        {
+          id: 'societes-add',
+          label: 'Nouvelle société',
+          icon: 'fas fa-building-circle-arrow-right',
+          route: '/clients/societes/new',
           roles: ['ADMIN', 'GERANT', 'RECEPTION', 'SUPERADMIN']
         }
       ]
@@ -364,6 +379,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
           route: '/menage/planning',
           roles: ['ADMIN', 'GERANT', 'MENAGE', 'SUPERADMIN']
         }
+      ]
+    },
+    {
+      id: 'reporting',
+      label: 'menu.reporting',
+      icon: 'fas fa-chart-line',
+      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
+      children: [
+        { id: 'reporting-hebergement', label: 'submenu.reporting.hebergement', icon: 'fas fa-bed', route: '/reporting/hebergement', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-finance', label: 'submenu.reporting.finance', icon: 'fas fa-credit-card', route: '/reporting/finance', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-inventory', label: 'submenu.reporting.inventory', icon: 'fas fa-boxes', route: '/reporting/inventory', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-restaurant', label: 'submenu.reporting.restaurant', icon: 'fas fa-utensils', route: '/reporting/restaurant', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-menage', label: 'submenu.reporting.menage', icon: 'fas fa-broom', route: '/reporting/menage', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-direction', label: 'submenu.reporting.direction', icon: 'fas fa-briefcase', route: '/reporting/direction', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] }
       ]
     },
     {

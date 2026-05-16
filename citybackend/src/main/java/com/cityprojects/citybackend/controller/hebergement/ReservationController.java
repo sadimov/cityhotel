@@ -79,8 +79,9 @@ public class ReservationController {
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
     public ResponseEntity<Page<ReservationDto>> findAll(
             @RequestParam(value = "statut", required = false) StatutReservation statut,
+            @RequestParam(value = "clientId", required = false) Long clientId,
             Pageable pageable) {
-        return ResponseEntity.ok(reservationService.findAll(statut, pageable));
+        return ResponseEntity.ok(reservationService.findAll(statut, clientId, pageable));
     }
 
     @GetMapping("/by-client/{clientId}")

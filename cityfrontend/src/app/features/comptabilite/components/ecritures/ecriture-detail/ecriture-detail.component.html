@@ -77,11 +77,21 @@
           <dd class="col-7">{{ ecriture.totalCredit | number:'1.2-2' }}</dd>
           @if (ecriture.contrePasseeParId) {
             <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.contrePasseePar' | translate }}</dt>
-            <dd class="col-7"><code>#{{ ecriture.contrePasseeParId }}</code></dd>
+            <dd class="col-7">
+              <a [routerLink]="['/comptabilite/ecritures', ecriture.contrePasseeParId]" class="text-decoration-none">
+                <i class="bi bi-arrow-right-circle me-1" aria-hidden="true"></i>
+                {{ 'comptabilite.ecriture.fields.voirEcriture' | translate }}
+              </a>
+            </dd>
           }
           @if (ecriture.ecritureSourceId) {
             <dt class="col-5 text-muted">{{ 'comptabilite.ecriture.fields.ecritureSource' | translate }}</dt>
-            <dd class="col-7"><code>#{{ ecriture.ecritureSourceId }}</code></dd>
+            <dd class="col-7">
+              <a [routerLink]="['/comptabilite/ecritures', ecriture.ecritureSourceId]" class="text-decoration-none">
+                <i class="bi bi-arrow-left-circle me-1" aria-hidden="true"></i>
+                {{ 'comptabilite.ecriture.fields.voirEcriture' | translate }}
+              </a>
+            </dd>
           }
         </dl>
       </div>

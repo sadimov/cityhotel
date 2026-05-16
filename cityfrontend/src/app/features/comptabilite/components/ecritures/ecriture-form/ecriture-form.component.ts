@@ -17,8 +17,10 @@ import {
   SensLigne,
 } from '../../../models/ecriture.model';
 import { JournalComptableDto } from '../../../models/journal.model';
+import { PlanComptableGeneralDto } from '../../../models/plan-comptable.model';
 import { EcrituresService } from '../../../services/ecritures.service';
 import { JournauxService } from '../../../services/journaux.service';
+import { PlanComptableService } from '../../../services/plan-comptable.service';
 
 /** Tolérance MRU pour l'équilibre Σ D / Σ C (alignée avec le back). */
 const EQUILIBRE_TOLERANCE = 0.01;
@@ -42,6 +44,8 @@ export class EcritureFormComponent implements OnInit, OnDestroy {
   submitting = false;
   journauxActifs: JournalComptableDto[] = [];
   loadingJournaux = true;
+  /** Plan comptable utilisable pour datalist autocomplete des compteCode. */
+  comptesPCG: PlanComptableGeneralDto[] = [];
 
   readonly sensOptions: ReadonlyArray<SensLigne> = SENS_LIGNE_OPTIONS;
   readonly SensLigne = SensLigne;
@@ -52,6 +56,7 @@ export class EcritureFormComponent implements OnInit, OnDestroy {
     private readonly fb: FormBuilder,
     private readonly service: EcrituresService,
     private readonly journauxService: JournauxService,
+    private readonly planComptableService: PlanComptableService,
     private readonly router: Router,
     private readonly i18n: TranslationService,
   ) {}
@@ -82,6 +87,21 @@ export class EcritureFormComponent implements OnInit, OnDestroy {
             icon: 'error',
             title: this.i18n.translate('comptabilite.journal.messages.loadError'),
           });
+        },
+      });
+
+    // Charge le plan comptable utilisable pour datalist autocomplete.
+    // Page max 500 — le PCG OHADA tient largement dedans (200-300 comptes).
+    this.planComptableService
+      .page({ page: 0, size: 500, sort: 'compteCode,asc' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => {
+          this.comptesPCG = (p.content || []).filter((c) => c.utilisable);
+        },
+        error: () => {
+          // Silencieux : si le PCG n'est pas chargeable, l'input reste libre.
+          this.comptesPCG = [];
         },
       });
   }

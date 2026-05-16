@@ -42,7 +42,7 @@ public class TypeChambreController {
         return ResponseEntity.ok(typeChambreService.findById(id));
     }
 
-    @GetMapping("/active")
+    @GetMapping({"/active", "/actifs"})
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','MENAGE','NIGHTAUDIT')")
     public ResponseEntity<List<TypeChambreDto>> findAllActive() {
         return ResponseEntity.ok(typeChambreService.findAllActive());

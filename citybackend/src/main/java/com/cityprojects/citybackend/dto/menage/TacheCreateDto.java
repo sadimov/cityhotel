@@ -1,6 +1,7 @@
 package com.cityprojects.citybackend.dto.menage;
 
 import com.cityprojects.citybackend.entity.menage.TypeNettoyage;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -41,6 +42,7 @@ public record TacheCreateDto(
         @Size(max = 1000, message = "error.tache.commentaires.tooLong")
         String commentaires,
 
+        @JsonAlias({"materielUtilise"})
         @Size(max = 500, message = "error.tache.materiel.tooLong")
         String materielNecessaire) {
 }

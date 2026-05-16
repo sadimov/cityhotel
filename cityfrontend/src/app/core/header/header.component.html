@@ -74,33 +74,22 @@
             <small>{{ notificationsCount }} nouvelles</small>
           </div>
           <div class="notifications-list">
-            <a href="#" class="notif-item">
-              <i class="fas fa-calendar-check notif-item__icon notif-item__icon--success"></i>
-              <div class="notif-item__body">
-                <div class="notif-item__title">Nouvelle réservation</div>
-                <small>Chambre 101 - Jean Dupont</small>
-                <small class="d-block">Il y a 5 minutes</small>
+            @if (notifications.length === 0) {
+              <div class="text-center text-muted small p-3">
+                {{ 'header.notificationsEmpty' | translate }}
               </div>
-            </a>
-            <a href="#" class="notif-item">
-              <i class="fas fa-exclamation-triangle notif-item__icon notif-item__icon--warning"></i>
-              <div class="notif-item__body">
-                <div class="notif-item__title">Stock faible</div>
-                <small>Produit de nettoyage - 2 unités</small>
-                <small class="d-block">Il y a 1 heure</small>
-              </div>
-            </a>
-            <a href="#" class="notif-item">
-              <i class="fas fa-credit-card notif-item__icon notif-item__icon--primary"></i>
-              <div class="notif-item__body">
-                <div class="notif-item__title">Paiement reçu</div>
-                <small>Facture #2024-001 - 150€</small>
-                <small class="d-block">Il y a 2 heures</small>
-              </div>
-            </a>
-          </div>
-          <div class="city-dropdown__footer">
-            <a href="#">Voir toutes les notifications</a>
+            } @else {
+              @for (n of notifications; track n.link) {
+                <a (click)="navigateToNotification(n.link)" class="notif-item" style="cursor: pointer;">
+                  <i class="bi" [ngClass]="[n.icon, 'notif-item__icon', 'notif-item__icon--' + n.severity]"></i>
+                  <div class="notif-item__body">
+                    <div class="notif-item__title">{{ n.titleKey | translate }}</div>
+                    <small>{{ n.message }}</small>
+                    <small class="d-block">{{ n.detail }}</small>
+                  </div>
+                </a>
+              }
+            }
           </div>
         </div>
       </div>

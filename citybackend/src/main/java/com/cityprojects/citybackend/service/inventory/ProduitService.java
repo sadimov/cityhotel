@@ -45,5 +45,26 @@ public interface ProduitService {
      */
     ProduitDto ajusterStock(Long produitId, AjustementStockDto dto);
 
+    /**
+     * Desactivation (soft delete) : pose {@code actif = false}. Le produit
+     * reste en base, n'apparait plus dans les selects {@code /actifs}, mais
+     * son historique de mouvements est preserve. Idempotente et reversible.
+     */
     void deactivate(Long produitId);
+
+    /**
+     * Suppression definitive (hard delete) : retire le produit de la base.
+     *
+     * <p>Refusee si le produit est reference par au moins un mouvement de
+     * stock ({@code error.produit.delete.hasMouvements}) — l'audit trail
+     * doit etre preserve. L'appelant doit alors passer par
+     * {@link #deactivate}.</p>
+     */
+    void delete(Long produitId);
+
+    /**
+     * Reactivation : pose {@code actif = true} sur un produit precedemment
+     * desactive. Symetrique de {@link #deactivate}. Idempotente.
+     */
+    void reactivate(Long produitId);
 }

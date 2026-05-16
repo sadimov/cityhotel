@@ -72,6 +72,10 @@ export class BonSortieFormComponent implements OnInit, OnDestroy {
       }
       this.editingId = id;
       this.loadExisting(id);
+    } else {
+      // Mode création : initialise une ligne vide pour que le user n'ait pas
+      // à cliquer "Ajouter une ligne" avant de pouvoir saisir.
+      this.addLigne();
     }
   }
 
@@ -107,7 +111,8 @@ export class BonSortieFormComponent implements OnInit, OnDestroy {
     this.lignesArray.push(
       this.fb.group({
         produitId: [null, [Validators.required]],
-        quantiteDemandee: [1, [Validators.required, Validators.min(0.01)]],
+        // Backend BonSortieCreateDto attend Integer @Min(1) → step entier.
+        quantiteDemandee: [1, [Validators.required, Validators.min(1)]],
         commentaires: [''],
       }),
     );
@@ -118,8 +123,9 @@ export class BonSortieFormComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.lignesArray.length === 0) {
       this.form.markAllAsTouched();
+      this.lignesArray.markAllAsTouched();
       return;
     }
     this.state = 'submitting';
@@ -129,11 +135,11 @@ export class BonSortieFormComponent implements OnInit, OnDestroy {
       quantiteDemandee: Number(l.quantiteDemandee),
       commentaires: l.commentaires || undefined,
     }));
+    // Payload aligné sur BonSortieCreateDto backend : seuls destination,
+    // commentaires et lignes sont acceptés. numeroBon, statut, dateSortie
+    // sont posés par le service (statut=BROUILLON, dateSortie=now()).
     const payload: BonSortie = {
-      numeroBon: String(raw.numeroBon || '').trim(),
       destination: String(raw.destination).trim(),
-      statut: raw.statut,
-      dateSortie: raw.dateSortie,
       commentaires: raw.commentaires || undefined,
       lignes,
     };

@@ -72,7 +72,14 @@
             <tr [formGroupName]="i">
               <td>{{ i + 1 }}</td>
               <td>
-                <input type="text" class="form-control form-control-sm" formControlName="compteCode" maxlength="10" />
+                <input
+                  type="text"
+                  class="form-control form-control-sm"
+                  formControlName="compteCode"
+                  maxlength="10"
+                  list="pcg-comptes"
+                  [attr.placeholder]="'comptabilite.ecriture.lignes.compteCode' | translate"
+                />
               </td>
               <td>
                 <input type="text" class="form-control form-control-sm" formControlName="libelle" maxlength="500" />
@@ -139,4 +146,12 @@
       </button>
     </div>
   </form>
+
+  <!-- Datalist autocomplete pour les codes de comptes du Plan Comptable Général.
+       Alimente tous les <input list="pcg-comptes"> des lignes d'écriture. -->
+  <datalist id="pcg-comptes">
+    @for (c of comptesPCG; track c.compteCode) {
+      <option [value]="c.compteCode">{{ c.compteCode }} — {{ c.libelle }}</option>
+    }
+  </datalist>
 </section>

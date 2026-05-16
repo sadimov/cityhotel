@@ -52,8 +52,16 @@
         </thead>
         <tbody>
           @for (produit of page.content; track produit.produitId) {
-            <tr>
-              <td><code>{{ produit.codeProduit }}</code></td>
+            <tr [class.produit-inactif]="produit.actif === false">
+              <td>
+                <code>{{ produit.codeProduit }}</code>
+                @if (produit.actif === false) {
+                  <span class="badge text-bg-secondary ms-2" [title]="'inventory.produit.statut.inactif' | translate">
+                    <i class="bi bi-slash-circle me-1" aria-hidden="true"></i>
+                    {{ 'inventory.produit.statut.inactif' | translate }}
+                  </span>
+                }
+              </td>
               <td>{{ produit.nomProduit }}</td>
               <td>{{ produit.nomCategorie || '-' }}</td>
               <td>{{ produit.uniteMesure }}</td>
@@ -81,12 +89,36 @@
                 >
                   <i class="bi bi-pencil" aria-hidden="true"></i>
                 </button>
+                @if (produit.actif !== false) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-warning me-1"
+                    (click)="deactivate(produit)"
+                    [disabled]="deleting"
+                    [attr.aria-label]="'inventory.produit.actions.deactivate' | translate"
+                    [title]="'inventory.produit.actions.deactivate' | translate"
+                  >
+                    <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-success me-1"
+                    (click)="reactivate(produit)"
+                    [disabled]="deleting"
+                    [attr.aria-label]="'inventory.produit.actions.reactivate' | translate"
+                    [title]="'inventory.produit.actions.reactivate' | translate"
+                  >
+                    <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                  </button>
+                }
                 <button
                   type="button"
                   class="btn btn-sm btn-outline-danger"
                   (click)="remove(produit)"
                   [disabled]="deleting"
                   [attr.aria-label]="'inventory.produit.actions.delete' | translate"
+                  [title]="'inventory.produit.actions.delete' | translate"
                 >
                   <i class="bi bi-trash" aria-hidden="true"></i>
                 </button>

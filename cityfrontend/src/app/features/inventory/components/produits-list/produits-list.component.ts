@@ -141,6 +141,10 @@ export class ProduitsListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/inventory/produits', produit.produitId, 'view']);
   }
 
+  /**
+   * Suppression définitive (hard delete). Le backend refuse si le produit a
+   * des mouvements de stock — on propose alors la désactivation à la place.
+   */
   remove(produit: Produit): void {
     if (produit.produitId == null) {
       return;
@@ -148,10 +152,12 @@ export class ProduitsListComponent implements OnInit, OnDestroy {
     const id = produit.produitId;
     Swal.fire({
       title: this.i18n.translate('inventory.produit.messages.deleteConfirm'),
+      text: this.i18n.translate('inventory.produit.messages.deleteConfirmText'),
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: this.i18n.translate('inventory.produit.actions.delete'),
       cancelButtonText: this.i18n.translate('inventory.actions.close'),
+      confirmButtonColor: '#dc3545',
       reverseButtons: true,
     }).then((result) => {
       if (!result.isConfirmed) {
@@ -176,13 +182,135 @@ export class ProduitsListComponent implements OnInit, OnDestroy {
             });
             this.load();
           },
+          error: (err) => {
+            const errorKey = err?.error?.error;
+            if (errorKey === 'error.produit.delete.hasMouvements') {
+              this.offerDeactivateInstead(produit);
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: this.i18n.translate('inventory.produit.messages.deleteError'),
+              });
+            }
+          },
+        });
+    });
+  }
+
+  /**
+   * Désactivation (soft delete) — pose actif=false, conserve l'historique.
+   */
+  deactivate(produit: Produit): void {
+    if (produit.produitId == null || produit.actif === false) {
+      return;
+    }
+    const id = produit.produitId;
+    Swal.fire({
+      title: this.i18n.translate('inventory.produit.messages.deactivateConfirm'),
+      text: this.i18n.translate('inventory.produit.messages.deactivateConfirmText'),
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.produit.actions.deactivate'),
+      cancelButtonText: this.i18n.translate('inventory.actions.close'),
+      reverseButtons: true,
+    }).then((result) => {
+      if (!result.isConfirmed) {
+        return;
+      }
+      this.deleting = true;
+      this.produitsService
+        .deactivate(id)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            this.deleting = false;
+          }),
+        )
+        .subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: this.i18n.translate('inventory.produit.messages.deactivateSuccess'),
+              timer: 1500,
+              showConfirmButton: false,
+            });
+            this.load();
+          },
           error: () => {
             Swal.fire({
               icon: 'error',
-              title: this.i18n.translate('inventory.produit.messages.deleteError'),
+              title: this.i18n.translate('inventory.produit.messages.deactivateError'),
             });
           },
         });
+    });
+  }
+
+  /**
+   * Réactivation — pose actif=true sur un produit précédemment désactivé.
+   */
+  reactivate(produit: Produit): void {
+    if (produit.produitId == null || produit.actif !== false) {
+      return;
+    }
+    const id = produit.produitId;
+    Swal.fire({
+      title: this.i18n.translate('inventory.produit.messages.reactivateConfirm'),
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.produit.actions.reactivate'),
+      cancelButtonText: this.i18n.translate('inventory.actions.close'),
+      reverseButtons: true,
+    }).then((result) => {
+      if (!result.isConfirmed) {
+        return;
+      }
+      this.deleting = true;
+      this.produitsService
+        .reactivate(id)
+        .pipe(
+          takeUntil(this.destroy$),
+          finalize(() => {
+            this.deleting = false;
+          }),
+        )
+        .subscribe({
+          next: () => {
+            Swal.fire({
+              icon: 'success',
+              title: this.i18n.translate('inventory.produit.messages.reactivateSuccess'),
+              timer: 1500,
+              showConfirmButton: false,
+            });
+            this.load();
+          },
+          error: () => {
+            Swal.fire({
+              icon: 'error',
+              title: this.i18n.translate('inventory.produit.messages.reactivateError'),
+            });
+          },
+        });
+    });
+  }
+
+  /**
+   * Affiché quand le hard delete est refusé par le backend (audit trail
+   * existant) : propose à l'utilisateur de désactiver le produit à la place.
+   */
+  private offerDeactivateInstead(produit: Produit): void {
+    Swal.fire({
+      icon: 'info',
+      title: this.i18n.translate('inventory.produit.messages.deleteRefused'),
+      text: this.i18n.translate('inventory.produit.messages.deleteRefusedSuggestion'),
+      showCancelButton: true,
+      confirmButtonText: this.i18n.translate('inventory.produit.actions.deactivate'),
+      cancelButtonText: this.i18n.translate('inventory.actions.close'),
+      reverseButtons: true,
+    }).then((res) => {
+      if (res.isConfirmed) {
+        this.deactivate(produit);
+      }
     });
   }
 

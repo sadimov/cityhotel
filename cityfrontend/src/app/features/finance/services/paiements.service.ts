@@ -1,8 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
+import { ApiResponse } from '../../../shared/models/api.model';
 import { Page, PageRequest } from '../models/page.model';
 import {
   AffectationCreateDto,
@@ -21,10 +23,9 @@ import {
  *   - POST   /api/finance/paiements/{id}/affecter         → PaiementDto
  *   - POST   /api/finance/paiements/{id}/annuler          → PaiementDto
  *
- * Endpoints supprimés (inexistants côté back) : `/compte/{compteId}`,
- * filtres ad-hoc (search/dateDebut/dateFin/modePaiement/statut/factureId/
- * montantMin/montantMax). La pagination est paramétrée via `Pageable`
- * Spring Data (`page`, `size`, `sort`).
+ * ⚠️ `ApiResponseBodyAdvice` (post-v1.0.0) wrappe TOUTES les réponses
+ * controller en `{data, status, ...}`. On unwrap via `.pipe(map)` avec
+ * fallback `r.data ?? r` pour compat ascendante.
  *
  * ⚠️ `hotelId` n'est jamais transmis (JWT côté serveur).
  */
@@ -35,12 +36,11 @@ export class PaiementsService {
   constructor(private readonly http: HttpClient) {}
 
   findById(id: number): Observable<PaiementDto> {
-    return this.http.get<PaiementDto>(`${this.base}/${id}`);
+    return this.http
+      .get<ApiResponse<PaiementDto>>(`${this.base}/${id}`)
+      .pipe(map((r) => (r?.data ?? (r as unknown as PaiementDto))));
   }
 
-  /**
-   * Liste paginée des paiements (filtre tenant côté serveur).
-   */
   page(req: PageRequest = {}): Observable<Page<PaiementDto>> {
     let params = new HttpParams();
     if (req.page != null) params = params.set('page', String(req.page));
@@ -52,27 +52,32 @@ export class PaiementsService {
         params = params.set('sort', req.sort);
       }
     }
-    return this.http.get<Page<PaiementDto>>(this.base, { params });
+    return this.http
+      .get<ApiResponse<Page<PaiementDto>>>(this.base, { params })
+      .pipe(map((r) => (r?.data ?? (r as unknown as Page<PaiementDto>))));
   }
 
   create(dto: PaiementCreateDto): Observable<PaiementDto> {
-    return this.http.post<PaiementDto>(this.base, dto);
+    return this.http
+      .post<ApiResponse<PaiementDto>>(this.base, dto)
+      .pipe(map((r) => (r?.data ?? (r as unknown as PaiementDto))));
   }
 
-  /**
-   * Ventile un paiement existant à plusieurs factures.
-   */
   affecter(
     paiementId: number,
     affectations: AffectationCreateDto[],
   ): Observable<PaiementDto> {
-    return this.http.post<PaiementDto>(
-      `${this.base}/${paiementId}/affecter`,
-      affectations,
-    );
+    return this.http
+      .post<ApiResponse<PaiementDto>>(
+        `${this.base}/${paiementId}/affecter`,
+        affectations,
+      )
+      .pipe(map((r) => (r?.data ?? (r as unknown as PaiementDto))));
   }
 
   annuler(id: number): Observable<PaiementDto> {
-    return this.http.post<PaiementDto>(`${this.base}/${id}/annuler`, {});
+    return this.http
+      .post<ApiResponse<PaiementDto>>(`${this.base}/${id}/annuler`, {})
+      .pipe(map((r) => (r?.data ?? (r as unknown as PaiementDto))));
   }
 }

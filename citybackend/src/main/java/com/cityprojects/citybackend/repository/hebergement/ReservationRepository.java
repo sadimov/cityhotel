@@ -40,6 +40,27 @@ public interface ReservationRepository
     /** Page des reservations d'un client, plus recentes d'abord. */
     Page<Reservation> findByClientPrincipalIdOrderByDateArriveeDesc(Long clientPrincipalId, Pageable pageable);
 
+    /**
+     * Page des reservations ou le client apparait en principal OU en
+     * client secondaire (table pivot {@code reservations_clients}). Tri
+     * delegue au {@link Pageable} de l'appelant (pas d'{@code ORDER BY}
+     * dans la JPQL pour ne pas le concatener avec celui de Spring Data).
+     *
+     * <p>Couvre le cas d'usage POS : un client accompagnant qui consomme au
+     * restaurant et qu'on souhaite rattacher a la facture chambre, meme s'il
+     * n'est pas le payeur principal.</p>
+     *
+     * <p>Le filtre tenant {@code hotel_id} reste applique automatiquement par
+     * Hibernate via {@code @TenantId} sur les deux entites.</p>
+     */
+    @Query("SELECT DISTINCT r FROM Reservation r "
+            + "WHERE r.clientPrincipalId = :clientId "
+            + "   OR EXISTS (SELECT 1 FROM ReservationClient rc "
+            + "              WHERE rc.reservationId = r.reservationId "
+            + "                AND rc.clientId = :clientId)")
+    Page<Reservation> findByClientPrincipalOrSecondary(
+            @Param("clientId") Long clientId, Pageable pageable);
+
     /** Reservations en cours a une date donnee (CHECKED-IN englobant la date). */
     List<Reservation> findByStatutAndDateArriveeLessThanEqualAndDateDepartGreaterThan(
             StatutReservation statut, LocalDate aujourd, LocalDate aujourd2);

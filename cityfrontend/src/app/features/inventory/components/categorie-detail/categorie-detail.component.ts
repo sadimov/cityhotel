@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -18,7 +18,6 @@ type DetailState = 'loading' | 'ready' | 'error';
   selector: 'app-categorie-detail',
   templateUrl: './categorie-detail.component.html',
   standalone: false,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CategorieDetailComponent implements OnInit, OnDestroy {
   state: DetailState = 'loading';

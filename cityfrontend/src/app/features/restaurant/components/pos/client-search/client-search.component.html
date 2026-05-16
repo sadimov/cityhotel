@@ -1,137 +1,281 @@
-<div class="bg-white rounded-2xl shadow p-4 mb-4">
-  <h3 class="text-base font-semibold mb-3 text-sky-700">
-    {{ 'restaurant.pos.client.title' | translate }}
-  </h3>
-
-  @let selected = (selectedClient$ | async);
-
-  @if (!selected) {
-    <div class="mb-3">
-      <label class="form-label small text-muted">
-        {{ 'restaurant.pos.client.searchLabel' | translate }}
-      </label>
-      <input
-        type="text"
-        class="form-control form-control-sm"
-        [placeholder]="'restaurant.pos.client.searchPlaceholder' | translate"
-        [value]="(clientSearch$ | async) ?? ''"
-        (input)="onSearchInput($any($event.target).value)"
-      />
-    </div>
-
-    @if (clientResultsLoading$ | async) {
-      <div class="text-center text-muted py-2 small">
-        {{ 'common.loading' | translate }}
+<!--
+  Modale POS — sélection client + réservation.
+  2 onglets : Réservations en cours / Client direct.
+-->
+@if (open) {
+  <div
+    class="pos-modal__backdrop"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'restaurant.pos.client.modalTitle' | translate"
+    (click)="onClose()"
+  >
+    <div class="pos-modal" (click)="$event.stopPropagation()">
+      <div class="pos-modal__header">
+        <h2 class="pos-modal__title">
+          <i class="bi bi-person-vcard" aria-hidden="true"></i>
+          {{ 'restaurant.pos.client.modalTitle' | translate }}
+        </h2>
+        <button
+          type="button"
+          class="pos-modal__close"
+          (click)="onClose()"
+          [attr.aria-label]="'common.close' | translate"
+        >
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
       </div>
-    }
 
-    @let results = (clientResults$ | async) ?? [];
-    @if (results.length > 0) {
-      <ul class="list-group list-group-flush max-h-60 overflow-auto">
-        @for (c of results; track trackByClientId($index, c)) {
-          <li
-            class="list-group-item list-group-item-action small cursor-pointer"
-            (click)="onSelectClient(c)"
-          >
-            <div class="fw-medium">{{ c.prenom }} {{ c.nom }}</div>
-            <div class="text-muted small">{{ c.telephone || '—' }}</div>
-          </li>
-        }
-      </ul>
-    } @else if (((clientSearch$ | async) ?? '').length > 0 && !(clientResultsLoading$ | async)) {
-      <div class="text-muted small py-2">
-        {{ 'restaurant.pos.client.noResults' | translate }}
+      <div class="pos-modal__tabs" role="tablist">
+        <button
+          type="button"
+          class="pos-modal__tab"
+          [class.pos-modal__tab--active]="activeTab === 'reservations'"
+          (click)="setTab('reservations')"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'reservations'"
+        >
+          <i class="bi bi-calendar-check me-1" aria-hidden="true"></i>
+          {{ 'restaurant.pos.client.tabReservations' | translate }}
+        </button>
+        <button
+          type="button"
+          class="pos-modal__tab"
+          [class.pos-modal__tab--active]="activeTab === 'client'"
+          (click)="setTab('client')"
+          role="tab"
+          [attr.aria-selected]="activeTab === 'client'"
+        >
+          <i class="bi bi-person me-1" aria-hidden="true"></i>
+          {{ 'restaurant.pos.client.tabClient' | translate }}
+        </button>
       </div>
-    }
-  } @else {
-    <div class="d-flex align-items-start justify-content-between border rounded p-2 bg-sky-50">
-      <div>
-        <div class="fw-semibold">{{ selected.prenom }} {{ selected.nom }}</div>
-        <div class="text-muted small">{{ selected.telephone || '—' }}</div>
-        @if (selected.email) {
-          <div class="text-muted small">{{ selected.email }}</div>
-        }
-      </div>
-      <button
-        type="button"
-        class="btn btn-sm btn-outline-secondary"
-        (click)="onClearClient()"
-        [attr.aria-label]="'restaurant.pos.client.change' | translate"
-      >
-        {{ 'restaurant.pos.client.change' | translate }}
-      </button>
-    </div>
 
-    <hr class="my-3" />
-
-    <h4 class="text-sm font-semibold mb-2">
-      {{ 'restaurant.pos.reservation.title' | translate }}
-    </h4>
-
-    @if (reservationsLoading$ | async) {
-      <div class="text-center text-muted py-2 small">
-        {{ 'common.loading' | translate }}
-      </div>
-    } @else {
-      @let reservations = (activeReservations$ | async) ?? [];
-      @if (reservations.length === 0) {
-        <div class="text-muted small">
-          {{ 'restaurant.pos.reservation.noActive' | translate }}
+      <div class="pos-modal__body">
+        <!-- Champ recherche commun aux 2 onglets -->
+        <div class="pos-modal__search-row">
+          <div class="pos-modal__search">
+            <i class="bi bi-search pos-modal__search-icon" aria-hidden="true"></i>
+            <input
+              type="text"
+              class="pos-modal__search-input"
+              [placeholder]="'restaurant.pos.client.searchPlaceholder' | translate"
+              [value]="(clientSearch$ | async) ?? ''"
+              (input)="onSearchInput($any($event.target).value)"
+              autofocus
+            />
+          </div>
         </div>
-      } @else {
-        @let selectedReservation = (selectedReservation$ | async);
-        <div class="d-flex flex-column gap-2">
-          @for (r of reservations; track trackByReservationId($index, r)) {
-            <button
-              type="button"
-              class="btn btn-sm text-start border"
-              [class.btn-info]="selectedReservation?.reservationId === r.reservationId"
-              [class.text-white]="selectedReservation?.reservationId === r.reservationId"
-              [class.btn-light]="selectedReservation?.reservationId !== r.reservationId"
-              (click)="onSelectReservation(r)"
-            >
-              <div class="d-flex justify-content-between align-items-start gap-2">
-                <div class="fw-semibold">
-                  #{{ r.numeroReservation || r.reservationId }}
+
+        @let selected = (selectedClient$ | async);
+        @let results = (clientResults$ | async) ?? [];
+        @let loading = (clientResultsLoading$ | async) ?? false;
+
+        @if (activeTab === 'reservations') {
+          <!-- ───── Onglet RÉSERVATIONS ───── -->
+          @if (!selected) {
+            <div class="pos-modal__hint">
+              <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+              {{ 'restaurant.pos.client.hintReservations' | translate }}
+            </div>
+            @if (loading) {
+              <div class="pos-modal__state">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <div class="small text-muted mt-2">
+                  {{ 'common.loading' | translate }}
                 </div>
-                <span class="badge" [ngClass]="statutBadgeClass(r.statut)">
-                  {{ statutKey(r.statut) | translate }}
-                </span>
               </div>
-              @if (chambreLabel(r); as chambres) {
-                @if (chambres) {
-                  <div class="small fw-medium">
-                    {{ 'restaurant.pos.reservation.chambre' | translate }} :
-                    {{ chambres }}
-                    @if (typeLabel(r); as types) {
-                      @if (types) {
-                        <span class="text-muted"> — {{ types }}</span>
-                      }
-                    }
+            } @else if (results.length > 0) {
+              <ul class="pos-modal__list">
+                @for (c of results; track trackByClientId($index, c)) {
+                  <li
+                    class="pos-modal__item"
+                    (click)="onSelectClient(c, false)"
+                  >
+                    <div class="pos-modal__item-icon">
+                      <i class="bi bi-person-circle" aria-hidden="true"></i>
+                    </div>
+                    <div class="pos-modal__item-main">
+                      <div class="pos-modal__item-name">
+                        {{ c.prenom }} {{ c.nom }}
+                      </div>
+                      <div class="pos-modal__item-meta">
+                        @if (c.telephone) {
+                          <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+                          {{ c.telephone }}
+                        }
+                        @if (c.email) {
+                          <span class="ms-2">
+                            <i class="bi bi-envelope me-1" aria-hidden="true"></i>
+                            {{ c.email }}
+                          </span>
+                        }
+                      </div>
+                    </div>
+                    <i class="bi bi-chevron-right pos-modal__item-chev" aria-hidden="true"></i>
+                  </li>
+                }
+              </ul>
+            } @else if (((clientSearch$ | async) ?? '').length > 0) {
+              <div class="pos-modal__state">
+                <i class="bi bi-search pos-modal__state-icon" aria-hidden="true"></i>
+                <div class="small mt-2">
+                  {{ 'restaurant.pos.client.noResults' | translate }}
+                </div>
+              </div>
+            } @else {
+              <div class="pos-modal__state">
+                <i class="bi bi-search pos-modal__state-icon" aria-hidden="true"></i>
+                <div class="small mt-2">
+                  {{ 'restaurant.pos.client.typeToSearch' | translate }}
+                </div>
+              </div>
+            }
+          } @else {
+            <!-- Client sélectionné → liste des réservations actives -->
+            <div class="pos-modal__client-selected">
+              <div>
+                <div class="fw-semibold">
+                  <i class="bi bi-person-check-fill text-success me-1" aria-hidden="true"></i>
+                  {{ selected.prenom }} {{ selected.nom }}
+                </div>
+                @if (selected.telephone) {
+                  <div class="small text-muted">
+                    {{ selected.telephone }}
                   </div>
                 }
-              }
-              <div class="small">
-                {{ r.dateArrivee }} → {{ r.dateDepart }}
               </div>
-              @if (r.nomClientPrincipal) {
-                <div class="small text-muted text-truncate">
-                  {{ r.nomClientPrincipal }}
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary"
+                (click)="onClearClient()"
+              >
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
+                {{ 'common.back' | translate }}
+              </button>
+            </div>
+
+            @if (reservationsLoading$ | async) {
+              <div class="pos-modal__state">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                <div class="small text-muted mt-2">
+                  {{ 'common.loading' | translate }}
                 </div>
+              </div>
+            } @else {
+              @let reservations = (activeReservations$ | async) ?? [];
+              @if (reservations.length === 0) {
+                <div class="pos-modal__state">
+                  <i class="bi bi-calendar-x pos-modal__state-icon" aria-hidden="true"></i>
+                  <div class="small mt-2">
+                    {{ 'restaurant.pos.reservation.noActive' | translate }}
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-primary mt-3"
+                    (click)="onClose()"
+                  >
+                    <i class="bi bi-check-lg me-1" aria-hidden="true"></i>
+                    {{ 'restaurant.pos.client.useDirect' | translate }}
+                  </button>
+                </div>
+              } @else {
+                <ul class="pos-modal__list">
+                  @for (r of reservations; track trackByReservationId($index, r)) {
+                    <li
+                      class="pos-modal__item pos-modal__item--resa"
+                      (click)="onSelectReservation(r)"
+                    >
+                      <div class="pos-modal__item-icon">
+                        <i class="bi bi-door-open-fill" aria-hidden="true"></i>
+                      </div>
+                      <div class="pos-modal__item-main">
+                        <div class="pos-modal__item-name">
+                          @if (chambreLabel(r); as ch) {
+                            {{ 'restaurant.pos.reservation.chambre' | translate }}
+                            {{ ch }}
+                          } @else {
+                            #{{ r.numeroReservation || r.reservationId }}
+                          }
+                          <span
+                            class="badge ms-2"
+                            [ngClass]="statutBadgeClass(r.statut)"
+                          >
+                            {{ statutKey(r.statut) | translate }}
+                          </span>
+                        </div>
+                        <div class="pos-modal__item-meta">
+                          @if (typeLabel(r); as t) {
+                            <span>{{ t }}</span>
+                          }
+                          <span class="ms-2">
+                            <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>
+                            {{ r.dateArrivee }} → {{ r.dateDepart }}
+                          </span>
+                        </div>
+                      </div>
+                      <i class="bi bi-chevron-right pos-modal__item-chev" aria-hidden="true"></i>
+                    </li>
+                  }
+                </ul>
               }
-            </button>
+            }
           }
-          @if (selectedReservation) {
-            <button
-              type="button"
-              class="btn btn-sm btn-link text-danger p-0"
-              (click)="onClearReservation()"
-            >
-              {{ 'restaurant.pos.reservation.clear' | translate }}
-            </button>
+        } @else {
+          <!-- ───── Onglet CLIENT DIRECT ───── -->
+          <div class="pos-modal__hint">
+            <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+            {{ 'restaurant.pos.client.hintDirect' | translate }}
+          </div>
+          @if (loading) {
+            <div class="pos-modal__state">
+              <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+              <div class="small text-muted mt-2">
+                {{ 'common.loading' | translate }}
+              </div>
+            </div>
+          } @else if (results.length > 0) {
+            <ul class="pos-modal__list">
+              @for (c of results; track trackByClientId($index, c)) {
+                <li
+                  class="pos-modal__item"
+                  (click)="onSelectClient(c, true)"
+                >
+                  <div class="pos-modal__item-icon">
+                    <i class="bi bi-person-circle" aria-hidden="true"></i>
+                  </div>
+                  <div class="pos-modal__item-main">
+                    <div class="pos-modal__item-name">
+                      {{ c.prenom }} {{ c.nom }}
+                    </div>
+                    <div class="pos-modal__item-meta">
+                      @if (c.telephone) {
+                        <i class="bi bi-telephone me-1" aria-hidden="true"></i>
+                        {{ c.telephone }}
+                      }
+                    </div>
+                  </div>
+                  <i class="bi bi-chevron-right pos-modal__item-chev" aria-hidden="true"></i>
+                </li>
+              }
+            </ul>
+          } @else if (((clientSearch$ | async) ?? '').length > 0) {
+            <div class="pos-modal__state">
+              <i class="bi bi-search pos-modal__state-icon" aria-hidden="true"></i>
+              <div class="small mt-2">
+                {{ 'restaurant.pos.client.noResults' | translate }}
+              </div>
+            </div>
+          } @else {
+            <div class="pos-modal__state">
+              <i class="bi bi-search pos-modal__state-icon" aria-hidden="true"></i>
+              <div class="small mt-2">
+                {{ 'restaurant.pos.client.typeToSearch' | translate }}
+              </div>
+            </div>
           }
-        </div>
-      }
-    }
-  }
-</div>
+        }
+      </div>
+    </div>
+  </div>
+}

@@ -21,7 +21,7 @@ import {
  *   - `GET    /api/restaurant/commandes/{id}`                     — read
  *   - `POST   /api/restaurant/commandes`                          — create (BROUILLON)
  *   - `POST   /api/restaurant/commandes/{id}/valider`             — envoie en cuisine
- *   - `POST   /api/restaurant/commandes/{id}/encaisser-comptant`  — facture + paiement
+ *   - `POST   /api/restaurant/commandes/{id}/encaisser`           — facture + paiement comptant
  *   - `POST   /api/restaurant/commandes/{id}/reporter-chambre`    — folio réservation
  *   - `POST   /api/restaurant/commandes/{id}/annuler`             — annule la commande
  *
@@ -102,10 +102,16 @@ export class CommandesService {
     commandeId: number,
     dto: EncaissementCommandeRequest,
   ): Observable<Commande> {
+    // Strip champs locaux non sÃ©rialisÃ©s (cf. EncaissementCommandeRequest).
+    const payload = {
+      modePaiement: dto.modePaiement,
+      montant: dto.montant,
+      referencePaiement: dto.referencePaiement,
+    };
     return this.http
       .post<ApiResponse<Commande>>(
-        `${this.base}/${commandeId}/encaisser-comptant`,
-        dto,
+        `${this.base}/${commandeId}/encaisser`,
+        payload,
       )
       .pipe(map((r) => r.data as Commande));
   }

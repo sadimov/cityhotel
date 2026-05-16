@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -12,18 +12,18 @@ import { CategoriesMenusService } from '../../services/categories-menus.service'
 type FormState = 'loading' | 'ready' | 'submitting' | 'error';
 
 /**
- * Formulaire création / édition d'une catégorie de menu.
+ * Formulaire crÃ©ation / Ã©dition d'une catÃ©gorie de menu.
  *
  * Validators :
  *  - `nomCategorie` : required + minLength(2) + maxLength(100)
  *  - `ordreAffichage` : >= 0
  *  - `nomCategorieEn` / `nomCategorieAr` : optionnels (i18n trilingue)
  *
- * Pattern aligné sur `produit-form` (Tour 16) et `facture-form` (Tour 19) :
- *  - route séparée `/restaurant/categories/new` ou `/restaurant/categories/:id`
- *    (pas de modal embarquée — cohérence routing/back-button)
- *  - hydratation via `findById()` quand `editingId` présent
- *  - SweetAlert2 pour les feedbacks succès/erreur
+ * Pattern alignÃ© sur `produit-form` (Tour 16) et `facture-form` (Tour 19) :
+ *  - route sÃ©parÃ©e `/restaurant/categories/new` ou `/restaurant/categories/:id`
+ *    (pas de modal embarquÃ©e â€” cohÃ©rence routing/back-button)
+ *  - hydratation via `findById()` quand `editingId` prÃ©sent
+ *  - SweetAlert2 pour les feedbacks succÃ¨s/erreur
  */
 @Component({
   selector: 'app-category-form',
@@ -81,11 +81,11 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     const raw = this.form.getRawValue();
 
     const payload: CategorieMenu = {
-      nomCategorie: String(raw.nomCategorie).trim(),
-      nomCategorieEn: raw.nomCategorieEn ? String(raw.nomCategorieEn).trim() : undefined,
-      nomCategorieAr: raw.nomCategorieAr ? String(raw.nomCategorieAr).trim() : undefined,
+      nom: String(raw.nom).trim(),
+      nomEn: raw.nomEn ? String(raw.nomEn).trim() : undefined,
+      nomAr: raw.nomAr ? String(raw.nomAr).trim() : undefined,
       description: raw.description || undefined,
-      ordreAffichage: Number(raw.ordreAffichage ?? 0),
+      ordre: Number(raw.ordre ?? 0),
       actif: raw.actif !== false,
     };
 
@@ -128,20 +128,20 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     this.router.navigate(['/restaurant/categories']);
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Privé
-  // ────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // PrivÃ©
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private buildForm(): FormGroup {
     return this.fb.group({
-      nomCategorie: [
+      nom: [
         '',
         [Validators.required, Validators.minLength(2), Validators.maxLength(100)],
       ],
-      nomCategorieEn: ['', [Validators.maxLength(100)]],
-      nomCategorieAr: ['', [Validators.maxLength(100)]],
+      nomEn: ['', [Validators.maxLength(100)]],
+      nomAr: ['', [Validators.maxLength(100)]],
       description: ['', [Validators.maxLength(500)]],
-      ordreAffichage: [0, [Validators.required, Validators.min(0)]],
+      ordre: [0, [Validators.required, Validators.min(0)]],
       actif: [true],
     });
   }
@@ -163,11 +163,11 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
 
   private hydrateForm(c: CategorieMenu): void {
     this.form.patchValue({
-      nomCategorie: c.nomCategorie ?? '',
-      nomCategorieEn: c.nomCategorieEn ?? '',
-      nomCategorieAr: c.nomCategorieAr ?? '',
+      nom: c.nom ?? '',
+      nomEn: c.nomEn ?? '',
+      nomAr: c.nomAr ?? '',
       description: c.description ?? '',
-      ordreAffichage: c.ordreAffichage ?? 0,
+      ordre: c.ordre ?? 0,
       actif: c.actif !== false,
     });
   }

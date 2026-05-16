@@ -48,6 +48,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -409,27 +410,46 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Page<ReservationDto> findAll(StatutReservation statut, Pageable pageable) {
+    public Page<ReservationDto> findAll(StatutReservation statut,
+                                         Long clientPrincipalId,
+                                         Pageable pageable) {
         // Tour 14 audit, finding I2 : tri stable.
         // Tour 14 audit, finding I4 : alias front "dateCreation" -> "createdAt".
         Pageable remapped = PageableUtils.remapSort(pageable, Map.of("dateCreation", "createdAt"));
         Sort defaultSort = Sort.by(Sort.Order.desc("dateArrivee"));
         Pageable stable = PageableUtils.stable(remapped, defaultSort, "reservationId");
 
-        // On utilise findAll(stable) avec spec future si filtre statut. Pour
-        // l'instant, conserver findByStatut* uniquement quand un tri n'est pas
-        // explicitement fourni par l'appelant (cas d'usage le plus frequent :
-        // sort=dateArrivee,desc).
-        Page<Reservation> page = (statut != null)
-                ? reservationRepository.findByStatut(statut, stable)
-                : reservationRepository.findAll(stable);
-        return enrichPage(page);
+        // Specification dynamique : combine statut et clientPrincipalId selon
+        // les filtres fournis. Hibernate ajoute automatiquement le predicat
+        // tenant (WHERE hotel_id = ?) via @TenantId, on n'a donc pas a le
+        // rajouter ici.
+        Specification<Reservation> spec = Specification.where(null);
+        if (statut != null) {
+            final StatutReservation s = statut;
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("statut"), s));
+        }
+        if (clientPrincipalId != null) {
+            final Long cid = clientPrincipalId;
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("clientPrincipalId"), cid));
+        }
+
+        return enrichPage(reservationRepository.findAll(spec, stable));
     }
 
     @Override
     public Page<ReservationDto> findByClient(Long clientId, Pageable pageable) {
+        // Inclut les reservations ou le client est principal OU client
+        // secondaire (pivot reservations_clients). Le POS doit pouvoir
+        // facturer la chambre meme pour un accompagnant.
+        //
+        // Tri stable identique a findAll : remap alias front "dateCreation"
+        // -> "createdAt" (sinon Hibernate plante UnknownPathException) puis
+        // tri stable par defaut sur dateArrivee desc + reservationId.
+        Pageable remapped = PageableUtils.remapSort(pageable, Map.of("dateCreation", "createdAt"));
+        Sort defaultSort = Sort.by(Sort.Order.desc("dateArrivee"));
+        Pageable stable = PageableUtils.stable(remapped, defaultSort, "reservationId");
         return enrichPage(reservationRepository
-                .findByClientPrincipalIdOrderByDateArriveeDesc(clientId, pageable));
+                .findByClientPrincipalOrSecondary(clientId, stable));
     }
 
     @Override

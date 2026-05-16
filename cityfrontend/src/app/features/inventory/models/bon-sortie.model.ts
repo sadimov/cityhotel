@@ -16,10 +16,13 @@ export const STATUTS_BON_SORTIE: ReadonlyArray<StatutBonSortie> = [
 export interface BonSortie {
   bonSortieId?: number;
   hotelId?: number;
-  numeroBon: string;
+  /** Lecture seule serveur (auto-généré via NumerotationService.BS). */
+  numeroBon?: string;
   destination: string;
-  statut: StatutBonSortie;
-  dateSortie: string;
+  /** Lecture seule serveur (initialisé à BROUILLON par le service). */
+  statut?: StatutBonSortie;
+  /** Lecture seule serveur (posée par le service à la création). */
+  dateSortie?: string;
   commentaires?: string;
   userId?: number;
   dateCreation?: string;

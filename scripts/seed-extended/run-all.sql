@@ -19,6 +19,7 @@
 \ir 04-restaurant-extra.sql
 \ir 05-finance-extra.sql
 \ir 06-menage-extra.sql
+\ir 08-resync-numerotation.sql
 \ir 07-validation.sql
 
 \echo '################################################################'

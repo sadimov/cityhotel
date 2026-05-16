@@ -95,7 +95,11 @@ export class ProduitFormComponent implements OnInit, OnDestroy {
     const raw = this.form.getRawValue();
 
     const payload: Produit = {
-      codeProduit: String(raw.codeProduit).toUpperCase().trim(),
+      // codeProduit : envoyé seulement en édition (immuable). En création,
+      // omettre pour laisser le backend générer via NumerotationService.PROD.
+      ...(this.editingId && raw.codeProduit
+        ? { codeProduit: String(raw.codeProduit).toUpperCase().trim() }
+        : {}),
       nomProduit: String(raw.nomProduit).trim(),
       description: raw.description || undefined,
       categorieId: Number(raw.categorieId),
@@ -156,14 +160,12 @@ export class ProduitFormComponent implements OnInit, OnDestroy {
 
   private buildForm(): FormGroup {
     return this.fb.group({
+      // codeProduit : auto-genere cote backend en creation (laisser vide).
+      // En edition, le champ est hydrate avec la valeur existante et reste
+      // immuable (cf. ProduitServiceImpl.update : "codeProduit immuable").
       codeProduit: [
-        '',
-        [
-          Validators.required,
-          Validators.minLength(3),
-          Validators.maxLength(20),
-          Validators.pattern(/^[A-Z0-9_-]{3,20}$/i),
-        ],
+        { value: '', disabled: true },
+        [Validators.maxLength(20)],
       ],
       nomProduit: ['', [Validators.required, Validators.maxLength(150)]],
       description: [''],

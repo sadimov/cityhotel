@@ -1,4 +1,4 @@
-<section class="categories-list">
+﻿<section class="categories-list">
   <header class="categories-list__header d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 m-0">{{ 'restaurant.categorie.list.title' | translate }}</h2>
     <button type="button" class="btn btn-primary" (click)="createNew()">
@@ -49,8 +49,8 @@
       <table class="table table-striped table-hover align-middle">
         <thead class="table-light">
           <tr>
-            <th scope="col" class="text-end">{{ 'restaurant.categorie.fields.ordreAffichage' | translate }}</th>
-            <th scope="col">{{ 'restaurant.categorie.fields.nomCategorie' | translate }}</th>
+            <th scope="col" class="text-end">{{ 'restaurant.categorie.fields.ordre' | translate }}</th>
+            <th scope="col">{{ 'restaurant.categorie.fields.nom' | translate }}</th>
             <th scope="col">{{ 'restaurant.categorie.fields.description' | translate }}</th>
             <th scope="col" class="text-end">{{ 'restaurant.categorie.fields.nombreArticles' | translate }}</th>
             <th scope="col">{{ 'restaurant.categorie.fields.actif' | translate }}</th>
@@ -60,11 +60,11 @@
         <tbody>
           @for (cat of page.content; track cat.categorieId) {
             <tr>
-              <td class="text-end">{{ cat.ordreAffichage ?? 0 }}</td>
+              <td class="text-end">{{ cat.ordre ?? 0 }}</td>
               <td>
-                <strong>{{ cat.nomCategorie }}</strong>
-                @if (cat.nomCategorieAr) {
-                  <small class="text-muted d-block" dir="rtl">{{ cat.nomCategorieAr }}</small>
+                <strong>{{ cat.nom }}</strong>
+                @if (cat.nomAr) {
+                  <small class="text-muted d-block" dir="rtl">{{ cat.nomAr }}</small>
                 }
               </td>
               <td>{{ cat.description || '-' }}</td>

@@ -1,4 +1,4 @@
-<section class="articles-list">
+﻿<section class="articles-list">
   <header class="articles-list__header d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 m-0">{{ 'restaurant.article.list.title' | translate }}</h2>
     <button type="button" class="btn btn-primary" (click)="createNew()">
@@ -23,7 +23,7 @@
     >
       <option value="">{{ 'restaurant.article.list.filterCategorieAll' | translate }}</option>
       @for (cat of categories; track cat.categorieId) {
-        <option [value]="cat.categorieId">{{ cat.nomCategorie }}</option>
+        <option [value]="cat.categorieId">{{ cat.nom }}</option>
       }
     </select>
     <select
@@ -69,7 +69,7 @@
         <thead class="table-light">
           <tr>
             <th scope="col">{{ 'restaurant.article.fields.codeArticle' | translate }}</th>
-            <th scope="col">{{ 'restaurant.article.fields.nomArticle' | translate }}</th>
+            <th scope="col">{{ 'restaurant.article.fields.nom' | translate }}</th>
             <th scope="col">{{ 'restaurant.article.fields.categorie' | translate }}</th>
             <th scope="col" class="text-end">{{ 'restaurant.article.fields.prix' | translate }}</th>
             <th scope="col" class="text-end">{{ 'restaurant.article.fields.tempsPreparation' | translate }}</th>
@@ -83,9 +83,9 @@
             <tr>
               <td><code>{{ article.codeArticle || '-' }}</code></td>
               <td>
-                <strong>{{ article.nomArticle }}</strong>
-                @if (article.nomArticleAr) {
-                  <small class="text-muted d-block" dir="rtl">{{ article.nomArticleAr }}</small>
+                <strong>{{ article.nom }}</strong>
+                @if (article.nomAr) {
+                  <small class="text-muted d-block" dir="rtl">{{ article.nomAr }}</small>
                 }
               </td>
               <td>{{ categorieNom(article) }}</td>

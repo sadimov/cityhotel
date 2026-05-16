@@ -19,18 +19,25 @@ import { Societe, SocieteCreate } from '../models/societe.model';
  * Service HTTP du module `clients`.
  *
  * Endpoints (backend Spring Boot, contexte `/citybackend`) :
- *   - `GET    /api/clients`           — liste paginée (filtre hôtel implicite via JWT)
+ *   - `GET    /api/clients`           — liste paginée clients (filtre hôtel JWT)
  *   - `GET    /api/clients/{id}`      — détail
  *   - `POST   /api/clients`           — création
  *   - `PUT    /api/clients/{id}`      — mise à jour
- *   - `DELETE /api/clients/{id}`      — suppression / désactivation
+ *   - `DELETE /api/clients/{id}`      — suppression
+ *   - `GET    /api/societes`          — liste paginée sociétés
+ *   - `GET    /api/societes/{id}`     — détail société
+ *   - `POST   /api/societes`          — création société
+ *   - `PUT    /api/societes/{id}`     — mise à jour société
+ *   - `POST   /api/societes/{id}/deactivate` — désactivation soft
+ *   - `POST   /api/societes/{id}/reactivate` — réactivation
+ *   - `DELETE /api/societes/{id}`     — suppression hard
  *
- * ⚠️ Le `hotelId` n'est **JAMAIS** envoyé par le client — le backend l'extrait
- *    du JWT (CLAUDE.md racine §6.1, cityfrontend/CLAUDE.md §4.1).
+ * ⚠️ Le `hotelId` n'est **JAMAIS** envoyé — backend l'extrait du JWT.
  */
 @Injectable({ providedIn: 'root' })
 export class ClientsService {
   private readonly base = `${environment.apiUrl}/api/clients`;
+  private readonly baseSocietes = `${environment.apiUrl}/api/societes`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -90,38 +97,57 @@ export class ClientsService {
   }
 
   // ────────────────────────────────────────────────────────────────────────
-  // Sociétés — Tour 45 (quick-create dans la modale création réservation)
+  // Sociétés — base sur `/api/societes` (SocieteController)
   // ────────────────────────────────────────────────────────────────────────
 
-  /**
-   * Liste paginée des sociétés de l'hôtel courant.
-   *
-   * Spec : `GET /api/clients/societes` (filtre tenant côté serveur).
-   * Utilisé par le calendar pour alimenter le select société des modales.
-   */
+  /** Liste paginée des sociétés de l'hôtel courant. */
   pageSocietes(req: PageRequest = {}): Observable<PageResponse<Societe>> {
     const params = this.toHttpParams(req);
     return this.http
-      .get<ApiResponse<PageResponse<Societe>>>(`${this.base}/societes`, {
-        params,
-      })
+      .get<ApiResponse<PageResponse<Societe>>>(this.baseSocietes, { params })
       .pipe(map((r) => r.data as PageResponse<Societe>));
   }
 
-  /**
-   * Création rapide d'une société depuis la modale réservation (quick-create
-   * panel). Le `hotelId` est extrait du JWT côté backend.
-   *
-   * Spec backend Phase A (Tour 45) : `POST /api/clients/societes`,
-   * body `{nom: string, telephone?, nif?, adresse?}` — la signature TS reste
-   * volontairement permissive (`SocieteCreate`) pour rester compatible avec
-   * d'éventuels futurs champs (`email`, `siret`, etc.) ; le consommateur du
-   * service décide quels champs il envoie.
-   */
+  /** Détail société par ID. */
+  findSocieteById(id: number): Observable<Societe> {
+    return this.http
+      .get<ApiResponse<Societe>>(`${this.baseSocietes}/${id}`)
+      .pipe(map((r) => r.data as Societe));
+  }
+
+  /** Création d'une société. */
   createSociete(dto: SocieteCreate): Observable<Societe> {
     return this.http
-      .post<ApiResponse<Societe>>(`${this.base}/societes`, dto)
+      .post<ApiResponse<Societe>>(this.baseSocietes, dto)
       .pipe(map((r) => r.data as Societe));
+  }
+
+  /** Mise à jour d'une société. */
+  updateSociete(id: number, dto: SocieteCreate): Observable<Societe> {
+    return this.http
+      .put<ApiResponse<Societe>>(`${this.baseSocietes}/${id}`, dto)
+      .pipe(map((r) => r.data as Societe));
+  }
+
+  /** Désactivation (soft delete) — pose actif=false. */
+  deactivateSociete(id: number): Observable<void> {
+    return this.http
+      .post<ApiResponse<void>>(`${this.baseSocietes}/${id}/deactivate`, {})
+      .pipe(map(() => undefined));
+  }
+
+  /** Réactivation — pose actif=true. */
+  reactivateSociete(id: number): Observable<void> {
+    return this.http
+      .post<ApiResponse<void>>(`${this.baseSocietes}/${id}/reactivate`, {})
+      .pipe(map(() => undefined));
+  }
+
+  /** Suppression définitive (hard delete) — refusée si des clients sont rattachés. */
+  deleteSociete(id: number): Observable<void> {
+    return this.http
+      .delete<ApiResponse<void>>(`${this.baseSocietes}/${id}`)
+      .pipe(map(() => undefined));
   }
 
   // ────────────────────────────────────────────────────────────────────────

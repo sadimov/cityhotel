@@ -63,7 +63,7 @@ public class ChambreController {
         return ResponseEntity.ok(chambreService.findAll(pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping({"/active", "/actives"})
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','MENAGE','NIGHTAUDIT')")
     public ResponseEntity<List<ChambreDto>> findAllActive() {
         return ResponseEntity.ok(chambreService.findAllActive());

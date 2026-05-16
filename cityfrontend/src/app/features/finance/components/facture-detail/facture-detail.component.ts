@@ -38,6 +38,13 @@ export class FactureDetailComponent implements OnInit, OnDestroy {
   emitting = false;
   downloadingPdf = false;
 
+  /**
+   * Lignes sélectionnées pour paiement individuel/partiel ciblé.
+   * Clé = `ligneFactureId` ; si la ligne n'a pas d'id, on utilise l'index
+   * négatif `-(idx+1)` pour rester unique dans la session courante.
+   */
+  selectedLineIds = new Set<number>();
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -82,11 +89,84 @@ export class FactureDetailComponent implements OnInit, OnDestroy {
 
   encaisser(): void {
     if (!this.facture?.factureId) return;
-    this.router.navigate([
-      '/finance/factures',
-      this.facture.factureId,
-      'paiement',
-    ]);
+    const queryParams: Record<string, string> = {};
+    const sum = this.selectedSum;
+    if (this.selectedLineIds.size > 0 && sum > 0) {
+      // Paiement ciblé : on transmet la somme + les ids des lignes pour
+      // affichage récapitulatif dans le formulaire.
+      queryParams['montant'] = String(sum);
+      queryParams['lignes'] = Array.from(this.selectedLineIds)
+        .filter((id) => id > 0)
+        .join(',');
+    }
+    this.router.navigate(
+      ['/finance/factures', this.facture.factureId, 'paiement'],
+      Object.keys(queryParams).length > 0 ? { queryParams } : undefined,
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sélection lignes (paiement individuel)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Identifiant stable d'une ligne (réel si présent, sinon `-(idx+1)`).
+   */
+  lineKey(ligne: { ligneFactureId?: number }, index: number): number {
+    return ligne.ligneFactureId ?? -(index + 1);
+  }
+
+  isLineSelected(ligne: { ligneFactureId?: number }, index: number): boolean {
+    return this.selectedLineIds.has(this.lineKey(ligne, index));
+  }
+
+  toggleLine(ligne: { ligneFactureId?: number }, index: number): void {
+    const key = this.lineKey(ligne, index);
+    const next = new Set(this.selectedLineIds);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    this.selectedLineIds = next;
+  }
+
+  toggleAll(): void {
+    if (!this.facture?.lignes) return;
+    if (this.allLinesSelected) {
+      this.selectedLineIds = new Set<number>();
+      return;
+    }
+    const next = new Set<number>();
+    this.facture.lignes.forEach((l, idx) => next.add(this.lineKey(l, idx)));
+    this.selectedLineIds = next;
+  }
+
+  /** Vrai si toutes les lignes sont sélectionnées (au moins une ligne). */
+  get allLinesSelected(): boolean {
+    const lignes = this.facture?.lignes ?? [];
+    if (lignes.length === 0) return false;
+    return lignes.every((l, idx) => this.selectedLineIds.has(this.lineKey(l, idx)));
+  }
+
+  /** Vrai si la sélection est partielle (ni vide ni complète). */
+  get hasIndeterminateSelection(): boolean {
+    const lignes = this.facture?.lignes ?? [];
+    if (lignes.length === 0) return false;
+    const count = lignes.filter((l, idx) =>
+      this.selectedLineIds.has(this.lineKey(l, idx)),
+    ).length;
+    return count > 0 && count < lignes.length;
+  }
+
+  /** Somme TTC des lignes cochées. */
+  get selectedSum(): number {
+    const lignes = this.facture?.lignes ?? [];
+    return lignes.reduce((sum, l, idx) => {
+      if (!this.selectedLineIds.has(this.lineKey(l, idx))) return sum;
+      const montant = Number(l.montantTtc ?? l.quantite * l.prixUnitaire);
+      return sum + (Number.isFinite(montant) ? montant : 0);
+    }, 0);
   }
 
   emettre(): void {

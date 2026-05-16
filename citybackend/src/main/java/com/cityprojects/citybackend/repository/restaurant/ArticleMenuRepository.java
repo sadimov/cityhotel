@@ -34,6 +34,9 @@ public interface ArticleMenuRepository
     List<ArticleMenu> findByCategorieIdAndActifTrueAndStatutOrderByNomAsc(
             Long categorieId, StatutArticle statut);
 
+    /** Liste de tous les articles actifs et d'un statut donne (POS, toutes categories). */
+    List<ArticleMenu> findByActifTrueAndStatutOrderByNomAsc(StatutArticle statut);
+
     /** Compte les articles actifs lies a une categorie (controle desactivation). */
     long countByCategorieIdAndActifTrue(Long categorieId);
 

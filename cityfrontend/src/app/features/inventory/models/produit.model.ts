@@ -13,7 +13,8 @@ export type StatutStock = 'NORMAL' | 'ALERTE' | 'CRITIQUE';
 export interface Produit {
   produitId?: number;
   hotelId?: number;
-  codeProduit: string;
+  /** Optionnel en création : le backend auto-génère via NumerotationService.PROD si absent. */
+  codeProduit?: string;
   nomProduit: string;
   description?: string;
   categorieId: number;

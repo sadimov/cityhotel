@@ -120,8 +120,6 @@
               <td>
                 @if (tache.nomPersonnel) {
                   {{ tache.nomPersonnel }}
-                } @else if (tache.personnelId) {
-                  #{{ tache.personnelId }}
                 } @else {
                   <span class="text-muted">{{ 'menage.tache.fields.nonAssignee' | translate }}</span>
                 }

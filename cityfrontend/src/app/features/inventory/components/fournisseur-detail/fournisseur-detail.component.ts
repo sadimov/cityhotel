@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -13,7 +13,6 @@ type DetailState = 'loading' | 'ready' | 'error';
   selector: 'app-fournisseur-detail',
   templateUrl: './fournisseur-detail.component.html',
   standalone: false,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FournisseurDetailComponent implements OnInit, OnDestroy {
   state: DetailState = 'loading';

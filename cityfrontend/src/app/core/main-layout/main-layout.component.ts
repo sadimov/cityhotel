@@ -25,6 +25,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     '/hebergement/calendar',
     '/hebergement/reservations',
     '/hebergement',
+    '/restaurant/pos',
   ];
 
   constructor(

@@ -58,6 +58,17 @@ public class ArticleMenuController {
         return ResponseEntity.ok(service.search(recherche, categorieId, pageable));
     }
 
+    /**
+     * Liste plate des articles disponibles pour le POS (statut ACTIF + actif=true).
+     * Catégorie optionnelle. Pas de pagination — utilisée pour la grille POS.
+     */
+    @GetMapping("/disponibles")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
+    public ResponseEntity<java.util.List<ArticleMenuDto>> findDisponibles(
+            @RequestParam(value = "categorieId", required = false) Long categorieId) {
+        return ResponseEntity.ok(service.findDisponibles(categorieId));
+    }
+
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RESTAURANT')")
     public ResponseEntity<ArticleMenuDto> create(@Valid @RequestBody ArticleMenuCreateDto dto) {

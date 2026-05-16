@@ -50,7 +50,7 @@ public class ProduitController {
         return ResponseEntity.ok(service.search(recherche, categorieId, pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping("/actifs")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
     public ResponseEntity<List<ProduitDto>> findAllActive() {
         return ResponseEntity.ok(service.findAllActive());
@@ -88,10 +88,36 @@ public class ProduitController {
         return ResponseEntity.ok(service.ajusterStock(id, dto));
     }
 
-    @DeleteMapping("/{id}")
+    /**
+     * Desactivation (soft delete) : pose {@code actif = false}, conserve le
+     * produit en base avec son historique. Reversible via {@link #reactivate}.
+     * Idempotent.
+     */
+    @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
     public ResponseEntity<Void> deactivate(@PathVariable("id") Long id) {
         service.deactivate(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Reactivation : pose {@code actif = true}. Symetrique du soft delete.
+     */
+    @PutMapping("/{id}/reactivate")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    public ResponseEntity<Void> reactivate(@PathVariable("id") Long id) {
+        service.reactivate(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Suppression definitive (hard delete) : retire le produit de la base.
+     * Refusee si le produit a des mouvements de stock (audit trail).
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

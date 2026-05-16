@@ -64,7 +64,12 @@
         @if (peutEncaisser) {
           <button type="button" class="btn btn-success" (click)="encaisser()">
             <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>
-            {{ 'finance.facture.actions.encaisser' | translate }}
+            @if (selectedLineIds.size > 0) {
+              {{ 'finance.facture.actions.encaisserSelection' | translate }}
+              ({{ selectedSum | number:'1.2-2' }})
+            } @else {
+              {{ 'finance.facture.actions.encaisser' | translate }}
+            }
           </button>
         }
       </div>
@@ -112,6 +117,18 @@
       <table class="table table-sm align-middle">
         <thead class="table-light">
           <tr>
+            @if (peutEncaisser) {
+              <th scope="col" class="text-center" style="width: 36px;">
+                <input
+                  type="checkbox"
+                  class="form-check-input"
+                  [checked]="allLinesSelected"
+                  [indeterminate]="hasIndeterminateSelection"
+                  (change)="toggleAll()"
+                  [attr.aria-label]="'finance.facture.lignes.selectAll' | translate"
+                />
+              </th>
+            }
             <th scope="col">{{ 'finance.facture.lignes.type' | translate }}</th>
             <th scope="col">{{ 'finance.facture.lignes.libelle' | translate }}</th>
             <th scope="col" class="text-end">{{ 'finance.facture.lignes.quantite' | translate }}</th>
@@ -120,8 +137,19 @@
           </tr>
         </thead>
         <tbody>
-          @for (l of facture.lignes; track l.ligneFactureId || $index) {
-            <tr>
+          @for (l of facture.lignes; track l.ligneFactureId || $index; let i = $index) {
+            <tr [class.table-active]="peutEncaisser && isLineSelected(l, i)">
+              @if (peutEncaisser) {
+                <td class="text-center">
+                  <input
+                    type="checkbox"
+                    class="form-check-input"
+                    [checked]="isLineSelected(l, i)"
+                    (change)="toggleLine(l, i)"
+                    [attr.aria-label]="'finance.facture.lignes.selectLine' | translate"
+                  />
+                </td>
+              }
               <td>{{ ('finance.facture.lignes.typeOption.' + l.typeLigne) | translate }}</td>
               <td>{{ l.libelle }}</td>
               <td class="text-end">{{ l.quantite | number:'1.0-3' }}</td>
@@ -130,12 +158,25 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="text-center text-muted">
+              <td [attr.colspan]="peutEncaisser ? 6 : 5" class="text-center text-muted">
                 {{ 'finance.facture.lignes.empty' | translate }}
               </td>
             </tr>
           }
         </tbody>
+        @if (peutEncaisser && selectedLineIds.size > 0) {
+          <tfoot>
+            <tr class="table-info">
+              <td [attr.colspan]="5" class="text-end fw-semibold">
+                {{ 'finance.facture.lignes.selectedTotal' | translate }}
+                ({{ selectedLineIds.size }})
+              </td>
+              <td class="text-end fw-bold">
+                {{ selectedSum | number:'1.2-2' }}
+              </td>
+            </tr>
+          </tfoot>
+        }
       </table>
     </div>
 

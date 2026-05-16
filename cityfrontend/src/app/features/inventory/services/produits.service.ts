@@ -95,9 +95,33 @@ export class ProduitsService {
       .pipe(map((r) => r.data as Produit));
   }
 
+  /**
+   * Suppression definitive (hard delete) — retire le produit de la base.
+   * Le backend refuse si le produit a des mouvements de stock
+   * (`error.produit.delete.hasMouvements`) — passer alors par `deactivate`.
+   */
   delete(id: number): Observable<void> {
     return this.http
       .delete<ApiResponse<void>>(`${this.base}/${id}`)
+      .pipe(map(() => undefined));
+  }
+
+  /**
+   * Desactivation (soft delete) — pose `actif = false`, conserve l'historique.
+   * Reversible via `reactivate(id)`.
+   */
+  deactivate(id: number): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.base}/${id}/deactivate`, {})
+      .pipe(map(() => undefined));
+  }
+
+  /**
+   * Reactivation — pose `actif = true`. Symetrique de `deactivate`.
+   */
+  reactivate(id: number): Observable<void> {
+    return this.http
+      .put<ApiResponse<void>>(`${this.base}/${id}/reactivate`, {})
       .pipe(map(() => undefined));
   }
 

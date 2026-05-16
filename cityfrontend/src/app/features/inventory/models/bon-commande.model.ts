@@ -29,14 +29,19 @@ export const STATUTS_BON_COMMANDE: ReadonlyArray<StatutBonCommande> = [
 export interface BonCommande {
   bonCommandeId?: number;
   hotelId?: number;
-  numeroBon: string;
+  /** Lecture seule serveur (auto-généré via NumerotationService.BC). */
+  numeroBon?: string;
   fournisseurId: number;
-  statut: StatutBonCommande;
-  dateCommande: string;
+  /** Lecture seule serveur (initialisé à BROUILLON par le service). */
+  statut?: StatutBonCommande;
+  /** Lecture seule serveur (posée par le service à la création). */
+  dateCommande?: string;
   dateLivraisonPrevue?: string;
   dateLivraisonReelle?: string;
-  montantTotal: number;
-  montantTva: number;
+  /** Lecture seule serveur (calculé depuis les lignes). */
+  montantTotal?: number;
+  /** Lecture seule serveur. */
+  montantTva?: number;
   commentaires?: string;
   userId?: number;
   dateCreation?: string;

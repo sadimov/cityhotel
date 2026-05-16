@@ -36,6 +36,7 @@ $files = @(
     "04-restaurant-extra.sql",
     "05-finance-extra.sql",
     "06-menage-extra.sql",
+    "08-resync-numerotation.sql",
     "07-validation.sql"
 )
 

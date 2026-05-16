@@ -55,6 +55,20 @@ export enum ModeReglement {
 }
 
 /**
+ * Type de ligne panier POS (Tour 55) — distingue article restauration et
+ * service hôtelier (taxi, blanchisserie, change devise, etc.).
+ *
+ *  - `ARTICLE` : article du catalogue restaurant (`ArticleMenu`).
+ *  - `SERVICE` : service hôtelier du module inventory (`ServiceHotelier`).
+ *
+ * Les lignes SERVICE ne sont pas envoyées dans `CreerCommandeRequest` —
+ * elles sont facturées séparément via le bridge
+ * `POST /api/finance/factures` avec une `LigneFactureCreateDto` typée SERVICE
+ * (cf. `LigneServiceService.addLigneService`).
+ */
+export type CartItemType = 'ARTICLE' | 'SERVICE';
+
+/**
  * Une ligne de commande / panier POS.
  *
  * `cartLineId` est un identifiant local (UUID/incrément côté store) utilisé
@@ -62,7 +76,10 @@ export enum ModeReglement {
  * `articleId` (qui peut être dupliqué si on ajoute deux fois le même plat
  * avec des notes différentes — cas futur). Il n'est JAMAIS envoyé au backend.
  *
- * `articleId` est l'identifiant du plat catalogue (`ArticleMenu`).
+ * `articleId` est l'identifiant du plat catalogue (`ArticleMenu`) — défini
+ * pour les lignes `type === 'ARTICLE'`.
+ * `serviceId` est l'identifiant du service hôtelier (`ServiceHotelier`) —
+ * défini pour les lignes `type === 'SERVICE'`.
  * `ligneId` est l'identifiant côté backend (rempli après POST).
  */
 export interface LigneCommande {
@@ -70,7 +87,15 @@ export interface LigneCommande {
   cartLineId: string;
   /** ID backend, rempli après POST. */
   ligneId?: number;
-  articleId: number;
+  /**
+   * Type d'item — Tour 55. Optional pour rétro-compat avec d'anciennes lignes
+   * pré-services qui n'ont pas ce champ ; par défaut traité comme `ARTICLE`.
+   */
+  type?: CartItemType;
+  /** Renseigné si `type === 'ARTICLE'`. */
+  articleId?: number;
+  /** Renseigné si `type === 'SERVICE'` (Tour 55). */
+  serviceId?: number;
   /** Libellé snapshot (au cas où l'article serait renommé après commande). */
   libelle: string;
   quantite: number;
@@ -79,6 +104,8 @@ export interface LigneCommande {
   sousTotal: number;
   /** Note de cuisine optionnelle (ex. "sans oignon"). */
   notes?: string;
+  /** Unité de mesure (Tour 55, lignes SERVICE) — ex. `forfait`, `heure`, `kg`. */
+  unite?: string;
 }
 
 /**
@@ -132,7 +159,7 @@ export interface CreerLigneCommandeRequest {
 }
 
 /**
- * Payload POST `/api/restaurant/commandes/{id}/encaisser-comptant` —
+ * Payload POST `/api/restaurant/commandes/{id}/encaisser` —
  * encaissement comptant d'une commande déjà créée (BROUILLON ou VALIDEE).
  *
  * Le serveur crée la facture, l'émet, encaisse le paiement avec le mode
@@ -141,11 +168,20 @@ export interface CreerLigneCommandeRequest {
  * `modePaiement` est l'enum `ModePaiement` du module finance (ESPECES,
  * BANKILY, CARTE_BANCAIRE, ...). On évite l'import circulaire en typant
  * en `string` — le composant fournit la constante `ModePaiement.X`.
+ *
+ * Contrat REST (FROZEN backend `EncaissementCommandeDto`) :
+ *  - `modePaiement` (string, NotNull)
+ *  - `montant` (number, NotNull, DecimalMin=0.01)
+ *  - `referencePaiement` (string, optionnel, max 100)
+ *
+ * `commentaires` est conservé en TS pour usage UI local (passé à Swal2 etc.)
+ * mais n'est PAS sérialisé dans le payload backend.
  */
 export interface EncaissementCommandeRequest {
   modePaiement: string;
-  montantPaye: number;
+  montant: number;
   referencePaiement?: string;
+  /** Local-only — ne PAS envoyer au backend. */
   commentaires?: string;
 }
 

@@ -8,7 +8,10 @@
 // ─── Conteneur sidebar ──────────────────────────────────────────────────────
 .sidebar {
   width: var(--sidebar-width);
-  min-height: calc(100vh - var(--header-height));
+  // Hauteur EXACTE viewport - header. Combinée à overflow-y: auto, garantit
+  // qu'un menu déroulé avec beaucoup de sous-items reste accessible via scroll
+  // interne au sidebar (au lieu de déborder hors écran).
+  height: calc(100vh - var(--header-height));
   background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
   position: fixed;
@@ -19,6 +22,9 @@
   box-shadow: var(--shadow-sidebar);
   overflow-y: auto;
   overflow-x: hidden;
+  // Préserve le scroll smooth (iOS/Safari) + bordure scroll visible.
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
 

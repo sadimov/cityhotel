@@ -1,196 +1,303 @@
-<div class="bg-white rounded-2xl shadow p-4 d-flex flex-column h-100">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="text-base font-semibold text-sky-700 mb-0">
-      {{ 'restaurant.pos.cart.title' | translate }}
-      <span class="badge bg-info text-white ms-2">
-        {{ (itemsCount$ | async) || 0 }}
-      </span>
-    </h3>
-    @if (!(isCartEmpty$ | async)) {
-      <button
-        type="button"
-        class="btn btn-sm btn-link text-danger p-0"
-        (click)="onClearCart()"
-      >
-        {{ 'restaurant.pos.cart.clear' | translate }}
-      </button>
+<!--
+  POS — Section C horizontale : Panier (gauche, scroll vertical interne)
+  + Récap totaux / modes paiement / actions (droite).
+  Le header client/réservation est dans <app-pos-client-header> (section A).
+  L'écran succès post-checkout est remplacé par un toast Swal2 dans pos.component.
+-->
+<div class="pos-cart">
+  @let lines = (cart$ | async) ?? [];
+  @let total = (total$ | async) ?? 0;
+  @let articleTotal = (articleTotal$ | async) ?? 0;
+  @let serviceTotal = (serviceTotal$ | async) ?? 0;
+  @let submitting = (submitting$ | async) ?? false;
+  @let selectedClient = (selectedClient$ | async);
+  @let selectedReservation = (selectedReservation$ | async);
+  @let canCheckout = (canCheckoutComptant$ | async) ?? false;
+  @let canReport = (canReportChambre$ | async) ?? false;
+  @let canPushSvc = (canPushServices$ | async) ?? false;
+  @let hasArticles = (hasArticlesInCart$ | async) ?? false;
+  @let hasServices = (hasServicesInCart$ | async) ?? false;
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       ZONE GAUCHE : lignes du panier (scroll vertical interne)
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="pos-cart__lines-zone">
+    <div class="pos-cart__lines-header">
+      <h3 class="pos-cart__title">
+        <i class="bi bi-bag-fill" aria-hidden="true"></i>
+        {{ 'restaurant.pos.cart.title' | translate }}
+        @if (lines.length > 0) {
+          <span class="pos-cart__count">{{ (itemsCount$ | async) || 0 }}</span>
+        }
+      </h3>
+      @if (lines.length > 0) {
+        <button
+          type="button"
+          class="pos-cart__clear"
+          (click)="onClearCart()"
+        >
+          <i class="bi bi-trash" aria-hidden="true"></i>
+          {{ 'restaurant.pos.cart.clear' | translate }}
+        </button>
+      }
+    </div>
+
+    @if (lines.length === 0) {
+      <div class="pos-cart__empty">
+        <i class="bi bi-cart-x" aria-hidden="true"></i>
+        <div class="pos-cart__empty-text">
+          {{ 'restaurant.pos.cart.empty' | translate }}
+        </div>
+        <div class="pos-cart__empty-hint">
+          {{ 'restaurant.pos.cart.emptyHint' | translate }}
+        </div>
+      </div>
+    } @else {
+      <div class="pos-cart__lines">
+        @for (l of lines; track trackByCartLine($index, l)) {
+          <div
+            class="pos-line"
+            [class.pos-line--service]="l.type === 'SERVICE'"
+          >
+            <div class="pos-line__main">
+              <div class="pos-line__name" [title]="l.libelle">
+                @if (l.type === 'SERVICE') {
+                  <i
+                    class="bi bi-concierge-bell pos-line__type-icon pos-line__type-icon--service"
+                    aria-hidden="true"
+                    [attr.title]="'restaurant.pos.tab.services' | translate"
+                  ></i>
+                } @else {
+                  <i
+                    class="bi bi-cup-hot pos-line__type-icon"
+                    aria-hidden="true"
+                    [attr.title]="'restaurant.pos.tab.articles' | translate"
+                  ></i>
+                }
+                {{ l.libelle }}
+              </div>
+              <div class="pos-line__price">
+                {{ l.prixUnitaire | number:'1.0-0' }}
+                {{ 'restaurant.pos.currency' | translate }}
+                @if (l.type === 'SERVICE' && l.unite) {
+                  <span class="pos-line__unit">
+                    {{ 'restaurant.pos.cart.service.suffix' | translate:{ unite: l.unite } }}
+                  </span>
+                }
+              </div>
+            </div>
+            <div class="pos-line__qty">
+              <button
+                type="button"
+                class="pos-line__qty-btn"
+                (click)="onDecrement(l)"
+                [attr.aria-label]="'restaurant.pos.cart.decrement' | translate"
+              >
+                <i class="bi bi-dash" aria-hidden="true"></i>
+              </button>
+              <input
+                type="number"
+                min="1"
+                class="pos-line__qty-input"
+                [value]="l.quantite"
+                (change)="onChangeQuantity(l.cartLineId, $any($event.target).value)"
+              />
+              <button
+                type="button"
+                class="pos-line__qty-btn"
+                (click)="onIncrement(l)"
+                [attr.aria-label]="'restaurant.pos.cart.increment' | translate"
+              >
+                <i class="bi bi-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="pos-line__total">
+              {{ l.sousTotal | number:'1.0-0' }}
+            </div>
+            <button
+              type="button"
+              class="pos-line__remove"
+              (click)="onRemove(l.cartLineId)"
+              [attr.aria-label]="'restaurant.pos.cart.remove' | translate"
+            >
+              <i class="bi bi-trash" aria-hidden="true"></i>
+            </button>
+          </div>
+        }
+      </div>
     }
   </div>
 
-  @let lines = (cart$ | async) ?? [];
-  @let lastCmd = (lastCommande$ | async);
-  @let printing = (printingTicket$ | async) ?? false;
-
-  @if (lines.length === 0 && lastCmd) {
-    <!-- Panneau post-encaissement : tickets + nouvelle commande.
-         Reproduit la modale d'impression de l'ancien `point-de-vente`,
-         mais avec le PDF rendu par le backend (`TicketController`). -->
-    <div class="post-checkout flex-grow-1 d-flex flex-column">
-      <div class="alert alert-success py-3 mb-3">
-        <div class="d-flex align-items-center gap-2 mb-1">
-          <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
-          <strong>
-            {{ 'restaurant.pos.cart.checkoutSuccess' | translate }}
-          </strong>
-        </div>
-        <div class="small text-muted">
-          {{ 'restaurant.pos.cart.orderNumber' | translate }} :
-          <strong>{{ lastCmd.numeroCommande || ('#' + lastCmd.commandeId) }}</strong>
-        </div>
-        @if (lastCmd.numeroFacture) {
-          <div class="small text-muted">
-            {{ 'restaurant.pos.cart.invoiceNumber' | translate }} :
-            <strong>{{ lastCmd.numeroFacture }}</strong>
+  <!-- ═══════════════════════════════════════════════════════════════════
+       ZONE DROITE : récap totaux + modes paiement + actions
+       ═══════════════════════════════════════════════════════════════════ -->
+  @if (lines.length > 0) {
+    <div class="pos-cart__recap">
+      <!-- Totaux -->
+      <div class="pos-cart__totals">
+        @if (hasArticles && hasServices) {
+          <div class="pos-cart__total-row">
+            <span>
+              <i class="bi bi-cup-hot me-1" aria-hidden="true"></i>
+              {{ 'restaurant.pos.cart.totalArticles' | translate }}
+            </span>
+            <span>
+              {{ articleTotal | number:'1.0-0' }}
+              {{ 'restaurant.pos.currency' | translate }}
+            </span>
+          </div>
+          <div class="pos-cart__total-row">
+            <span>
+              <i class="bi bi-concierge-bell me-1" aria-hidden="true"></i>
+              {{ 'restaurant.pos.cart.totalServices' | translate }}
+            </span>
+            <span>
+              {{ serviceTotal | number:'1.0-0' }}
+              {{ 'restaurant.pos.currency' | translate }}
+            </span>
           </div>
         }
-        <div class="small text-muted">
-          {{ 'restaurant.pos.cart.total' | translate }} :
-          <strong>
-            {{ lastCmd.montantTotal | number:'1.2-2' }}
-            {{ 'restaurant.pos.currency' | translate }}
-          </strong>
+        <div class="pos-cart__total-row pos-cart__total-row--grand">
+          <span>{{ 'restaurant.pos.cart.total' | translate }}</span>
+          <span class="pos-cart__total-amount">
+            {{ total | number:'1.0-0' }}
+            <span class="pos-cart__total-currency">
+              {{ 'restaurant.pos.currency' | translate }}
+            </span>
+          </span>
         </div>
       </div>
 
-      <div class="d-grid gap-2">
-        <button
-          type="button"
-          class="btn btn-info text-white"
-          [disabled]="printing || lastCmd.commandeId == null"
-          (click)="onPrintCaisse(lastCmd.commandeId!)"
-        >
-          @if (printing) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-          } @else {
-            <i class="bi bi-printer me-1" aria-hidden="true"></i>
+      <!-- Modes de paiement -->
+      <div class="pos-cart__modes">
+        <div class="pos-cart__modes-grid">
+          @for (mode of quickModes; track mode) {
+            <button
+              type="button"
+              class="pos-mode"
+              [class.pos-mode--active]="selectedMode === mode"
+              (click)="selectMode(mode)"
+            >
+              @switch (mode) {
+                @case ('ESPECES') {
+                  <i class="bi bi-cash-stack" aria-hidden="true"></i>
+                }
+                @case ('BANKILY') {
+                  <i class="bi bi-phone" aria-hidden="true"></i>
+                }
+                @case ('CARTE_BANCAIRE') {
+                  <i class="bi bi-credit-card-2-front" aria-hidden="true"></i>
+                }
+              }
+              <span>
+                {{ 'restaurant.pos.payment.modes.' + mode | translate }}
+              </span>
+            </button>
           }
-          {{ 'restaurant.pos.ticket.print' | translate }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline-info"
-          [disabled]="printing || lastCmd.commandeId == null"
-          (click)="onPrintCuisine(lastCmd.commandeId!)"
+        </div>
+        <select
+          class="pos-cart__modes-other form-select form-select-sm"
+          [value]="selectedMode"
+          (change)="onChangeOtherMode($any($event.target).value)"
         >
-          @if (printing) {
-            <span class="spinner-border spinner-border-sm me-1"></span>
-          } @else {
-            <i class="bi bi-printer me-1" aria-hidden="true"></i>
+          <option value="" disabled>
+            {{ 'restaurant.pos.payment.modesGroup.others' | translate }}…
+          </option>
+          @for (mode of otherModes; track mode) {
+            <option [value]="mode">
+              {{ 'restaurant.pos.payment.modes.' + mode | translate }}
+            </option>
           }
-          {{ 'restaurant.pos.ticket.printKitchen' | translate }}
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline-secondary"
-          (click)="onStartNewOrder()"
-        >
-          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-          {{ 'restaurant.pos.cart.newOrder' | translate }}
-        </button>
-      </div>
-    </div>
-  } @else if (lines.length === 0) {
-    <div class="text-center text-muted py-4 small flex-grow-1">
-      {{ 'restaurant.pos.cart.empty' | translate }}
-    </div>
-  } @else {
-    <div class="flex-grow-1 overflow-auto cart-lines">
-      <table class="table table-sm align-middle mb-0">
-        <thead class="text-muted small">
-          <tr>
-            <th scope="col">{{ 'restaurant.pos.cart.article' | translate }}</th>
-            <th scope="col" class="text-center">
-              {{ 'restaurant.pos.cart.quantity' | translate }}
-            </th>
-            <th scope="col" class="text-end">
-              {{ 'restaurant.pos.cart.subtotal' | translate }}
-            </th>
-            <th scope="col" class="text-end" aria-label="actions"></th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (l of lines; track trackByCartLine($index, l)) {
-            <tr>
-              <td>
-                <div class="fw-medium">{{ l.libelle }}</div>
-                <div class="small text-muted">
-                  {{ l.prixUnitaire | number:'1.2-2' }}
-                  {{ 'restaurant.pos.currency' | translate }}
-                </div>
-              </td>
-              <td class="text-center">
-                <div class="btn-group btn-group-sm" role="group">
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    (click)="onDecrement(l)"
-                    [attr.aria-label]="'restaurant.pos.cart.decrement' | translate"
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    min="1"
-                    class="form-control form-control-sm text-center qty-input"
-                    [value]="l.quantite"
-                    (change)="onChangeQuantity(l.cartLineId, $any($event.target).value)"
-                  />
-                  <button
-                    type="button"
-                    class="btn btn-outline-secondary"
-                    (click)="onIncrement(l)"
-                    [attr.aria-label]="'restaurant.pos.cart.increment' | translate"
-                  >
-                    +
-                  </button>
-                </div>
-              </td>
-              <td class="text-end fw-semibold">
-                {{ l.sousTotal | number:'1.2-2' }}
-              </td>
-              <td class="text-end">
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-danger"
-                  (click)="onRemove(l.cartLineId)"
-                  [attr.aria-label]="'restaurant.pos.cart.remove' | translate"
-                >
-                  ×
-                </button>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-
-    <div class="border-top pt-3 mt-3">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <span class="text-muted">{{ 'restaurant.pos.cart.total' | translate }}</span>
-        <span class="h5 fw-bold mb-0">
-          {{ (total$ | async) | number:'1.2-2' }}
-          {{ 'restaurant.pos.currency' | translate }}
-        </span>
+        </select>
       </div>
 
-      <div class="d-grid gap-2">
+      <!-- Référence (chèque, carte, mobile money…) -->
+      @if (modeRequiresReference) {
+        <form [formGroup]="form" class="pos-cart__ref">
+          <input
+            type="text"
+            class="form-control form-control-sm"
+            formControlName="referencePaiement"
+            [placeholder]="'restaurant.pos.payment.referencePlaceholder' | translate"
+          />
+          @if (form.get('referencePaiement')?.touched && form.get('referencePaiement')?.invalid) {
+            <div class="small text-danger mt-1">
+              {{ 'restaurant.pos.payment.errors.referenceRequired' | translate }}
+            </div>
+          }
+        </form>
+      }
+
+      <!-- Boutons d'action -->
+      <div class="pos-cart__actions">
         <button
           type="button"
-          class="btn btn-info text-white"
-          [disabled]="!(canCheckoutComptant$ | async)"
-          (click)="onCheckoutComptant()"
+          class="btn btn-success pos-cart__checkout"
+          [disabled]="!canCheckout || submitting"
+          (click)="onCheckoutComptant(total)"
         >
-          {{ 'restaurant.pos.cart.checkout' | translate }}
+          @if (submitting) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          } @else {
+            <i class="bi bi-cash-coin me-2" aria-hidden="true"></i>
+          }
+          <span class="pos-cart__checkout-label">
+            {{ 'restaurant.pos.cart.checkout' | translate }}
+          </span>
+          <span class="pos-cart__checkout-amount">
+            {{ total | number:'1.0-0' }}
+            {{ 'restaurant.pos.currency' | translate }}
+          </span>
         </button>
-        <button
-          type="button"
-          class="btn btn-outline-info"
-          [disabled]="!(canReportChambre$ | async)"
-          (click)="onReportChambre()"
-        >
-          {{ 'restaurant.pos.cart.reportChambre' | translate }}
-        </button>
+
+        @if (hasArticles && selectedReservation) {
+          <button
+            type="button"
+            class="btn btn-outline-primary pos-cart__report"
+            [disabled]="!canReport || submitting"
+            (click)="onReportChambre()"
+          >
+            <i class="bi bi-door-open me-2" aria-hidden="true"></i>
+            {{ 'restaurant.pos.cart.reportChambre' | translate }}
+          </button>
+        }
+
+        @if (hasServices) {
+          @if (selectedReservation) {
+            <button
+              type="button"
+              class="btn btn-warning pos-cart__push-services"
+              [disabled]="!canPushSvc || submitting"
+              (click)="onPushServices()"
+            >
+              @if (submitting) {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+              } @else {
+                <i class="bi bi-concierge-bell me-2" aria-hidden="true"></i>
+              }
+              <span class="pos-cart__push-services-label">
+                {{ 'restaurant.pos.cart.pushServicesToRoom' | translate }}
+              </span>
+              <span class="pos-cart__checkout-amount">
+                {{ serviceTotal | number:'1.0-0' }}
+                {{ 'restaurant.pos.currency' | translate }}
+              </span>
+            </button>
+          } @else {
+            <div class="pos-cart__warn">
+              <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+              {{ 'restaurant.pos.errors.servicesRequireReservation' | translate }}
+            </div>
+          }
+        }
       </div>
+
+      @if (!selectedClient) {
+        <div class="pos-cart__warn">
+          <i class="bi bi-info-circle me-1" aria-hidden="true"></i>
+          {{ 'restaurant.pos.cart.selectClientHint' | translate }}
+        </div>
+      }
     </div>
   }
 </div>

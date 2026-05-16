@@ -262,7 +262,22 @@
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command '& { $env:PGPASSWORD='\\\\''admin'\\\\''; psql -U postgres -d cityprojectdb -v ON_ERROR_STOP=1 -f 06-menage-extra.sql 2>&1 | Out-String }')",
       "Bash(powershell.exe -ExecutionPolicy Bypass -Command '& { $env:PGPASSWORD='\\\\''admin'\\\\''; psql -U postgres -d cityprojectdb -f 07-validation.sql 2>&1 | Out-String }')",
       "Bash(cd \"C:\\\\\\\\Users\\\\\\\\BK\\\\\\\\Documents\\\\\\\\devops\\\\\\\\claude_projects\\\\\\\\cityhotel\")",
-      "Bash(awk '{print $NF}')"
+      "Bash(awk '{print $NF}')",
+      "Bash(git push *)",
+      "Bash(py -3 -c \"import openpyxl; print\\('openpyxl OK', openpyxl.__version__\\)\")",
+      "Bash(py -3 -c \"import reportlab; print\\('reportlab OK', reportlab.Version\\)\")",
+      "Bash(py -3 -m pip install --quiet openpyxl reportlab)",
+      "Bash(py -3 -c \"import openpyxl, reportlab; print\\('OK openpyxl', openpyxl.__version__, '- reportlab', reportlab.Version\\)\")",
+      "Bash(cd \"C:\\\\\\\\Users\\\\\\\\BK\\\\\\\\Documents\\\\\\\\devops\\\\\\\\claude_projects\\\\\\\\cityhotel\\\\\\\\data-plans-tests\")",
+      "Bash(py -3 generate.py)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\BK\\\\Documents\\\\devops\\\\claude_projects\\\\cityhotel\" -File)",
+      "Bash(Select-Object Name, Length)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(echo \"EXIT_BACK=$?\")",
+      "Bash(Get-Content \"C:\\\\Users\\\\BK\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-BK-Documents-devops-claude-projects-cityhotel\\\\65cc8480-7bf3-4447-9cb0-3ff4aa97e50e\\\\tasks\\\\bty60zpxi.output\")",
+      "Bash(Out-String)",
+      "Bash(echo \"EXIT_FRONT=$?\")",
+      "Bash(echo \"EXIT_U=$?\")"
     ]
   }
 }

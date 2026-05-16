@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { ComponentStore } from '@ngrx/component-store';
 import { EMPTY, Observable, forkJoin, of } from 'rxjs';
 import {
@@ -15,6 +15,12 @@ import {
   StatutReservation,
 } from '../../../../hebergement/models/reservation.model';
 import { ReservationsService } from '../../../../hebergement/services/reservations.service';
+import { ServiceHotelier } from '../../../../inventory/models/service-hotelier.model';
+import {
+  AjouterLigneServiceRequest,
+  LigneServiceService,
+} from '../../../../inventory/services/ligne-service.service';
+import { ServicesHoteliersService } from '../../../../inventory/services/services-hoteliers.service';
 import { ArticleMenu } from '../../../models/article-menu.model';
 import { CategorieMenu } from '../../../models/categorie-menu.model';
 import {
@@ -24,7 +30,6 @@ import {
   EncaissementCommandeRequest,
   LigneCommande,
   ModeReglement,
-  ReportChambreRequest,
 } from '../../../models/commande.model';
 import { TicketDto } from '../../../models/ticket.model';
 import { ArticlesMenusService } from '../../../services/articles-menus.service';
@@ -33,10 +38,10 @@ import { CommandesService } from '../../../services/commandes.service';
 import { TicketsService } from '../../../services/tickets.service';
 
 /**
- * Étapes du workflow POS — pilote l'affichage de la zone active.
+ * Ã‰tapes du workflow POS â€” pilote l'affichage de la zone active.
  *
- *  - `SELECT_CLIENT` : recherche/sélection client + (optionnel) réservation.
- *  - `SELECT_ARTICLES` : grille articles + édition panier.
+ *  - `SELECT_CLIENT` : recherche/sÃ©lection client + (optionnel) rÃ©servation.
+ *  - `SELECT_ARTICLES` : grille articles + Ã©dition panier.
  *  - `PAYMENT` : modal de paiement ouvert.
  */
 export enum PosStep {
@@ -46,27 +51,42 @@ export enum PosStep {
 }
 
 /**
- * État du POS — un seul `ComponentStore` local au composant `PosComponent`,
- * détruit avec lui (pas de pollution du store global NgRx).
+ * Mode de la grille POS (Tour 55) — bascule entre catalogue restaurant et
+ * services hôteliers. Le mode est UI-only : il pilote uniquement quelle
+ * collection (`articles` vs `services`) est affichée par la grille. Les deux
+ * collections coexistent au panier.
+ */
+export type PosCatalogMode = 'ARTICLES' | 'SERVICES';
+
+/**
+ * Ã‰tat du POS â€” un seul `ComponentStore` local au composant `PosComponent`,
+ * dÃ©truit avec lui (pas de pollution du store global NgRx).
  *
  * Conventions :
- *  - immutabilité stricte (toujours retourner un nouvel objet dans les
- *    updaters — runtimeChecks NgRx hérités du store global le vérifient
+ *  - immutabilitÃ© stricte (toujours retourner un nouvel objet dans les
+ *    updaters â€” runtimeChecks NgRx hÃ©ritÃ©s du store global le vÃ©rifient
  *    en dev).
- *  - `error` / `lastSuccessMessage` sont des **clés i18n** ; le composant
- *    les passe à `TranslateService.instant()` pour le rendu visuel.
+ *  - `error` / `lastSuccessMessage` sont des **clÃ©s i18n** ; le composant
+ *    les passe Ã  `TranslateService.instant()` pour le rendu visuel.
  */
 export interface PosState {
   step: PosStep;
 
   // Catalogue
+  /** Mode actif de la grille (Tour 55) — `ARTICLES` (par dÃ©faut) ou `SERVICES`. */
+  mode: PosCatalogMode;
   categories: CategorieMenu[];
   selectedCategorieId: number | null;
   articles: ArticleMenu[];
   articlesLoading: boolean;
   articleSearch: string;
 
-  // Client + réservation
+  // Services hÃ´teliers (Tour 55)
+  services: ServiceHotelier[];
+  servicesLoading: boolean;
+  servicesLoaded: boolean;
+
+  // Client + rÃ©servation
   clientSearch: string;
   clientResults: Client[];
   clientResultsLoading: boolean;
@@ -81,27 +101,31 @@ export interface PosState {
   // Paiement
   modeReglement: ModeReglement;
 
-  // États globaux
+  // Ã‰tats globaux
   submitting: boolean;
-  /** Clé i18n d'erreur courante (ex. `restaurant.pos.errors.cartEmpty`). */
+  /** ClÃ© i18n d'erreur courante (ex. `restaurant.pos.errors.cartEmpty`). */
   error: string | null;
-  /** Clé i18n de succès dernière action. */
+  /** ClÃ© i18n de succÃ¨s derniÃ¨re action. */
   lastSuccessMessage: string | null;
-  /** Dernière commande créée (utilisée pour navigation post-paiement). */
+  /** DerniÃ¨re commande crÃ©Ã©e (utilisÃ©e pour navigation post-paiement). */
   lastCommande: Commande | null;
   /** Vrai pendant l'impression d'un ticket (caisse / cuisine). */
   printingTicket: boolean;
-  /** Dernier ticket édité (si l'utilisateur souhaite re-télécharger). */
+  /** Dernier ticket Ã©ditÃ© (si l'utilisateur souhaite re-tÃ©lÃ©charger). */
   lastTicket: TicketDto | null;
 }
 
 const INITIAL_STATE: PosState = {
   step: PosStep.SELECT_CLIENT,
+  mode: 'ARTICLES',
   categories: [],
   selectedCategorieId: null,
   articles: [],
   articlesLoading: false,
   articleSearch: '',
+  services: [],
+  servicesLoading: false,
+  servicesLoaded: false,
   clientSearch: '',
   clientResults: [],
   clientResultsLoading: false,
@@ -120,9 +144,9 @@ const INITIAL_STATE: PosState = {
 };
 
 /**
- * Génère un identifiant local pour une ligne panier. Pas besoin de
- * cryptographie — un compteur monotone suffit (le store est local et
- * détruit avec le composant).
+ * GÃ©nÃ¨re un identifiant local pour une ligne panier. Pas besoin de
+ * cryptographie â€” un compteur monotone suffit (le store est local et
+ * dÃ©truit avec le composant).
  */
 let cartLineCounter = 0;
 function nextCartLineId(): string {
@@ -131,32 +155,26 @@ function nextCartLineId(): string {
 }
 
 /**
- * Détermine si une réservation est "active" pour le POS (le client peut
- * imputer la commande dessus). Critères :
- *  - statut ARRIVEE (client séjourne actuellement)
- *  - OU statut CONFIRMEE et la date courante est dans la plage du séjour.
+ * DÃ©termine si une rÃ©servation est "active" pour le POS (le client peut
+ * imputer la commande dessus). CritÃ¨res :
+ *  - statut ARRIVEE (client sÃ©journe actuellement)
+ *  - OU statut CONFIRMEE (rÃ©servation confirmÃ©e, mÃªme pour une arrivÃ©e future
+ *    â€” cas vente Ã  emporter avant check-in, repas d'attente, etc.)
+ *
+ * Sont exclues : PARTIE (check-out fait), ANNULEE, NO_SHOW.
  */
 function isActiveForPos(reservation: Reservation): boolean {
-  if (reservation.statut === StatutReservation.ARRIVEE) {
-    return true;
-  }
-  if (reservation.statut !== StatutReservation.CONFIRMEE) {
-    return false;
-  }
-  if (!reservation.dateArrivee || !reservation.dateDepart) {
-    return false;
-  }
-  const now = new Date();
-  const start = new Date(reservation.dateArrivee);
-  const end = new Date(reservation.dateDepart);
-  return start <= now && now <= end;
+  return (
+    reservation.statut === StatutReservation.ARRIVEE ||
+    reservation.statut === StatutReservation.CONFIRMEE
+  );
 }
 
 /**
  * NgRx Component Store local du POS Restaurant.
  *
  * Provided au niveau du composant `PosComponent` (cf. `providers: [PosStore]`)
- * pour que son cycle de vie soit lié à celui du composant.
+ * pour que son cycle de vie soit liÃ© Ã  celui du composant.
  */
 @Injectable()
 export class PosStore extends ComponentStore<PosState> {
@@ -166,20 +184,28 @@ export class PosStore extends ComponentStore<PosState> {
     private readonly reservationsService: ReservationsService,
     private readonly commandesService: CommandesService,
     private readonly ticketsService: TicketsService,
+    private readonly servicesHoteliersService: ServicesHoteliersService,
+    private readonly ligneServiceService: LigneServiceService,
   ) {
     super(INITIAL_STATE);
   }
 
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Selectors
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   readonly step$ = this.select((s) => s.step);
+  readonly mode$ = this.select((s) => s.mode);
   readonly categories$ = this.select((s) => s.categories);
   readonly selectedCategorieId$ = this.select((s) => s.selectedCategorieId);
   readonly articles$ = this.select((s) => s.articles);
   readonly articlesLoading$ = this.select((s) => s.articlesLoading);
   readonly articleSearch$ = this.select((s) => s.articleSearch);
+
+  // Services hÃ´teliers (Tour 55)
+  readonly services$ = this.select((s) => s.services);
+  readonly servicesLoading$ = this.select((s) => s.servicesLoading);
+  readonly servicesLoaded$ = this.select((s) => s.servicesLoaded);
 
   readonly clientSearch$ = this.select((s) => s.clientSearch);
   readonly clientResults$ = this.select((s) => s.clientResults);
@@ -198,12 +224,30 @@ export class PosStore extends ComponentStore<PosState> {
   readonly printingTicket$ = this.select((s) => s.printingTicket);
   readonly lastTicket$ = this.select((s) => s.lastTicket);
 
-  /** Total panier en MRU (somme des sous-totaux). */
+  /** Total panier en MRU (somme des sous-totaux toutes lignes confondues). */
   readonly total$ = this.select(this.cart$, (cart) =>
     cart.reduce((sum, line) => sum + line.sousTotal, 0),
   );
 
-  /** Nombre total d'articles (somme des quantités). */
+  /**
+   * Total panier limitÃ© aux lignes ARTICLE (Tour 55) — utilisÃ© pour
+   * `montantPaye` de l'encaissement comptant (les SERVICE ne sont pas
+   * encaissables ici, ils sont facturÃ©s Ã  la chambre).
+   */
+  readonly articleTotal$ = this.select(this.cart$, (cart) =>
+    cart
+      .filter((l) => (l.type ?? 'ARTICLE') === 'ARTICLE')
+      .reduce((sum, line) => sum + line.sousTotal, 0),
+  );
+
+  /** Total des lignes SERVICE (Tour 55). */
+  readonly serviceTotal$ = this.select(this.cart$, (cart) =>
+    cart
+      .filter((l) => l.type === 'SERVICE')
+      .reduce((sum, line) => sum + line.sousTotal, 0),
+  );
+
+  /** Nombre total d'articles (somme des quantitÃ©s). */
   readonly itemsCount$ = this.select(this.cart$, (cart) =>
     cart.reduce((sum, line) => sum + line.quantite, 0),
   );
@@ -214,9 +258,27 @@ export class PosStore extends ComponentStore<PosState> {
   readonly isCartEmpty$ = this.select(this.cart$, (cart) => cart.length === 0);
 
   /**
-   * Vrai si la commande peut être encaissée comptant. Conditions :
-   *  - panier non vide ;
-   *  - client sélectionné (un POS sans client est interdit en V1).
+   * Vrai si le panier contient au moins une ligne ARTICLE (Tour 55).
+   */
+  readonly hasArticlesInCart$ = this.select(this.cart$, (cart) =>
+    cart.some((l) => (l.type ?? 'ARTICLE') === 'ARTICLE'),
+  );
+
+  /**
+   * Vrai si le panier contient au moins une ligne SERVICE (Tour 55).
+   */
+  readonly hasServicesInCart$ = this.select(this.cart$, (cart) =>
+    cart.some((l) => l.type === 'SERVICE'),
+  );
+
+  /**
+   * Vrai si la commande peut Ãªtre encaissÃ©e comptant. Conditions :
+   *  - au moins une ligne (ARTICLE ou SERVICE) ;
+   *  - client sÃ©lectionnÃ© (un POS sans client est interdit en V1).
+   *
+   * Note : depuis l'ouverture POS aux services en comptant, on accepte aussi
+   * les paniers 100% SERVICE. Le push sur facture chambre reste possible via
+   * `canPushServices$` quand une rÃ©servation est sÃ©lectionnÃ©e.
    */
   readonly canCheckoutComptant$ = this.select(
     this.cart$,
@@ -227,10 +289,14 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Vrai si la commande peut être reportée sur chambre. Conditions :
-   *  - panier non vide ;
-   *  - client sélectionné ;
-   *  - réservation active sélectionnée.
+   * Vrai si la commande peut Ãªtre reportÃ©e sur chambre. Conditions :
+   *  - au moins une ligne ARTICLE ;
+   *  - client sÃ©lectionnÃ© ;
+   *  - rÃ©servation sÃ©lectionnÃ©e ET en statut {@code ARRIVEE} (check-in fait).
+   *
+   * Le backend exige {@code statut == ARRIVEE} pour valider le report :
+   * une consommation ne peut pas Ãªtre facturÃ©e Ã  une chambre dont le
+   * client n'est pas encore arrivÃ© (CommandeServiceImpl.java:156).
    */
   readonly canReportChambre$ = this.select(
     this.cart$,
@@ -238,20 +304,56 @@ export class PosStore extends ComponentStore<PosState> {
     this.selectedReservation$,
     this.submitting$,
     (cart, client, reservation, submitting) =>
-      cart.length > 0 &&
+      cart.some((l) => (l.type ?? 'ARTICLE') === 'ARTICLE') &&
       client != null &&
+      reservation != null &&
+      reservation.reservationId != null &&
+      reservation.statut === StatutReservation.ARRIVEE &&
+      !submitting,
+  );
+
+  /**
+   * Vrai si on peut pousser des services sur la facture chambre (Tour 55).
+   * Conditions : au moins une ligne SERVICE + rÃ©servation sÃ©lectionnÃ©e.
+   */
+  readonly canPushServices$ = this.select(
+    this.cart$,
+    this.selectedReservation$,
+    this.submitting$,
+    (cart, reservation, submitting) =>
+      cart.some((l) => l.type === 'SERVICE') &&
       reservation != null &&
       reservation.reservationId != null &&
       !submitting,
   );
 
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Updaters (synchrones)
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   readonly setStep = this.updater<PosStep>((state, step) => ({
     ...state,
     step,
+  }));
+
+  /** (Tour 55) Bascule entre la grille articles et la grille services. */
+  readonly setMode = this.updater<PosCatalogMode>((state, mode) => ({
+    ...state,
+    mode,
+    // Reset recherche locale en basculant pour Ã©viter de filtrer un catalogue
+    // avec un terme appartenant Ã  l'autre.
+    articleSearch: '',
+  }));
+
+  readonly setServices = this.updater<ServiceHotelier[]>((state, services) => ({
+    ...state,
+    services,
+    servicesLoaded: true,
+  }));
+
+  readonly setServicesLoading = this.updater<boolean>((state, loading) => ({
+    ...state,
+    servicesLoading: loading,
   }));
 
   readonly setCategories = this.updater<CategorieMenu[]>((state, categories) => ({
@@ -313,6 +415,19 @@ export class PosStore extends ComponentStore<PosState> {
     clientSearch: '',
   }));
 
+  /**
+   * Variante "soft" : retire la sÃ©lection client/rÃ©sa courante sans toucher
+   * au champ recherche ni aux rÃ©sultats. UtilisÃ©e quand l'utilisateur
+   * retape dans le champ recherche alors qu'un client est dÃ©jÃ  sÃ©lectionnÃ©
+   * (reset de la sÃ©lection sans interrompre la frappe en cours).
+   */
+  readonly deselectClient = this.updater((state) => ({
+    ...state,
+    selectedClient: null,
+    selectedReservation: null,
+    activeReservations: [],
+  }));
+
   readonly setActiveReservations = this.updater<Reservation[]>(
     (state, activeReservations) => ({
       ...state,
@@ -344,16 +459,19 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Ajoute un article au panier. Si une ligne existe déjà pour cet article
-   * sans note de cuisine (cas standard), on incrémente sa quantité.
-   * Sinon on crée une nouvelle ligne.
+   * Ajoute un article au panier. Si une ligne existe dÃ©jÃ  pour cet article
+   * sans note de cuisine (cas standard), on incrÃ©mente sa quantitÃ©.
+   * Sinon on crÃ©e une nouvelle ligne.
    */
   readonly addArticle = this.updater<ArticleMenu>((state, article) => {
     if (article.articleId == null || article.prix == null || article.prix < 0) {
       return { ...state, error: 'restaurant.pos.errors.invalidArticle' };
     }
     const existingIndex = state.cart.findIndex(
-      (l) => l.articleId === article.articleId && !l.notes,
+      (l) =>
+        (l.type ?? 'ARTICLE') === 'ARTICLE' &&
+        l.articleId === article.articleId &&
+        !l.notes,
     );
     if (existingIndex >= 0) {
       const existing = state.cart[existingIndex];
@@ -369,8 +487,9 @@ export class PosStore extends ComponentStore<PosState> {
     }
     const newLine: LigneCommande = {
       cartLineId: nextCartLineId(),
+      type: 'ARTICLE',
       articleId: article.articleId,
-      libelle: article.nomArticle,
+      libelle: article.nom,
       quantite: 1,
       prixUnitaire: article.prix,
       sousTotal: article.prix,
@@ -379,7 +498,51 @@ export class PosStore extends ComponentStore<PosState> {
   });
 
   /**
-   * Retire la ligne identifiée par son `cartLineId` local.
+   * Ajoute un service hÃ´telier au panier (Tour 55). Comportement aligne sur
+   * `addArticle` : si la ligne existe dÃ©jÃ  (mÃªme `serviceId`, pas de notes),
+   * on incrÃ©mente la quantitÃ©. Sinon nouvelle ligne typÃ©e `SERVICE`.
+   */
+  readonly addService = this.updater<ServiceHotelier>((state, service) => {
+    if (
+      service.serviceId == null ||
+      service.prixUnitaire == null ||
+      service.prixUnitaire < 0
+    ) {
+      return { ...state, error: 'restaurant.pos.errors.invalidService' };
+    }
+    const existingIndex = state.cart.findIndex(
+      (l) =>
+        l.type === 'SERVICE' &&
+        l.serviceId === service.serviceId &&
+        !l.notes,
+    );
+    if (existingIndex >= 0) {
+      const existing = state.cart[existingIndex];
+      const newQuantite = existing.quantite + 1;
+      const updated: LigneCommande = {
+        ...existing,
+        quantite: newQuantite,
+        sousTotal: newQuantite * existing.prixUnitaire,
+      };
+      const newCart = [...state.cart];
+      newCart[existingIndex] = updated;
+      return { ...state, cart: newCart, error: null };
+    }
+    const newLine: LigneCommande = {
+      cartLineId: nextCartLineId(),
+      type: 'SERVICE',
+      serviceId: service.serviceId,
+      libelle: service.nomService,
+      quantite: 1,
+      prixUnitaire: service.prixUnitaire,
+      sousTotal: service.prixUnitaire,
+      unite: service.uniteMesure,
+    };
+    return { ...state, cart: [...state.cart, newLine], error: null };
+  });
+
+  /**
+   * Retire la ligne identifiÃ©e par son `cartLineId` local.
    */
   readonly removeLine = this.updater<string>((state, cartLineId) => ({
     ...state,
@@ -387,7 +550,7 @@ export class PosStore extends ComponentStore<PosState> {
   }));
 
   /**
-   * Met à jour la quantité d'une ligne. Quantité ≤ 0 retire la ligne.
+   * Met Ã  jour la quantitÃ© d'une ligne. QuantitÃ© â‰¤ 0 retire la ligne.
    */
   readonly updateLineQuantity = this.updater<{
     cartLineId: string;
@@ -408,7 +571,7 @@ export class PosStore extends ComponentStore<PosState> {
   });
 
   /**
-   * Met à jour la note cuisine d'une ligne.
+   * Met Ã  jour la note cuisine d'une ligne.
    */
   readonly updateLineNotes = this.updater<{
     cartLineId: string;
@@ -460,35 +623,40 @@ export class PosStore extends ComponentStore<PosState> {
   }));
 
   /**
-   * Vide le panier + désélectionne client/réservation après checkout, MAIS
+   * Vide le panier + dÃ©sÃ©lectionne client/rÃ©servation aprÃ¨s checkout, MAIS
    * conserve `lastCommande` + `lastTicket` visibles pour autoriser l'impression
-   * du ticket caisse / cuisine sur la commande qui vient d'être encaissée.
+   * du ticket caisse / cuisine sur la commande qui vient d'Ãªtre encaissÃ©e.
    *
    * Le reset complet (effacement de `lastCommande`) se fait via
-   * `startNewOrder()` — déclenché par le bouton « Nouvelle commande ».
+   * `startNewOrder()` â€” dÃ©clenchÃ© par le bouton Â« Nouvelle commande Â».
    */
   readonly resetAfterCheckout = this.updater((state) => ({
     ...INITIAL_STATE,
     categories: state.categories,
+    // (Tour 55) Conserve les services dÃ©jÃ  chargÃ©s pour Ã©viter un rechargement.
+    services: state.services,
+    servicesLoaded: state.servicesLoaded,
     lastCommande: state.lastCommande,
     lastTicket: state.lastTicket,
   }));
 
   /**
-   * Reset total : utilisé pour démarrer une nouvelle commande après avoir
-   * imprimé ou consulté le ticket de la commande précédente.
+   * Reset total : utilisÃ© pour dÃ©marrer une nouvelle commande aprÃ¨s avoir
+   * imprimÃ© ou consultÃ© le ticket de la commande prÃ©cÃ©dente.
    */
   readonly startNewOrder = this.updater((state) => ({
     ...INITIAL_STATE,
     categories: state.categories,
+    services: state.services,
+    servicesLoaded: state.servicesLoaded,
   }));
 
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Effects (asynchrones)
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
-   * Charge les catégories actives. Appelé au démarrage du POS.
+   * Charge les catÃ©gories actives. AppelÃ© au dÃ©marrage du POS.
    */
   readonly loadCategories = this.effect<void>((trigger$) =>
     trigger$.pipe(
@@ -505,8 +673,8 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Charge les articles disponibles pour la catégorie courante (ou toutes
-   * catégories si `selectedCategorieId` est null).
+   * Charge les articles disponibles pour la catÃ©gorie courante (ou toutes
+   * catÃ©gories si `selectedCategorieId` est null).
    */
   readonly loadArticles = this.effect<number | null>((categorieId$) =>
     categorieId$.pipe(
@@ -532,7 +700,95 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Charge les réservations actives du client sélectionné. Appelé après
+   * Charge les services hÃ´teliers actifs de l'hÃ´tel courant (Tour 55).
+   * AppelÃ© au premier basculement vers le mode `SERVICES` (lazy load).
+   */
+  readonly loadServices = this.effect<void>((trigger$) =>
+    trigger$.pipe(
+      tap(() => {
+        this.setServicesLoading(true);
+      }),
+      switchMap(() =>
+        this.servicesHoteliersService.findActifs().pipe(
+          tap((services) => {
+            this.setServices(services);
+            this.setServicesLoading(false);
+          }),
+          catchError(() => {
+            this.setServices([]);
+            this.setServicesLoading(false);
+            this.setError('restaurant.pos.errors.loadServices');
+            return EMPTY;
+          }),
+        ),
+      ),
+    ),
+  );
+
+  /**
+   * Bridge — pousse les lignes SERVICE du panier sur la facture de la
+   * rÃ©servation sÃ©lectionnÃ©e (Tour 55). Pour chaque ligne SERVICE, appelle
+   * l'endpoint `POST /api/finance/factures` avec `LigneFactureCreateDto`
+   * typÃ©e SERVICE (cf. `LigneServiceService.addLigneService`).
+   *
+   * Idempotent cÃ´tÃ© backend : si la rÃ©servation a dÃ©jÃ  une facture brouillon,
+   * la ligne est ajoutÃ©e ; sinon la facture est crÃ©Ã©e et la ligne posÃ©e dessus.
+   *
+   * Une fois toutes les lignes SERVICE poussÃ©es, on les retire du panier
+   * (les ARTICLE restent pour Ãªtre encaissÃ©es / reportÃ©es sÃ©parÃ©ment).
+   */
+  readonly pushServicesToReservation = this.effect<void>((trigger$) =>
+    trigger$.pipe(
+      withLatestFrom(this.state$),
+      tap(() => {
+        this.setSubmitting(true);
+        this.setError(null);
+      }),
+      switchMap(([, state]) => {
+        const reservationId = state.selectedReservation?.reservationId;
+        if (reservationId == null) {
+          this.setSubmitting(false);
+          this.setError('restaurant.pos.errors.servicesRequireReservation');
+          return of(null);
+        }
+        const serviceLines = state.cart.filter((l) => l.type === 'SERVICE');
+        if (serviceLines.length === 0) {
+          this.setSubmitting(false);
+          return of(null);
+        }
+        const requests = serviceLines
+          .filter((l) => l.serviceId != null)
+          .map((l) => {
+            const req: AjouterLigneServiceRequest = {
+              reservationId,
+              serviceId: l.serviceId as number,
+              quantite: l.quantite,
+              prixUnitaire: l.prixUnitaire,
+              libelle: l.libelle,
+            };
+            return this.ligneServiceService.addLigneService(req);
+          });
+        return forkJoin(requests).pipe(
+          tap(() => {
+            // Retire toutes les lignes SERVICE du panier.
+            this.patchState((s) => ({
+              cart: s.cart.filter((l) => l.type !== 'SERVICE'),
+            }));
+            this.setSuccess('restaurant.pos.messages.servicesPushed');
+            this.setSubmitting(false);
+          }),
+          catchError(() => {
+            this.setSubmitting(false);
+            this.setError('restaurant.pos.errors.servicesPushFailed');
+            return EMPTY;
+          }),
+        );
+      }),
+    ),
+  );
+
+  /**
+   * Charge les rÃ©servations actives du client sÃ©lectionnÃ©. AppelÃ© aprÃ¨s
    * `selectClient`.
    */
   readonly loadActiveReservationsForClient = this.effect<number>((clientId$) =>
@@ -542,10 +798,13 @@ export class PosStore extends ComponentStore<PosState> {
         this.setActiveReservations([]);
       }),
       switchMap((clientId) =>
-        this.reservationsService.page({ clientId }, 0, 50).pipe(
+        // Endpoint dÃ©diÃ© `/by-client/{clientId}` â€” le filtre `clientId` n'est
+        // PAS supportÃ© par l'endpoint paginÃ© gÃ©nÃ©rique (cf. ReservationController
+        // backend, qui ignore ce query param et retourne toutes les rÃ©sas).
+        this.reservationsService.findByClient(clientId, 0, 50).pipe(
           map((page) => page.content.filter(isActiveForPos)),
-          // Charge le détail (chambres + clients) de chaque réservation active
-          // pour pouvoir afficher numéro/type de chambre dans le POS.
+          // Charge le dÃ©tail (chambres + clients) de chaque rÃ©servation active
+          // pour pouvoir afficher numÃ©ro/type de chambre dans le POS.
           // Reproduit la logique de l'ancien `point-de-vente` qui interrogeait
           // `getInstanceReservationsForClient` avec les jointures.
           switchMap((reservations: Reservation[]) => {
@@ -577,7 +836,7 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Soumet la commande comptant : crée la commande puis l'encaisse en un
+   * Soumet la commande comptant : crÃ©e la commande puis l'encaisse en un
    * second appel (le backend orchestre la facture + paiement).
    */
   readonly submitOrderComptant = this.effect<EncaissementCommandeRequest>(
@@ -626,8 +885,14 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Soumet la commande pour report sur chambre. Crée la commande puis
-   * appelle `/reporter-chambre` avec la réservation sélectionnée.
+   * Soumet la commande pour report sur chambre.
+   *
+   * <p><b>Doctrine Tour 50</b> : le report sur chambre est entiÃ¨rement
+   * encodÃ© dans le {@code create()} de la commande via
+   * {@code modeReglement = REPORTE_CHAMBRE} + {@code reservationId}. Pas
+   * d'endpoint backend sÃ©parÃ© : la commande est automatiquement picorÃ©e
+   * par {@code FactureServiceImpl.fromReservation} au check-out de la rÃ©sa
+   * (Tour 25 â€“ "rÃ©cupere AUSSI les commandes REPORTE_CHAMBRE non facturÃ©es").</p>
    */
   readonly submitOrderReportChambre = this.effect<void>((trigger$) =>
     trigger$.pipe(
@@ -652,22 +917,8 @@ export class PosStore extends ComponentStore<PosState> {
           this.setError('restaurant.pos.errors.invalidPayload');
           return of(null);
         }
-        const reportPayload: ReportChambreRequest = { reservationId };
         return this.commandesService.create(createPayload).pipe(
-          switchMap((commande) => {
-            if (commande.commandeId == null) {
-              return of<Commande | null>(null);
-            }
-            return this.commandesService
-              .reporterSurChambre(commande.commandeId, reportPayload)
-              .pipe(catchError(() => of<Commande | null>(null)));
-          }),
-          tap((commande: Commande | null) => {
-            if (!commande) {
-              this.setSubmitting(false);
-              this.setError('restaurant.pos.errors.reportChambre');
-              return;
-            }
+          tap((commande: Commande) => {
             this.setLastCommande(commande);
             this.setSuccess('restaurant.pos.messages.reportSuccess');
             this.setSubmitting(false);
@@ -684,9 +935,9 @@ export class PosStore extends ComponentStore<PosState> {
   );
 
   /**
-   * Imprime un ticket caisse (PDF base64 retourné par le backend) pour une
-   * commande donnée. Ouvre une fenêtre d'impression. Aucun changement d'état
-   * panier — c'est une action transversale sur `lastCommande`.
+   * Imprime un ticket caisse (PDF base64 retournÃ© par le backend) pour une
+   * commande donnÃ©e. Ouvre une fenÃªtre d'impression. Aucun changement d'Ã©tat
+   * panier â€” c'est une action transversale sur `lastCommande`.
    */
   readonly imprimerTicketCaisse = this.effect<number>((commandeId$) =>
     commandeId$.pipe(
@@ -737,15 +988,15 @@ export class PosStore extends ComponentStore<PosState> {
     ),
   );
 
-  // ──────────────────────────────────────────────────────────────────────
-  // Helpers privés
-  // ──────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Helpers privÃ©s
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   /**
-   * Ouvre le PDF base64 du ticket dans une nouvelle fenêtre et déclenche
-   * l'impression. Reproduit le pattern de l'ancienne implémentation
-   * (`printInvoice()` jsPDF) mais en s'appuyant sur le PDF généré côté
-   * serveur, pour ne pas dupliquer la mise en forme entête / pied de page.
+   * Ouvre le PDF base64 du ticket dans une nouvelle fenÃªtre et dÃ©clenche
+   * l'impression. Reproduit le pattern de l'ancienne implÃ©mentation
+   * (`printInvoice()` jsPDF) mais en s'appuyant sur le PDF gÃ©nÃ©rÃ© cÃ´tÃ©
+   * serveur, pour ne pas dupliquer la mise en forme entÃªte / pied de page.
    */
   private openTicketPdf(ticket: TicketDto): void {
     if (!ticket.pdfBase64) {
@@ -763,16 +1014,16 @@ export class PosStore extends ComponentStore<PosState> {
       const blobUrl = URL.createObjectURL(blob);
       const w = window.open(blobUrl, '_blank');
       if (w) {
-        // Laisse le navigateur charger le PDF puis déclenche l'impression.
+        // Laisse le navigateur charger le PDF puis dÃ©clenche l'impression.
         w.addEventListener('load', () => {
           try {
             w.print();
           } catch {
-            /* l'utilisateur peut imprimer manuellement depuis la fenêtre */
+            /* l'utilisateur peut imprimer manuellement depuis la fenÃªtre */
           }
         });
       }
-      // Libère l'URL après 60 s — laisse le temps au rendu et à l'impression.
+      // LibÃ¨re l'URL aprÃ¨s 60 s â€” laisse le temps au rendu et Ã  l'impression.
       setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     } catch {
       this.setError('restaurant.pos.errors.ticketDecode');
@@ -780,35 +1031,54 @@ export class PosStore extends ComponentStore<PosState> {
   }
 
   /**
-   * Construit le payload `CreerCommandeRequest` à partir de l'état panier
-   * courant. Retourne `null` si l'état n'est pas valide pour soumission.
+   * Construit le payload `CreerCommandeRequest` Ã  partir de l'Ã©tat panier
+   * courant. Retourne `null` si l'Ã©tat n'est pas valide pour soumission.
    */
   private toCreateRequest(
     state: PosState,
     modeReglement: ModeReglement,
   ): CreerCommandeRequest | null {
-    if (state.cart.length === 0 || state.selectedClient == null) {
+    if (state.selectedClient == null) {
       return null;
     }
-    const lignes: CreerLigneCommandeRequest[] = state.cart.map((l) => ({
-      articleId: l.articleId,
+    // (Tour 55) Seules les lignes ARTICLE entrent dans la commande POS â€”
+    // les lignes SERVICE sont facturÃ©es Ã  part via `pushServicesToReservation`.
+    const articleLines = state.cart.filter(
+      (l) => (l.type ?? 'ARTICLE') === 'ARTICLE' && l.articleId != null,
+    );
+    if (articleLines.length === 0) {
+      return null;
+    }
+    const lignes: CreerLigneCommandeRequest[] = articleLines.map((l) => ({
+      articleId: l.articleId as number,
       quantite: l.quantite,
       prixUnitaire: l.prixUnitaire,
       notes: l.notes,
     }));
-    return {
+    const payload: CreerCommandeRequest = {
       clientId: state.selectedClient.clientId,
       modeReglement,
       lignes,
     };
+    // Backend (CommandeServiceImpl.java:151) rejette REPORTE_CHAMBRE sans
+    // reservationId (error.commande.reservation.required) ET inversement
+    // rejette COMPTANT avec reservationId (error.commande.reservation.interditComptant).
+    if (modeReglement === ModeReglement.REPORTE_CHAMBRE) {
+      const reservationId = state.selectedReservation?.reservationId;
+      if (reservationId == null) {
+        return null;
+      }
+      payload.reservationId = reservationId;
+    }
+    return payload;
   }
 
   /**
-   * Permet aux composants enfants (ex. `client-search`) de déclencher la
-   * recherche client en injectant le service `ClientsService` côté composant
+   * Permet aux composants enfants (ex. `client-search`) de dÃ©clencher la
+   * recherche client en injectant le service `ClientsService` cÃ´tÃ© composant
    * (le store n'en a pas besoin). Voir `PosComponent.search()`.
    *
-   * Exposé en tant que méthode pour découplage.
+   * ExposÃ© en tant que mÃ©thode pour dÃ©couplage.
    */
   applyClientResults(results: Observable<Client[]>): void {
     this.setClientResultsLoading(true);

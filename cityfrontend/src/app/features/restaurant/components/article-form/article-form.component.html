@@ -1,4 +1,4 @@
-<section class="article-form">
+﻿<section class="article-form">
   <header class="article-form__header mb-3">
     <h2 class="h4 m-0">
       {{
@@ -35,7 +35,7 @@
           >
             <option [ngValue]="null">--</option>
             @for (cat of categories; track cat.categorieId) {
-              <option [ngValue]="cat.categorieId">{{ cat.nomCategorie }}</option>
+              <option [ngValue]="cat.categorieId">{{ cat.nom }}</option>
             }
           </select>
           @if (form.get('categorieId')?.touched && form.get('categorieId')?.errors?.['required']) {
@@ -59,21 +59,21 @@
 
         <div class="col-md-5">
           <label for="nomArticle" class="form-label">
-            {{ 'restaurant.article.fields.nomArticle' | translate }}
+            {{ 'restaurant.article.fields.nom' | translate }}
           </label>
           <input
             id="nomArticle"
             type="text"
             class="form-control"
-            formControlName="nomArticle"
-            [class.is-invalid]="form.get('nomArticle')?.invalid && form.get('nomArticle')?.touched"
+            formControlName="nom"
+            [class.is-invalid]="form.get('nom')?.invalid && form.get('nom')?.touched"
           />
-          @if (form.get('nomArticle')?.touched && form.get('nomArticle')?.errors?.['required']) {
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['required']) {
             <div class="invalid-feedback d-block">
               {{ 'restaurant.article.errors.nomRequired' | translate }}
             </div>
           }
-          @if (form.get('nomArticle')?.touched && form.get('nomArticle')?.errors?.['minlength']) {
+          @if (form.get('nom')?.touched && form.get('nom')?.errors?.['minlength']) {
             <div class="invalid-feedback d-block">
               {{ 'restaurant.article.errors.nomMinLength' | translate }}
             </div>
@@ -82,25 +82,25 @@
 
         <div class="col-md-6">
           <label for="nomArticleEn" class="form-label">
-            {{ 'restaurant.article.fields.nomArticleEn' | translate }}
+            {{ 'restaurant.article.fields.nomEn' | translate }}
           </label>
           <input
             id="nomArticleEn"
             type="text"
             class="form-control"
-            formControlName="nomArticleEn"
+            formControlName="nomEn"
           />
         </div>
 
         <div class="col-md-6">
           <label for="nomArticleAr" class="form-label">
-            {{ 'restaurant.article.fields.nomArticleAr' | translate }}
+            {{ 'restaurant.article.fields.nomAr' | translate }}
           </label>
           <input
             id="nomArticleAr"
             type="text"
             class="form-control"
-            formControlName="nomArticleAr"
+            formControlName="nomAr"
             dir="rtl"
           />
         </div>
@@ -185,7 +185,7 @@
         <div class="col-12">
           <label for="allergenes" class="form-label">
             {{ 'restaurant.article.fields.allergenes' | translate }}
-            <small class="text-muted">— {{ 'restaurant.article.fields.allergenesHint' | translate }}</small>
+            <small class="text-muted">â€” {{ 'restaurant.article.fields.allergenesHint' | translate }}</small>
           </label>
           <input
             id="allergenes"

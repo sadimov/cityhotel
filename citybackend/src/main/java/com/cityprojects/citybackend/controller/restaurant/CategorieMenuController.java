@@ -48,7 +48,7 @@ public class CategorieMenuController {
         return ResponseEntity.ok(service.findById(id));
     }
 
-    @GetMapping("/active")
+    @GetMapping({"/active", "/actives"})
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<List<CategorieMenuDto>> findAllActive() {
         return ResponseEntity.ok(service.findAllActive());

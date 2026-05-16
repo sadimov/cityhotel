@@ -55,7 +55,7 @@ public class FournisseurController {
         return ResponseEntity.ok(service.search(recherche, pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping("/actifs")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
     public ResponseEntity<List<FournisseurDto>> findAllActive() {
         return ResponseEntity.ok(service.findAllActive());

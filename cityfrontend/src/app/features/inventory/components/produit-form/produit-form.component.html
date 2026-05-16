@@ -32,18 +32,16 @@
             type="text"
             class="form-control"
             formControlName="codeProduit"
-            [class.is-invalid]="form.get('codeProduit')?.invalid && form.get('codeProduit')?.touched"
+            [placeholder]="isEditing ? '' : ('inventory.produit.fields.codeProduitAuto' | translate)"
           />
-          @if (form.get('codeProduit')?.touched && form.get('codeProduit')?.errors?.['required']) {
-            <div class="invalid-feedback d-block">
-              {{ 'inventory.produit.errors.codeProduitRequired' | translate }}
-            </div>
-          }
-          @if (form.get('codeProduit')?.touched && form.get('codeProduit')?.errors?.['pattern']) {
-            <div class="invalid-feedback d-block">
-              {{ 'inventory.produit.errors.codeProduitPattern' | translate }}
-            </div>
-          }
+          <small class="text-muted">
+            {{
+              (isEditing
+                ? 'inventory.produit.fields.codeProduitImmutable'
+                : 'inventory.produit.fields.codeProduitAutoHint'
+              ) | translate
+            }}
+          </small>
         </div>
 
         <div class="col-md-8">

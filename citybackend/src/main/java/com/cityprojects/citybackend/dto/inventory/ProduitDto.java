@@ -15,12 +15,16 @@ public record ProduitDto(
         String nomProduit,
         String description,
         Long categorieId,
+        /** Resolu cote service (lookup CategorieProduit#getNomCategorie). */
+        String nomCategorie,
         String uniteMesure,
         BigDecimal prixUnitaire,
         Integer seuilAlerte,
         Integer seuilCritique,
         Integer stockActuel,
         Long fournisseurPrincipalId,
+        /** Resolu cote service (lookup Fournisseur#getNomFournisseur). */
+        String nomFournisseurPrincipal,
         Boolean estFacturable,
         Boolean actif,
         BigDecimal valeurStock,

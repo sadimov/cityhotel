@@ -71,65 +71,53 @@
           {{ 'finance.facture.errors.cibleRequired' | translate }}
         </p>
         <div class="row g-3">
-          <div class="col-md-2">
-            <label for="compteId" class="form-label">
-              {{ 'finance.facture.fields.compteId' | translate }}
-            </label>
-            <input
-              id="compteId"
-              type="number"
-              min="1"
-              class="form-control"
-              formControlName="compteId"
-            />
-          </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label for="clientId" class="form-label">
               {{ 'finance.facture.fields.clientId' | translate }}
             </label>
-            <input
-              id="clientId"
-              type="number"
-              min="1"
-              class="form-control"
-              formControlName="clientId"
-            />
+            <select id="clientId" class="form-select" formControlName="clientId">
+              <option [ngValue]="null">— {{ 'common.none' | translate }} —</option>
+              @for (c of clients; track c.clientId) {
+                <option [ngValue]="c.clientId">
+                  {{ c.prenom }} {{ c.nom }}@if (c.telephone) { · {{ c.telephone }} }
+                </option>
+              }
+            </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label for="societeId" class="form-label">
               {{ 'finance.facture.fields.societeId' | translate }}
             </label>
-            <input
-              id="societeId"
-              type="number"
-              min="1"
-              class="form-control"
-              formControlName="societeId"
-            />
+            <select id="societeId" class="form-select" formControlName="societeId">
+              <option [ngValue]="null">— {{ 'common.none' | translate }} —</option>
+              @for (s of societes; track s.societeId) {
+                <option [ngValue]="s.societeId">{{ s.societeNom }}</option>
+              }
+            </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label for="reservationId" class="form-label">
               {{ 'finance.facture.fields.reservationId' | translate }}
             </label>
-            <input
-              id="reservationId"
-              type="number"
-              min="1"
-              class="form-control"
-              formControlName="reservationId"
-            />
+            <select id="reservationId" class="form-select" formControlName="reservationId">
+              <option [ngValue]="null">— {{ 'common.none' | translate }} —</option>
+              @for (r of reservationsEnCours; track r.reservationId) {
+                <option [ngValue]="r.reservationId">
+                  {{ r.numeroReservation }}@if (r.nomClientPrincipal) { · {{ r.nomClientPrincipal }} }
+                </option>
+              }
+            </select>
           </div>
-          <div class="col-md-2">
+          <div class="col-md-3">
             <label for="fournisseurId" class="form-label">
               {{ 'finance.facture.fields.fournisseurId' | translate }}
             </label>
-            <input
-              id="fournisseurId"
-              type="number"
-              min="1"
-              class="form-control"
-              formControlName="fournisseurId"
-            />
+            <select id="fournisseurId" class="form-select" formControlName="fournisseurId">
+              <option [ngValue]="null">— {{ 'common.none' | translate }} —</option>
+              @for (f of fournisseurs; track f.fournisseurId) {
+                <option [ngValue]="f.fournisseurId">{{ f.nomFournisseur }}</option>
+              }
+            </select>
           </div>
         </div>
         @if (form.errors?.['atLeastOneCible'] && form.touched) {

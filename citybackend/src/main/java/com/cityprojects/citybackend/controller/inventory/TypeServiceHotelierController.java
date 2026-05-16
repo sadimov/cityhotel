@@ -51,7 +51,7 @@ public class TypeServiceHotelierController {
         return ResponseEntity.ok(service.search(recherche, pageable));
     }
 
-    @GetMapping("/active")
+    @GetMapping({"/active", "/actifs"})
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<List<TypeServiceHotelierDto>> findAllActive() {
         return ResponseEntity.ok(service.findAllActive());

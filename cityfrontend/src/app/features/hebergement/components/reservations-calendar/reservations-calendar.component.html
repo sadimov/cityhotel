@@ -1697,15 +1697,25 @@
             </div>
           </div>
 
-          <!-- SECTION 3 — Lignes facture (lecture seule, Tour 46) -->
+          <!-- SECTION 3 — Lignes facture (Tour 56 : checkbox paiement individuel restaurée) -->
           <h3 class="h6 mb-2">
             <i class="bi bi-receipt me-1" aria-hidden="true"></i>
             {{ 'hebergement.calendar.payments.factures' | translate }}
           </h3>
-          <div class="table-responsive mb-3">
+          <div class="table-responsive mb-2">
             <table class="table table-sm align-middle">
               <thead class="table-light">
                 <tr>
+                  <th class="text-center" style="width: 36px;">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="paymentLignesAllSelected"
+                      [indeterminate]="paymentLignesIndeterminate"
+                      (change)="togglePaymentAllLignes()"
+                      [attr.aria-label]="'hebergement.calendar.payments.lignes.selectAll' | translate"
+                    />
+                  </th>
                   <th>{{ 'hebergement.calendar.payments.lignes.description' | translate }}</th>
                   <th>{{ 'hebergement.calendar.payments.lignes.date' | translate }}</th>
                   <th class="text-end">{{ 'hebergement.calendar.payments.lignes.sousTotal' | translate }}</th>
@@ -1715,7 +1725,20 @@
                 </tr>
               </thead>
               <tbody>
-                <tr *ngFor="let row of lignesFromRecap(recap)">
+                <tr
+                  *ngFor="let row of lignesFromRecap(recap)"
+                  [class.table-active]="isPaymentLigneSelected(row.ligneFactureId)"
+                >
+                  <td class="text-center">
+                    <input
+                      type="checkbox"
+                      class="form-check-input"
+                      [checked]="isPaymentLigneSelected(row.ligneFactureId)"
+                      [disabled]="row.reste <= 0"
+                      (change)="togglePaymentLigne(row.ligneFactureId)"
+                      [attr.aria-label]="'hebergement.calendar.payments.lignes.select' | translate"
+                    />
+                  </td>
                   <td class="fw-semibold">{{ row.description }}</td>
                   <td>{{ row.date }}</td>
                   <td class="text-end">{{ row.sousTotal | number: '1.0-2' }} MRU</td>
@@ -1735,11 +1758,34 @@
                   </td>
                 </tr>
                 <tr *ngIf="recap.factures.length === 0">
-                  <td colspan="6" class="text-center text-muted py-3">
+                  <td colspan="7" class="text-center text-muted py-3">
                     {{ 'hebergement.calendar.payments.empty' | translate }}
                   </td>
                 </tr>
               </tbody>
+              <tfoot *ngIf="paymentSelectedCount > 0">
+                <tr class="table-info">
+                  <td colspan="5" class="text-end fw-semibold">
+                    {{ 'hebergement.calendar.payments.selection.total' | translate }}
+                    ({{ paymentSelectedCount }})
+                  </td>
+                  <td class="text-end fw-bold">
+                    {{ paymentSelectedSum | number: '1.0-2' }} MRU
+                  </td>
+                  <td class="text-end">
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-info"
+                      [disabled]="saving || paymentSelectedSum <= 0"
+                      (click)="submitPayerSelection()"
+                    >
+                      <span class="spinner-border spinner-border-sm me-1" *ngIf="saving"></span>
+                      <i class="bi bi-cash-coin me-1" *ngIf="!saving" aria-hidden="true"></i>
+                      {{ 'hebergement.calendar.payments.selection.payer' | translate }}
+                    </button>
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
 

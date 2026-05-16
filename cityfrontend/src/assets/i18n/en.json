@@ -287,7 +287,13 @@
           "sousTotal": "Subtotal",
           "paye": "Paid",
           "reste": "Remaining",
-          "select": "Select line"
+          "select": "Select line",
+          "selectAll": "Select all"
+        },
+        "selection": {
+          "total": "Selection total",
+          "payer": "Pay selection",
+          "success": "Selected lines paid."
         },
         "action": {
           "payer": "Pay selection",
@@ -577,10 +583,18 @@
       "actions": {
         "create": "New product",
         "edit": "Edit",
-        "delete": "Delete"
+        "delete": "Delete permanently",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate"
+      },
+      "statut": {
+        "inactif": "Inactive"
       },
       "fields": {
         "codeProduit": "Code",
+        "codeProduitAuto": "Auto-generated",
+        "codeProduitAutoHint": "The code will be generated automatically on save.",
+        "codeProduitImmutable": "The code cannot be modified.",
         "nomProduit": "Name",
         "description": "Description",
         "categorie": "Category",
@@ -614,9 +628,19 @@
       "messages": {
         "createSuccess": "Product created successfully",
         "updateSuccess": "Product updated successfully",
-        "deleteSuccess": "Product deleted",
-        "deleteConfirm": "Delete this product?",
+        "deleteSuccess": "Product permanently deleted",
+        "deleteConfirm": "Permanently delete this product?",
+        "deleteConfirmText": "This action is irreversible. The product will be removed from the database.",
         "deleteError": "Unable to delete this product.",
+        "deleteRefused": "Deletion refused",
+        "deleteRefusedSuggestion": "This product has been used (stock movements). Do you want to deactivate it instead?",
+        "deactivateConfirm": "Deactivate this product?",
+        "deactivateConfirmText": "The product will be hidden from active lists but will keep its history. Reversible.",
+        "deactivateSuccess": "Product deactivated",
+        "deactivateError": "Unable to deactivate this product.",
+        "reactivateConfirm": "Reactivate this product?",
+        "reactivateSuccess": "Product reactivated",
+        "reactivateError": "Unable to reactivate this product.",
         "saveError": "Unable to save the product."
       },
       "detail": {
@@ -1172,30 +1196,49 @@
     "pos": {
       "title": "Point of sale",
       "currency": "MRU",
+      "tab": {
+        "articles": "Items",
+        "services": "Services"
+      },
+      "services": {
+        "search": "Search a service…",
+        "empty": "No service available.",
+        "emptyHint": "Create services in /inventory/services-hoteliers."
+      },
       "client": {
         "title": "Customer",
+        "modalTitle": "Select a customer",
         "searchLabel": "Search customer",
-        "searchPlaceholder": "Last name, first name or phone",
+        "searchPlaceholder": "Last name, first name or phone…",
         "noResults": "No customer found.",
-        "change": "Change"
+        "typeToSearch": "Type at least 1 character to search.",
+        "change": "Change",
+        "tabReservations": "Active reservations",
+        "tabClient": "Walk-in customer",
+        "hintReservations": "Search a customer then select their active reservation to charge to the room.",
+        "hintDirect": "Select a customer for a direct sale (without reservation).",
+        "useDirect": "Use this customer without reservation"
       },
       "reservation": {
         "title": "Active reservations",
         "noActive": "No active reservation for this customer.",
+        "noneSelected": "Walk-in sale (no reservation)",
         "statut": "Status",
         "chambre": "Room",
         "clear": "Unselect reservation"
       },
       "articles": {
         "title": "Items",
-        "search": "Search an item",
+        "search": "Search an item…",
         "allCategories": "All",
         "empty": "No item available.",
+        "emptyHint": "Check your categories or create items in the catalog.",
         "unavailable": "Unavailable"
       },
       "cart": {
         "title": "Cart",
-        "empty": "Cart is empty. Select items to start.",
+        "empty": "Cart is empty",
+        "emptyHint": "Add items from the catalog.",
         "article": "Item",
         "quantity": "Qty",
         "subtotal": "Subtotal",
@@ -1204,12 +1247,20 @@
         "decrement": "Decrease quantity",
         "remove": "Remove line",
         "clear": "Clear cart",
-        "checkout": "Cash checkout",
-        "reportChambre": "Charge to room",
+        "checkout": "Checkout",
+        "reportChambre": "Charge to room invoice",
         "checkoutSuccess": "Order checked out",
         "orderNumber": "Order #",
         "invoiceNumber": "Invoice #",
-        "newOrder": "New order"
+        "newOrder": "New order",
+        "selectClient": "Select customer / reservation",
+        "selectClientHint": "Select a customer before checking out.",
+        "totalArticles": "Items subtotal",
+        "totalServices": "Services subtotal",
+        "pushServicesToRoom": "Charge services to room invoice",
+        "service": {
+          "suffix": "× {{unite}}"
+        }
       },
       "payment": {
         "title": "Checkout",
@@ -1246,13 +1297,17 @@
       "errors": {
         "loadCategories": "Unable to load categories.",
         "loadArticles": "Unable to load items.",
+        "loadServices": "Unable to load hotel services.",
         "loadReservations": "Unable to load customer reservations.",
         "searchClients": "Customer search failed.",
         "invalidArticle": "This item cannot be added.",
+        "invalidService": "This service cannot be added.",
         "invalidPayload": "The order is incomplete.",
         "encaissement": "Checkout failed. Please retry.",
         "reportChambre": "Charging to room failed.",
         "reservationRequired": "Select a reservation first.",
+        "servicesRequireReservation": "Select a reservation to charge a service.",
+        "servicesPushFailed": "Unable to add services to the room invoice.",
         "ticketCaisse": "Unable to print cash receipt.",
         "ticketCuisine": "Unable to print kitchen ticket.",
         "ticketDecode": "Unable to display ticket (invalid PDF)."
@@ -1261,7 +1316,13 @@
         "encaissementSuccess": "Order checked out successfully.",
         "reportSuccess": "Order charged to the room.",
         "reportConfirmTitle": "Charge to the room?",
-        "reportConfirmText": "Charges will be added to the reservation folio and invoiced at check-out."
+        "reportConfirmText": "Charges will be added to the reservation folio and invoiced at check-out.",
+        "checkoutConfirmTitle": "Check out the order?",
+        "clearCartConfirmTitle": "Clear the cart?",
+        "clearCartConfirmText": "All lines will be removed. This action cannot be undone.",
+        "pushServicesConfirmTitle": "Charge services to the room invoice?",
+        "pushServicesConfirmText": "Services will be added to the selected reservation folio and invoiced at check-out.",
+        "servicesPushed": "Services added to the room invoice."
       },
       "ticket": {
         "print": "Print cash receipt",
@@ -1303,6 +1364,7 @@
         "emettre": "Issue",
         "annuler": "Cancel invoice",
         "encaisser": "Collect payment",
+        "encaisserSelection": "Collect selection",
         "downloadPdf": "Download PDF"
       },
       "fields": {
@@ -1351,6 +1413,9 @@
         "total": "Total",
         "empty": "No line on this invoice.",
         "emptyAllowed": "No line added — the invoice will be created as a draft.",
+        "selectAll": "Select all",
+        "selectLine": "Select this line",
+        "selectedTotal": "Selection total",
         "typeOption": {
           "NUITEE": "Night",
           "PRODUIT": "Product",

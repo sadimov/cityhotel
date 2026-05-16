@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+﻿import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, of } from 'rxjs';
@@ -14,7 +14,7 @@ import { CategoriesMenusService } from '../../services/categories-menus.service'
 type FormState = 'loading' | 'ready' | 'submitting' | 'error';
 
 /**
- * Formulaire création / édition d'un article du menu.
+ * Formulaire crÃ©ation / Ã©dition d'un article du menu.
  *
  * Validators :
  *  - `categorieId` : required
@@ -23,10 +23,10 @@ type FormState = 'loading' | 'ready' | 'submitting' | 'error';
  *  - `coutIngredients` / `tempsPreparation` : optionnels, >= 0
  *  - `codeArticle` : optionnel, maxLength(20)
  *
- * Pattern aligné sur `produit-form` (Tour 16). Le champ `allergenes`
- * est saisi en texte libre (le composant gère le sérialisation JSON
- * `["x","y"]` quand l'utilisateur saisit "x, y") — UI plus avancée
- * différée à un tour ultérieur.
+ * Pattern alignÃ© sur `produit-form` (Tour 16). Le champ `allergenes`
+ * est saisi en texte libre (le composant gÃ¨re le sÃ©rialisation JSON
+ * `["x","y"]` quand l'utilisateur saisit "x, y") â€” UI plus avancÃ©e
+ * diffÃ©rÃ©e Ã  un tour ultÃ©rieur.
  */
 @Component({
   selector: 'app-article-form',
@@ -87,9 +87,9 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
     const payload: ArticleMenu = {
       categorieId: Number(raw.categorieId),
       codeArticle: raw.codeArticle ? String(raw.codeArticle).toUpperCase().trim() : undefined,
-      nomArticle: String(raw.nomArticle).trim(),
-      nomArticleEn: raw.nomArticleEn ? String(raw.nomArticleEn).trim() : undefined,
-      nomArticleAr: raw.nomArticleAr ? String(raw.nomArticleAr).trim() : undefined,
+      nom: String(raw.nom).trim(),
+      nomEn: raw.nomEn ? String(raw.nomEn).trim() : undefined,
+      nomAr: raw.nomAr ? String(raw.nomAr).trim() : undefined,
       description: raw.description || undefined,
       descriptionEn: raw.descriptionEn || undefined,
       descriptionAr: raw.descriptionAr || undefined,
@@ -141,20 +141,20 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
     this.router.navigate(['/restaurant/articles']);
   }
 
-  // ────────────────────────────────────────────────────────────────────────
-  // Privé
-  // ────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // PrivÃ©
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   private buildForm(): FormGroup {
     return this.fb.group({
       categorieId: [null, [Validators.required]],
       codeArticle: ['', [Validators.maxLength(20)]],
-      nomArticle: [
+      nom: [
         '',
         [Validators.required, Validators.minLength(2), Validators.maxLength(150)],
       ],
-      nomArticleEn: ['', [Validators.maxLength(150)]],
-      nomArticleAr: ['', [Validators.maxLength(150)]],
+      nomEn: ['', [Validators.maxLength(150)]],
+      nomAr: ['', [Validators.maxLength(150)]],
       description: ['', [Validators.maxLength(500)]],
       descriptionEn: ['', [Validators.maxLength(500)]],
       descriptionAr: ['', [Validators.maxLength(500)]],
@@ -202,9 +202,9 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
     this.form.patchValue({
       categorieId: a.categorieId ?? null,
       codeArticle: a.codeArticle ?? '',
-      nomArticle: a.nomArticle ?? '',
-      nomArticleEn: a.nomArticleEn ?? '',
-      nomArticleAr: a.nomArticleAr ?? '',
+      nom: a.nom ?? '',
+      nomEn: a.nomEn ?? '',
+      nomAr: a.nomAr ?? '',
       description: a.description ?? '',
       descriptionEn: a.descriptionEn ?? '',
       descriptionAr: a.descriptionAr ?? '',
@@ -219,7 +219,7 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Sérialise une saisie texte « gluten, lactose » en JSON `["gluten","lactose"]`.
+   * SÃ©rialise une saisie texte Â« gluten, lactose Â» en JSON `["gluten","lactose"]`.
    * Renvoie `undefined` si la liste est vide pour ne pas polluer le payload.
    */
   private serializeAllergenes(input: unknown): string | undefined {
@@ -234,8 +234,8 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Désérialise un JSON `["gluten","lactose"]` en saisie texte
-   * « gluten, lactose ». Tolère un format brut si le backend renvoie
+   * DÃ©sÃ©rialise un JSON `["gluten","lactose"]` en saisie texte
+   * Â« gluten, lactose Â». TolÃ¨re un format brut si le backend renvoie
    * autre chose qu'un JSON valide.
    */
   private deserializeAllergenes(json: string | undefined): string {
@@ -248,7 +248,7 @@ export class ArticleFormComponent implements OnInit, OnDestroy {
         return parsed.filter((x) => typeof x === 'string').join(', ');
       }
     } catch {
-      // Format inattendu — on retombe sur la valeur brute
+      // Format inattendu â€” on retombe sur la valeur brute
     }
     return json;
   }

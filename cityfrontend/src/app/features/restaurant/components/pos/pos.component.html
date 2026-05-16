@@ -1,33 +1,36 @@
-<div class="pos-container p-3">
-  <div class="row g-3">
-    <!-- Colonne client + réservations -->
-    <div class="col-12 col-lg-3">
-      <app-pos-client-search></app-pos-client-search>
-    </div>
+<!--
+  POS Restaurant — layout 3 bandes horizontales scrollables.
+  A · Détails client / réservation (sticky top, hauteur compacte).
+  B · Sélection articles / services (onglets, flex-1).
+  C · Panier + récap paiement (horizontal interne).
+  Si le contenu déborde, la page scroll verticalement.
+-->
+<div class="pos-shell">
+  <!-- Section A · Détails client / réservation -->
+  <section class="pos-shell__client">
+    <app-pos-client-header
+      (openClientModal)="openClientModal()"
+    ></app-pos-client-header>
+  </section>
 
-    <!-- Colonne articles -->
-    <div class="col-12 col-lg-5">
-      <app-pos-article-grid></app-pos-article-grid>
-    </div>
+  <!-- Section B · Sélection articles / services (onglets internes) -->
+  <section class="pos-shell__catalog">
+    <app-pos-article-grid></app-pos-article-grid>
+  </section>
 
-    <!-- Colonne panier -->
-    <div class="col-12 col-lg-4">
-      <app-pos-cart
-        (checkoutComptant)="openPaymentModal()"
-        (reportChambre)="onReportChambre()"
-        (printCaisse)="onPrintCaisse($event.commandeId)"
-        (printCuisine)="onPrintCuisine($event.commandeId)"
-        (startNewOrder)="onStartNewOrder()"
-      ></app-pos-cart>
-    </div>
-  </div>
+  <!-- Section C · Panier + paiement -->
+  <section class="pos-shell__cart">
+    <app-pos-cart
+      (checkoutComptant)="onCheckoutComptant($event)"
+      (reportChambre)="onReportChambre()"
+      (clearCart)="onClearCart()"
+      (pushServices)="onPushServices()"
+    ></app-pos-cart>
+  </section>
 
-  <!-- Modal paiement -->
-  <app-pos-payment-modal
-    [open]="paymentModalOpen"
-    [total]="paymentModalTotal"
-    [submitting]="(submitting$ | async) ?? false"
-    (close)="closePaymentModal()"
-    (submitPayment)="onSubmitPayment($event)"
-  ></app-pos-payment-modal>
+  <!-- Modale sélection client / réservation -->
+  <app-pos-client-search
+    [open]="clientModalOpen"
+    (close)="closeClientModal()"
+  ></app-pos-client-search>
 </div>

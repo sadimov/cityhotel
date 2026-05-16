@@ -73,6 +73,29 @@ export class ReservationsService {
       .pipe(map((r) => r.data as PageResponse<Reservation>));
   }
 
+  /**
+   * Liste paginée des réservations d'un client donné — endpoint dédié
+   * `GET /by-client/{clientId}` (le filtre `clientId` n'est PAS supporté
+   * par l'endpoint paginé générique `GET /` côté backend).
+   */
+  findByClient(
+    clientId: number,
+    page = 0,
+    size = 50,
+    sortBy = 'dateCreation',
+    sortDir: 'asc' | 'desc' = 'desc',
+  ): Observable<PageResponse<Reservation>> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('size', String(size))
+      .set('sort', `${sortBy},${sortDir}`);
+    return this.http
+      .get<ApiResponse<PageResponse<Reservation>>>(`${this.base}/by-client/${clientId}`, {
+        params,
+      })
+      .pipe(map((r) => r.data as PageResponse<Reservation>));
+  }
+
   /** Recherche full-text serveur (numéro, nom client...). */
   rechercher(
     terme: string,

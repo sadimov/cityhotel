@@ -138,14 +138,12 @@ export class BonCommandeFormComponent implements OnInit, OnDestroy {
       prixUnitaire: Number(l.prixUnitaire),
     }));
 
+    // Payload aligné sur BonCommandeCreateDto backend : seuls fournisseurId,
+    // dateLivraisonPrevue, commentaires et lignes sont acceptés. numeroBon,
+    // statut, dateCommande, montants sont calculés/posés par le service.
     const payload: BonCommande = {
-      numeroBon: raw.numeroBon || '',
       fournisseurId: Number(raw.fournisseurId),
-      statut: this.currentStatut,
-      dateCommande: raw.dateCommande,
       dateLivraisonPrevue: raw.dateLivraisonPrevue || undefined,
-      montantTotal: this.totalCalcule,
-      montantTva: 0,
       commentaires: raw.commentaires || undefined,
       lignes: lignesPayload,
     };
@@ -340,10 +338,11 @@ export class BonCommandeFormComponent implements OnInit, OnDestroy {
   // ────────────────────────────────────────────────────────────────────────
 
   private buildForm(): FormGroup {
+    // dateCommande retiré du form (le backend la pose à now() automatiquement
+    // côté BonCommandeService.create — pas dans BonCommandeCreateDto).
     return this.fb.group({
       numeroBon: [''],
       fournisseurId: [null, [Validators.required]],
-      dateCommande: ['', [Validators.required]],
       dateLivraisonPrevue: [''],
       commentaires: [''],
       lignes: this.fb.array<FormGroup>([this.buildLigne()]),

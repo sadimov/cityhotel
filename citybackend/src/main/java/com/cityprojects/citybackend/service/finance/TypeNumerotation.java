@@ -59,6 +59,16 @@ public enum TypeNumerotation {
     RES,
 
     /**
+     * Code produit (module inventory). Format :
+     * {@code PROD-{exercice}-{codePays}-{6 chiffres}}, par exemple
+     * {@code PROD-2026-MR-000001}.
+     * <p>Genere automatiquement par {@code ProduitServiceImpl.create()} quand
+     * le DTO ne fournit pas de {@code codeProduit} explicite. Reset chaque
+     * 1er janvier comme les autres types.</p>
+     */
+    PROD,
+
+    /**
      * Ecriture comptable (journal). Format :
      * {@code JRN-{codeJournal}-{exercice}-{codePays}-{6 chiffres}}, par exemple
      * {@code JRN-VTE-2026-MR-000123}.

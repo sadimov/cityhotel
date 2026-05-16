@@ -12,6 +12,13 @@ import { finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { Client } from '../../../clients/models/client.model';
+import { Societe } from '../../../clients/models/societe.model';
+import { ClientsService } from '../../../clients/services/clients.service';
+import { Reservation } from '../../../hebergement/models/reservation.model';
+import { ReservationsService } from '../../../hebergement/services/reservations.service';
+import { Fournisseur } from '../../../inventory/models/fournisseur.model';
+import { FournisseursService } from '../../../inventory/services/fournisseurs.service';
 import {
   FactureCreateDto,
   LigneFactureCreateDto,
@@ -56,6 +63,12 @@ export class FactureFormComponent implements OnInit, OnDestroy {
   state: FormState = 'ready';
   totalCalcule = 0;
 
+  /** Listes pré-chargées pour les selects "cible" (client/société/fournisseur/résa). */
+  clients: Client[] = [];
+  societes: Societe[] = [];
+  fournisseurs: Fournisseur[] = [];
+  reservationsEnCours: Reservation[] = [];
+
   readonly typesFacture = TYPES_FACTURE;
   readonly typesLigne = TYPES_LIGNE_FACTURE;
 
@@ -66,12 +79,16 @@ export class FactureFormComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly facturesService: FacturesService,
+    private readonly clientsService: ClientsService,
+    private readonly reservationsService: ReservationsService,
+    private readonly fournisseursService: FournisseursService,
     private readonly i18n: TranslationService,
   ) {}
 
   ngOnInit(): void {
     this.form = this.buildForm();
     this.subscribeTotal();
+    this.loadReferentiels();
 
     // L'édition n'est pas supportée côté back. Si on arrive via /:id/edit,
     // on redirige vers le détail.
@@ -84,6 +101,43 @@ export class FactureFormComponent implements OnInit, OnDestroy {
         this.state = 'error';
       }
     }
+  }
+
+  /**
+   * Charge les listes de référence pour les selects "cible" — clients,
+   * sociétés, fournisseurs, réservations en cours. Si un appel échoue, la
+   * liste correspondante reste vide (l'utilisateur ne pourra pas choisir
+   * cette catégorie de cible mais peut utiliser les autres).
+   */
+  private loadReferentiels(): void {
+    this.clientsService
+      .page({ page: 0, size: 300, sortBy: 'nom', sortDir: 'asc' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => (this.clients = p.content || []),
+        error: () => (this.clients = []),
+      });
+    this.clientsService
+      .pageSocietes({ page: 0, size: 300, sortBy: 'societeNom', sortDir: 'asc' })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => (this.societes = p.content || []),
+        error: () => (this.societes = []),
+      });
+    this.fournisseursService
+      .findActifs()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (list) => (this.fournisseurs = list || []),
+        error: () => (this.fournisseurs = []),
+      });
+    this.reservationsService
+      .enCours()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (list) => (this.reservationsEnCours = list || []),
+        error: () => (this.reservationsEnCours = []),
+      });
   }
 
   ngOnDestroy(): void {

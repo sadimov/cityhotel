@@ -18,14 +18,17 @@
 export interface CategorieMenu {
   categorieId?: number;
   hotelId?: number;
-  nomCategorie: string;
-  nomCategorieEn?: string;
-  nomCategorieAr?: string;
+  /** Aligné sur CategorieMenuDto record backend : champ `nom`. */
+  nom: string;
+  nomEn?: string;
+  nomAr?: string;
   description?: string;
-  ordreAffichage?: number;
+  iconeUrl?: string;
+  /** Aligné sur DTO backend : champ `ordre` (pas `ordreAffichage`). */
+  ordre?: number;
   actif?: boolean;
-  dateCreation?: string;
-  dateModification?: string;
+  createdAt?: string;
+  updatedAt?: string;
   /** Champ dérivé renvoyé par le backend (read-only). */
   nombreArticles?: number;
 }

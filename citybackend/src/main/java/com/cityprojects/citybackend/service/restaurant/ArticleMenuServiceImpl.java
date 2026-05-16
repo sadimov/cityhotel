@@ -133,6 +133,15 @@ public class ArticleMenuServiceImpl implements ArticleMenuService {
     }
 
     @Override
+    public java.util.List<ArticleMenuDto> findDisponibles(Long categorieId) {
+        java.util.List<ArticleMenu> entities = (categorieId != null)
+                ? articleRepository.findByCategorieIdAndActifTrueAndStatutOrderByNomAsc(
+                        categorieId, StatutArticle.ACTIF)
+                : articleRepository.findByActifTrueAndStatutOrderByNomAsc(StatutArticle.ACTIF);
+        return entities.stream().map(mapper::toDto).toList();
+    }
+
+    @Override
     @Transactional
     public ArticleMenuDto changeStatut(Long articleId, StatutArticle nouveauStatut) {
         logger.info("Changement statut article id={} -> {}", articleId, nouveauStatut);

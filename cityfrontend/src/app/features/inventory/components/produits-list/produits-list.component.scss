@@ -18,3 +18,17 @@
     justify-content: center;
   }
 }
+
+/* Produit desactive : opacite reduite + italique + fond grise.
+ * Le bouton "Desactiver" disparait (cf. @if dans le template) ; il reste
+ * uniquement la suppression definitive et l'edition (qui peut reactiver via
+ * le flag `actif`). */
+.produit-inactif {
+  opacity: 0.55;
+  font-style: italic;
+  background-color: #f8f9fa !important;
+
+  td > code {
+    text-decoration: line-through;
+  }
+}

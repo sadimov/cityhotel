@@ -1,7 +1,57 @@
-/* POS Restaurant — point d'entrée. Le layout 3 colonnes utilise la grille
-   Bootstrap (`col-lg-3 / col-lg-5 / col-lg-4`). En mobile, les colonnes
-   s'empilent verticalement (col-12). */
-.pos-container {
-  background: var(--bs-light, #f8f9fa);
-  min-height: calc(100vh - 4rem);
+/* POS Restaurant — coquille 3 bandes horizontales empilées verticalement.
+ *
+ * Layout :
+ *  - `pos-shell` : flex column, min-height = calc(100vh - 70px) pour occuper
+ *    l'écran ; `height: auto` pour permettre le scroll vertical de la PAGE
+ *    si le contenu dépasse (cf. user request "page scrollable").
+ *  - Section A (client) : sticky top, ~110px.
+ *  - Section B (catalogue) : flex-1, scroll interne pour la grille.
+ *  - Section C (panier) : auto-height (le panier scroll en interne sur ses lignes).
+ *
+ * Le main-layout retire le padding sur les routes FULLSCREEN_ROUTES — on
+ * remet ici nos propres marges.
+ */
+.pos-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f1f5f9;
+  min-height: calc(100vh - 70px);
+
+  &__client {
+    flex: 0 0 auto;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  &__catalog {
+    flex: 1 1 auto;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__cart {
+    flex: 0 0 auto;
+  }
+}
+
+/* Mode plein-écran : `app-pos-article-grid` est responsable de son propre
+ * scroll vertical interne (toolbar sticky + grille scrollable). On lui
+ * assure une hauteur cible via la section parente.
+ */
+.pos-shell__catalog app-pos-article-grid {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 640px) {
+  .pos-shell {
+    padding: 8px;
+    gap: 8px;
+  }
 }

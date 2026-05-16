@@ -18,10 +18,16 @@ import java.util.List;
  * <p>Pas de POST/PUT/DELETE : les roles sont figes par le changeset
  * Liquibase {@code 011-insert-initial-roles.sql}. Toute evolution passe
  * par un nouveau changeset.</p>
+ *
+ * <p>Lecture autorisee pour ADMIN ET SUPERADMIN : la liste des roles est
+ * necessaire au formulaire utilisateur de "Mon hotel" (ADMIN d'hotel) pour
+ * peupler le select role. Le service applique de toute facon le filtre
+ * tenant via {@code @TenantId} sur DBUser ; ce GET ne retourne que des
+ * referentiels statiques (pas de donnees hotel-specifiques).</p>
  */
 @RestController
 @RequestMapping("/api/admin/roles")
-@PreAuthorize("hasRole('SUPERADMIN')")
+@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 public class RoleAdminController {
 
     private final RoleAdminService roleAdminService;

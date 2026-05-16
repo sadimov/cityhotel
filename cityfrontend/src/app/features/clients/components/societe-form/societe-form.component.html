@@ -1,0 +1,105 @@
+<section class="societe-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      @if (isEditing) {
+        {{ 'clients.societes.form.titleEdit' | translate }}
+      } @else {
+        {{ 'clients.societes.form.titleCreate' | translate }}
+      }
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger">
+      {{ 'clients.societes.form.loadError' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="cancel()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label for="societeNom" class="form-label">
+            {{ 'clients.societes.fields.nom' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="societeNom"
+            type="text"
+            class="form-control"
+            formControlName="societeNom"
+            [class.is-invalid]="form.controls['societeNom'].invalid && form.controls['societeNom'].touched"
+          />
+          @if (form.controls['societeNom'].invalid && form.controls['societeNom'].touched) {
+            <div class="invalid-feedback">
+              {{ 'clients.societes.errors.nomRequired' | translate }}
+            </div>
+          }
+        </div>
+        <div class="col-md-4">
+          <label for="siret" class="form-label">{{ 'clients.societes.fields.siret' | translate }}</label>
+          <input id="siret" type="text" class="form-control" formControlName="siret" />
+        </div>
+
+        <div class="col-md-6">
+          <label for="contactPrincipal" class="form-label">{{ 'clients.societes.fields.contactPrincipal' | translate }}</label>
+          <input id="contactPrincipal" type="text" class="form-control" formControlName="contactPrincipal" />
+        </div>
+        <div class="col-md-3">
+          <label for="telephone" class="form-label">{{ 'clients.societes.fields.telephone' | translate }}</label>
+          <input id="telephone" type="text" class="form-control" formControlName="telephone" />
+        </div>
+        <div class="col-md-3">
+          <label for="email" class="form-label">{{ 'clients.societes.fields.email' | translate }}</label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            formControlName="email"
+            [class.is-invalid]="form.controls['email'].invalid && form.controls['email'].touched"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="adresse" class="form-label">{{ 'clients.societes.fields.adresse' | translate }}</label>
+          <input id="adresse" type="text" class="form-control" formControlName="adresse" />
+        </div>
+        <div class="col-md-6">
+          <label for="ville" class="form-label">{{ 'clients.societes.fields.ville' | translate }}</label>
+          <input id="ville" type="text" class="form-control" formControlName="ville" />
+        </div>
+        <div class="col-md-6">
+          <label for="pays" class="form-label">{{ 'clients.societes.fields.pays' | translate }}</label>
+          <input id="pays" type="text" class="form-control" formControlName="pays" />
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

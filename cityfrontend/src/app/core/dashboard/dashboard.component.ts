@@ -1,7 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { forkJoin, of, Subject } from 'rxjs';
+import { catchError, takeUntil } from 'rxjs/operators';
 import { AuthService, UserInfo } from '../../services/auth.service';
 import { TranslationService } from '../../services/translation.service';
+import { ReservationsService } from '../../features/hebergement/services/reservations.service';
+import { ProduitsService } from '../../features/inventory/services/produits.service';
+import { DashboardMenageService } from '../../features/menage/services/dashboard-menage.service';
 
 interface DashboardCard {
   title: string;
@@ -158,7 +162,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private reservationsService: ReservationsService,
+    private produitsService: ProduitsService,
+    private dashboardMenageService: DashboardMenageService,
   ) {}
 
   ngOnInit(): void {
@@ -177,16 +184,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Charger les données du dashboard
+   * Charger les KPI dynamiques depuis les services HTTP réels. En cas d'échec
+   * sur un appel, la valeur est marquée "—" (pas de chiffre décoratif).
    */
   private loadDashboardData(): void {
     this.isLoading = true;
-    
-    // Simuler le chargement des données
-    setTimeout(() => {
-      // Ici, vous pouvez appeler vos services pour récupérer les vraies données
-      this.isLoading = false;
-    }, 1000);
+
+    forkJoin({
+      arrivees: this.reservationsService.arriveesToday().pipe(catchError(() => of([] as unknown[]))),
+      enCours: this.reservationsService.enCours().pipe(catchError(() => of([] as unknown[]))),
+      produits: this.produitsService.findActifs().pipe(catchError(() => of([] as unknown[]))),
+      menage: this.dashboardMenageService.getDashboard().pipe(catchError(() => of(null))),
+    })
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(({ arrivees, enCours, produits, menage }) => {
+        this.setCardValue("Réservations Aujourd'hui", arrivees.length);
+        this.setCardValue('Chambres Occupées', enCours.length);
+        this.setCardValue('Produits en Stock', produits.length);
+        const menageData = menage as { nombreTachesEnCours?: number; nombreTachesAujourdhui?: number } | null;
+        this.setCardValue(
+          'Tâches Ménage',
+          menageData?.nombreTachesEnCours ?? menageData?.nombreTachesAujourdhui ?? '—',
+        );
+        // KPI sans endpoint dédié — afficher "—" plutôt qu'un nombre décoratif.
+        this.setCardValue('Revenus du Jour', '—');
+        this.setCardValue('Clients Nouveaux', '—');
+        this.setCardValue('Commandes Restaurant', '—');
+        this.isLoading = false;
+      });
+  }
+
+  private setCardValue(title: string, value: string | number): void {
+    const card = this.dashboardCards.find((c) => c.title === title);
+    if (card) {
+      card.value = value;
+    }
   }
 
   /**

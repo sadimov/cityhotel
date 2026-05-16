@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subject, takeUntil } from 'rxjs';
+import { interval, Subject, takeUntil } from 'rxjs';
+import { startWith, switchMap } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 import { AuthService, UserInfo } from '../../services/auth.service';
 import { TranslationService, Language } from '../../services/translation.service';
+import { NotificationItem, NotificationsService } from '../services/notifications.service';
 
 @Component({
   selector: 'app-header',
@@ -15,13 +17,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   currentUser: UserInfo | null = null;
   notificationsCount = 0;
+  notifications: NotificationItem[] = [];
   showUserDropdown = false;
   showNotifications = false;
+
+  /** Intervalle de polling notifications (60s). */
+  private readonly POLL_MS = 60_000;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    public translationService: TranslationService
+    public translationService: TranslationService,
+    private notificationsService: NotificationsService,
   ) {}
 
   ngOnInit(): void {
@@ -31,8 +38,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.currentUser = user;
       });
 
-    // Simuler des notifications (à remplacer par un vrai service)
-    this.loadNotifications();
+    // Polling dynamique des notifications : appel immediat + refresh chaque 60s.
+    interval(this.POLL_MS)
+      .pipe(
+        startWith(0),
+        switchMap(() => this.notificationsService.list()),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((items) => {
+        this.notifications = items;
+        this.notificationsCount = items.length;
+      });
   }
 
   ngOnDestroy(): void {
@@ -125,18 +141,20 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.showNotifications = false;
   }
 
-  /** Charger les notifications (simulées). */
-  private loadNotifications(): void {
-    setTimeout(() => {
-      this.notificationsCount = 3;
-    }, 1000);
+  /**
+   * Marquer les notifications comme lues — V1 = côté UI seulement (pas de
+   * persistance backend). Le compteur sera rafraîchi par le polling suivant.
+   */
+  private markNotificationsAsRead(): void {
+    this.notificationsCount = 0;
   }
 
-  /** Marquer les notifications comme lues. */
-  private markNotificationsAsRead(): void {
-    setTimeout(() => {
-      this.notificationsCount = 0;
-    }, 500);
+  /** Navigation depuis une notification cliquée. */
+  navigateToNotification(link: string): void {
+    this.showNotifications = false;
+    if (link) {
+      this.router.navigateByUrl(link);
+    }
   }
 
   /** Initiales de l'utilisateur. */

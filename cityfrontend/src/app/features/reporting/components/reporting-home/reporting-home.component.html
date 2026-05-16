@@ -1,0 +1,41 @@
+<section class="reporting-home p-4">
+  <header class="mb-4">
+    <h2 class="h4 m-0">
+      <i class="fas fa-chart-line me-2" aria-hidden="true"></i>
+      {{ ('reporting.' + module + '.title') | translate }}
+    </h2>
+    <p class="text-muted small mt-2 mb-0">
+      {{ 'reporting.subtitle' | translate }}
+    </p>
+  </header>
+
+  @if (reports.length === 0) {
+    <div class="alert alert-info">{{ 'reporting.empty' | translate }}</div>
+  } @else {
+    <div class="row g-3">
+      @for (r of reports; track r.code) {
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body">
+              <div class="d-flex align-items-start justify-content-between mb-2">
+                <code class="text-primary">{{ r.code }}</code>
+                <i class="fas fa-file-alt text-muted" aria-hidden="true"></i>
+              </div>
+              <h3 class="h6 mb-2">{{ r.labelKey | translate }}</h3>
+              <code class="d-block small text-muted mb-3">{{ r.endpoint }}</code>
+              <a
+                [href]="r.endpoint"
+                class="btn btn-sm btn-outline-primary w-100"
+                target="_blank"
+                rel="noopener"
+              >
+                <i class="fas fa-external-link-alt me-1" aria-hidden="true"></i>
+                {{ 'reporting.openEndpoint' | translate }}
+              </a>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>
