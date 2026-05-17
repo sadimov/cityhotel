@@ -184,21 +184,22 @@
         </div>
 
         <div class="col-md-6">
-          <label for="roleCode" class="form-label">
+          <label for="roleId" class="form-label">
             {{ 'admin.users.fields.role' | translate }}
+            <span class="text-danger">*</span>
           </label>
           <select
-            id="roleCode"
+            id="roleId"
             class="form-select"
-            formControlName="roleCode"
-            [class.is-invalid]="form.get('roleCode')?.invalid && form.get('roleCode')?.touched"
+            formControlName="roleId"
+            [class.is-invalid]="form.get('roleId')?.invalid && form.get('roleId')?.touched"
           >
-            <option value="">{{ 'admin.users.form.selectRole' | translate }}</option>
+            <option [ngValue]="null">{{ 'admin.users.form.selectRole' | translate }}</option>
             @for (r of roles; track r.roleId) {
-              <option [value]="r.code">{{ r.nom }}</option>
+              <option [ngValue]="r.roleId">{{ r.nom }}</option>
             }
           </select>
-          @if (form.get('roleCode')?.touched && form.get('roleCode')?.errors?.['required']) {
+          @if (form.get('roleId')?.touched && form.get('roleId')?.errors?.['required']) {
             <div class="invalid-feedback d-block">
               {{ 'admin.users.errors.roleRequired' | translate }}
             </div>

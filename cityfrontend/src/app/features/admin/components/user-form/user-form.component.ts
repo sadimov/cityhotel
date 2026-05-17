@@ -155,7 +155,9 @@ export class UserFormComponent implements OnInit, OnDestroy {
       prenom: String(raw.prenom).trim(),
       nom: String(raw.nom).trim(),
       telephone: raw.telephone ? String(raw.telephone).trim() : undefined,
-      roleCode: String(raw.roleCode),
+      // Le backend attend `roleId` (Integer), pas `roleCode` — cf.
+      // DBUserCreateAdminDto / DBUserUpdateAdminDto.
+      roleId: Number(raw.roleId),
       actif: raw.actif !== false,
     };
 
@@ -226,7 +228,9 @@ export class UserFormComponent implements OnInit, OnDestroy {
       prenom: ['', [Validators.required, Validators.maxLength(100)]],
       nom: ['', [Validators.required, Validators.maxLength(100)]],
       telephone: ['', [Validators.maxLength(20)]],
-      roleCode: ['', [Validators.required]],
+      // `roleId` (Integer) — aligné sur le DTO backend. Le select stocke
+      // `r.roleId` via `[ngValue]` dans le template.
+      roleId: [null, [Validators.required]],
       actif: [true],
     });
   }
@@ -315,7 +319,10 @@ export class UserFormComponent implements OnInit, OnDestroy {
       prenom: u.prenom ?? '',
       nom: u.nom ?? '',
       telephone: u.telephone ?? '',
-      roleCode: u.roleCode ?? '',
+      // Le backend DBUserAdminDto retourne roleId, roleCode et roleNom. On
+      // utilise roleId pour le select (clé technique alignée sur le DTO de
+      // mise à jour).
+      roleId: u.roleId ?? null,
       actif: u.actif !== false,
     });
   }
