@@ -34,6 +34,12 @@ export interface Chambre {
   // Relations résolues serveur
   typeCode?: string;
   typeNom?: string;
+  /**
+   * Nom du type de chambre — alias renvoyé par `ChambreDto.nomTypeChambre`
+   * depuis l'enrichissement Tour 56 (anti-N+1 batch lookup côté service).
+   * `typeNom` reste pour compat ascendante.
+   */
+  nomTypeChambre?: string;
 
   // Champs calculés serveur
   disponible?: boolean;

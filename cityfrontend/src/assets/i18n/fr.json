@@ -1745,7 +1745,8 @@
       "form": {
         "titleCreate": "Nouvelle tâche",
         "titleEdit": "Modifier la tâche",
-        "loadError": "Impossible de charger cette tâche."
+        "loadError": "Impossible de charger cette tâche.",
+        "selectChambre": "Sélectionner une chambre"
       },
       "detail": {
         "title": "Détail de la tâche",

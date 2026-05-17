@@ -1668,7 +1668,8 @@
       "form": {
         "titleCreate": "New task",
         "titleEdit": "Edit task",
-        "loadError": "Unable to load this task."
+        "loadError": "Unable to load this task.",
+        "selectChambre": "Sélectionner une chambre"
       },
       "detail": {
         "title": "Task detail",

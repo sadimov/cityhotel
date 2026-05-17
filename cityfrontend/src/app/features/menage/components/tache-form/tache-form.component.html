@@ -23,18 +23,22 @@
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="row g-3">
-        <div class="col-md-3">
+        <div class="col-md-4">
           <label for="chambreId" class="form-label">
             {{ 'menage.tache.fields.chambre' | translate }}
+            <span class="text-danger">*</span>
           </label>
-          <input
+          <select
             id="chambreId"
-            type="number"
-            min="1"
-            class="form-control"
+            class="form-select"
             formControlName="chambreId"
             [class.is-invalid]="form.get('chambreId')?.invalid && form.get('chambreId')?.touched"
-          />
+          >
+            <option [ngValue]="null">{{ 'menage.tache.form.selectChambre' | translate }}</option>
+            @for (c of chambres; track c.chambreId) {
+              <option [ngValue]="c.chambreId">{{ chambreLabel(c) }}</option>
+            }
+          </select>
           @if (form.get('chambreId')?.touched && form.get('chambreId')?.errors?.['required']) {
             <div class="invalid-feedback d-block">
               {{ 'menage.tache.errors.chambreRequired' | translate }}

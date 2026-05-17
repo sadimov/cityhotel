@@ -6,6 +6,8 @@ import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { Chambre } from '../../../hebergement/models/chambre.model';
+import { ChambresService } from '../../../hebergement/services/chambres.service';
 import { Personnel } from '../../models/personnel.model';
 import {
   PRIORITES_TACHE,
@@ -23,18 +25,15 @@ type FormState = 'loading' | 'ready' | 'submitting' | 'error';
  * Formulaire création / édition d'une tâche de ménage.
  *
  * Validators :
- *  - `chambreId` : required (saisie numérique simple — un sélecteur
- *    de chambres serait préférable mais dépend du module hébergement,
- *    différé pour rester focus sur ce tour)
+ *  - `chambreId` : required — select des chambres actives chargées via
+ *    `ChambresService.findActives()`. Affiché « numéro - type » (consigne
+ *    user 2026-05-17). Un input numérique libre laissait passer des IDs
+ *    inexistants et provoquait une 404 côté backend.
  *  - `datePlanifiee` : required
  *  - `priorite` : required dans [1..3]
  *  - `typeNettoyage` : required dans l'enum
  *  - `personnelId` : optionnel (assignation peut être déférée)
  *  - `noteQualite` : optionnel mais bornée [1..5] côté backend
- *
- * Le sélecteur de personnel utilise la liste des actifs ; le sélecteur
- * de chambre est un input numérique simple en attendant un composant
- * partagé `chambre-picker`.
  */
 @Component({
   selector: 'app-tache-form',
@@ -47,6 +46,7 @@ export class TacheFormComponent implements OnInit, OnDestroy {
   state: FormState = 'loading';
   editingId: number | null = null;
   personnels: Personnel[] = [];
+  chambres: Chambre[] = [];
   readonly typesNettoyage: ReadonlyArray<TypeNettoyage> = TYPES_NETTOYAGE;
   readonly priorites: ReadonlyArray<PrioriteTache> = PRIORITES_TACHE;
 
@@ -58,12 +58,14 @@ export class TacheFormComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly tachesService: TachesService,
     private readonly personnelsService: PersonnelsService,
+    private readonly chambresService: ChambresService,
     private readonly i18n: TranslationService,
   ) {}
 
   ngOnInit(): void {
     this.form = this.buildForm();
     this.loadPersonnels();
+    this.loadChambres();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam && idParam !== 'new') {
@@ -75,6 +77,17 @@ export class TacheFormComponent implements OnInit, OnDestroy {
       this.editingId = id;
       this.loadExisting(id);
     }
+  }
+
+  /**
+   * Libellé d'option chambre : « numéro - type » (consigne user 2026-05-17).
+   * Utilise `nomTypeChambre` enrichi côté backend, fallback sur le numéro
+   * seul si le type n'est pas résolu.
+   */
+  chambreLabel(c: Chambre): string {
+    const num = c.numeroChambre ?? '';
+    const type = c.nomTypeChambre ?? '';
+    return type ? `${num} - ${type}` : num;
   }
 
   ngOnDestroy(): void {
@@ -177,6 +190,22 @@ export class TacheFormComponent implements OnInit, OnDestroy {
         if (this.state === 'loading' && !this.editingId) {
           this.state = 'ready';
         }
+      });
+  }
+
+  private loadChambres(): void {
+    this.chambresService
+      .findActives()
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of([] as Chambre[])),
+      )
+      .subscribe((list) => {
+        // Tri stable : numéro de chambre ASC (le numéro est une string
+        // type "101", "102", "201" → ordre lexicographique acceptable).
+        this.chambres = [...list].sort((a, b) =>
+          (a.numeroChambre ?? '').localeCompare(b.numeroChambre ?? ''),
+        );
       });
   }
 

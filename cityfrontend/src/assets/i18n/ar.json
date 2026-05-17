@@ -1668,7 +1668,8 @@
       "form": {
         "titleCreate": "مهمة جديدة",
         "titleEdit": "تعديل المهمة",
-        "loadError": "تعذر تحميل المهمة."
+        "loadError": "تعذر تحميل المهمة.",
+        "selectChambre": "Sélectionner une chambre"
       },
       "detail": {
         "title": "تفاصيل المهمة",
