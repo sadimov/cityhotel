@@ -5,6 +5,7 @@ import { RoleGuard } from '../../guards/role-guard.guard';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { PersonnelFormComponent } from './components/personnel-form/personnel-form.component';
 import { PersonnelsListComponent } from './components/personnels-list/personnels-list.component';
+import { PlanningFormComponent } from './components/planning-form/planning-form.component';
 import { PlanningListComponent } from './components/planning-list/planning-list.component';
 import { TacheDetailComponent } from './components/tache-detail/tache-detail.component';
 import { TacheFormComponent } from './components/tache-form/tache-form.component';
@@ -115,15 +116,27 @@ const routes: Routes = [
     data: { roles: ROLES_ECRITURE },
   },
 
-  // Planning — Tour 28
+  // Planning — Tour 28 (liste) + Tour 56 (form création/édition).
   // Lecture : MENAGE + GERANT + ADMIN + RECEPTION (pour vue partagée).
-  // Création / édition : différé Tour 29 (composant planning-form pas
-  // encore scaffolé — les routes new/:id seront ajoutées avec lui).
+  // Création / édition : ADMIN + GERANT (planification = responsabilité
+  // hiérarchique, cf. roles_utilisateurs.txt + PlanningController.@PreAuthorize).
   {
     path: 'planning',
     component: PlanningListComponent,
     canActivate: [RoleGuard],
     data: { roles: ROLES_LECTURE },
+  },
+  {
+    path: 'planning/new',
+    component: PlanningFormComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ROLES_ECRITURE },
+  },
+  {
+    path: 'planning/:id',
+    component: PlanningFormComponent,
+    canActivate: [RoleGuard],
+    data: { roles: ROLES_ECRITURE },
   },
 ];
 

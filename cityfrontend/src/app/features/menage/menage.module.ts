@@ -8,6 +8,7 @@ import { AssignationPersonnelComponent } from './components/assignation-personne
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { PersonnelFormComponent } from './components/personnel-form/personnel-form.component';
 import { PersonnelsListComponent } from './components/personnels-list/personnels-list.component';
+import { PlanningFormComponent } from './components/planning-form/planning-form.component';
 import { PlanningListComponent } from './components/planning-list/planning-list.component';
 import { TacheDetailComponent } from './components/tache-detail/tache-detail.component';
 import { TacheFormComponent } from './components/tache-form/tache-form.component';
@@ -50,6 +51,7 @@ import { MenageRoutingModule } from './menage-routing.module';
     TacheDetailComponent,
     DashboardComponent,
     PlanningListComponent,
+    PlanningFormComponent,
     AssignationPersonnelComponent,
   ],
   imports: [

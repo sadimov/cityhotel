@@ -1799,7 +1799,10 @@
         "secteur": "القطاع",
         "horaire": "التوقيت",
         "statut": "الحالة",
-        "commentaires": "ملاحظات"
+        "commentaires": "ملاحظات",
+        "heureDebut": "Heure début",
+        "heureFin": "Heure fin",
+        "disponible": "Disponible"
       },
       "statut": {
         "disponible": "متاح",
@@ -1817,6 +1820,12 @@
         "deleteConfirm": "هل تريد حذف هذا الجدول؟",
         "deleteSuccess": "تم حذف الجدول.",
         "deleteError": "تعذر حذف الجدول."
+      },
+      "form": {
+        "titleCreate": "Nouveau créneau de planning",
+        "titleEdit": "Modifier le créneau",
+        "loadError": "Impossible de charger ce créneau.",
+        "selectPersonnel": "Sélectionner un personnel"
       }
     },
     "assignation": {

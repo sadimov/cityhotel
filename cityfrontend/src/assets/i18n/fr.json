@@ -1869,12 +1869,21 @@
         "edit": "Modifier",
         "delete": "Supprimer"
       },
+      "form": {
+        "titleCreate": "Nouveau créneau de planning",
+        "titleEdit": "Modifier le créneau",
+        "loadError": "Impossible de charger ce créneau.",
+        "selectPersonnel": "Sélectionner un personnel"
+      },
       "fields": {
         "dateTravail": "Date",
         "personnel": "Personnel",
         "etage": "Étage",
         "secteur": "Secteur",
         "horaire": "Horaire",
+        "heureDebut": "Heure début",
+        "heureFin": "Heure fin",
+        "disponible": "Disponible",
         "statut": "Statut",
         "commentaires": "Observations"
       },

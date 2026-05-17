@@ -1799,7 +1799,10 @@
         "secteur": "Sector",
         "horaire": "Schedule",
         "statut": "Status",
-        "commentaires": "Notes"
+        "commentaires": "Notes",
+        "heureDebut": "Heure début",
+        "heureFin": "Heure fin",
+        "disponible": "Disponible"
       },
       "statut": {
         "disponible": "Available",
@@ -1817,6 +1820,12 @@
         "deleteConfirm": "Delete this planning?",
         "deleteSuccess": "Planning deleted.",
         "deleteError": "Unable to delete the planning."
+      },
+      "form": {
+        "titleCreate": "Nouveau créneau de planning",
+        "titleEdit": "Modifier le créneau",
+        "loadError": "Impossible de charger ce créneau.",
+        "selectPersonnel": "Sélectionner un personnel"
       }
     },
     "assignation": {

@@ -1,0 +1,145 @@
+<section class="planning-form p-4">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      {{
+        (isEditing
+          ? 'menage.planning.form.titleEdit'
+          : 'menage.planning.form.titleCreate'
+        ) | translate
+      }}
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger" role="alert">
+      {{ 'menage.planning.form.loadError' | translate }}
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="personnelId" class="form-label">
+            {{ 'menage.planning.fields.personnel' | translate }}
+            <span class="text-danger">*</span>
+          </label>
+          <select
+            id="personnelId"
+            class="form-select"
+            formControlName="personnelId"
+            [class.is-invalid]="form.get('personnelId')?.invalid && form.get('personnelId')?.touched"
+          >
+            <option [ngValue]="null">{{ 'menage.planning.form.selectPersonnel' | translate }}</option>
+            @for (p of personnels; track p.personnelId) {
+              <option [ngValue]="p.personnelId">{{ p.nomComplet || (p.prenom + ' ' + p.nom) }}</option>
+            }
+          </select>
+          @if (form.get('personnelId')?.touched && form.get('personnelId')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.planning.errors.personnelRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-6">
+          <label for="dateTravail" class="form-label">
+            {{ 'menage.planning.fields.dateTravail' | translate }}
+            <span class="text-danger">*</span>
+          </label>
+          <input
+            id="dateTravail"
+            type="date"
+            class="form-control"
+            formControlName="dateTravail"
+            [class.is-invalid]="form.get('dateTravail')?.invalid && form.get('dateTravail')?.touched"
+          />
+          @if (form.get('dateTravail')?.touched && form.get('dateTravail')?.errors?.['required']) {
+            <div class="invalid-feedback d-block">
+              {{ 'menage.planning.errors.dateRequired' | translate }}
+            </div>
+          }
+        </div>
+
+        <div class="col-md-4">
+          <label for="heureDebut" class="form-label">
+            {{ 'menage.planning.fields.heureDebut' | translate }}
+            <span class="text-danger">*</span>
+          </label>
+          <input
+            id="heureDebut"
+            type="time"
+            class="form-control"
+            formControlName="heureDebut"
+            [class.is-invalid]="form.get('heureDebut')?.invalid && form.get('heureDebut')?.touched"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="heureFin" class="form-label">
+            {{ 'menage.planning.fields.heureFin' | translate }}
+            <span class="text-danger">*</span>
+          </label>
+          <input
+            id="heureFin"
+            type="time"
+            class="form-control"
+            formControlName="heureFin"
+            [class.is-invalid]="form.get('heureFin')?.invalid && form.get('heureFin')?.touched"
+          />
+        </div>
+
+        <div class="col-md-4 d-flex align-items-end pb-2">
+          <div class="form-check">
+            <input
+              id="disponible"
+              type="checkbox"
+              class="form-check-input"
+              formControlName="disponible"
+            />
+            <label for="disponible" class="form-check-label">
+              {{ 'menage.planning.fields.disponible' | translate }}
+            </label>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <label for="commentaires" class="form-label">
+            {{ 'menage.planning.fields.commentaires' | translate }}
+          </label>
+          <textarea
+            id="commentaires"
+            class="form-control"
+            rows="2"
+            formControlName="commentaires"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>
