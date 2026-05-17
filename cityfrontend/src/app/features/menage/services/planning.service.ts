@@ -46,11 +46,11 @@ export class PlanningService {
     sortBy = 'dateTravail',
     sortDir: 'asc' | 'desc' = 'desc',
   ): Observable<PageResponse<Planning>> {
+    // Spring Pageable standard : `sort=field,dir` (et non `sortBy`/`sortDir`).
     let params = new HttpParams()
       .set('page', String(page))
       .set('size', String(size))
-      .set('sortBy', sortBy)
-      .set('sortDir', sortDir);
+      .set('sort', `${sortBy},${sortDir}`);
     if (filtres.search && filtres.search.trim()) {
       params = params.set('search', filtres.search.trim());
     }

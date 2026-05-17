@@ -4,6 +4,8 @@ import com.cityprojects.citybackend.dto.menage.PlanningCreateDto;
 import com.cityprojects.citybackend.dto.menage.PlanningDto;
 import com.cityprojects.citybackend.service.menage.PlanningService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +36,17 @@ public class PlanningController {
 
     public PlanningController(PlanningService service) {
         this.service = service;
+    }
+
+    /**
+     * Liste paginee de tous les creneaux planning (tri/pagination Spring
+     * standard `sort=field,dir`). Utilise par l'ecran liste planning cote
+     * front (sous-tour menage E5 - fix 405).
+     */
+    @GetMapping
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MENAGE')")
+    public ResponseEntity<Page<PlanningDto>> page(Pageable pageable) {
+        return ResponseEntity.ok(service.page(pageable));
     }
 
     @PostMapping

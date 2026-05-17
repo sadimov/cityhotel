@@ -12,6 +12,8 @@ import com.cityprojects.citybackend.repository.menage.PersonnelRepository;
 import com.cityprojects.citybackend.repository.menage.PlanningRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,6 +95,26 @@ public class PlanningServiceImpl implements PlanningService {
         Planning entity = planningRepository.findById(planningId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.planning.notFound"));
         return enrichDto(entity);
+    }
+
+    @Override
+    public Page<PlanningDto> page(Pageable pageable) {
+        Page<Planning> page = planningRepository.findAll(pageable);
+        java.util.Map<Long, String> noms = batchNomsPersonnels(page.getContent());
+        return page.map(p -> mapper.toDto(p).withResolvedNames(noms.get(p.getPersonnelId())));
+    }
+
+    /** Batch lookup personnel → nom (anti-N+1). Extrait pour réutilisation. */
+    private java.util.Map<Long, String> batchNomsPersonnels(java.util.Collection<Planning> entities) {
+        java.util.Set<Long> ids = entities.stream()
+                .map(Planning::getPersonnelId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        if (ids.isEmpty()) return java.util.Map.of();
+        java.util.Map<Long, String> result = new java.util.HashMap<>();
+        personnelRepository.findAllById(ids).forEach(p ->
+                result.put(p.getPersonnelId(), p.getNomComplet()));
+        return result;
     }
 
     @Override

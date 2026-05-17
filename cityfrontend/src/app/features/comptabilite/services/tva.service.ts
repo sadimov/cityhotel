@@ -1,8 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 import { environment } from '../../../../environments/environment';
+import { ApiResponse } from '../../../shared/models/api.model';
 import { Page, PageRequest } from '../../finance/models/page.model';
 import {
   DeclarationTvaCreateDto,
@@ -33,24 +35,34 @@ export class TvaService {
 
   constructor(private readonly http: HttpClient) {}
 
+  // ⚠️ `ApiResponseBodyAdvice` wrappe TOUTES les réponses controller en
+  // `{data, status, ...}`. On unwrap systématiquement via
+  // `.pipe(map(r => r.data ?? r))` avec fallback pour compat ascendante.
+
   // ===== Configuration TVA =====
 
   listConfig(): Observable<TauxTvaConfigDto[]> {
-    return this.http.get<TauxTvaConfigDto[]>(this.baseConfig);
+    return this.http
+      .get<ApiResponse<TauxTvaConfigDto[]>>(this.baseConfig)
+      .pipe(map((r) => (r?.data ?? (r as unknown as TauxTvaConfigDto[]))));
   }
 
   getConfig(typeService: TypeServiceTva): Observable<TauxTvaConfigDto> {
-    return this.http.get<TauxTvaConfigDto>(`${this.baseConfig}/${typeService}`);
+    return this.http
+      .get<ApiResponse<TauxTvaConfigDto>>(`${this.baseConfig}/${typeService}`)
+      .pipe(map((r) => (r?.data ?? (r as unknown as TauxTvaConfigDto))));
   }
 
   updateConfig(
     typeService: TypeServiceTva,
     dto: TauxTvaConfigUpdateDto,
   ): Observable<TauxTvaConfigDto> {
-    return this.http.put<TauxTvaConfigDto>(
-      `${this.baseConfig}/${typeService}`,
-      dto,
-    );
+    return this.http
+      .put<ApiResponse<TauxTvaConfigDto>>(
+        `${this.baseConfig}/${typeService}`,
+        dto,
+      )
+      .pipe(map((r) => (r?.data ?? (r as unknown as TauxTvaConfigDto))));
   }
 
   // ===== Déclarations TVA =====
@@ -66,13 +78,17 @@ export class TvaService {
         params = params.set('sort', req.sort);
       }
     }
-    return this.http.get<Page<DeclarationTvaDto>>(this.baseDeclarations, {
-      params,
-    });
+    return this.http
+      .get<ApiResponse<Page<DeclarationTvaDto>>>(this.baseDeclarations, {
+        params,
+      })
+      .pipe(map((r) => (r?.data ?? (r as unknown as Page<DeclarationTvaDto>))));
   }
 
   findDeclaration(id: number): Observable<DeclarationTvaDto> {
-    return this.http.get<DeclarationTvaDto>(`${this.baseDeclarations}/${id}`);
+    return this.http
+      .get<ApiResponse<DeclarationTvaDto>>(`${this.baseDeclarations}/${id}`)
+      .pipe(map((r) => (r?.data ?? (r as unknown as DeclarationTvaDto))));
   }
 
   findDeclarationByPeriode(
@@ -82,22 +98,28 @@ export class TvaService {
     const params = new HttpParams()
       .set('dateDebut', dateDebut)
       .set('dateFin', dateFin);
-    return this.http.get<DeclarationTvaDto>(
-      `${this.baseDeclarations}/periode`,
-      { params },
-    );
+    return this.http
+      .get<ApiResponse<DeclarationTvaDto>>(
+        `${this.baseDeclarations}/periode`,
+        { params },
+      )
+      .pipe(map((r) => (r?.data ?? (r as unknown as DeclarationTvaDto))));
   }
 
   createDeclaration(
     dto: DeclarationTvaCreateDto,
   ): Observable<DeclarationTvaDto> {
-    return this.http.post<DeclarationTvaDto>(this.baseDeclarations, dto);
+    return this.http
+      .post<ApiResponse<DeclarationTvaDto>>(this.baseDeclarations, dto)
+      .pipe(map((r) => (r?.data ?? (r as unknown as DeclarationTvaDto))));
   }
 
   validerDeclaration(id: number): Observable<DeclarationTvaDto> {
-    return this.http.post<DeclarationTvaDto>(
-      `${this.baseDeclarations}/${id}/valider`,
-      {},
-    );
+    return this.http
+      .post<ApiResponse<DeclarationTvaDto>>(
+        `${this.baseDeclarations}/${id}/valider`,
+        {},
+      )
+      .pipe(map((r) => (r?.data ?? (r as unknown as DeclarationTvaDto))));
   }
 }
