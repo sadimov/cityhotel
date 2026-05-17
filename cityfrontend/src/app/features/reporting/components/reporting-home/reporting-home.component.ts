@@ -5,7 +5,10 @@ import { takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
-import { ReportsDownloadService } from '../../services/reports-download.service';
+import {
+  ReportDownloadError,
+  ReportsDownloadService,
+} from '../../services/reports-download.service';
 
 /** Format d'export disponible côté backend pour un rapport donné. */
 type ExportFormat = 'xlsx' | 'pdf';
@@ -214,11 +217,20 @@ export class ReportingHomeComponent implements OnInit, OnDestroy {
         next: () => {
           this.downloadingPath = null;
         },
-        error: () => {
+        error: (e: ReportDownloadError) => {
           this.downloadingPath = null;
+          // On tente de traduire le message (clé i18n type `error.xxx`) ; si
+          // la traduction n'existe pas, on retombe sur le texte brut.
+          const translated = e?.message
+            ? this.i18n.translate(e.message)
+            : null;
+          const detail = translated && translated !== e.message
+            ? translated
+            : (e?.message ?? '');
           Swal.fire({
             icon: 'error',
             title: this.i18n.translate('reporting.downloadError'),
+            text: e?.status ? `HTTP ${e.status} — ${detail}` : detail,
           });
         },
       });
