@@ -21,5 +21,13 @@ public record ChambreDto(
         String description,
         Boolean actif,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom du type de chambre (résolu côté service, anti-N+1). */
+        String nomTypeChambre) {
+
+    public ChambreDto withResolvedNames(String nomType) {
+        return new ChambreDto(
+                chambreId, numeroChambre, typeId, etage, statut, nbLits, nbPersonnesMax,
+                equipements, description, actif, createdAt, updatedAt, nomType);
+    }
 }

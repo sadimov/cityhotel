@@ -80,13 +80,14 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
     this.state = 'submitting';
     const raw = this.form.getRawValue();
 
+    // Aligné sur CategorieMenuCreateDto backend : nom + description + iconeUrl + ordre.
+    // (Les champs nomEn/nomAr/actif sont laissés au formulaire pour usage UI futur
+    // mais NON envoyés — le DTO backend ne les déclare pas, Jackson les ignorerait.)
     const payload: CategorieMenu = {
       nom: String(raw.nom).trim(),
-      nomEn: raw.nomEn ? String(raw.nomEn).trim() : undefined,
-      nomAr: raw.nomAr ? String(raw.nomAr).trim() : undefined,
       description: raw.description || undefined,
+      iconeUrl: raw.iconeUrl ? String(raw.iconeUrl).trim() : undefined,
       ordre: Number(raw.ordre ?? 0),
-      actif: raw.actif !== false,
     };
 
     const obs$ = this.editingId
@@ -138,11 +139,9 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
         '',
         [Validators.required, Validators.minLength(2), Validators.maxLength(100)],
       ],
-      nomEn: ['', [Validators.maxLength(100)]],
-      nomAr: ['', [Validators.maxLength(100)]],
       description: ['', [Validators.maxLength(500)]],
+      iconeUrl: ['', [Validators.maxLength(200)]],
       ordre: [0, [Validators.required, Validators.min(0)]],
-      actif: [true],
     });
   }
 
@@ -164,11 +163,9 @@ export class CategoryFormComponent implements OnInit, OnDestroy {
   private hydrateForm(c: CategorieMenu): void {
     this.form.patchValue({
       nom: c.nom ?? '',
-      nomEn: c.nomEn ?? '',
-      nomAr: c.nomAr ?? '',
       description: c.description ?? '',
+      iconeUrl: c.iconeUrl ?? '',
       ordre: c.ordre ?? 0,
-      actif: c.actif !== false,
     });
   }
 }

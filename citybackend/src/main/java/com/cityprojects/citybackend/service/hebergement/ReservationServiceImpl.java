@@ -513,10 +513,22 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public List<NuiteeDto> findNuitees(Long reservationId) {
         // Verifie d'abord l'appartenance tenant via le repository (Hibernate filtre)
-        reservationRepository.findById(reservationId)
+        Reservation res = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
-        return nuiteeRepository.findByReservationIdOrderByDateNuitAsc(reservationId).stream()
-                .map(reservationMapper::toDto)
+        List<Nuitee> nuitees = nuiteeRepository.findByReservationIdOrderByDateNuitAsc(reservationId);
+        // Résolution noms chambres en batch (1 SELECT IN) — toutes les nuitées d'une même
+        // résa pointent vers les chambres réservées (généralement 1, parfois 2-3).
+        java.util.Set<Long> chambreIds = nuitees.stream()
+                .map(Nuitee::getChambreId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, String> numerosChambres = chambreIds.isEmpty() ? Map.of()
+                : chambreRepository.findAllById(chambreIds).stream()
+                        .collect(Collectors.toMap(Chambre::getChambreId, Chambre::getNumeroChambre));
+        String numRes = res.getNumeroReservation();
+        return nuitees.stream()
+                .map(n -> reservationMapper.toDto(n)
+                        .withResolvedNames(numerosChambres.get(n.getChambreId()), numRes))
                 .collect(Collectors.toList());
     }
 

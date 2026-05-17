@@ -20,6 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 /**
@@ -216,5 +219,17 @@ public class ClientServiceImpl implements ClientService {
                 .orElseThrow(() -> new ResourceNotFoundException("error.client.notFound"));
         entity.setActif(Boolean.TRUE);
         clientRepository.save(entity);
+    }
+
+    /** Timezone serveur cible — alignée sur application.yml. */
+    private static final ZoneId NOUAKCHOTT = ZoneId.of("Africa/Nouakchott");
+
+    @Override
+    public long countNouveauxDuJour(LocalDate date) {
+        LocalDate target = (date != null) ? date : LocalDate.now(NOUAKCHOTT);
+        Instant from = target.atStartOfDay(NOUAKCHOTT).toInstant();
+        Instant to = target.plusDays(1).atStartOfDay(NOUAKCHOTT).toInstant();
+        return clientRepository
+                .countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(from, to);
     }
 }

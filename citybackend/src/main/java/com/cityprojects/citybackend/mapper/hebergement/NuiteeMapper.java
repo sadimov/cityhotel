@@ -22,5 +22,7 @@ public interface NuiteeMapper {
 
     @Mapping(target = "id", source = "nuiteeId")
     @Mapping(target = "dateNuitee", source = "dateNuit")
+    @Mapping(target = "numeroChambre", ignore = true)
+    @Mapping(target = "numeroReservation", ignore = true)
     NuiteeDto toDto(Nuitee entity);
 }

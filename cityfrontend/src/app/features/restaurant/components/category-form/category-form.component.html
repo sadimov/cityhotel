@@ -66,31 +66,6 @@
           }
         </div>
 
-        <div class="col-md-6">
-          <label for="nomCategorieEn" class="form-label">
-            {{ 'restaurant.categorie.fields.nomEn' | translate }}
-          </label>
-          <input
-            id="nomCategorieEn"
-            type="text"
-            class="form-control"
-            formControlName="nomEn"
-          />
-        </div>
-
-        <div class="col-md-6">
-          <label for="nomCategorieAr" class="form-label">
-            {{ 'restaurant.categorie.fields.nomAr' | translate }}
-          </label>
-          <input
-            id="nomCategorieAr"
-            type="text"
-            class="form-control"
-            formControlName="nomAr"
-            dir="rtl"
-          />
-        </div>
-
         <div class="col-12">
           <label for="description" class="form-label">
             {{ 'restaurant.categorie.fields.description' | translate }}
@@ -103,18 +78,16 @@
           ></textarea>
         </div>
 
-        <div class="col-md-6 d-flex align-items-center pt-3">
-          <div class="form-check">
-            <input
-              id="actif"
-              type="checkbox"
-              class="form-check-input"
-              formControlName="actif"
-            />
-            <label for="actif" class="form-check-label">
-              {{ 'restaurant.categorie.fields.actif' | translate }}
-            </label>
-          </div>
+        <div class="col-12">
+          <label for="iconeUrl" class="form-label">
+            {{ 'restaurant.categorie.fields.iconeUrl' | translate }}
+          </label>
+          <input
+            id="iconeUrl"
+            type="text"
+            class="form-control"
+            formControlName="iconeUrl"
+          />
         </div>
       </div>
 

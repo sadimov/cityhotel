@@ -26,5 +26,15 @@ public record NuiteeDto(
         BigDecimal prixNuit,
         BigDecimal taxeSejour,
         StatutNuitee statut,
-        Instant createdAt) {
+        Instant createdAt,
+        /** Numéro de chambre (résolu côté service, anti-N+1). */
+        String numeroChambre,
+        /** Numéro de réservation (résolu côté service, anti-N+1). */
+        String numeroReservation) {
+
+    public NuiteeDto withResolvedNames(String numChambre, String numRes) {
+        return new NuiteeDto(
+                id, reservationId, chambreId, dateNuitee, prixNuit, taxeSejour,
+                statut, createdAt, numChambre, numRes);
+    }
 }

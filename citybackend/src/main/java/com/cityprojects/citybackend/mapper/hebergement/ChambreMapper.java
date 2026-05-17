@@ -14,6 +14,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ChambreMapper {
 
+    @Mapping(target = "nomTypeChambre", ignore = true)
     ChambreDto toDto(Chambre entity);
 
     @Mapping(target = "chambreId", ignore = true)

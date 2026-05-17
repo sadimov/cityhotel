@@ -20,5 +20,16 @@ public record MouvementStockDto(
         String referenceDocument,
         String commentaire,
         Long userId,
-        Instant createdAt) {
+        Instant createdAt,
+        /** Nom du produit (résolu côté service, anti-N+1). */
+        String nomProduit,
+        /** Code du produit (résolu côté service, anti-N+1). */
+        String codeProduit) {
+
+    public MouvementStockDto withResolvedNames(String nomProd, String codeProd) {
+        return new MouvementStockDto(
+                mouvementId, produitId, typeMouvement, quantite, prixUnitaire,
+                stockAvant, stockApres, referenceDocument, commentaire, userId, createdAt,
+                nomProd, codeProd);
+    }
 }

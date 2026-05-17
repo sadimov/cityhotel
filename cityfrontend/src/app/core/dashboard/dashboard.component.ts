@@ -8,6 +8,7 @@ import { ReservationsService } from '../../features/hebergement/services/reserva
 import { ProduitsService } from '../../features/inventory/services/produits.service';
 import { DashboardMenageService } from '../../features/menage/services/dashboard-menage.service';
 import { CommandesService } from '../../features/restaurant/services/commandes.service';
+import { ClientsService } from '../../features/clients/services/clients.service';
 
 interface DashboardCard {
   title: string;
@@ -170,6 +171,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     private dashboardMenageService: DashboardMenageService,
     private reportingDashboardService: ReportingDashboardService,
     private commandesService: CommandesService,
+    private clientsService: ClientsService,
   ) {}
 
   ngOnInit(): void {
@@ -210,9 +212,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
       commandesJour: this.commandesService
         .page({ dateDebut: today, dateFin: today }, 0, 1)
         .pipe(catchError(() => of(null))),
+      clientsNouveaux: this.clientsService.countNouveauxDuJour()
+        .pipe(catchError(() => of(null))),
     })
       .pipe(takeUntil(this.destroy$))
-      .subscribe(({ arrivees, enCours, produits, menage, direction, commandesJour }) => {
+      .subscribe(({ arrivees, enCours, produits, menage, direction, commandesJour, clientsNouveaux }) => {
         this.setCardValue("Réservations Aujourd'hui", arrivees.length);
         this.setCardValue('Chambres Occupées', enCours.length);
         this.setCardValue('Produits en Stock', produits.length);
@@ -229,8 +233,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         );
         // Commandes restaurant du jour (totalElements de la première page filtrée)
         this.setCardValue('Commandes Restaurant', commandesJour?.totalElements ?? '—');
-        // Pas d'endpoint dédié — TODO créer GET /api/clients/nouveaux-du-jour.
-        this.setCardValue('Clients Nouveaux', '—');
+        // Clients nouveaux du jour via /api/clients/nouveaux-du-jour
+        this.setCardValue('Clients Nouveaux', clientsNouveaux?.count ?? '—');
         this.isLoading = false;
       });
   }

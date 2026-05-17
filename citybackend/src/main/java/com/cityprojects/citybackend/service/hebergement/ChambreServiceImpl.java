@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -110,7 +111,7 @@ public class ChambreServiceImpl implements ChambreService {
             entity.setStatut(StatutChambre.DISPONIBLE);
         }
 
-        return chambreMapper.toDto(chambreRepository.save(entity));
+        return enrichDto(chambreRepository.save(entity));
     }
 
     @Override
@@ -143,21 +144,21 @@ public class ChambreServiceImpl implements ChambreService {
         entity.setDescription(dto.description());
         // statut non modifie ici : passer par changerStatut()
 
-        return chambreMapper.toDto(chambreRepository.save(entity));
+        return enrichDto(chambreRepository.save(entity));
     }
 
     @Override
     public ChambreDto findById(Long chambreId) {
         Chambre entity = chambreRepository.findById(chambreId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.chambre.notFound"));
-        return chambreMapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
     public ChambreDto findByNumero(String numeroChambre) {
         Chambre entity = chambreRepository.findByNumeroChambre(numeroChambre)
                 .orElseThrow(() -> new ResourceNotFoundException("error.chambre.notFound"));
-        return chambreMapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
@@ -167,28 +168,52 @@ public class ChambreServiceImpl implements ChambreService {
         Pageable remapped = PageableUtils.remapSort(pageable, Map.of("dateCreation", "createdAt"));
         Sort defaultSort = Sort.by(Sort.Order.asc("numeroChambre"));
         Pageable stable = PageableUtils.stable(remapped, defaultSort, "chambreId");
-        return chambreRepository.findAll(stable).map(chambreMapper::toDto);
+        Page<Chambre> page = chambreRepository.findAll(stable);
+        Map<Long, String> typeNoms = batchTypeNoms(page.getContent());
+        return page.map(c -> chambreMapper.toDto(c).withResolvedNames(typeNoms.get(c.getTypeId())));
     }
 
     @Override
     public List<ChambreDto> findAllActive() {
-        return chambreRepository.findByActifTrueOrderByNumeroChambreAsc().stream()
-                .map(chambreMapper::toDto)
-                .collect(Collectors.toList());
+        return enrichList(chambreRepository.findByActifTrueOrderByNumeroChambreAsc());
     }
 
     @Override
     public List<ChambreDto> findByType(Long typeId) {
-        return chambreRepository.findByTypeIdAndActifTrueOrderByNumeroChambreAsc(typeId).stream()
-                .map(chambreMapper::toDto)
-                .collect(Collectors.toList());
+        return enrichList(chambreRepository.findByTypeIdAndActifTrueOrderByNumeroChambreAsc(typeId));
     }
 
     @Override
     public List<ChambreDto> findByStatut(StatutChambre statut) {
-        return chambreRepository.findByStatutAndActifTrueOrderByNumeroChambreAsc(statut).stream()
-                .map(chambreMapper::toDto)
+        return enrichList(chambreRepository.findByStatutAndActifTrueOrderByNumeroChambreAsc(statut));
+    }
+
+    /** Enrichit un DTO unitaire avec le nom du type de chambre (1 SELECT). */
+    private ChambreDto enrichDto(Chambre entity) {
+        String nomType = (entity.getTypeId() != null)
+                ? typeChambreRepository.findById(entity.getTypeId())
+                        .map(TypeChambre::getTypeNom).orElse(null)
+                : null;
+        return chambreMapper.toDto(entity).withResolvedNames(nomType);
+    }
+
+    /** Enrichit une liste de chambres en batch (1 SELECT IN sur les types). */
+    private List<ChambreDto> enrichList(List<Chambre> entities) {
+        Map<Long, String> typeNoms = batchTypeNoms(entities);
+        return entities.stream()
+                .map(c -> chambreMapper.toDto(c).withResolvedNames(typeNoms.get(c.getTypeId())))
                 .collect(Collectors.toList());
+    }
+
+    /** Batch lookup type chambre → nom (1 SELECT IN, anti-N+1). */
+    private Map<Long, String> batchTypeNoms(List<Chambre> entities) {
+        Set<Long> typeIds = entities.stream()
+                .map(Chambre::getTypeId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (typeIds.isEmpty()) return Map.of();
+        return typeChambreRepository.findAllById(typeIds).stream()
+                .collect(Collectors.toMap(TypeChambre::getTypeId, TypeChambre::getTypeNom));
     }
 
     @Override
@@ -199,7 +224,7 @@ public class ChambreServiceImpl implements ChambreService {
 
         checkTransition(entity.getStatut(), nouveauStatut);
         entity.setStatut(nouveauStatut);
-        return chambreMapper.toDto(chambreRepository.save(entity));
+        return enrichDto(chambreRepository.save(entity));
     }
 
     @Override
@@ -241,9 +266,7 @@ public class ChambreServiceImpl implements ChambreService {
         if (!dateFin.isAfter(dateDebut)) {
             throw new BusinessException("error.disponibilite.dates.invalid");
         }
-        return chambreRepository.findDisponibles(dateDebut, dateFin).stream()
-                .map(chambreMapper::toDto)
-                .collect(Collectors.toList());
+        return enrichList(chambreRepository.findDisponibles(dateDebut, dateFin));
     }
 
     /**

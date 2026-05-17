@@ -35,6 +35,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation de {@link BonSortieService}.
@@ -232,9 +236,25 @@ public class BonSortieServiceImpl implements BonSortieService {
 
     private BonSortieDto toDtoWithLignes(BonSortie bs) {
         BonSortieDto base = mapper.toDto(bs);
-        List<LigneBonSortieDto> lignes = ligneRepository
-                .findByBonSortieIdOrderByLigneIdAsc(bs.getBonSortieId())
-                .stream().map(mapper::toLigneDto).toList();
+        List<LigneBonSortie> entLignes = ligneRepository
+                .findByBonSortieIdOrderByLigneIdAsc(bs.getBonSortieId());
+        Set<Long> produitIds = entLignes.stream()
+                .map(LigneBonSortie::getProduitId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Produit> produits = produitIds.isEmpty() ? Map.of()
+                : produitRepository.findAllById(produitIds).stream()
+                        .collect(Collectors.toMap(Produit::getProduitId, p -> p));
+        List<LigneBonSortieDto> lignes = entLignes.stream()
+                .map(l -> {
+                    LigneBonSortieDto baseDto = mapper.toLigneDto(l);
+                    Produit p = produits.get(l.getProduitId());
+                    return baseDto.withResolvedNames(
+                            p != null ? p.getNomProduit() : null,
+                            p != null ? p.getCodeProduit() : null,
+                            p != null ? p.getUniteMesure() : null);
+                })
+                .toList();
         return mapper.withLignes(base, lignes);
     }
 

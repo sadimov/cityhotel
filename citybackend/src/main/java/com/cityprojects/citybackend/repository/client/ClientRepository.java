@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.Optional;
 
 /**
@@ -80,4 +81,10 @@ public interface ClientRepository
      * Utilise pour bloquer la suppression d'une societe ayant des clients actifs.
      */
     long countBySocieteIdAndActifTrue(Long societeId);
+
+    /**
+     * Compte des clients créés dans une fenêtre temporelle (tenant courant).
+     * Utilisé par le KPI "Clients Nouveaux" du dashboard accueil.
+     */
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant from, Instant to);
 }

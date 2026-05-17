@@ -24,6 +24,9 @@ public interface BonCommandeMapper {
     BonCommandeDto toDto(BonCommande entity);
 
     @Mapping(target = "sousTotal", expression = "java(entity.getSousTotal())")
+    @Mapping(target = "nomProduit", ignore = true)
+    @Mapping(target = "codeProduit", ignore = true)
+    @Mapping(target = "uniteMesure", ignore = true)
     LigneBonCommandeDto toLigneDto(LigneBonCommande entity);
 
     /**

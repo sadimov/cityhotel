@@ -42,6 +42,9 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation de {@link BonCommandeService}.
@@ -333,9 +336,26 @@ public class BonCommandeServiceImpl implements BonCommandeService {
 
     private BonCommandeDto toDtoWithLignes(BonCommande bc) {
         BonCommandeDto base = mapper.toDto(bc);
-        List<LigneBonCommandeDto> lignes = ligneRepository
-                .findByBonCommandeIdOrderByLigneIdAsc(bc.getBonCommandeId())
-                .stream().map(mapper::toLigneDto).toList();
+        List<LigneBonCommande> entLignes = ligneRepository
+                .findByBonCommandeIdOrderByLigneIdAsc(bc.getBonCommandeId());
+        // Batch lookup produits pour résolution noms (anti-N+1)
+        Set<Long> produitIds = entLignes.stream()
+                .map(LigneBonCommande::getProduitId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Map<Long, Produit> produits = produitIds.isEmpty() ? Map.of()
+                : produitRepository.findAllById(produitIds).stream()
+                        .collect(Collectors.toMap(Produit::getProduitId, p -> p));
+        List<LigneBonCommandeDto> lignes = entLignes.stream()
+                .map(l -> {
+                    LigneBonCommandeDto baseDto = mapper.toLigneDto(l);
+                    Produit p = produits.get(l.getProduitId());
+                    return baseDto.withResolvedNames(
+                            p != null ? p.getNomProduit() : null,
+                            p != null ? p.getCodeProduit() : null,
+                            p != null ? p.getUniteMesure() : null);
+                })
+                .toList();
         BonCommandeDto withLignes = mapper.withLignes(base, lignes);
         String nomFournisseur = (bc.getFournisseurId() != null)
                 ? fournisseurRepository.findById(bc.getFournisseurId())

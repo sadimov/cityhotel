@@ -18,6 +18,9 @@ public interface BonSortieMapper {
     @Mapping(target = "lignes", ignore = true)
     BonSortieDto toDto(BonSortie entity);
 
+    @Mapping(target = "nomProduit", ignore = true)
+    @Mapping(target = "codeProduit", ignore = true)
+    @Mapping(target = "uniteMesure", ignore = true)
     LigneBonSortieDto toLigneDto(LigneBonSortie entity);
 
     default BonSortieDto withLignes(BonSortieDto dto, List<LigneBonSortieDto> lignes) {

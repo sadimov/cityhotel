@@ -96,6 +96,24 @@ export class ClientsService {
       .pipe(map((r) => r.data as StatistiquesClient));
   }
 
+  /**
+   * KPI dashboard — nombre de clients nouvellement créés à la date demandée
+   * (par défaut aujourd'hui en timezone serveur).
+   *
+   * Réponse backend : `{ count: number, date: string }`. Réponse brute (non
+   * wrappée par ApiResponse), envoyée directement par `ClientController#countNouveauxDuJour`.
+   */
+  countNouveauxDuJour(date?: Date): Observable<{ count: number; date: string }> {
+    let params = new HttpParams();
+    if (date) {
+      params = params.set('date', date.toISOString().slice(0, 10));
+    }
+    return this.http.get<{ count: number; date: string }>(
+      `${this.base}/nouveaux-du-jour`,
+      { params },
+    );
+  }
+
   // ────────────────────────────────────────────────────────────────────────
   // Sociétés — base sur `/api/societes` (SocieteController)
   // ────────────────────────────────────────────────────────────────────────

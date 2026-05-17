@@ -9,5 +9,17 @@ public record LigneBonSortieDto(
         Long produitId,
         Integer quantiteDemandee,
         Integer quantiteServie,
-        String commentaires) {
+        String commentaires,
+        /** Nom du produit (résolu côté service, anti-N+1). */
+        String nomProduit,
+        /** Code du produit (résolu côté service, anti-N+1). */
+        String codeProduit,
+        /** Unité de mesure du produit (résolue côté service). */
+        String uniteMesure) {
+
+    public LigneBonSortieDto withResolvedNames(String nomProd, String codeProd, String unite) {
+        return new LigneBonSortieDto(
+                ligneId, bonSortieId, produitId, quantiteDemandee, quantiteServie,
+                commentaires, nomProd, codeProd, unite);
+    }
 }

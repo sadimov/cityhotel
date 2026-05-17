@@ -17,7 +17,11 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
+import java.util.Map;
 
 /**
  * REST API des clients (personnes physiques).
@@ -116,5 +120,20 @@ public class ClientController {
     public ResponseEntity<Void> reactivate(@PathVariable("id") Long id) {
         clientService.reactivate(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * KPI dashboard accueil — nombre de clients créés à la date demandée
+     * (par défaut aujourd'hui dans la timezone serveur).
+     * Réponse : {@code {"count": 12, "date": "2026-05-17"}}.
+     */
+    @GetMapping("/nouveaux-du-jour")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    public ResponseEntity<Map<String, Object>> countNouveauxDuJour(
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        long count = clientService.countNouveauxDuJour(date);
+        LocalDate effective = (date != null) ? date : LocalDate.now();
+        return ResponseEntity.ok(Map.of("count", count, "date", effective.toString()));
     }
 }

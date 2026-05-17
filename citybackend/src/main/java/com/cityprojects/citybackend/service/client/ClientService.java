@@ -84,4 +84,12 @@ public interface ClientService {
      * Reactive un client.
      */
     void reactivate(Long clientId);
+
+    /**
+     * Compte les clients créés à la date demandée (00:00 → 23:59:59) dans le
+     * tenant courant. Utilisé par le KPI "Clients Nouveaux" du dashboard accueil.
+     *
+     * @param date date à considérer (timezone Africa/Nouakchott)
+     */
+    long countNouveauxDuJour(java.time.LocalDate date);
 }
