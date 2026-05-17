@@ -767,9 +767,18 @@ public class ReservationServiceImpl implements ReservationService {
                         reservationMapper.toDto(e),
                         byReservation.getOrDefault(e.getReservationId(), List.of()))
                         .withResolvedNames(
-                                nomsClients.get(e.getClientPrincipalId()),
-                                nomsSocietes.get(e.getSocieteId())))
+                                lookup(nomsClients, e.getClientPrincipalId()),
+                                lookup(nomsSocietes, e.getSocieteId())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * {@code Map.of().get(null)} lève NPE (immutable map) — wrapper null-safe.
+     * Indispensable quand la FK source est nullable (ex. {@code societeId} pour
+     * une réservation B2C) et que la map cible est vide.
+     */
+    private static String lookup(Map<Long, String> map, Long key) {
+        return (key == null) ? null : map.get(key);
     }
 
     /** Variante {@code Page<>} de {@link #enrichDtos(List)}. */
