@@ -2016,7 +2016,8 @@
         "titleEdit": "Edit user",
         "loadError": "Unable to load this user.",
         "selectRole": "Select a role",
-        "passwordEditHint": "To reset the password, use the \"reset\" action from the list."
+        "passwordEditHint": "To reset the password, use the \"reset\" action from the list.",
+        "selectHotel": "Sélectionner un hôtel"
       },
       "actions": {
         "create": "New user",
@@ -2039,7 +2040,8 @@
         "role": "Role",
         "derniereConnexion": "Last login",
         "statut": "Status",
-        "actif": "Active"
+        "actif": "Active",
+        "hotelImmutable": "non modifiable"
       },
       "statut": {
         "actif": "Active",
@@ -2055,7 +2057,8 @@
         "emailFormat": "Email address is invalid.",
         "prenomRequired": "First name is required.",
         "nomRequired": "Last name is required.",
-        "roleRequired": "Role is required."
+        "roleRequired": "Role is required.",
+        "hotelRequired": "L'hôtel est obligatoire."
       },
       "messages": {
         "createSuccess": "User created successfully",

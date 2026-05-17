@@ -182,16 +182,12 @@ export class UsersListComponent implements OnInit, OnDestroy {
   }
 
   createNew(): void {
+    // L'hôtel est désormais choisi via un champ du formulaire de création
+    // (pas via le filtre liste). Si l'utilisateur a pré-sélectionné un
+    // hôtel dans le filtre, on le passe en queryParam pour pré-remplir.
     const hotelId = this.request.filtres.hotelId;
-    if (hotelId != null) {
-      this.router.navigate(['/admin/hotels', hotelId, 'users', 'new']);
-    } else {
-      // Sélectionner d'abord un hôtel via le filtre.
-      Swal.fire({
-        icon: 'info',
-        title: this.i18n.translate('admin.users.messages.selectHotelFirst'),
-      });
-    }
+    const extras = hotelId != null ? { queryParams: { hotelId } } : {};
+    this.router.navigate(['/admin/users/new'], extras);
   }
 
   edit(user: User): void {

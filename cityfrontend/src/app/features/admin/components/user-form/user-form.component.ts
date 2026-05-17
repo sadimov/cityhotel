@@ -6,8 +6,10 @@ import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { Hotel } from '../../models/hotel.admin.model';
 import { Role } from '../../models/role.admin.model';
 import { User } from '../../models/user.admin.model';
+import { HotelsAdminService } from '../../services/hotels.admin.service';
 import { RolesAdminService } from '../../services/roles.admin.service';
 import { UsersAdminService } from '../../services/users.admin.service';
 
@@ -16,16 +18,24 @@ type FormState = 'loading' | 'ready' | 'submitting' | 'error';
 /**
  * Formulaire création / édition d'un utilisateur (vue SUPERADMIN).
  *
- * `hotelId` est lu du **path param** `:hotelId` (route
- * `/admin/hotels/:hotelId/users/new` ou `/admin/hotels/:hotelId/users/:userId`).
- * C'est l'unique endroit du front où on accepte un `hotelId` côté UI —
- * ce n'est pas un champ libre du formulaire mais une cible explicite
- * de la route SUPERADMIN-only (cf. JSDoc de `UsersAdminService` pour
- * la justification de cette exception).
+ * <h3>Deux modes de routage</h3>
+ * <ul>
+ *   <li><b>Mode standalone</b> (route `/admin/users/new` ou `/admin/users/:userId`) :
+ *     `hotelId` est un <b>champ du formulaire</b>, l'utilisateur choisit
+ *     l'hôtel par son nom dans un select. C'est le flux principal depuis
+ *     la liste utilisateurs (consigne user 2026-05-17).</li>
+ *   <li><b>Mode scoped hôtel</b> (route `/admin/hotels/:hotelId/users/...`) :
+ *     `hotelId` est lu du path param, le champ select est masqué. Conservé
+ *     pour les entrées depuis le détail d'un hôtel.</li>
+ * </ul>
+ *
+ * Le champ `hotelId` est pré-rempli si le queryParam `?hotelId=X` est fourni
+ * (cas où l'utilisateur avait un filtre actif dans la liste).
  *
  * Validators :
- *  - `username` : required + maxLength(50) + pattern alphanumérique. **Désactivé en édition.**
- *  - `password` : required + minLength(8) en création. **Désactivé en édition**
+ *  - `hotelId` : required en mode standalone uniquement
+ *  - `username` : required + maxLength(50) + pattern alphanumérique. <b>Désactivé en édition.</b>
+ *  - `password` : required + minLength(8) en création. <b>Désactivé en édition</b>
  *    (un changement de mdp se fait via l'action « reset password » de la liste).
  *  - `email` : required + format email
  *  - `prenom` / `nom` : required + maxLength(100)
@@ -41,9 +51,13 @@ type FormState = 'loading' | 'ready' | 'submitting' | 'error';
 export class UserFormComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   state: FormState = 'ready';
+  /** Hotel résolu (route path-param OU lu depuis le form après submit). */
   hotelId: number | null = null;
+  /** `true` quand l'hôtel n'est PAS dans le path → afficher le select hôtel. */
+  hotelInForm = false;
   editingId: number | null = null;
   roles: Role[] = [];
+  hotels: Hotel[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -53,6 +67,7 @@ export class UserFormComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly usersService: UsersAdminService,
     private readonly rolesService: RolesAdminService,
+    private readonly hotelsService: HotelsAdminService,
     private readonly i18n: TranslationService,
   ) {}
 
@@ -60,17 +75,33 @@ export class UserFormComponent implements OnInit, OnDestroy {
     this.form = this.buildForm();
     this.loadRoles();
 
+    // Mode 1 : path param `:hotelId` (route legacy `/admin/hotels/:hotelId/users/...`)
     const hotelIdParam = this.route.snapshot.paramMap.get('hotelId');
-    if (!hotelIdParam) {
-      this.state = 'error';
-      return;
+    if (hotelIdParam) {
+      const hotelId = Number(hotelIdParam);
+      if (!Number.isFinite(hotelId)) {
+        this.state = 'error';
+        return;
+      }
+      this.hotelId = hotelId;
+      this.hotelInForm = false;
+    } else {
+      // Mode 2 : standalone (`/admin/users/new` ou `/admin/users/:userId`)
+      // → hotelId vient du champ form. Préchargement de la liste hôtels.
+      this.hotelInForm = true;
+      this.form.addControl('hotelId', this.fb.control(null, [Validators.required]));
+      this.loadHotels();
+
+      // Pré-remplir le select si ?hotelId=X en queryParam (cas où la liste
+      // avait un filtre actif au moment du clic « Nouvel utilisateur »).
+      const queryHotelId = this.route.snapshot.queryParamMap.get('hotelId');
+      if (queryHotelId) {
+        const qh = Number(queryHotelId);
+        if (Number.isFinite(qh)) {
+          this.form.patchValue({ hotelId: qh });
+        }
+      }
     }
-    const hotelId = Number(hotelIdParam);
-    if (!Number.isFinite(hotelId)) {
-      this.state = 'error';
-      return;
-    }
-    this.hotelId = hotelId;
 
     const userIdParam = this.route.snapshot.paramMap.get('userId');
     if (userIdParam && userIdParam !== 'new') {
@@ -80,7 +111,15 @@ export class UserFormComponent implements OnInit, OnDestroy {
         return;
       }
       this.editingId = userId;
-      this.loadExisting(this.hotelId, userId);
+      // En édition standalone, on a besoin du hotelId pour faire le GET ; le
+      // backend `findById(hotelId, userId)` exige les deux. On résout en
+      // récupérant la liste cross-hotel pour trouver l'hôtel du user — fait
+      // dans loadExistingStandalone() ci-dessous.
+      if (this.hotelId != null) {
+        this.loadExisting(this.hotelId, userId);
+      } else {
+        this.loadExistingStandalone(userId);
+      }
     }
   }
 
@@ -94,10 +133,19 @@ export class UserFormComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
-    if (this.form.invalid || this.hotelId == null) {
+    if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
+    // En mode standalone, hotelId vient du form ; en mode scoped, du path.
+    const effectiveHotelId = this.hotelInForm
+      ? Number(this.form.value.hotelId)
+      : this.hotelId;
+    if (effectiveHotelId == null || !Number.isFinite(effectiveHotelId)) {
+      this.form.markAllAsTouched();
+      return;
+    }
+    this.hotelId = effectiveHotelId;
     this.state = 'submitting';
     const raw = this.form.getRawValue();
 
@@ -117,8 +165,8 @@ export class UserFormComponent implements OnInit, OnDestroy {
     }
 
     const obs$ = this.editingId
-      ? this.usersService.update(this.hotelId, this.editingId, payload)
-      : this.usersService.create(this.hotelId, payload);
+      ? this.usersService.update(effectiveHotelId, this.editingId, payload)
+      : this.usersService.create(effectiveHotelId, payload);
 
     obs$
       .pipe(
@@ -193,6 +241,22 @@ export class UserFormComponent implements OnInit, OnDestroy {
       .subscribe((roles) => (this.roles = roles));
   }
 
+  /**
+   * Charge un échantillon large (200) d'hôtels actifs pour le select de
+   * création SUPERADMIN. La cible produit < 100 hôtels en pratique.
+   */
+  private loadHotels(): void {
+    this.hotelsService
+      .page({}, 0, 200, 'nom', 'asc')
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(() => of(null)),
+      )
+      .subscribe((p) => {
+        this.hotels = p?.content ?? [];
+      });
+  }
+
   private loadExisting(hotelId: number, userId: number): void {
     this.state = 'loading';
     this.usersService
@@ -207,6 +271,35 @@ export class UserFormComponent implements OnInit, OnDestroy {
           this.form.get('password')?.clearValidators();
           this.form.get('password')?.updateValueAndValidity({ emitEvent: false });
           this.state = 'ready';
+        },
+        error: () => {
+          this.state = 'error';
+        },
+      });
+  }
+
+  /**
+   * Édition standalone (`/admin/users/:userId` sans hotelId path) : on lit
+   * d'abord le User dans la liste cross-hotel pour récupérer son hotelId,
+   * puis on fait le findById scoped. Le select hôtel reste affiché mais
+   * désactivé (déplacement cross-hotel non géré ici).
+   */
+  private loadExistingStandalone(userId: number): void {
+    this.state = 'loading';
+    this.usersService
+      .pageAll({}, 0, 1000, 'username', 'asc')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (p) => {
+          const found = p.content.find((u) => u.userId === userId);
+          if (!found || found.hotelId == null) {
+            this.state = 'error';
+            return;
+          }
+          this.hotelId = found.hotelId;
+          this.form.patchValue({ hotelId: found.hotelId });
+          this.form.get('hotelId')?.disable({ emitEvent: false });
+          this.loadExisting(found.hotelId, userId);
         },
         error: () => {
           this.state = 'error';

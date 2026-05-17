@@ -2093,6 +2093,7 @@
         "titleEdit": "Modifier l'utilisateur",
         "loadError": "Impossible de charger cet utilisateur.",
         "selectRole": "Sélectionner un rôle",
+        "selectHotel": "Sélectionner un hôtel",
         "passwordEditHint": "Pour réinitialiser le mot de passe, utilisez l'action « réinitialiser » depuis la liste."
       },
       "actions": {
@@ -2113,6 +2114,7 @@
         "nomComplet": "Nom complet",
         "telephone": "Téléphone",
         "hotel": "Hôtel",
+        "hotelImmutable": "non modifiable",
         "role": "Rôle",
         "derniereConnexion": "Dernière connexion",
         "statut": "Statut",
@@ -2132,7 +2134,8 @@
         "emailFormat": "L'adresse email est invalide.",
         "prenomRequired": "Le prénom est obligatoire.",
         "nomRequired": "Le nom est obligatoire.",
-        "roleRequired": "Le rôle est obligatoire."
+        "roleRequired": "Le rôle est obligatoire.",
+        "hotelRequired": "L'hôtel est obligatoire."
       },
       "messages": {
         "createSuccess": "Utilisateur créé avec succès",

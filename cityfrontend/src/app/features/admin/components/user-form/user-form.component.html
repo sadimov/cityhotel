@@ -23,6 +23,34 @@
   } @else {
     <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <div class="row g-3">
+        @if (hotelInForm) {
+          <div class="col-12">
+            <label for="hotelId" class="form-label">
+              {{ 'admin.users.fields.hotel' | translate }}
+              <span class="text-danger">*</span>
+              @if (isEditing) {
+                <small class="text-muted">— {{ 'admin.users.fields.hotelImmutable' | translate }}</small>
+              }
+            </label>
+            <select
+              id="hotelId"
+              class="form-select"
+              formControlName="hotelId"
+              [class.is-invalid]="form.get('hotelId')?.invalid && form.get('hotelId')?.touched"
+            >
+              <option [ngValue]="null">{{ 'admin.users.form.selectHotel' | translate }}</option>
+              @for (h of hotels; track h.hotelId) {
+                <option [ngValue]="h.hotelId">{{ h.nom }}</option>
+              }
+            </select>
+            @if (form.get('hotelId')?.touched && form.get('hotelId')?.errors?.['required']) {
+              <div class="invalid-feedback d-block">
+                {{ 'admin.users.errors.hotelRequired' | translate }}
+              </div>
+            }
+          </div>
+        }
+
         <div class="col-md-6">
           <label for="username" class="form-label">
             {{ 'admin.users.fields.username' | translate }}

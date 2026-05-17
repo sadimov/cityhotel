@@ -2016,7 +2016,8 @@
         "titleEdit": "تعديل المستخدم",
         "loadError": "تعذر تحميل هذا المستخدم.",
         "selectRole": "اختر دورًا",
-        "passwordEditHint": "لإعادة تعيين كلمة المرور، استخدم إجراء «إعادة التعيين» من القائمة."
+        "passwordEditHint": "لإعادة تعيين كلمة المرور، استخدم إجراء «إعادة التعيين» من القائمة.",
+        "selectHotel": "Sélectionner un hôtel"
       },
       "actions": {
         "create": "مستخدم جديد",
@@ -2039,7 +2040,8 @@
         "role": "الدور",
         "derniereConnexion": "آخر اتصال",
         "statut": "الحالة",
-        "actif": "نشط"
+        "actif": "نشط",
+        "hotelImmutable": "non modifiable"
       },
       "statut": {
         "actif": "نشط",
@@ -2055,7 +2057,8 @@
         "emailFormat": "عنوان البريد الإلكتروني غير صالح.",
         "prenomRequired": "الاسم الأول مطلوب.",
         "nomRequired": "اللقب مطلوب.",
-        "roleRequired": "الدور مطلوب."
+        "roleRequired": "الدور مطلوب.",
+        "hotelRequired": "L'hôtel est obligatoire."
       },
       "messages": {
         "createSuccess": "تم إنشاء المستخدم بنجاح",

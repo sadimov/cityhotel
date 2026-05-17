@@ -55,8 +55,15 @@ const routes: Routes = [
       { path: 'hotels/:hotelId/users/:userId', component: UserFormComponent },
       { path: 'hotels/:id', component: HotelFormComponent },
 
-      // Users (vue cross-hotel)
+      // Users (vue cross-hotel) + création/édition standalone.
+      // L'hôtel est choisi via un champ du formulaire (pas en path param)
+      // — cf. consigne user 2026-05-17 : « le formulaire de création doit
+      // s'ouvrir normalement, ensuite on choisit un hôtel via un champ ».
+      // Les routes path-positioned `hotels/:hotelId/users/...` restent pour
+      // rétro-compat (entrée depuis le détail d'un hôtel).
       { path: 'users', component: UsersListComponent },
+      { path: 'users/new', component: UserFormComponent },
+      { path: 'users/:userId', component: UserFormComponent },
 
       // Roles (read-only)
       { path: 'roles', component: RolesListComponent },
