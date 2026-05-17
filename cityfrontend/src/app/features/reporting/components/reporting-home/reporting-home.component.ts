@@ -211,7 +211,7 @@ export class ReportingHomeComponent implements OnInit, OnDestroy {
     if (this.downloadingPath) return;
     this.downloadingPath = ex.path;
     this.downloadService
-      .download(ex.path, ex.filename)
+      .download(ex.path, ex.filename, this.defaultQueryParams())
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
@@ -238,5 +238,31 @@ export class ReportingHomeComponent implements OnInit, OnDestroy {
 
   trackByCode(_: number, r: ReportEntry): string {
     return r.code;
+  }
+
+  /**
+   * Paramètres de requête par défaut transmis à tous les endpoints reporting.
+   *
+   * <p>La plupart des controllers exigent `from`/`to` (Hebergement, Finance,
+   * Inventory, Menage, Restaurant) ou `date` (Restaurant journal-caisse,
+   * Hebergement kpi-reception, Direction dashboard) — sans defaultValue côté
+   * Spring → HTTP 400 si on ne les envoie pas. Les endpoints qui n'utilisent
+   * pas ces params les ignorent silencieusement (Spring ne valide pas les
+   * paramètres orphelins).</p>
+   *
+   * <p>Fenêtre par défaut : 30 derniers jours jusqu'à aujourd'hui inclus.
+   * À enrichir ultérieurement avec un sélecteur de période dans la carte
+   * (date-picker `from` / `to`).</p>
+   */
+  private defaultQueryParams(): Record<string, string> {
+    const today = new Date();
+    const from = new Date();
+    from.setDate(today.getDate() - 30);
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    return {
+      from: iso(from),
+      to: iso(today),
+      date: iso(today),
+    };
   }
 }
