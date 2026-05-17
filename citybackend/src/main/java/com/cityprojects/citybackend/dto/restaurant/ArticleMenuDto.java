@@ -22,5 +22,13 @@ public record ArticleMenuDto(
         Boolean actif,
         StatutArticle statut,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom de la catégorie (résolu côté service, anti-N+1). */
+        String nomCategorie) {
+
+    public ArticleMenuDto withResolvedNames(String nomCat) {
+        return new ArticleMenuDto(
+                articleId, codeArticle, nom, description, categorieId, prix, imageUrl,
+                disponible, actif, statut, createdAt, updatedAt, nomCat);
+    }
 }

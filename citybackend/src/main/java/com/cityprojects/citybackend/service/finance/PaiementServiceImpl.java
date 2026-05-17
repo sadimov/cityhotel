@@ -322,9 +322,21 @@ public class PaiementServiceImpl implements PaiementService {
 
     private PaiementDto toDtoWithAffectations(Paiement paiement) {
         PaiementDto base = mapper.toDto(paiement);
-        List<AffectationPaiementDto> affs = affectationRepository
-                .findByPaiementIdOrderByDateAffectationAsc(paiement.getPaiementId())
-                .stream().map(mapper::toAffectationDto).toList();
+        List<com.cityprojects.citybackend.entity.finance.AffectationPaiement> entAffs = affectationRepository
+                .findByPaiementIdOrderByDateAffectationAsc(paiement.getPaiementId());
+        // Batch lookup factures pour résolution numeroFacture (anti-N+1)
+        java.util.Set<Long> factureIds = entAffs.stream()
+                .map(com.cityprojects.citybackend.entity.finance.AffectationPaiement::getFactureId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, String> numerosFactures = factureIds.isEmpty() ? java.util.Map.of()
+                : factureRepository.findAllById(factureIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                Facture::getFactureId, Facture::getNumeroFacture));
+        List<AffectationPaiementDto> affs = entAffs.stream()
+                .map(a -> mapper.toAffectationDto(a)
+                        .withResolvedNames(numerosFactures.get(a.getFactureId())))
+                .toList();
         return mapper.withAffectations(base, affs);
     }
 

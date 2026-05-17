@@ -15,5 +15,13 @@ public record AffectationPaiementDto(
         Long factureId,
         Long ligneFactureId,
         BigDecimal montantAffecte,
-        Instant dateAffectation) {
+        Instant dateAffectation,
+        /** Numéro de facture (résolu côté service). */
+        String numeroFacture) {
+
+    public AffectationPaiementDto withResolvedNames(String numFact) {
+        return new AffectationPaiementDto(
+                affectationId, paiementId, factureId, ligneFactureId,
+                montantAffecte, dateAffectation, numFact);
+    }
 }

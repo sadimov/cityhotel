@@ -73,7 +73,7 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
         logger.info("Recette creee : id={}, articleId={}, produitId={}, qte={}",
                 saved.getRecetteId(), saved.getArticleId(), saved.getProduitId(),
                 saved.getQuantiteParUnite());
-        return mapper.toDto(saved);
+        return enrichDto(saved);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
 
         logger.info("Recette mise a jour : id={}, qte={}", saved.getRecetteId(),
                 saved.getQuantiteParUnite());
-        return mapper.toDto(saved);
+        return enrichDto(saved);
     }
 
     @Override
@@ -112,19 +112,58 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
     public RecetteArticleDto findById(Long recetteId) {
         RecetteArticle entity = recetteRepository.findById(recetteId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.recetteArticle.notFound"));
-        return mapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
     public List<RecetteArticleDto> findActiveByArticle(Long articleId) {
-        return recetteRepository.findByArticleIdAndActifTrue(articleId)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(recetteRepository.findByArticleIdAndActifTrue(articleId));
     }
 
     @Override
     public List<RecetteArticleDto> findAllByArticle(Long articleId) {
-        return recetteRepository.findByArticleId(articleId)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(recetteRepository.findByArticleId(articleId));
+    }
+
+    /** Enrichit une recette unitaire avec nomArticle + nomProduit + codeProduit. */
+    private RecetteArticleDto enrichDto(RecetteArticle entity) {
+        String nomArticle = (entity.getArticleId() != null)
+                ? articleRepository.findById(entity.getArticleId())
+                        .map(a -> a.getNom()).orElse(null)
+                : null;
+        var produit = (entity.getProduitId() != null)
+                ? produitRepository.findById(entity.getProduitId()).orElse(null)
+                : null;
+        return mapper.toDto(entity).withResolvedNames(
+                nomArticle,
+                produit != null ? produit.getNomProduit() : null,
+                produit != null ? produit.getCodeProduit() : null);
+    }
+
+    /** Enrichit une liste de recettes en batch (anti-N+1). */
+    private List<RecetteArticleDto> enrichList(List<RecetteArticle> entities) {
+        if (entities.isEmpty()) return List.of();
+        Set<Long> articleIds = entities.stream()
+                .map(RecetteArticle::getArticleId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        Set<Long> produitIds = entities.stream()
+                .map(RecetteArticle::getProduitId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, String> nomsArticles = articleIds.isEmpty() ? java.util.Map.of()
+                : articleRepository.findAllById(articleIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(a -> a.getArticleId(), a -> a.getNom()));
+        java.util.Map<Long, com.cityprojects.citybackend.entity.inventory.Produit> produits = produitIds.isEmpty() ? java.util.Map.of()
+                : produitRepository.findAllById(produitIds).stream()
+                        .collect(java.util.stream.Collectors.toMap(p -> p.getProduitId(), p -> p));
+        return entities.stream().map(r -> {
+            var p = produits.get(r.getProduitId());
+            return mapper.toDto(r).withResolvedNames(
+                    nomsArticles.get(r.getArticleId()),
+                    p != null ? p.getNomProduit() : null,
+                    p != null ? p.getCodeProduit() : null);
+        }).toList();
     }
 
     @Override
@@ -146,7 +185,7 @@ public class RecetteArticleServiceImpl implements RecetteArticleService {
         }
         for (LigneRecetteDto l : lignes) {
             RecetteArticle saved = upsertLigne(articleId, existantes, l);
-            resultat.add(mapper.toDto(saved));
+            resultat.add(enrichDto(saved));
         }
 
         logger.info("Recette d'article {} remplacee : {} lignes actives", articleId, resultat.size());

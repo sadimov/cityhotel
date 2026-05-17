@@ -110,6 +110,7 @@ public class CommandeServiceImpl implements CommandeService {
     private final RecetteArticleRepository recetteArticleRepository;
     private final ClientRepository clientRepository;
     private final ReservationRepository reservationRepository;
+    private final com.cityprojects.citybackend.repository.finance.FactureRepository factureRepository;
     private final CommandeMapper commandeMapper;
     private final LigneCommandeMapper ligneMapper;
     private final NumerotationService numerotationService;
@@ -123,6 +124,7 @@ public class CommandeServiceImpl implements CommandeService {
                                RecetteArticleRepository recetteArticleRepository,
                                ClientRepository clientRepository,
                                ReservationRepository reservationRepository,
+                               com.cityprojects.citybackend.repository.finance.FactureRepository factureRepository,
                                CommandeMapper commandeMapper,
                                LigneCommandeMapper ligneMapper,
                                NumerotationService numerotationService,
@@ -135,6 +137,7 @@ public class CommandeServiceImpl implements CommandeService {
         this.recetteArticleRepository = recetteArticleRepository;
         this.clientRepository = clientRepository;
         this.reservationRepository = reservationRepository;
+        this.factureRepository = factureRepository;
         this.commandeMapper = commandeMapper;
         this.ligneMapper = ligneMapper;
         this.numerotationService = numerotationService;
@@ -614,6 +617,20 @@ public class CommandeServiceImpl implements CommandeService {
         List<LigneCommandeDto> lignes = new ArrayList<>(ligneCommandeRepository
                 .findByCommandeIdOrderByLigneIdAsc(commande.getCommandeId())
                 .stream().map(ligneMapper::toDto).toList());
-        return commandeMapper.withLignes(base, lignes);
+        CommandeDto withLignes = commandeMapper.withLignes(base, lignes);
+        // Résolution noms FK (anti-N+1 unitaire — 1 SELECT par FK non null)
+        String nomClient = (commande.getClientId() != null)
+                ? clientRepository.findById(commande.getClientId())
+                        .map(c -> c.getNomComplet()).orElse(null)
+                : null;
+        String numeroRes = (commande.getReservationId() != null)
+                ? reservationRepository.findById(commande.getReservationId())
+                        .map(r -> r.getNumeroReservation()).orElse(null)
+                : null;
+        String numeroFact = (commande.getFactureId() != null)
+                ? factureRepository.findById(commande.getFactureId())
+                        .map(f -> f.getNumeroFacture()).orElse(null)
+                : null;
+        return withLignes.withResolvedNames(nomClient, numeroRes, numeroFact);
     }
 }

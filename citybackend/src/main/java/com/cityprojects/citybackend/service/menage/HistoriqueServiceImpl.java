@@ -2,9 +2,13 @@ package com.cityprojects.citybackend.service.menage;
 
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.menage.HistoriqueDto;
+import com.cityprojects.citybackend.entity.hebergement.Chambre;
 import com.cityprojects.citybackend.entity.menage.Historique;
+import com.cityprojects.citybackend.entity.menage.Personnel;
 import com.cityprojects.citybackend.mapper.menage.HistoriqueMapper;
+import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.menage.HistoriqueRepository;
+import com.cityprojects.citybackend.repository.menage.PersonnelRepository;
 import com.cityprojects.citybackend.security.UserPrincipal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +23,10 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Implementation de {@link HistoriqueService}.
@@ -40,13 +48,19 @@ public class HistoriqueServiceImpl implements HistoriqueService {
     static final int MIN_RETENTION_DAYS = 30;
 
     private final HistoriqueRepository repository;
+    private final PersonnelRepository personnelRepository;
+    private final ChambreRepository chambreRepository;
     private final HistoriqueMapper mapper;
     private final Clock clock;
 
     public HistoriqueServiceImpl(HistoriqueRepository repository,
+                                  PersonnelRepository personnelRepository,
+                                  ChambreRepository chambreRepository,
                                   HistoriqueMapper mapper,
                                   Clock clock) {
         this.repository = repository;
+        this.personnelRepository = personnelRepository;
+        this.chambreRepository = chambreRepository;
         this.mapper = mapper;
         this.clock = clock;
     }
@@ -74,25 +88,73 @@ public class HistoriqueServiceImpl implements HistoriqueService {
 
     @Override
     public Page<HistoriqueDto> findAll(Pageable pageable) {
-        return repository.findAllByOrderByTimestampActionDesc(pageable).map(mapper::toDto);
+        Page<Historique> page = repository.findAllByOrderByTimestampActionDesc(pageable);
+        return enrichPage(page);
     }
 
     @Override
     public List<HistoriqueDto> findByTache(Long tacheId) {
-        return repository.findByTacheIdOrderByTimestampActionDesc(tacheId)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(repository.findByTacheIdOrderByTimestampActionDesc(tacheId));
     }
 
     @Override
     public List<HistoriqueDto> findByChambre(Long chambreId) {
-        return repository.findByChambreIdOrderByTimestampActionDesc(chambreId)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(repository.findByChambreIdOrderByTimestampActionDesc(chambreId));
     }
 
     @Override
     public List<HistoriqueDto> findByPersonnel(Long personnelId) {
-        return repository.findByPersonnelIdOrderByTimestampActionDesc(personnelId)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(repository.findByPersonnelIdOrderByTimestampActionDesc(personnelId));
+    }
+
+    /** Enrichit une liste avec nomPersonnel + numeroChambre (batch anti-N+1). */
+    private List<HistoriqueDto> enrichList(List<Historique> entities) {
+        if (entities.isEmpty()) return List.of();
+        Map<Long, String> noms = batchNoms(entities);
+        Map<Long, String> numeros = batchNumeros(entities);
+        return entities.stream()
+                .map(h -> mapper.toDto(h).withResolvedNames(
+                        lookup(noms, h.getPersonnelId()),
+                        lookup(numeros, h.getChambreId())))
+                .toList();
+    }
+
+    private Page<HistoriqueDto> enrichPage(Page<Historique> page) {
+        Map<Long, String> noms = batchNoms(page.getContent());
+        Map<Long, String> numeros = batchNumeros(page.getContent());
+        return page.map(h -> mapper.toDto(h).withResolvedNames(
+                lookup(noms, h.getPersonnelId()),
+                lookup(numeros, h.getChambreId())));
+    }
+
+    /** {@code Map.of().get(null)} lève NPE — null-safe wrapper. */
+    private static String lookup(Map<Long, String> map, Long key) {
+        return (key == null) ? null : map.get(key);
+    }
+
+    private Map<Long, String> batchNoms(List<Historique> entities) {
+        Set<Long> ids = entities.stream()
+                .map(Historique::getPersonnelId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) return Map.of();
+        // HashMap + put : tolère les valeurs null (Collectors.toMap NPE si value null)
+        Map<Long, String> result = new java.util.HashMap<>();
+        personnelRepository.findAllById(ids).forEach(p ->
+                result.put(p.getPersonnelId(), p.getNomComplet()));
+        return result;
+    }
+
+    private Map<Long, String> batchNumeros(List<Historique> entities) {
+        Set<Long> ids = entities.stream()
+                .map(Historique::getChambreId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (ids.isEmpty()) return Map.of();
+        Map<Long, String> result = new java.util.HashMap<>();
+        chambreRepository.findAllById(ids).forEach(c ->
+                result.put(c.getChambreId(), c.getNumeroChambre()));
+        return result;
     }
 
     @Override

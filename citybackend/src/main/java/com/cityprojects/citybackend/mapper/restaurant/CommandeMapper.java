@@ -19,6 +19,9 @@ import java.util.List;
 public interface CommandeMapper {
 
     @Mapping(target = "lignes", ignore = true)
+    @Mapping(target = "nomClient", ignore = true)
+    @Mapping(target = "numeroReservation", ignore = true)
+    @Mapping(target = "numeroFacture", ignore = true)
     CommandeDto toDto(Commande entity);
 
     /**
@@ -35,6 +38,7 @@ public interface CommandeMapper {
                 base.statut(), base.montantHt(), base.montantTtc(), base.montantPaye(),
                 base.devise(), base.dateCommande(), base.motifAnnulation(),
                 base.numeroTable(),
-                lignes, base.createdAt(), base.updatedAt());
+                lignes, base.createdAt(), base.updatedAt(),
+                base.nomClient(), base.numeroReservation(), base.numeroFacture());
     }
 }

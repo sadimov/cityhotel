@@ -14,6 +14,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface PlanningMapper {
 
+    @Mapping(target = "nomPersonnel", ignore = true)
     PlanningDto toDto(Planning entity);
 
     @Mapping(target = "planningId", ignore = true)

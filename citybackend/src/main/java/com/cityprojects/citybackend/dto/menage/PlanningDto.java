@@ -18,5 +18,13 @@ public record PlanningDto(
         Boolean disponible,
         String commentaires,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom complet du personnel (résolu côté service). */
+        String nomPersonnel) {
+
+    public PlanningDto withResolvedNames(String nomPers) {
+        return new PlanningDto(
+                planningId, personnelId, dateTravail, heureDebut, heureFin,
+                disponible, commentaires, createdAt, updatedAt, nomPers);
+    }
 }

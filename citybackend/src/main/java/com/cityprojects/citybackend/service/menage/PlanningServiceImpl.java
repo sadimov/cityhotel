@@ -62,7 +62,7 @@ public class PlanningServiceImpl implements PlanningService {
             entity.setDisponible(Boolean.TRUE);
         }
         // PAS de setHotelId : Hibernate via @TenantId.
-        return mapper.toDto(planningRepository.save(entity));
+        return enrichDto(planningRepository.save(entity));
     }
 
     @Override
@@ -85,35 +85,59 @@ public class PlanningServiceImpl implements PlanningService {
         entity.setHeureFin(dto.heureFin());
         entity.setDisponible(dto.disponible() != null ? dto.disponible() : Boolean.TRUE);
         entity.setCommentaires(dto.commentaires());
-        return mapper.toDto(planningRepository.save(entity));
+        return enrichDto(planningRepository.save(entity));
     }
 
     @Override
     public PlanningDto findById(Long planningId) {
-        return planningRepository.findById(planningId)
-                .map(mapper::toDto)
+        Planning entity = planningRepository.findById(planningId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.planning.notFound"));
+        return enrichDto(entity);
     }
 
     @Override
     public List<PlanningDto> findByPersonnel(Long personnelId, LocalDate date) {
         // Hibernate filtre via @TenantId
-        personnelRepository.findById(personnelId)
+        Personnel p = personnelRepository.findById(personnelId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.personnel.notFound"));
+        String nomPersonnel = p.getNomComplet();
         return planningRepository.findByPersonnelIdAndDateTravailOrderByHeureDebutAsc(personnelId, date)
-                .stream().map(mapper::toDto).toList();
+                .stream()
+                .map(pl -> mapper.toDto(pl).withResolvedNames(nomPersonnel))
+                .toList();
     }
 
     @Override
     public List<PlanningDto> findByDate(LocalDate date) {
-        return planningRepository.findByDateTravailOrderByPersonnelIdAscHeureDebutAsc(date)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(planningRepository.findByDateTravailOrderByPersonnelIdAscHeureDebutAsc(date));
     }
 
     @Override
     public List<PlanningDto> findDisponibles(LocalDate date) {
-        return planningRepository.findByDateTravailAndDisponibleTrueOrderByPersonnelIdAscHeureDebutAsc(date)
-                .stream().map(mapper::toDto).toList();
+        return enrichList(planningRepository.findByDateTravailAndDisponibleTrueOrderByPersonnelIdAscHeureDebutAsc(date));
+    }
+
+    private PlanningDto enrichDto(Planning entity) {
+        String nom = (entity.getPersonnelId() != null)
+                ? personnelRepository.findById(entity.getPersonnelId())
+                        .map(Personnel::getNomComplet).orElse(null)
+                : null;
+        return mapper.toDto(entity).withResolvedNames(nom);
+    }
+
+    private List<PlanningDto> enrichList(List<Planning> entities) {
+        if (entities.isEmpty()) return List.of();
+        java.util.Set<Long> ids = entities.stream()
+                .map(Planning::getPersonnelId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        java.util.Map<Long, String> noms = ids.isEmpty() ? java.util.Map.of()
+                : personnelRepository.findAllById(ids).stream()
+                        .collect(java.util.stream.Collectors.toMap(
+                                Personnel::getPersonnelId, Personnel::getNomComplet));
+        return entities.stream()
+                .map(p -> mapper.toDto(p).withResolvedNames(noms.get(p.getPersonnelId())))
+                .toList();
     }
 
     @Override

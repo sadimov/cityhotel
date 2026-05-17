@@ -30,5 +30,19 @@ public record CommandeDto(
         String numeroTable,
         List<LigneCommandeDto> lignes,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom complet du client (résolu côté service). */
+        String nomClient,
+        /** Numéro de réservation (résolu côté service, pour report chambre). */
+        String numeroReservation,
+        /** Numéro de facture (résolu côté service, si encaissé). */
+        String numeroFacture) {
+
+    public CommandeDto withResolvedNames(String nomCli, String numRes, String numFact) {
+        return new CommandeDto(
+                commandeId, numeroCommande, clientId, reservationId, factureId,
+                modeReglement, statut, montantHt, montantTtc, montantPaye, devise,
+                dateCommande, motifAnnulation, numeroTable, lignes, createdAt, updatedAt,
+                nomCli, numRes, numFact);
+    }
 }

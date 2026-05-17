@@ -16,6 +16,9 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface RecetteArticleMapper {
 
+    @Mapping(target = "nomArticle", ignore = true)
+    @Mapping(target = "nomProduit", ignore = true)
+    @Mapping(target = "codeProduit", ignore = true)
     RecetteArticleDto toDto(RecetteArticle entity);
 
     @Mapping(target = "recetteId", ignore = true)

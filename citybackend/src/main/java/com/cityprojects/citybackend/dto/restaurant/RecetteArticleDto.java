@@ -17,5 +17,17 @@ public record RecetteArticleDto(
         String note,
         Boolean actif,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        /** Nom de l'article (résolu côté service). */
+        String nomArticle,
+        /** Nom du produit (résolu côté service). */
+        String nomProduit,
+        /** Code du produit (résolu côté service). */
+        String codeProduit) {
+
+    public RecetteArticleDto withResolvedNames(String nomArt, String nomProd, String codeProd) {
+        return new RecetteArticleDto(
+                recetteId, articleId, produitId, quantiteParUnite, unite, note,
+                actif, createdAt, updatedAt, nomArt, nomProd, codeProd);
+    }
 }

@@ -18,5 +18,16 @@ public record HistoriqueDto(
         String nouveauStatut,
         String commentaire,
         Long userId,
-        Instant timestampAction) {
+        Instant timestampAction,
+        /** Nom complet du personnel (résolu côté service). */
+        String nomPersonnel,
+        /** Numéro de chambre (résolu côté service). */
+        String numeroChambre) {
+
+    public HistoriqueDto withResolvedNames(String nomPers, String numChambre) {
+        return new HistoriqueDto(
+                historiqueId, tacheId, chambreId, personnelId, action,
+                ancienStatut, nouveauStatut, commentaire, userId, timestampAction,
+                nomPers, numChambre);
+    }
 }

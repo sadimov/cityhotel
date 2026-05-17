@@ -16,6 +16,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ArticleMenuMapper {
 
+    @Mapping(target = "nomCategorie", ignore = true)
     ArticleMenuDto toDto(ArticleMenu entity);
 
     @Mapping(target = "articleId", ignore = true)

@@ -90,7 +90,7 @@ public class ArticleMenuServiceImpl implements ArticleMenuService {
             entity.setDisponible(Boolean.TRUE);
         }
         // PAS de setHotelId : Hibernate s'en charge.
-        return mapper.toDto(articleRepository.save(entity));
+        return enrichDto(articleRepository.save(entity));
     }
 
     @Override
@@ -117,19 +117,20 @@ public class ArticleMenuServiceImpl implements ArticleMenuService {
         if (dto.disponible() != null) {
             entity.setDisponible(dto.disponible());
         }
-        return mapper.toDto(articleRepository.save(entity));
+        return enrichDto(articleRepository.save(entity));
     }
 
     @Override
     public ArticleMenuDto findById(Long articleId) {
         ArticleMenu entity = articleRepository.findById(articleId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.articleMenu.notFound"));
-        return mapper.toDto(entity);
+        return enrichDto(entity);
     }
 
     @Override
     public Page<ArticleMenuDto> search(String recherche, Long categorieId, Pageable pageable) {
-        return articleRepository.search(recherche, categorieId, pageable).map(mapper::toDto);
+        Page<ArticleMenu> page = articleRepository.search(recherche, categorieId, pageable);
+        return enrichPage(page);
     }
 
     @Override
@@ -138,7 +139,41 @@ public class ArticleMenuServiceImpl implements ArticleMenuService {
                 ? articleRepository.findByCategorieIdAndActifTrueAndStatutOrderByNomAsc(
                         categorieId, StatutArticle.ACTIF)
                 : articleRepository.findByActifTrueAndStatutOrderByNomAsc(StatutArticle.ACTIF);
-        return entities.stream().map(mapper::toDto).toList();
+        return enrichList(entities);
+    }
+
+    /** Enrichit 1 article avec nomCategorie (1 SELECT). */
+    private ArticleMenuDto enrichDto(ArticleMenu entity) {
+        String nomCat = (entity.getCategorieId() != null)
+                ? categorieRepository.findById(entity.getCategorieId())
+                        .map(CategorieMenu::getNom).orElse(null)
+                : null;
+        return mapper.toDto(entity).withResolvedNames(nomCat);
+    }
+
+    /** Enrichit une liste d'articles en batch (1 SELECT IN sur les catégories). */
+    private java.util.List<ArticleMenuDto> enrichList(java.util.List<ArticleMenu> entities) {
+        java.util.Map<Long, String> nomsCategories = batchNomsCategories(entities);
+        return entities.stream()
+                .map(a -> mapper.toDto(a).withResolvedNames(nomsCategories.get(a.getCategorieId())))
+                .toList();
+    }
+
+    /** Variante {@code Page} de {@link #enrichList}. */
+    private Page<ArticleMenuDto> enrichPage(Page<ArticleMenu> page) {
+        java.util.Map<Long, String> nomsCategories = batchNomsCategories(page.getContent());
+        return page.map(a -> mapper.toDto(a).withResolvedNames(nomsCategories.get(a.getCategorieId())));
+    }
+
+    /** Batch lookup catégorie → nom (anti-N+1). */
+    private java.util.Map<Long, String> batchNomsCategories(java.util.List<ArticleMenu> entities) {
+        java.util.Set<Long> categorieIds = entities.stream()
+                .map(ArticleMenu::getCategorieId)
+                .filter(java.util.Objects::nonNull)
+                .collect(java.util.stream.Collectors.toSet());
+        if (categorieIds.isEmpty()) return java.util.Map.of();
+        return categorieRepository.findAllById(categorieIds).stream()
+                .collect(java.util.stream.Collectors.toMap(CategorieMenu::getCategorieId, CategorieMenu::getNom));
     }
 
     @Override
@@ -152,7 +187,7 @@ public class ArticleMenuServiceImpl implements ArticleMenuService {
                 .orElseThrow(() -> new ResourceNotFoundException("error.articleMenu.notFound"));
         validateTransition(entity.getStatut(), nouveauStatut);
         entity.setStatut(nouveauStatut);
-        return mapper.toDto(articleRepository.save(entity));
+        return enrichDto(articleRepository.save(entity));
     }
 
     /**

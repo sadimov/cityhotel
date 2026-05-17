@@ -18,6 +18,7 @@ public interface PaiementMapper {
     @Mapping(target = "affectations", ignore = true)
     PaiementDto toDto(Paiement entity);
 
+    @Mapping(target = "numeroFacture", ignore = true)
     AffectationPaiementDto toAffectationDto(AffectationPaiement entity);
 
     default PaiementDto withAffectations(PaiementDto dto, List<AffectationPaiementDto> affectations) {
