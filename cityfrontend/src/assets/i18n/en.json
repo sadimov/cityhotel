@@ -2735,35 +2735,59 @@
       "r002": "RevPAR (revenu par chambre disponible)",
       "r003": "ADR (prix moyen par nuitée)",
       "r004": "Sources des réservations",
-      "r005": "ALOS (durée moyenne de séjour)"
+      "r005": "ALOS (durée moyenne de séjour)",
+      "r001Desc": "Occupation quotidienne des chambres sur la période sélectionnée.",
+      "r002Desc": "Réservations confirmées non honorées par les clients.",
+      "r003Desc": "Indicateurs clés de performance pour l'équipe réception.",
+      "r004Desc": "Répartition des réservations par canal de distribution.",
+      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées."
     },
     "finance": {
       "title": "Rapports Finance",
       "r001": "Journal des ventes",
       "r002": "Encaissements par mode",
       "r003": "Clients débiteurs",
-      "r004": "Balance âgée des créances"
+      "r004": "Balance âgée des créances",
+      "r001Desc": "CA émis et encaissé sur la période, par mode de paiement.",
+      "r002Desc": "Comptes auxiliaires clients avec soldes en attente.",
+      "r003Desc": "Détail TVA collectée par taux pour la déclaration mensuelle.",
+      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC)."
     },
     "inventory": {
       "title": "Rapports Stocks",
       "r001": "Stock actuel valorisé",
       "r002": "Valorisation des mouvements",
-      "r003": "Rotation produits"
+      "r003": "Rotation produits",
+      "r001Desc": "Produits sous le seuil critique ou en rupture.",
+      "r002Desc": "Entrées et sorties de stock avec valorisation comptable.",
+      "r003Desc": "Indice de rotation des produits sur la période."
     },
     "restaurant": {
       "title": "Rapports Restaurant",
       "r001": "Ventes restaurant",
       "r002": "Top articles vendus",
-      "r003": "Services poussés sur chambre"
+      "r003": "Services poussés sur chambre",
+      "r001Desc": "Journal des encaissements restaurant (PDF ou Excel).",
+      "r002Desc": "Classement des articles menu par volume et chiffre d'affaires.",
+      "r003Desc": "Évolution du ticket moyen par jour et par service."
     },
     "menage": {
       "title": "Rapports Ménage",
       "r001": "Productivité du personnel",
-      "r002": "Tâches en retard"
+      "r002": "Tâches en retard",
+      "r001Desc": "Synthèse des tâches ménage par chambre et par statut.",
+      "r002Desc": "Charge de travail par employé sur la période."
     },
     "direction": {
       "title": "Rapports Direction",
-      "r001": "Synthèse direction"
+      "r001": "Synthèse direction",
+      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage). Consultable depuis le dashboard d'accueil — export à venir."
+    },
+    "viewSoon": "Vue détaillée à venir",
+    "downloadError": "Le téléchargement du rapport a échoué.",
+    "download": {
+      "pdf": "Télécharger PDF",
+      "xlsx": "Télécharger Excel"
     }
   }
 }

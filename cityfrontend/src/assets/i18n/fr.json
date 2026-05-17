@@ -70,44 +70,67 @@
     }
   },
   "reporting": {
-    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
+    "subtitle": "Téléchargez les rapports au format PDF ou Excel depuis chaque module.",
     "empty": "Aucun rapport disponible pour ce module.",
-    "openEndpoint": "Ouvrir le rapport",
+    "viewSoon": "Vue détaillée à venir",
+    "downloadError": "Le téléchargement du rapport a échoué.",
+    "download": {
+      "pdf": "Télécharger PDF",
+      "xlsx": "Télécharger Excel"
+    },
     "hebergement": {
       "title": "Rapports Hébergement",
-      "r001": "Taux d'occupation quotidien",
-      "r002": "RevPAR (revenu par chambre disponible)",
-      "r003": "ADR (prix moyen par nuitée)",
-      "r004": "Sources des réservations",
-      "r005": "ALOS (durée moyenne de séjour)"
+      "r001": "Taux d'occupation",
+      "r001Desc": "Occupation quotidienne des chambres sur la période sélectionnée.",
+      "r002": "Taux de no-show",
+      "r002Desc": "Réservations confirmées non honorées par les clients.",
+      "r003": "KPI Réception",
+      "r003Desc": "Indicateurs clés de performance pour l'équipe réception.",
+      "r004": "Sources de réservation",
+      "r004Desc": "Répartition des réservations par canal de distribution.",
+      "r005": "ALOS — Durée moyenne de séjour",
+      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées."
     },
     "finance": {
       "title": "Rapports Finance",
-      "r001": "Journal des ventes",
-      "r002": "Encaissements par mode",
-      "r003": "Clients débiteurs",
-      "r004": "Balance âgée des créances"
+      "r001": "Chiffre d'affaires",
+      "r001Desc": "CA émis et encaissé sur la période, par mode de paiement.",
+      "r002": "Encours clients",
+      "r002Desc": "Comptes auxiliaires clients avec soldes en attente.",
+      "r003": "Récapitulatif TVA",
+      "r003Desc": "Détail TVA collectée par taux pour la déclaration mensuelle.",
+      "r004": "Top sociétés clientes",
+      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC)."
     },
     "inventory": {
       "title": "Rapports Stocks",
-      "r001": "Stock actuel valorisé",
-      "r002": "Valorisation des mouvements",
-      "r003": "Rotation produits"
+      "r001": "Alertes stock",
+      "r001Desc": "Produits sous le seuil critique ou en rupture.",
+      "r002": "Mouvements valorisés",
+      "r002Desc": "Entrées et sorties de stock avec valorisation comptable.",
+      "r003": "Rotation produits",
+      "r003Desc": "Indice de rotation des produits sur la période."
     },
     "restaurant": {
       "title": "Rapports Restaurant",
-      "r001": "Ventes restaurant",
+      "r001": "Journal de caisse",
+      "r001Desc": "Journal des encaissements restaurant (PDF ou Excel).",
       "r002": "Top articles vendus",
-      "r003": "Services poussés sur chambre"
+      "r002Desc": "Classement des articles menu par volume et chiffre d'affaires.",
+      "r003": "Ticket moyen",
+      "r003Desc": "Évolution du ticket moyen par jour et par service."
     },
     "menage": {
       "title": "Rapports Ménage",
-      "r001": "Productivité du personnel",
-      "r002": "Tâches en retard"
+      "r001": "Récap des tâches",
+      "r001Desc": "Synthèse des tâches ménage par chambre et par statut.",
+      "r002": "Charge personnel",
+      "r002Desc": "Charge de travail par employé sur la période."
     },
     "direction": {
       "title": "Rapports Direction",
-      "r001": "Synthèse direction"
+      "r001": "Dashboard direction",
+      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage). Consultable depuis le dashboard d'accueil — export à venir."
     }
   },
   "common": {
