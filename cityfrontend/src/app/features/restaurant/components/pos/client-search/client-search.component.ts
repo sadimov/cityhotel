@@ -84,6 +84,19 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
 
   activeTab: Tab = 'reservations';
 
+  /**
+   * Valeur locale synchrone du champ recherche, bindée via `[value]` côté
+   * template. NE PAS binder `[value]="(clientSearch$ | async)"` : le store
+   * n'est mis à jour qu'après debounce 200ms, donc à chaque keystroke,
+   * change detection écrasait `input.value` avec l'ancienne valeur du store
+   * et l'utilisateur perdait son caractère (consigne user 2026-05-21
+   * « le filtre client n'est pas stable »).
+   * Source de vérité durant la saisie = ce champ. Le store est resync via
+   * le pipeline debounce ; la subscription dans `ngOnInit` couvre les
+   * resets externes (clearClient, ouverture modale, etc.).
+   */
+  searchTerm = '';
+
   private readonly searchInput$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
@@ -93,6 +106,17 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Resync local quand le store est mis à jour de l'extérieur
+    // (clearClient, ouverture modale, sélection programmatique).
+    this.store.clientSearch$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((storeTerm) => {
+        const safe = storeTerm ?? '';
+        if (safe !== this.searchTerm) {
+          this.searchTerm = safe;
+        }
+      });
+
     this.searchInput$
       .pipe(
         debounceTime(200),
@@ -140,6 +164,9 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
   }
 
   onSearchInput(value: string): void {
+    // Maj locale SYNCHRONE → garantit que `[value]="searchTerm"` ne réécrase
+    // pas l'input à la prochaine change detection (cf. doc `searchTerm`).
+    this.searchTerm = value;
     this.searchInput$.next(value);
   }
 

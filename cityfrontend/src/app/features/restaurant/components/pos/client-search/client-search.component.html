@@ -60,7 +60,7 @@
               type="text"
               class="pos-modal__search-input"
               [placeholder]="'restaurant.pos.client.searchPlaceholder' | translate"
-              [value]="(clientSearch$ | async) ?? ''"
+              [value]="searchTerm"
               (input)="onSearchInput($any($event.target).value)"
               autofocus
             />
