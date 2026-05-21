@@ -1,10 +1,12 @@
 import {
   Component,
+  ElementRef,
   EventEmitter,
   Input,
   OnDestroy,
   OnInit,
   Output,
+  ViewChild,
 } from '@angular/core';
 import { Observable, Subject, combineLatest } from 'rxjs';
 import {
@@ -85,17 +87,18 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
   activeTab: Tab = 'reservations';
 
   /**
-   * Valeur locale synchrone du champ recherche, bindée via `[value]` côté
-   * template. NE PAS binder `[value]="(clientSearch$ | async)"` : le store
-   * n'est mis à jour qu'après debounce 200ms, donc à chaque keystroke,
-   * change detection écrasait `input.value` avec l'ancienne valeur du store
-   * et l'utilisateur perdait son caractère (consigne user 2026-05-21
-   * « le filtre client n'est pas stable »).
-   * Source de vérité durant la saisie = ce champ. Le store est resync via
-   * le pipeline debounce ; la subscription dans `ngOnInit` couvre les
-   * resets externes (clearClient, ouverture modale, etc.).
+   * Référence DOM de l'input pour reset programmatique (clearClient,
+   * ouverture modale). On n'utilise PAS `[value]="..."` sur le template
+   * car ce binding réécrit `input.value` à chaque change detection ; or
+   * Angular re-render le modal à chaque émission d'un observable enfant
+   * (clientResults$, clientResultsLoading$, …) → l'input était écrasé
+   * mid-frappe et perdait son focus visuel (consigne user 2026-05-21
+   * « le modal tremble et perd le focus »).
+   *
+   * L'input est donc UNCONTROLLED : seul `(input)` lit la saisie, le DOM
+   * conserve son state intact tant que la modale est ouverte.
    */
-  searchTerm = '';
+  @ViewChild('searchInputRef') searchInputRef?: ElementRef<HTMLInputElement>;
 
   private readonly searchInput$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
@@ -106,14 +109,17 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Resync local quand le store est mis à jour de l'extérieur
-    // (clearClient, ouverture modale, sélection programmatique).
+    // Reset visuel de l'input quand le store est vidé de l'extérieur
+    // (clearClient, ouverture modale fraîche). On écrit directement dans
+    // le DOM via ViewChild — pas de binding [value] qui interfèrerait
+    // avec la frappe en cours.
     this.store.clientSearch$
       .pipe(takeUntil(this.destroy$))
       .subscribe((storeTerm) => {
         const safe = storeTerm ?? '';
-        if (safe !== this.searchTerm) {
-          this.searchTerm = safe;
+        const inputEl = this.searchInputRef?.nativeElement;
+        if (inputEl && inputEl.value !== safe) {
+          inputEl.value = safe;
         }
       });
 
@@ -164,9 +170,9 @@ export class ClientSearchComponent implements OnInit, OnDestroy {
   }
 
   onSearchInput(value: string): void {
-    // Maj locale SYNCHRONE → garantit que `[value]="searchTerm"` ne réécrase
-    // pas l'input à la prochaine change detection (cf. doc `searchTerm`).
-    this.searchTerm = value;
+    // Input UNCONTROLLED : on lit juste la saisie, on ne re-écrit jamais
+    // `input.value` côté Angular. Le DOM conserve son state intact, focus
+    // préservé même pendant les re-renders parents (clientResults$ etc.).
     this.searchInput$.next(value);
   }
 

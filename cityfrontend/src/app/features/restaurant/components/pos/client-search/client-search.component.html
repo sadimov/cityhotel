@@ -52,15 +52,20 @@
       </div>
 
       <div class="pos-modal__body">
-        <!-- Champ recherche commun aux 2 onglets -->
+        <!-- Champ recherche commun aux 2 onglets.
+             Input UNCONTROLLED : PAS de [value] binding. Cf. doc
+             `searchInputRef` côté .ts — un binding [value] réécrirait
+             input.value à chaque change detection et faisait « trembler »
+             le modal pendant la frappe. Reset programmatique via
+             ViewChild + nativeElement.value quand le store change. -->
         <div class="pos-modal__search-row">
           <div class="pos-modal__search">
             <i class="bi bi-search pos-modal__search-icon" aria-hidden="true"></i>
             <input
+              #searchInputRef
               type="text"
               class="pos-modal__search-input"
               [placeholder]="'restaurant.pos.client.searchPlaceholder' | translate"
-              [value]="searchTerm"
               (input)="onSearchInput($any($event.target).value)"
               autofocus
             />
