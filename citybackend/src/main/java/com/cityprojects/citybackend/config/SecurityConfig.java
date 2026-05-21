@@ -117,6 +117,16 @@ public class SecurityConfig {
                 // et GlobalExceptionHandler (audit Tour 7B I3 : OK au 2026-05-05).
                 .requestMatchers("/error").permitAll()
 
+                // Exception consigne user 2026-05-21 : le referentiel des roles
+                // /api/admin/roles doit etre lisible par ADMIN aussi (formulaire
+                // "Mon hotel > Nouvel utilisateur" alimente son select role via
+                // cet endpoint). Le @PreAuthorize du RoleAdminController autorise
+                // deja SUPERADMIN + ADMIN, mais la regle filterChain ci-dessous
+                // (/api/admin/**) prevaut et renvoyait un 403 avant evaluation.
+                // L'exception DOIT precede la regle generale (ordre d'evaluation).
+                .requestMatchers("/api/admin/roles", "/api/admin/roles/**")
+                    .hasAnyRole("SUPERADMIN", "ADMIN")
+
                 // Tour 38 C5 : tout admin sous /api/admin/** (single source of truth).
                 // Les anciennes regles dispersees /admin/hotels, /admin/users, /admin/roles
                 // ne matchaient rien (tous les controllers exposent /api/admin/...).
