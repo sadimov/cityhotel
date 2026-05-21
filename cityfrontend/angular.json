@@ -71,7 +71,13 @@
               "sourceMap": false,
               "namedChunks": false,
               "aot": true,
-              "extractLicenses": true
+              "extractLicenses": true,
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -90,6 +96,11 @@
             },
             "development": {
               "buildTarget": "cityfrontend:build:development"
+            },
+            "lan": {
+              "buildTarget": "cityfrontend:build:production",
+              "host": "0.0.0.0",
+              "allowedHosts": ["all"]
             }
           },
           "defaultConfiguration": "development",

@@ -111,9 +111,16 @@ app:
     refresh-expiration: 604800000  # 7 jours en millisecondes
 
   cors:
-    allowed-origins: 
+    # Origines autorisées (cohérent avec SecurityConfig.corsConfigurationSource).
+    # LAN : `http://192.168.100.141:4200` — déploiement serveur Windows
+    # (consigne 2026-05-20). Garder les origines localhost pour dev local.
+    # Pour étendre à d'autres machines, surcharger via la variable d'env
+    # `APP_CORS_ALLOWED_ORIGINS_0=...` au lancement.
+    allowed-origins:
       - http://localhost:3000
       - http://localhost:4200
+      - http://192.168.100.141:4200
+      - http://192.168.100.141:8080
     allowed-methods:
       - GET
       - POST
@@ -198,12 +205,14 @@ city:
   night-audit:
     # Alerte 3 min avant l'heure cible (broadcast tous les utilisateurs connectés).
     # Format Spring cron : "sec min hour day month dayOfWeek". Mettre "-" pour désactiver.
-    alert-cron: "0 27 16 * * *"
+    alert-cron: "0 57 11 * * *"
     # Heure cible : ouvre la modale de lancement chez les ADMIN/SUPERADMIN/NIGHTAUDIT.
     # Test rapide : "0 */2 * * * *" = toutes les 2 minutes
     # Test très rapide : "0 * * * * *" = toutes les minutes
-    run-cron: "0 30 16 * * *"
-    timezone: Africa/Nouakchott
+    run-cron: "0 0 12 * * *"
+    # Midi Temps Universel (GMT / UTC) — consigne user 2026-05-17.
+    # ZoneId.of("UTC") équivaut à GMT (offset fixe +00:00, pas de DST).
+    timezone: UTC
 
 logging:
   level:
