@@ -171,6 +171,7 @@
         <div class="col-md-6">
           <label for="roleId" class="form-label">
             {{ 'admin.users.fields.role' | translate }}
+            <span class="text-danger">*</span>
           </label>
           <select
             id="roleId"
@@ -186,6 +187,12 @@
           @if (form.get('roleId')?.touched && form.get('roleId')?.errors?.['required']) {
             <div class="invalid-feedback d-block">
               {{ 'admin.users.errors.roleRequired' | translate }}
+            </div>
+          }
+          @if (rolesLoadError) {
+            <div class="alert alert-warning small mt-2 mb-0 py-1 px-2" role="alert">
+              <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>
+              {{ rolesLoadError }}
             </div>
           }
           <small class="form-text text-muted">

@@ -2068,7 +2068,10 @@
         "prenomRequired": "First name is required.",
         "nomRequired": "Last name is required.",
         "roleRequired": "Role is required.",
-        "hotelRequired": "L'hôtel est obligatoire."
+        "hotelRequired": "L'hôtel est obligatoire.",
+        "rolesLoadFailed": "Impossible de charger la liste des rôles.",
+        "rolesEmpty": "Aucun rôle disponible dans la base — contactez le SUPERADMIN.",
+        "rolesAllForbidden": "Aucun rôle assignable n'est disponible (SUPERADMIN et ADMIN sont réservés)."
       },
       "messages": {
         "createSuccess": "User created successfully",

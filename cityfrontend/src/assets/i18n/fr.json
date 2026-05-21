@@ -2145,7 +2145,10 @@
         "prenomRequired": "Le prénom est obligatoire.",
         "nomRequired": "Le nom est obligatoire.",
         "roleRequired": "Le rôle est obligatoire.",
-        "hotelRequired": "L'hôtel est obligatoire."
+        "hotelRequired": "L'hôtel est obligatoire.",
+        "rolesLoadFailed": "Impossible de charger la liste des rôles.",
+        "rolesEmpty": "Aucun rôle disponible dans la base — contactez le SUPERADMIN.",
+        "rolesAllForbidden": "Aucun rôle assignable n'est disponible (SUPERADMIN et ADMIN sont réservés)."
       },
       "messages": {
         "createSuccess": "Utilisateur créé avec succès",

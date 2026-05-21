@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
     xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -11,17 +11,17 @@
     <!--
     ============================================================================
     CITY BACKEND - CHANGELOG MASTER
-    SystÃ¨me de gestion hÃ´teliÃ¨re multi-tenant
+    Système de gestion hôtelière multi-tenant
     ============================================================================
     -->
 
-    <!-- PHASE 1: CrÃ©ation des schÃ©mas et tables de base -->
+    <!-- PHASE 1: Création des schémas et tables de base -->
     <include file="db/changelog/changes/001-create-core-schema.sql"/>
 
-    <!-- PHASE 2: Tables des clients et sociÃ©tÃ©s (Tour 8 â€” XML, ex-fichier .sql vide) -->
+    <!-- PHASE 2: Tables des clients et sociétés (Tour 8 — XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/002-create-client-schema.xml"/>
 
-    <!-- PHASE 3: Tables d'hÃ©bergement (chambres, rÃ©servations) â€” Tour 11 (XML, ex-fichier .sql vide) -->
+    <!-- PHASE 3: Tables d'hébergement (chambres, réservations) — Tour 11 (XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/003-create-hebergement-schema.xml"/>
 
     <!-- PHASE 4: Tables du restaurant - CATALOGUE (Tour 23 - XML, ex-fichier .sql stub).
@@ -31,19 +31,19 @@
     <!-- PHASE 5: Tables de gestion des stocks (Tour 16 - XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/005-create-inventory-schema.xml"/>
 
-    <!-- PHASE 6: Tables financiÃ¨res (Tour 19 - XML, ex-fichier .sql vide) -->
+    <!-- PHASE 6: Tables financières (Tour 19 - XML, ex-fichier .sql vide) -->
     <include file="db/changelog/changes/006-create-finance-schema.xml"/>
 
-    <!-- PHASE 7: Tables de mÃ©nage (Tour 27 - XML, ex-fichier .sql stub remplace) -->
+    <!-- PHASE 7: Tables de ménage (Tour 27 - XML, ex-fichier .sql stub remplace) -->
     <include file="db/changelog/changes/007-create-menage-schema.xml"/>
 
     <!-- PHASE 8: Tables de reporting -->
     <include file="db/changelog/changes/008-create-reporting-schema.sql"/>
 
-    <!-- PHASE 11: DonnÃ©es initiales - RÃ´les systÃ¨me -->
+    <!-- PHASE 11: Données initiales - Rôles système -->
     <include file="db/changelog/changes/011-insert-initial-roles.sql"/>
 
-    <!-- PHASE 12: DonnÃ©es initiales (placeholder, fichier vide Ã  complÃ©ter) -->
+    <!-- PHASE 12: Données initiales (placeholder, fichier vide à compléter) -->
     <include file="db/changelog/changes/012-insert-initial-data.sql"/>
 
     <!-- PHASE 14: Utilisateur super admin initial -->
@@ -52,7 +52,7 @@
     <!-- PHASE 17: Correction de la colonne ip_address (VARCHAR -> inet) -->
     <include file="db/changelog/changes/017-fix-ip-address-column.sql"/>
 
-    <!-- PHASE 18: Drop colonne salt obsolÃ¨te sur core.dbusers (BCrypt embarque le salt) -->
+    <!-- PHASE 18: Drop colonne salt obsolète sur core.dbusers (BCrypt embarque le salt) -->
     <include file="db/changelog/changes/018-drop-salt-column-dbusers.sql"/>
 
     <!-- PHASE 19: Ajout code pays ISO 3166 sur hotels (palier 1 multi-pays, sert au format de numerotation comptable) -->
@@ -90,7 +90,7 @@
     <include file="db/changelog/changes/008-link-inventory-finance.xml"/>
 
     <!-- ============================================================
-         PHASE 27 : fix audit fields numerotation_sequence (Tour 7D â€” audit /db-validate)
+         PHASE 27 : fix audit fields numerotation_sequence (Tour 7D — audit /db-validate)
          ============================================================ -->
     <include file="db/changelog/changes/021-fix-numerotation-sequence-audit-types.xml"/>
 
@@ -173,13 +173,13 @@
          PHASE 37 (Tour 31) : module admin SUPERADMIN
           - Table core.parametres (configuration applicative globale,
             pas de hotel_id, pas de @TenantId).
-          - Seed paramÃ¨tres systÃ¨me initiaux (timezone, devise, email,
+          - Seed paramètres système initiaux (timezone, devise, email,
             retention, maintenance message).
           ============================================================ -->
     <include file="db/changelog/changes/029-create-admin-parametres-schema.xml"/>
 
     <!-- ============================================================
-         PHASE 38 (Tour 42 post-release) : revert ip_address inet â†’ VARCHAR(45)
+         PHASE 38 (Tour 42 post-release) : revert ip_address inet → VARCHAR(45)
          Bug bloquant login : UserSession.ipAddress String incompatible inet.
          ============================================================ -->
     <include file="db/changelog/changes/032-fix-ip-address-back-to-varchar.xml"/>
@@ -311,7 +311,7 @@
          finance.journal_comptable, finance.ecriture_comptable et
          finance.ligne_ecriture. Toutes tenant-aware (@TenantId +
          CHECK hotel_id > 0). Trigger PG defense en profondeur pour
-         l'equilibre Σ debits = Σ credits sur les ecritures VALIDEE
+         l'equilibre S debits = S credits sur les ecritures VALIDEE
          (skip H2 - garde applicative dans EcritureComptableServiceImpl).
          ============================================================ -->
     <include file="db/changelog/changes/047-create-finance-comptabilite-partie-double.xml"/>
@@ -380,12 +380,18 @@
          ============================================================ -->
     <include file="db/changelog/changes/055-add-hotel-mentions-facture.xml"/>
 
+    <!-- 060 - Ajout idempotent des roles MAGASIN, MENAGE, NIGHTAUDIT
+         (consigne user 2026-05-21 : la liste des roles du formulaire
+         'Mon hotel > Nouvel utilisateur' etait incomplete car le seed
+         initial 011 n'avait insere que 6 des 9 roles documentes). -->
+    <include file="db/changelog/changes/060-add-missing-roles.sql"/>
+
     <!--
-    TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et crÃ©er les changesets correspondants.
+    TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql
        - db/changelog/data/roles.sql
        - db/changelog/data/statuts-taches.sql
-    Aujourd'hui orphelins : ne PAS les inclure tant que le contenu n'a pas Ã©tÃ© validÃ©.
+    Aujourd'hui orphelins : ne PAS les inclure tant que le contenu n'a pas été validé.
     -->
 
 </databaseChangeLog>

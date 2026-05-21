@@ -37,6 +37,8 @@ export class UserFormComponent implements OnInit, OnDestroy {
   state: FormState = 'ready';
   editingId: number | null = null;
   roles: Role[] = [];
+  /** Trace du dernier échec de chargement des rôles (affiché en alert UI). */
+  rolesLoadError: string | null = null;
 
   /** Codes de rôles interdits par anti-escalation. */
   private static readonly FORBIDDEN_ROLES: ReadonlyArray<string> = ['SUPERADMIN', 'ADMIN'];
@@ -163,13 +165,35 @@ export class UserFormComponent implements OnInit, OnDestroy {
   }
 
   private loadRoles(): void {
+    this.rolesLoadError = null;
     this.rolesService
       .findAll()
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(() => of([] as Role[])),
-      )
-      .subscribe((roles) => (this.roles = roles));
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (roles) => {
+          this.roles = roles;
+          // Garde-fou : `availableRoles` filtre SUPERADMIN+ADMIN. Si après
+          // filtrage la liste est vide, on alerte explicitement plutôt que
+          // de laisser l'admin coincé sur un select sans options.
+          if (this.availableRoles.length === 0) {
+            this.rolesLoadError = roles.length === 0
+              ? this.i18n.translate('admin.users.errors.rolesEmpty')
+              : this.i18n.translate('admin.users.errors.rolesAllForbidden');
+            console.warn(
+              '[hotel-admin/user-form] Aucun rôle assignable. roles reçus:',
+              roles.map((r) => `${r.code}:${r.nom}`),
+            );
+          }
+        },
+        error: (err: unknown) => {
+          this.roles = [];
+          // Trace du status HTTP pour diagnostic (403 = permission, 401 = JWT, 500 = backend)
+          const status = err instanceof HttpErrorResponse ? err.status : 0;
+          this.rolesLoadError = this.i18n.translate('admin.users.errors.rolesLoadFailed')
+            + (status ? ` (HTTP ${status})` : '');
+          console.error('[hotel-admin/user-form] Échec chargement rôles', err);
+        },
+      });
   }
 
   private loadExisting(userId: number): void {
