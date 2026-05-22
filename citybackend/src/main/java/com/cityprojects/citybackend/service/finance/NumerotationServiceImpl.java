@@ -6,6 +6,10 @@ import com.cityprojects.citybackend.entity.core.Hotel;
 import com.cityprojects.citybackend.entity.finance.NumerotationSequence;
 import com.cityprojects.citybackend.repository.core.HotelRepository;
 import com.cityprojects.citybackend.repository.finance.NumerotationSequenceRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,9 +61,14 @@ import java.util.Optional;
 @Transactional
 public class NumerotationServiceImpl implements NumerotationService {
 
+    private static final Logger logger = LoggerFactory.getLogger(NumerotationServiceImpl.class);
+
     private final NumerotationSequenceRepository sequenceRepository;
     private final HotelRepository hotelRepository;
     private final Clock clock;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public NumerotationServiceImpl(NumerotationSequenceRepository sequenceRepository,
                                    HotelRepository hotelRepository,
@@ -99,8 +108,26 @@ public class NumerotationServiceImpl implements NumerotationService {
                 sequenceRepository.findByTypeExerciceAndDiscriminantForUpdate(
                         type, exercice, effectiveDiscriminant);
 
-        NumerotationSequence sequence = existing.orElseGet(
-                () -> new NumerotationSequence(hotelId, type, exercice, effectiveDiscriminant));
+        NumerotationSequence sequence;
+        if (existing.isPresent()) {
+            sequence = existing.get();
+        } else {
+            // Cas migration BD : une séquence n'existe pas encore pour
+            // (hotel, type, exercice) mais des numéros peuvent déjà avoir
+            // été émis (reprise de données, restauration partielle…).
+            // On recale `last_value` sur le MAX existant pour garantir
+            // l'unicité métier — sinon collision UNIQUE au prochain INSERT.
+            // Cf. consigne user 2026-05-22 : « numérotations successives
+            // pour chaque hôtel à part, pas de sauts, pas d'interférence ».
+            sequence = new NumerotationSequence(hotelId, type, exercice, effectiveDiscriminant);
+            long recalibratedFloor = findMaxExistingValueForRecalibration(
+                    type, exercice, effectiveDiscriminant, hotelId);
+            if (recalibratedFloor > 0L) {
+                logger.info("Recalibrage seq {} hotel={} exercice={} disc={} : MAX existant = {}",
+                        type, hotelId, exercice, effectiveDiscriminant, recalibratedFloor);
+                sequence.setLastValue(recalibratedFloor);
+            }
+        }
 
         long nextValue = sequence.getLastValue() + 1L;
         sequence.setLastValue(nextValue);
@@ -127,5 +154,74 @@ public class NumerotationServiceImpl implements NumerotationService {
                 exercice,
                 hotel.getCodePays(),
                 persisted.getLastValue());
+    }
+
+    /**
+     * Cherche dans la table cible le MAX du compteur déjà émis pour ce
+     * (type, exercice, discriminant, hotelId). Retourne 0 si aucune
+     * occurrence (cas nominal nouvel hôtel) ou si le type ne mappe pas
+     * vers une table connue.
+     *
+     * <p>Le pattern de numéro est {@code TYPE-{disc-}EXERCICE-CODEPAYS-NNNNNN}.
+     * On extrait les 6 derniers chiffres via {@code SUBSTRING + CAST}
+     * portable Postgres/H2.</p>
+     *
+     * <p>Hibernate {@code @TenantId} ajoute automatiquement
+     * {@code WHERE hotel_id = ?} aux requêtes JPA — le scope par hôtel est
+     * garanti sans paramètre explicite.</p>
+     */
+    private long findMaxExistingValueForRecalibration(TypeNumerotation type,
+                                                       Integer exercice,
+                                                       String discriminant,
+                                                       Long hotelId) {
+        try {
+            String jpql = switch (type) {
+                case FACT, AVOIR -> "SELECT MAX(CAST(SUBSTRING(f.numeroFacture, "
+                        + "LENGTH(f.numeroFacture) - 5, 6) AS integer)) "
+                        + "FROM Facture f WHERE f.numeroFacture LIKE :pattern";
+                case PAY -> "SELECT MAX(CAST(SUBSTRING(p.numeroPaiement, "
+                        + "LENGTH(p.numeroPaiement) - 5, 6) AS integer)) "
+                        + "FROM Paiement p WHERE p.numeroPaiement LIKE :pattern";
+                case RES -> "SELECT MAX(CAST(SUBSTRING(r.numeroReservation, "
+                        + "LENGTH(r.numeroReservation) - 5, 6) AS integer)) "
+                        + "FROM Reservation r WHERE r.numeroReservation LIKE :pattern";
+                case BC -> "SELECT MAX(CAST(SUBSTRING(b.numeroBc, "
+                        + "LENGTH(b.numeroBc) - 5, 6) AS integer)) "
+                        + "FROM BonCommande b WHERE b.numeroBc LIKE :pattern";
+                case BS -> "SELECT MAX(CAST(SUBSTRING(b.numeroBs, "
+                        + "LENGTH(b.numeroBs) - 5, 6) AS integer)) "
+                        + "FROM BonSortie b WHERE b.numeroBs LIKE :pattern";
+                case CLI -> "SELECT MAX(CAST(SUBSTRING(c.numeroClient, "
+                        + "LENGTH(c.numeroClient) - 5, 6) AS integer)) "
+                        + "FROM Client c WHERE c.numeroClient LIKE :pattern";
+                case COMM -> "SELECT MAX(CAST(SUBSTRING(c.numeroCommande, "
+                        + "LENGTH(c.numeroCommande) - 5, 6) AS integer)) "
+                        + "FROM Commande c WHERE c.numeroCommande LIKE :pattern";
+                // JRN (écritures comptables) : recalcul complexe par journal
+                // (discriminant). Pas géré ici — repart à 0 en migration.
+                // PROD : codes libres user-saisis, pas de pattern strict.
+                default -> null;
+            };
+            if (jpql == null) {
+                return 0L;
+            }
+            String prefix = discriminant.isEmpty()
+                    ? String.format("%s-%d-", type.name(), exercice)
+                    : String.format("%s-%s-%d-", type.name(), discriminant, exercice);
+            Object result = entityManager.createQuery(jpql)
+                    .setParameter("pattern", prefix + "%")
+                    .getSingleResult();
+            if (result == null) {
+                return 0L;
+            }
+            return ((Number) result).longValue();
+        } catch (Exception e) {
+            // Fail-safe : tout échec de recalibrage retombe à 0. Mieux vaut
+            // démarrer à 1 et collisionner visiblement (l'INSERT lèvera
+            // une erreur) que masquer un problème de schéma.
+            logger.warn("Recalibrage seq {} hotel={} exercice={} echoue : {}",
+                    type, hotelId, exercice, e.getMessage());
+            return 0L;
+        }
     }
 }

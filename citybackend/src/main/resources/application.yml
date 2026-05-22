@@ -2,30 +2,30 @@ spring:
   application:
     name: citybackend
   
-  # Configuration de la base de données PostgreSQL
+  # Configuration de la base de donnÃ©es PostgreSQL
   datasource:
     url: jdbc:postgresql://localhost:5432/cityprojectdb
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:admin}
     driver-class-name: org.postgresql.Driver
-    # Configuration HikariCP optimisée pour éviter les fuites mémoire
+    # Configuration HikariCP optimisÃ©e pour Ã©viter les fuites mÃ©moire
     hikari:
       # Pool de connexions
-      minimum-idle: 5                    # Réduire le minimum
-      maximum-pool-size: 20              # Réduire le maximum pour le dev
+      minimum-idle: 5                    # RÃ©duire le minimum
+      maximum-pool-size: 20              # RÃ©duire le maximum pour le dev
       idle-timeout: 300000               # 5 minutes
       max-lifetime: 1200000              # 20 minutes
       connection-timeout: 20000          # 20 secondes
       leak-detection-threshold: 60000    # 1 minute
       
-      # Optimisations pour éviter les fuites
-      register-mbeans: false             # Désactiver les MBeans
+      # Optimisations pour Ã©viter les fuites
+      register-mbeans: false             # DÃ©sactiver les MBeans
       allow-pool-suspension: true        # Permettre la suspension du pool
       
       # Configuration de nettoyage
       housekeeping-period-ms: 30000      # Nettoyage toutes les 30 secondes
       
-      # Propriétés PostgreSQL spécifiques
+      # PropriÃ©tÃ©s PostgreSQL spÃ©cifiques
       data-source-properties:
         cachePrepStmts: true
         prepStmtCacheSize: 250
@@ -102,8 +102,18 @@ server:
 
 # Configuration de l'application
 app:
+  # Mode de deploiement (consigne user 2026-05-22) - informatif pour audit
+  # et observabilite. Les sequences de numerotation restent isolees par
+  # hotel_id dans LES DEUX modes (cf. DeploymentProperties.java).
+  deployment:
+    # LOCAL : serveur dedie a un seul hotel client (on-premise)
+    # SAAS  : hebergement central multi-hotels (defaut)
+    mode: ${APP_DEPLOYMENT_MODE:SAAS}
+    # Mode LOCAL uniquement : code de l'hotel unique de ce serveur.
+    hotel-code: ${APP_DEPLOYMENT_HOTEL_CODE:}
+
   jwt:
-    # Tour 38 C1 : pas de default — boot fail-fast si JWT_SECRET absent.
+    # Tour 38 C1 : pas de default â€” boot fail-fast si JWT_SECRET absent.
     # Doit faire >= 64 caracteres (validation @PostConstruct dans JwtTokenProvider).
     secret: ${JWT_SECRET}
     # Tour 38 C6/C7 : access token court (1h). Refresh token = 7j (refresh-expiration).
@@ -111,10 +121,10 @@ app:
     refresh-expiration: 604800000  # 7 jours en millisecondes
 
   cors:
-    # Origines autorisées (cohérent avec SecurityConfig.corsConfigurationSource).
-    # LAN : `http://192.168.100.141:4200` — déploiement serveur Windows
+    # Origines autorisÃ©es (cohÃ©rent avec SecurityConfig.corsConfigurationSource).
+    # LAN : `http://192.168.100.141:4200` â€” dÃ©ploiement serveur Windows
     # (consigne 2026-05-20). Garder les origines localhost pour dev local.
-    # Pour étendre à d'autres machines, surcharger via la variable d'env
+    # Pour Ã©tendre Ã  d'autres machines, surcharger via la variable d'env
     # `APP_CORS_ALLOWED_ORIGINS_0=...` au lancement.
     allowed-origins:
       - http://localhost:3000
@@ -139,7 +149,7 @@ app:
       require-digit: true
     session:
       max-sessions-per-user: 3
-      concurrent-sessions: 80  # Support pour 80 sessions simultanées
+      concurrent-sessions: 80  # Support pour 80 sessions simultanÃ©es
 
   # Tour A : repertoire de stockage disque des avatars utilisateurs.
   # Override via env AVATARS_DIR en prod (ex. /var/lib/citybackend/avatars).
@@ -198,20 +208,20 @@ spring:
     hibernate:
       ddl-auto: create-drop
 
-# Night audit (Tour 13) — heures paramétrables.
-# Valeurs par défaut (production) appliquées si commentées (cf. NightAuditScheduler).
-# Décommenter et adapter pour tester rapidement (ex. toutes les 2 minutes).
+# Night audit (Tour 13) â€” heures paramÃ©trables.
+# Valeurs par dÃ©faut (production) appliquÃ©es si commentÃ©es (cf. NightAuditScheduler).
+# DÃ©commenter et adapter pour tester rapidement (ex. toutes les 2 minutes).
 city:
   night-audit:
-    # Alerte 3 min avant l'heure cible (broadcast tous les utilisateurs connectés).
-    # Format Spring cron : "sec min hour day month dayOfWeek". Mettre "-" pour désactiver.
+    # Alerte 3 min avant l'heure cible (broadcast tous les utilisateurs connectÃ©s).
+    # Format Spring cron : "sec min hour day month dayOfWeek". Mettre "-" pour dÃ©sactiver.
     alert-cron: "0 57 11 * * *"
     # Heure cible : ouvre la modale de lancement chez les ADMIN/SUPERADMIN/NIGHTAUDIT.
     # Test rapide : "0 */2 * * * *" = toutes les 2 minutes
-    # Test très rapide : "0 * * * * *" = toutes les minutes
+    # Test trÃ¨s rapide : "0 * * * * *" = toutes les minutes
     run-cron: "0 0 12 * * *"
-    # Midi Temps Universel (GMT / UTC) — consigne user 2026-05-17.
-    # ZoneId.of("UTC") équivaut à GMT (offset fixe +00:00, pas de DST).
+    # Midi Temps Universel (GMT / UTC) â€” consigne user 2026-05-17.
+    # ZoneId.of("UTC") Ã©quivaut Ã  GMT (offset fixe +00:00, pas de DST).
     timezone: UTC
 
 logging:
