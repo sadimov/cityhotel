@@ -64,19 +64,19 @@ public class ReservationController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<ReservationDto> findById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.findById(id));
     }
 
     @GetMapping("/by-numero/{numero}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<ReservationDto> findByNumero(@PathVariable("numero") String numero) {
         return ResponseEntity.ok(reservationService.findByNumero(numero));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<Page<ReservationDto>> findAll(
             @RequestParam(value = "statut", required = false) StatutReservation statut,
             @RequestParam(value = "clientId", required = false) Long clientId,
@@ -85,51 +85,51 @@ public class ReservationController {
     }
 
     @GetMapping("/by-client/{clientId}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<Page<ReservationDto>> findByClient(@PathVariable("clientId") Long clientId,
                                                               Pageable pageable) {
         return ResponseEntity.ok(reservationService.findByClient(clientId, pageable));
     }
 
     @GetMapping("/{id}/nuitees")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<NuiteeDto>> findNuitees(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.findNuitees(id));
     }
 
     @GetMapping("/arrivees-today")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<ReservationDto>> findArriveesToday() {
         return ResponseEntity.ok(reservationService.findArriveesToday());
     }
 
     @GetMapping("/departs-today")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<ReservationDto>> findDepartsToday() {
         return ResponseEntity.ok(reservationService.findDepartsToday());
     }
 
     @GetMapping("/en-cours")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<ReservationDto>> findEnCours() {
         return ResponseEntity.ok(reservationService.findEnCours());
     }
 
     @GetMapping("/check-ins-retard")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<ReservationDto>> findCheckInsRetard() {
         return ResponseEntity.ok(reservationService.findCheckInsRetard());
     }
 
     @GetMapping("/rechercher")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<Page<ReservationDto>> rechercher(@RequestParam("terme") String terme,
                                                             Pageable pageable) {
         return ResponseEntity.ok(reservationService.rechercher(terme, pageable));
     }
 
     @PostMapping("/rechercher-disponibilite")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT','RESTAURANT')")
     public ResponseEntity<List<ChambreDto>> rechercherDisponibilite(
             @Valid @RequestBody RechercheDisponibiliteRequest request) {
         return ResponseEntity.ok(reservationService.rechercherDisponibilite(request));

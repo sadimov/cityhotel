@@ -49,19 +49,19 @@ public class ClientController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<ClientDto> findById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(clientService.findById(id));
     }
 
     @GetMapping("/by-numero/{numero}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<ClientDto> findByNumero(@PathVariable("numero") String numero) {
         return ResponseEntity.ok(clientService.findByNumeroClient(numero));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Page<ClientDto>> search(
             @RequestParam(value = "q", required = false) String recherche,
             Pageable pageable) {
@@ -69,14 +69,14 @@ public class ClientController {
     }
 
     @GetMapping("/by-societe/{societeId}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Page<ClientDto>> findBySociete(
             @PathVariable("societeId") Long societeId, Pageable pageable) {
         return ResponseEntity.ok(clientService.findBySociete(societeId, pageable));
     }
 
     @GetMapping("/without-societe")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Page<ClientDto>> findWithoutSociete(Pageable pageable) {
         return ResponseEntity.ok(clientService.findWithoutSociete(pageable));
     }
@@ -128,7 +128,7 @@ public class ClientController {
      * Réponse : {@code {"count": 12, "date": "2026-05-17"}}.
      */
     @GetMapping("/nouveaux-du-jour")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Map<String, Object>> countNouveauxDuJour(
             @RequestParam(value = "date", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {

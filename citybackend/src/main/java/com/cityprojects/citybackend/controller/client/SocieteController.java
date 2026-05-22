@@ -55,13 +55,13 @@ public class SocieteController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<SocieteDto> findById(@PathVariable("id") Long id) {
         return ResponseEntity.ok(societeService.findById(id));
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Page<SocieteDto>> search(
             @RequestParam(value = "q", required = false) String recherche,
             Pageable pageable) {
@@ -69,7 +69,7 @@ public class SocieteController {
     }
 
     @GetMapping({"/active", "/actives"})
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<List<SocieteDto>> findAllActive() {
         return ResponseEntity.ok(societeService.findAllActive());
     }
