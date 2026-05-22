@@ -31,6 +31,9 @@ Thumbs.db
 .env
 .env.local
 .env.*.local
+
+# Secrets runtime PowerShell (template : scripts/deploy-windows/set-env.example.ps1)
+set-env.ps1
 *.key
 *.pem
 *.p12
@@ -51,17 +54,17 @@ secrets/
 
 # === Ajouts city-claude-setup ===
 
-# Helper local poste dev (Java 21 sans JAVA_HOME système)
+# Helper local poste dev (Java 21 sans JAVA_HOME systÃ¨me)
 _run_mvn_*.ps1
 
-# Prompts user de session (à conserver localement, pas en repo)
+# Prompts user de session (Ã  conserver localement, pas en repo)
 prompt_*.md
 carto.md
 
-# Stock brut — matière première de génération (cf. CLAUDE.md §2bis)
-# Ces dossiers contiennent du code mélangé/hétérogène servant de source
-# pour /integrate-module. Ne JAMAIS les committer : seul le code intégré
-# dans citybackend/ et cityfrontend/ est la vérité du projet.
+# Stock brut â€” matiÃ¨re premiÃ¨re de gÃ©nÃ©ration (cf. CLAUDE.md Â§2bis)
+# Ces dossiers contiennent du code mÃ©langÃ©/hÃ©tÃ©rogÃ¨ne servant de source
+# pour /integrate-module. Ne JAMAIS les committer : seul le code intÃ©grÃ©
+# dans citybackend/ et cityfrontend/ est la vÃ©ritÃ© du projet.
 /CLIENTS/
 /FINANCE/
 /HEBERGEMENT/
