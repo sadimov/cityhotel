@@ -2,6 +2,130 @@
 
 > Voir aussi le `CLAUDE.md` à la racine pour le contexte produit, l'architecture multi-tenant et les règles métier.
 
+## 0. Statut à la reprise — 2026-05-24 (backend)
+
+> Voir le `CLAUDE.md` racine §0 pour le contexte global. Ce bloc complète
+> avec les patterns backend introduits ou consolidés depuis Tour 41.
+
+### 0.1 Patterns transverses ajoutés
+
+**DTOs enrichis avec noms résolus** (14 DTOs) — pattern uniforme :
+
+```java
+public record XxxDto(Long id, /* champs FK numériques */ Long fkId,
+                     /* … */ String nomFkResolu) {
+    public XxxDto withResolvedNames(String nomFk) {
+        return new XxxDto(id, fkId, /* … */ nomFk);
+    }
+}
+```
+
+Côté mapper MapStruct : `@Mapping(target = "nomFk", ignore = true)`.
+Côté service : batch `findAllById(Set<Long>)` puis `withResolvedNames`.
+
+**`NumerotationServiceImpl.findMaxExistingValueForRecalibration`** :
+quand une nouvelle séquence `(hotel_id, type, exercice)` est créée et
+qu'aucune ligne n'existe en BD, le service interroge `MAX(numero)` dans
+la table cible (FACT, AVOIR, PAY, RES, BC, BS, CLI, COMM) pour éviter
+les collisions en migration. Cf. consigne user 2026-05-22 « pas de sauts,
+pas d'interférence ».
+
+**`DeploymentProperties`** (`@ConfigurationProperties("app.deployment")`) :
+expose `mode` (LOCAL | SAAS) et `hotelCode`. Surchargeable via env
+`APP_DEPLOYMENT_MODE` / `APP_DEPLOYMENT_HOTEL_CODE`. Informatif —
+n'altère pas la logique métier (multi-tenant Hibernate gère tout).
+
+**`PdfExportServiceImpl.buildDataSource`** : workaround Jasper 6.21 +
+records Java. Détecte les records (`Class.isRecord()`) et convertit en
+`Map<String, Object>` via `RecordComponent.getAccessor().invoke()`,
+puis utilise `JRMapCollectionDataSource`. Sinon `JRBeanCollectionDataSource`
+classique.
+
+**Helper `lookup(map, key)` null-safe** : `Map.of()` immutable jette
+NPE sur `.get(null)`. Utilisé dans `ReservationServiceImpl.enrichDtos`
+et `HistoriqueServiceImpl` quand on enrichit des entités avec FK nullable
+(ex. `Reservation.societeId` pour résa B2C).
+
+### 0.2 Sécurité — exceptions ajoutées dans `SecurityConfig`
+
+- `requestMatchers("/api/admin/roles", "/api/admin/roles/**").hasAnyRole("SUPERADMIN", "ADMIN")`
+  — précède la règle générale `/api/admin/**` restreinte à SUPERADMIN.
+  Permet à l'ADMIN d'hôtel de lire le référentiel pour son formulaire
+  "Mon hôtel > Nouvel utilisateur". Le `@PreAuthorize` du controller
+  est aussi étendu.
+- **RESTAURANT** ajouté aux `@PreAuthorize` de lecture (GET) sur
+  `ClientController`, `SocieteController`, `ReservationController`
+  (le POS RESTAURANT en a besoin pour son filtre client et le report
+  chambre). Écritures restent restreintes ADMIN/GERANT/RECEPTION.
+- **CORS** : `http://192.168.100.141:4200` ajouté pour le déploiement
+  LAN Windows. Surchargeable via env.
+
+### 0.3 Liquibase — état au 2026-05-24
+
+- **Dernier changeset** : `060-add-missing-roles.sql` (ajout
+  MAGASIN/MENAGE/NIGHTAUDIT avec `ON CONFLICT DO NOTHING`).
+- **9 rôles seedés** au total (cf. `011-insert-initial-roles.sql` +
+  `060`). Le `011` faisait un check `role_count = 6` qui n'était plus
+  d'actualité — `060` ajoute son propre check `>= 9`.
+
+### 0.4 Tests
+
+- **433 Surefire verts** au dernier build (BUILD SUCCESS).
+- Failsafe `*IT` : à lancer via `mvnw verify` (H2 / Testcontainers).
+- Convention : `*Test.java` / `*Tests.java` = unit Mockito (Surefire) ;
+  `*IT.java` = intégration Spring (Failsafe).
+- **NumerotationService** : les tests existants ne couvrent pas le
+  recalibrage migration (`findMaxExistingValueForRecalibration`) — à
+  compléter si le besoin se manifeste.
+
+### 0.5 Endpoints récents notables
+
+- `GET /api/clients/nouveaux-du-jour?date=YYYY-MM-DD` — KPI dashboard
+  accueil. Réponse `{count, date}`.
+- `GET /api/menage/planning` — paginé (était absent, ajouté Tour 56,
+  fix 405).
+- `POST /api/admin/roles` (lecture seule par design — seeded Liquibase).
+
+### 0.6 Configuration runtime résumée
+
+Cf. `application.yml` :
+
+```yaml
+app:
+  deployment:
+    mode: ${APP_DEPLOYMENT_MODE:SAAS}
+    hotel-code: ${APP_DEPLOYMENT_HOTEL_CODE:}
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:4200
+      - http://192.168.100.141:4200
+      - http://192.168.100.141:8080
+  jwt:
+    secret: ${JWT_SECRET}            # >= 64 chars, fail-fast si absent
+    expiration: 3600000              # 1h
+    refresh-expiration: 604800000    # 7j
+
+city:
+  night-audit:
+    alert-cron: "0 57 11 * * *"     # 11:57 UTC
+    run-cron:   "0 0 12 * * *"      # 12:00 UTC
+    timezone: UTC
+```
+
+### 0.7 Build du JAR
+
+```bash
+cd citybackend
+./mvnw -DskipTests clean package
+# -> target/citybackend-1.0.0.jar (~110 MB)
+```
+
+Pour passer les tests avant package : `./mvnw clean package` (sans
+`-DskipTests`).
+
+---
+
 ## 1. Stack & version cibles (mai 2026)
 
 > **🎯 Stratégie en deux paliers** (arbitrage Tour 1, 2026-05-05) :

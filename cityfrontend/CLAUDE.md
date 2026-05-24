@@ -2,6 +2,137 @@
 
 > Voir aussi le `CLAUDE.md` à la racine pour le contexte produit, les règles métier et l'i18n.
 
+## 0. Statut à la reprise — 2026-05-24 (frontend)
+
+> Voir le `CLAUDE.md` racine §0 pour le contexte global. Ce bloc complète
+> avec les patterns frontend introduits ou consolidés depuis Tour 41.
+
+### 0.1 Patterns d'input qui ont posé problème (à connaître)
+
+**Input UNCONTROLLED pour autocomplete / recherche live** (POS
+`client-search`, futurs sélecteurs) :
+
+```html
+<!-- ❌ NE PAS FAIRE -->
+<input [value]="(search$ | async)" (input)="onInput($event.target.value)" />
+
+<!-- ✅ FAIRE -->
+<input #searchRef (input)="onInput($event.target.value)" />
+```
+
+```ts
+@ViewChild('searchRef') searchRef?: ElementRef<HTMLInputElement>;
+
+ngOnInit() {
+  // Reset programmatique du DOM si le store change de l'extérieur
+  this.store.search$.subscribe(s => {
+    const el = this.searchRef?.nativeElement;
+    if (el && el.value !== s) el.value = s ?? '';
+  });
+}
+
+onInput(v: string) {
+  this.searchInput$.next(v);  // debounce + push store
+}
+```
+
+**Raison** : avec `[value]="(x$ | async)"`, Angular écrit `input.value`
+à chaque change detection. Pendant un debounce, le store n'a pas encore
+émis la nouvelle valeur → Angular écrase la frappe de l'utilisateur →
+effet "tremblement" + focus apparemment perdu.
+
+### 0.2 Mapping backend → front pour les DTOs admin
+
+Les DTOs backend admin utilisent un préfixe historique `hotel*` /
+`role*` (`hotelNom`, `hotelCode`, `roleNom`, `roleCode`). Le
+modèle TS front utilise la convention courte (`nom`, `code`).
+
+**Mapping centralisé** dans les services admin :
+- `HotelsAdminService.toFrontHotel(dto)` : `hotelNom → nom`, etc.
+- `RolesAdminService.toFrontRole(dto)` : `roleNom → nom`, etc.
+
+→ **NE PAS toucher** les composants qui consomment `Hotel` / `Role` —
+le mapping est local au service. Si un autre DTO admin utilise des
+champs préfixés, suivre le même pattern.
+
+### 0.3 Form CRUD utilisateur — modes du `user-form` admin
+
+- `/admin/users/new` — création STANDALONE (l'hôtel est dans le form
+  via select `hotelId`)
+- `/admin/users/:userId` — édition STANDALONE
+- `/admin/hotels/:hotelId/users/new` — création SCOPED (hotelId path-param)
+- `/admin/hotels/:hotelId/users/:userId` — édition SCOPED
+
+Le `UserFormComponent` détecte le mode via `route.snapshot.paramMap.get('hotelId')`.
+En standalone, ajoute un FormControl `hotelId` required + select des
+hôtels. **Le payload utilise `roleId` (Integer)**, pas `roleCode` —
+sinon HTTP 400 (cf. DBUserCreateAdminDto).
+
+### 0.4 Reporting — pattern de téléchargement
+
+`ReportsDownloadService.download(path, filename, queryParams?)` :
+- Passe par `HttpClient` (l'intercepteur JWT attache le token, un
+  `<a href>` direct ne le ferait pas → 401)
+- Récupère un `Blob` via `responseType: 'blob'`
+- Déclenche un download programmatique (`URL.createObjectURL` + `<a>`)
+- `parseHttpError` lit le Blob d'erreur en text() puis JSON.parse pour
+  extraire `{message}` du `GlobalExceptionHandler` backend
+
+**Toujours envoyer `from` / `to` / `date` en queryParams** — beaucoup
+d'endpoints reporting les exigent (`@RequestParam` sans defaultValue) →
+HTTP 400 sinon. Cf. `reporting-home.defaultQueryParams()` (today - 30j).
+
+### 0.5 Configuration LAN — `environment.prod.ts` + `angular.json`
+
+- `src/environments/environment.prod.ts` : `apiUrl =
+  'http://192.168.100.141:8080/citybackend'` (édité = rebuild requis)
+- `angular.json` configuration `serve.lan` :
+  - `buildTarget = production` (utilise environment.prod.ts via
+    `fileReplacements`)
+  - `host = 0.0.0.0` (bind toutes interfaces réseau)
+  - `allowedHosts = ["all"]` (Angular dev-server bloque les Host
+    headers non-localhost par défaut)
+- `package.json` : `npm run start:lan` = `ng serve --configuration lan`
+
+### 0.6 i18n — sync EN/AR depuis FR
+
+Script jetable `cityfrontend/src/assets/i18n/__sync_i18n.mjs` (Node)
+qui parse `fr.json`, identifie les clés absentes de `en.json` /
+`ar.json`, et copie les valeurs FR comme fallback. Utilisé après
+chaque ajout de clés FR pour ne pas casser `@ngx-translate` qui sinon
+afficherait la clé technique en EN/AR.
+
+Le fichier n'est pas commit — recréer ponctuellement, lancer via
+`powershell.exe -Command "node ./__sync_i18n.mjs"`, puis supprimer.
+
+### 0.7 Routes feature au statut 2026-05-24
+
+| Feature | Routes principales | État |
+|---|---|---|
+| `/admin` | hotels, users (standalone + scoped), roles, parametres | ✅ |
+| `/hotel-admin` | users (CRUD pour ADMIN d'hôtel) | ✅ |
+| `/clients` | list, form, societes (list + form) | ✅ |
+| `/hebergement` | calendar, reservations, check-in, night-audit | ✅ |
+| `/inventory` | produits, BC, BS, fournisseurs, mouvements, services | ✅ |
+| `/finance` | factures, paiements, comptes | ✅ |
+| `/comptabilite` | 12 écrans (plan, mapping, écritures, balance, etc.) | ✅ |
+| `/restaurant` | POS, articles, categories | ✅ |
+| `/menage` | dashboard, taches, personnel, planning (list + form) | ✅ |
+| `/reporting` | 6 landing pages (hebergement/finance/inventory/restaurant/menage/direction) | ✅ |
+| `/profile` | composant front uniquement (Vague 3) | 🟡 |
+
+### 0.8 Build vert
+
+```bash
+cd cityfrontend
+npx tsc --noEmit                        # type-check
+npx ng build --configuration development # build dev
+npx ng build --configuration production  # build prod (utilise env.prod.ts)
+npm run start:lan                       # ng serve sur 0.0.0.0:4200
+```
+
+---
+
 ## 1. Stack (mai 2026)
 
 > **🎯 Stratégie en deux paliers** (arbitrage Tour 1, 2026-05-05) :

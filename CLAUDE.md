@@ -5,6 +5,118 @@
 
 ---
 
+## 0. Statut à la reprise — 2026-05-24
+
+> **Lis cette section EN PREMIER avant toute modification.** Elle résume
+> l'état réel du projet au moment où l'utilisateur a fait une pause.
+> Branche active : `fix/menage-completion`. ~25 commits depuis Tour 41.
+
+### 0.1 État global
+
+**Application "presque mature, presque finale"** — déployable sur deux
+modes (cf. §0.4), tous les modules métier fonctionnels, tests verts.
+
+- **Backend** : `citybackend-1.0.0.jar` (~110 MB, Spring Boot fat-jar).
+  433 tests Surefire verts, build clean (BUILD SUCCESS).
+- **Frontend** : `ng build --configuration production` vert. Routes
+  admin / hotel-admin / menage / restaurant / hebergement / finance /
+  comptabilite / inventory / reporting toutes fonctionnelles.
+- **BD** : 60 changesets Liquibase appliqués (le dernier est le 060
+  pour ajouter les rôles MAGASIN/MENAGE/NIGHTAUDIT manquants).
+- **9 rôles seedés** : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESTAURANT,
+  RESREC, MAGASIN, MENAGE, NIGHTAUDIT.
+
+### 0.2 Corrections systémiques livrées depuis Tour 41
+
+Pattern récurrent par catégorie (cf. `git log --oneline main..HEAD`) :
+
+| Catégorie | Détail |
+|---|---|
+| **DTOs enrichis** | 14 DTOs avec champs `nom*` / `numero*` résolus côté service via batch `findAllById(Set<Long>)`. Pattern : record + `withResolvedNames(...)` static method + `@Mapping(target="nom*", ignore=true)` MapStruct. Concerne : ReservationDto, FactureDto, BonCommandeDto, MouvementStockDto, LigneBonCommande/SortieDto, ChambreDto, NuiteeDto, ArticleMenuDto, RecetteArticleDto, CommandeDto, AffectationPaiementDto, HistoriqueDto, PlanningDto. |
+| **Mapping back↔front admin** | Backend `HotelAdminDto`/`RoleAdminDto` utilisent un préfixe historique `hotel*`/`role*` (hotelNom, hotelCode, roleNom, roleCode). Front attend `nom`/`code`. Mapping fait dans `HotelsAdminService.toFrontHotel()` et `RolesAdminService.toFrontRole()` — **NE PAS toucher** les 7+ composants qui consomment ces modèles TS. |
+| **Java records + Jasper** | `PdfExportServiceImpl.buildDataSource()` détecte les records et utilise `JRMapCollectionDataSource` (Jasper 6.21 ne lit pas les accesseurs `xxx()` sans préfixe `get`). Applicable à tous les PDFs reporting. |
+| **NPE Map.of().get(null)** | Helper `lookup(map, key)` null-safe dans `ReservationServiceImpl.enrichDtos` et `HistoriqueServiceImpl`. `Map.of()` (immutable) jette NPE sur `.get(null)`, à éviter quand on enrichit des entités avec FK nullable (ex. `Reservation.societeId`). |
+| **Uncontrolled input** | Pour les inputs autocomplete (POS `client-search`), **NE PAS** binder `[value]="x$ \| async"` — Angular réécrit à chaque CD et casse la frappe. Pattern : pas de `[value]`, seulement `(input)`, reset programmatique via `@ViewChild` + `nativeElement.value`. |
+| **Security RESTAURANT** | Le rôle RESTAURANT a été ouvert en lecture sur `/api/clients/**`, `/api/societes/**`, `/api/hebergement/reservations/**` (besoin POS pour filtre client + report chambre). Cf. `@PreAuthorize` des controllers. |
+| **Security `/api/admin/roles`** | Exception dans `SecurityConfig` (avant la règle `/api/admin/**` restreinte à SUPERADMIN) : ADMIN peut lire le référentiel des rôles pour alimenter le formulaire "Mon hôtel > Nouvel utilisateur". |
+| **NumerotationService recalibrage** | Au démarrage d'une nouvelle séquence (hôtel ou exercice neuf), `findMaxExistingValueForRecalibration()` interroge `MAX(numero)` dans la table cible pour éviter les collisions en migration. Couvre FACT, AVOIR, PAY, RES, BC, BS, CLI, COMM. |
+| **i18n EN/AR sync auto** | Script jetable `__sync_i18n.mjs` (Node) qui copie les clés manquantes EN/AR depuis FR avec valeurs FR comme fallback. À recréer ponctuellement après ajout de clés FR. |
+
+### 0.3 Numérotation tenant-scoped — garanties
+
+Les numérotations (factures, réservations, produits, clients, paiements,
+BC, BS, commandes, écritures) sont strictement **scoped par `hotel_id`** :
+
+- Table `finance.numerotation_sequence` avec UNIQUE
+  `(hotel_id, type, exercice, discriminant)`
+- `@TenantId` Hibernate ajoute auto `WHERE hotel_id = ?` partout
+- `SELECT ... FOR UPDATE` + `@Transactional REQUIRED` → pas de saut en
+  cas d'échec INSERT (rollback annule l'incrémentation)
+- Recalibrage auto au démarrage en cas de migration
+
+→ **Aucune séquence n'est partagée entre hôtels**. Garanti par la BD
+(contrainte UNIQUE) et par le code (`NumerotationServiceImpl`).
+
+### 0.4 Modes de déploiement supportés (consigne 2026-05-22)
+
+| Mode | Description | Configuration |
+|---|---|---|
+| **LOCAL** | Serveur dédié à 1 hôtel (on-premise client) | `APP_DEPLOYMENT_MODE=LOCAL` + `APP_DEPLOYMENT_HOTEL_CODE=HOTEL_X` |
+| **SAAS** | Hébergement central multi-hôtels (défaut) | `APP_DEPLOYMENT_MODE=SAAS` |
+
+**Même JAR** pour les deux modes — différenciation via variables
+d'environnement (placeholder `${APP_DEPLOYMENT_MODE:SAAS}` dans
+`application.yml`). Pas de recompilation à changer de mode.
+
+Cf. `deploiement/MODES_DEPLOIEMENT.md` pour procédure complète + tests.
+
+### 0.5 Déploiement Windows LAN
+
+Cible historique pré-prod : `192.168.100.141` sur réseau `192.168.100.0/24`.
+
+- `scripts/deploy-windows/firewall-rules.ps1` : ouvre ports 4200 + 8080
+  inbound, scope restreint au sous-réseau LAN
+- `scripts/deploy-windows/start-backend.ps1` : source auto `set-env.ps1`
+  + `java -jar … --server.address=0.0.0.0 --spring.profiles.active=prod`
+- `scripts/deploy-windows/start-frontend.ps1` : `npm run start:lan` →
+  `ng serve --configuration lan` (host 0.0.0.0, allowedHosts ["all"])
+- `scripts/deploy-windows/set-env.example.ps1` : template runtime vars
+  (JWT_SECRET, DB_*, APP_DEPLOYMENT_*). À copier en `set-env.ps1` à la
+  racine du repo (gitignored).
+- `cityfrontend/src/environments/environment.prod.ts` : `apiUrl =
+  http://192.168.100.141:8080/citybackend` — à éditer si IP différente.
+- `application.yml` CORS : étendu avec `http://192.168.100.141:4200`.
+
+### 0.6 Night audit configuré à midi UTC
+
+- `city.night-audit.alert-cron` = `0 57 11 * * *` (11:57 UTC)
+- `city.night-audit.run-cron` = `0 0 12 * * *` (12:00 UTC)
+- `timezone` = `UTC` (équivalent GMT, pas de DST)
+
+### 0.7 Points d'attention pour la reprise
+
+- **Le JAR `citybackend-1.0.0.jar`** est généré dans `target/` mais le
+  repo ignore `target/`. À rebuilder via `mvnw -DskipTests clean
+  package` après pull.
+- **`set-env.ps1`** est gitignored — recréer depuis
+  `set-env.example.ps1` sur chaque serveur, le remplir avec les
+  secrets locaux.
+- **Liquibase 060** ajoute des rôles via `ON CONFLICT DO NOTHING` →
+  idempotent, safe à rejouer.
+- **Tests** : 433 Surefire verts. Lancer `mvnw test` après pull pour
+  valider l'état avant toute modif.
+- **Pas de rétrogradation** sous Java 21 / Spring Boot 3.4.5 / Angular
+  21.2 / Node 22 LTS / PostgreSQL 16 (cf. §3 et `/sync-tech`).
+
+### 0.8 Modules backlog (Vague 3, non livrés)
+
+Cf. §4 ci-dessous pour le tableau complet. Restants :
+- **profile** : back from-scratch (changement mdp + avatar + préférences)
+- **notification** : Mail Thymeleaf + Kafka mode dégradé Spring Events
+- **dolibarr** : bridge Feign Facture/Paiement → Dolibarr
+
+---
+
 ## 1. Contexte produit
 
 City Hotel est une application web SaaS de gestion hôtelière **multi-tenant**. Le client initial s'appelle "City Hotel" mais le produit est commercialisé à d'autres hôtels qui s'abonnent comme **membres**. Chaque hôtel dispose de son **propre espace** isolé : ses utilisateurs, ses chambres, ses clients, ses factures, ses stocks.
