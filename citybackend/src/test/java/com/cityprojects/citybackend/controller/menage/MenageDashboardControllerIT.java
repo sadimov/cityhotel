@@ -42,10 +42,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>T3 : ADMIN GET /api/menage/statistiques/periode?dateDebut&dateFin
  *       -&gt; 200, dateReference = dateDebut.</li>
  *   <li>T4 : RECEPTION GET /api/menage/kpi -&gt; 200.</li>
- *   <li>T5 : MENAGE GET /api/menage/dashboard -&gt; 403 (role MENAGE non
- *       autorise sur le dashboard — reserve ADMIN/GERANT/RECEPTION).</li>
+ *   <li>T5 : MENAGE GET /api/menage/dashboard -&gt; 200 (role MENAGE autorise
+ *       sur le dashboard de son module — stats agregees sans donnee RH
+ *       individuelle).</li>
  *   <li>T6 : RECEPTION GET /api/menage/statistiques/personnel/{id} -&gt; 403
- *       (donnee RH plus sensible, reservee ADMIN/GERANT).</li>
+ *       (donnee RH individuelle, reservee ADMIN/GERANT).</li>
  * </ol>
  *
  * <p>Setup minimal : BDD vide pour chaque test ; les counts retournent 0
@@ -184,13 +185,14 @@ class MenageDashboardControllerIT {
     }
 
     @Test
-    @DisplayName("T5 - MENAGE GET /dashboard : 403 (role non autorise)")
-    void shouldDenyDashboardForMenage() throws Exception {
+    @DisplayName("T5 - MENAGE GET /dashboard : 200 (role autorise — stats agregees)")
+    void shouldAllowDashboardForMenage() throws Exception {
         String jwt = jwtFor(userMenage);
 
         mockMvc.perform(get("/api/menage/dashboard")
                         .header("Authorization", "Bearer " + jwt))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.statistiques").exists());
     }
 
     @Test

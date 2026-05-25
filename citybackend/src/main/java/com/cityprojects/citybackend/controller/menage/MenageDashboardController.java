@@ -20,10 +20,13 @@ import java.time.LocalDate;
  * REST API du tableau de bord, des statistiques et des KPI du module
  * menage (sous-tour C — cf. {@code endpoints_module_menage.txt} §Dashboard).
  *
- * <h3>Roles (spec)</h3>
+ * <h3>Roles</h3>
  * <ul>
- *   <li>Dashboard / statistiques generales / kpi : ADMIN, GERANT, RECEPTION.</li>
- *   <li>Performance personnel : ADMIN, GERANT (donnee RH plus sensible).</li>
+ *   <li>Dashboard / statistiques generales / kpi : ADMIN, GERANT, RECEPTION, MENAGE
+ *       (le rôle MENAGE peut consulter le dashboard de son module — stats agregees
+ *       sans donnee RH individuelle ; coherent avec l'acces deja accorde aux
+ *       endpoints {@code /taches}, {@code /planning}, {@code /personnel/actifs}).</li>
+ *   <li>Performance personnel : ADMIN, GERANT (donnee RH individuelle plus sensible).</li>
  *   <li>SUPERADMIN inclus partout.</li>
  * </ul>
  *
@@ -46,14 +49,14 @@ public class MenageDashboardController {
      * + personnels disponibles aujourd'hui.
      */
     @GetMapping("/dashboard")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
     public ResponseEntity<DashboardMenageDto> getDashboard() {
         return ResponseEntity.ok(service.getDashboard());
     }
 
     /** Statistiques agregees pour la journee courante. */
     @GetMapping("/statistiques")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
     public ResponseEntity<StatistiquesMenageDto> getStatistiquesJour() {
         return ResponseEntity.ok(service.getStatistiquesJour());
     }
@@ -65,7 +68,7 @@ public class MenageDashboardController {
      * @param dateFin   borne superieure incluse (format ISO yyyy-MM-dd)
      */
     @GetMapping("/statistiques/periode")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
     public ResponseEntity<StatistiquesMenageDto> getStatistiquesPeriode(
             @RequestParam("dateDebut") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateDebut,
             @RequestParam("dateFin") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFin) {
@@ -91,7 +94,7 @@ public class MenageDashboardController {
 
     /** Indicateurs synthese vue tendance. */
     @GetMapping("/kpi")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','MENAGE')")
     public ResponseEntity<KpiMenageDto> getKpi() {
         return ResponseEntity.ok(service.getKpi());
     }
