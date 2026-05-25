@@ -393,6 +393,11 @@
 	   expectedResult:0 sur COUNT(*) WHERE categorie='nationalite'. -->
 	<include file="db/changelog/changes/061-seed-nationalites.sql"/>
 	
+	<!-- 062 - Suivi structure de l'annulation (motif + date + auteur) sur
+           hebergement.reservations. Remplace progressivement la concatenation
+           textuelle dans `commentaires`. Toutes nullable (retro-compat). -->
+     <include file="db/changelog/changes/062-add-annulation-tracking-reservations.xml"/>
+	  
     <!--
     TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql
