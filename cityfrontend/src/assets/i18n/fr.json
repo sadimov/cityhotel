@@ -192,7 +192,8 @@
         "search": "Rechercher une société",
         "empty": "Aucune société trouvée.",
         "error": "Impossible de charger les sociétés.",
-        "actions": "Actions"
+        "actions": "Actions",
+        "showInactive": "Afficher les sociétés désactivées"
       },
       "form": {
         "titleCreate": "Nouvelle société",

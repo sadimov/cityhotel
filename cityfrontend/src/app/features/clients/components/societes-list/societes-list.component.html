@@ -7,14 +7,28 @@
     </button>
   </header>
 
-  <div class="mb-3" style="max-width: 360px;">
-    <input
-      type="search"
-      class="form-control"
-      [placeholder]="'clients.societes.list.search' | translate"
-      [value]="searchTerm"
-      (input)="onSearchChange($any($event.target).value)"
-    />
+  <div class="mb-3 d-flex align-items-center gap-3 flex-wrap">
+    <div style="max-width: 360px; flex: 1 1 240px;">
+      <input
+        type="search"
+        class="form-control"
+        [placeholder]="'clients.societes.list.search' | translate"
+        [value]="searchTerm"
+        (input)="onSearchChange($any($event.target).value)"
+      />
+    </div>
+    <div class="form-check form-switch">
+      <input
+        type="checkbox"
+        class="form-check-input"
+        id="societes-show-inactive"
+        [checked]="showInactive"
+        (change)="onToggleShowInactive($any($event.target).checked)"
+      />
+      <label class="form-check-label" for="societes-show-inactive">
+        {{ 'clients.societes.list.showInactive' | translate }}
+      </label>
+    </div>
   </div>
 
   @if (state === 'loading') {

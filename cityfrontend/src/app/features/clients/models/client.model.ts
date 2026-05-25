@@ -130,4 +130,6 @@ export interface PageRequest {
   sortBy?: string;
   sortDir?: 'asc' | 'desc';
   recherche?: string;
+  /** Inclut les éléments désactivés (ex. sociétés inactives) — défaut false. */
+  includeInactive?: boolean;
 }

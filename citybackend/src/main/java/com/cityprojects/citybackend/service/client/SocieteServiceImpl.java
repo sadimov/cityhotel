@@ -165,11 +165,20 @@ public class SocieteServiceImpl implements SocieteService {
 
     @Override
     public Page<SocieteDto> search(String recherche, Pageable pageable) {
+        return search(recherche, false, pageable);
+    }
+
+    @Override
+    public Page<SocieteDto> search(String recherche, boolean includeInactive, Pageable pageable) {
         if (recherche == null || recherche.isBlank()) {
-            return findAllActive(pageable);
+            return includeInactive
+                    ? societeRepository.findAllByOrderBySocieteNomAsc(pageable).map(societeMapper::toDto)
+                    : findAllActive(pageable);
         }
-        return societeRepository.searchSocietes(recherche.trim(), pageable)
-                .map(societeMapper::toDto);
+        Page<Societe> page = includeInactive
+                ? societeRepository.searchSocietesIncludingInactive(recherche.trim(), pageable)
+                : societeRepository.searchSocietes(recherche.trim(), pageable);
+        return page.map(societeMapper::toDto);
     }
 
     @Override

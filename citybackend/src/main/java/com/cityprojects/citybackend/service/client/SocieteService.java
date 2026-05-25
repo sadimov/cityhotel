@@ -61,6 +61,17 @@ public interface SocieteService {
     Page<SocieteDto> search(String recherche, Pageable pageable);
 
     /**
+     * Variante de {@link #search(String, Pageable)} permettant d'inclure les
+     * societes desactivees dans le resultat. Utilisee par le toggle "Afficher
+     * inactives" cote front pour pouvoir les reactiver depuis la liste.
+     *
+     * @param includeInactive si {@code true}, les societes desactivees sont
+     *                        retournees ; sinon comportement identique a
+     *                        {@link #search(String, Pageable)}.
+     */
+    Page<SocieteDto> search(String recherche, boolean includeInactive, Pageable pageable);
+
+    /**
      * Desactive une societe (suppression logique). Refuse si la societe a
      * des clients actifs rattaches.
      */

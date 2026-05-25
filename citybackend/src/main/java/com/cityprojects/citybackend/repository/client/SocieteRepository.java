@@ -35,12 +35,28 @@ public interface SocieteRepository
     Page<Societe> findByActifTrueOrderBySocieteNomAsc(Pageable pageable);
 
     /**
+     * Page de toutes les societes (actives ET inactives), ordonnees par nom.
+     * Utilisee quand l'UI demande explicitement l'affichage des desactivees
+     * (toggle "Afficher inactives") pour permettre la reactivation.
+     */
+    Page<Societe> findAllByOrderBySocieteNomAsc(Pageable pageable);
+
+    /**
      * Recherche par nom (LIKE insensible a la casse) parmi les societes actives.
      * Utilise dans le service pour la recherche libre.
      */
     @Query("SELECT s FROM Societe s WHERE s.actif = true "
             + "AND LOWER(s.societeNom) LIKE LOWER(CONCAT('%', :recherche, '%'))")
     Page<Societe> searchSocietes(@Param("recherche") String recherche, Pageable pageable);
+
+    /**
+     * Recherche par nom (LIKE insensible a la casse) parmi <b>toutes</b> les
+     * societes (actives + inactives). Variante du {@link #searchSocietes(String, Pageable)}
+     * pour le toggle "Afficher inactives" cote front.
+     */
+    @Query("SELECT s FROM Societe s "
+            + "WHERE LOWER(s.societeNom) LIKE LOWER(CONCAT('%', :recherche, '%'))")
+    Page<Societe> searchSocietesIncludingInactive(@Param("recherche") String recherche, Pageable pageable);
 
     /**
      * Test d'unicite du nom (ignore la casse) au sein du tenant courant.

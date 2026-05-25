@@ -23,7 +23,8 @@ import { Societe, SocieteCreate } from '../models/societe.model';
  *   - `GET    /api/clients/{id}`      — détail
  *   - `POST   /api/clients`           — création
  *   - `PUT    /api/clients/{id}`      — mise à jour
- *   - `DELETE /api/clients/{id}`      — suppression
+ *   - `POST   /api/clients/{id}/deactivate` — désactivation (soft delete)
+ *   - `POST   /api/clients/{id}/reactivate` — réactivation
  *   - `GET    /api/societes`          — liste paginée sociétés
  *   - `GET    /api/societes/{id}`     — détail société
  *   - `POST   /api/societes`          — création société
@@ -79,11 +80,13 @@ export class ClientsService {
   }
 
   /**
-   * Suppression / désactivation d'un client.
+   * Désactivation (soft delete) d'un client. Le backend ne fait pas de hard
+   * delete sur les clients pour préserver l'audit comptable et les FK aval
+   * (factures, paiements, nuitées). Cf. ClientController JavaDoc.
    */
   delete(id: number): Observable<void> {
     return this.http
-      .delete<ApiResponse<void>>(`${this.base}/${id}`)
+      .post<ApiResponse<void>>(`${this.base}/${id}/deactivate`, {})
       .pipe(map(() => undefined));
   }
 
@@ -181,6 +184,9 @@ export class ClientsService {
     const recherche = req.recherche?.trim();
     if (recherche) {
       params = params.set('recherche', recherche);
+    }
+    if (req.includeInactive) {
+      params = params.set('includeInactive', 'true');
     }
     return params;
   }

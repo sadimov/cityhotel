@@ -32,6 +32,8 @@ export class SocietesListComponent implements OnInit, OnDestroy {
   state: ListState = 'loading';
   page: PageResponse<Societe> | null = null;
   searchTerm = '';
+  /** Si true, la liste affiche aussi les sociétés désactivées (pour réactivation). */
+  showInactive = false;
   busy = false;
 
   request = { page: 0, size: 10, sortBy: 'societeNom', sortDir: 'asc' as 'asc' | 'desc' };
@@ -60,7 +62,11 @@ export class SocietesListComponent implements OnInit, OnDestroy {
   load(): void {
     this.state = 'loading';
     this.clientsService
-      .pageSocietes({ ...this.request, recherche: this.searchTerm.trim() || undefined })
+      .pageSocietes({
+        ...this.request,
+        recherche: this.searchTerm.trim() || undefined,
+        includeInactive: this.showInactive || undefined,
+      })
       .pipe(
         takeUntil(this.destroy$),
         catchError(() => {
@@ -82,6 +88,13 @@ export class SocietesListComponent implements OnInit, OnDestroy {
       this.request = { ...this.request, page: 0 };
       this.load();
     }, 300);
+  }
+
+  /** Toggle "Afficher inactives" — re-fetch immédiat sur page 0. */
+  onToggleShowInactive(value: boolean): void {
+    this.showInactive = value;
+    this.request = { ...this.request, page: 0 };
+    this.load();
   }
 
   goToPage(p: number): void {

@@ -32,7 +32,7 @@ import java.util.List;
  * <ul>
  *   <li>Lecture : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC.</li>
  *   <li>Ecriture : SUPERADMIN, ADMIN, GERANT, RECEPTION.</li>
- *   <li>DELETE physique : SUPERADMIN, ADMIN.</li>
+ *   <li>DELETE physique : SUPERADMIN, ADMIN, GERANT.</li>
  * </ul>
  *
  * <h2>DELETE physique autorise (asymetrie volontaire avec {@link ClientController})</h2>
@@ -64,8 +64,9 @@ public class SocieteController {
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<Page<SocieteDto>> search(
             @RequestParam(value = "q", required = false) String recherche,
+            @RequestParam(value = "includeInactive", defaultValue = "false") boolean includeInactive,
             Pageable pageable) {
-        return ResponseEntity.ok(societeService.search(recherche, pageable));
+        return ResponseEntity.ok(societeService.search(recherche, includeInactive, pageable));
     }
 
     @GetMapping({"/active", "/actives"})
@@ -103,7 +104,7 @@ public class SocieteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         societeService.delete(id);
         return ResponseEntity.noContent().build();
