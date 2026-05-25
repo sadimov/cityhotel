@@ -26,7 +26,7 @@ const routes: Routes = [
     path: 'calendar',
     component: ReservationsCalendarComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC'] },
+    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT'] },
   },
   {
     // Alias historique — conservé pour ne pas casser les liens externes.
@@ -38,7 +38,7 @@ const routes: Routes = [
     path: 'reservations/list',
     component: ReservationsListComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC'] },
+    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT'] },
   },
   {
     path: 'reservations/new',
@@ -65,7 +65,7 @@ const routes: Routes = [
     path: 'reservations/:id',
     component: ReservationFormComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC'] },
+    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT'] },
   },
 ];
 

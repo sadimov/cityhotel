@@ -49,7 +49,7 @@ const routes: Routes = [
         loadChildren: () =>
           import('./features/hebergement/hebergement.module').then(m => m.HebergementModule),
         canActivate: [RoleGuard],
-        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC'] }
+        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT'] }
       },
 
       // Module Inventory (Produits, bons de commande, stocks) — feature lazy
@@ -121,7 +121,10 @@ const routes: Routes = [
         loadChildren: () =>
           import('./features/reporting/reporting.module').then(m => m.ReportingModule),
         canActivate: [RoleGuard],
-        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT'] }
+        // NIGHTAUDIT inclus au niveau parent ; le filtrage fin par sous-rapport
+        // est dans reporting-routing (hebergement + finance seulement pour
+        // NIGHTAUDIT — cf. ROLES_FIN backend et HebergementReportController).
+        data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'NIGHTAUDIT'] }
       },
 
       // Module Administration (hôtels, utilisateurs, rôles, paramètres) —
