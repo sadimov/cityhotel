@@ -5,11 +5,15 @@ import { RoleGuard } from '../../guards/role-guard.guard';
 import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 
 const REPORTING_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT'];
+// NIGHTAUDIT autorise sur les rapports hebergement + finance (consultation
+// dans le cadre du night audit — endpoints back deja ouverts cf.
+// HebergementReportController + FinanceReportController.ROLES_FIN).
+const REPORTING_ROLES_WITH_NIGHTAUDIT = [...REPORTING_ROLES, 'NIGHTAUDIT'];
 
 const routes: Routes = [
   { path: '', redirectTo: 'hebergement', pathMatch: 'full' },
-  { path: 'hebergement', component: ReportingHomeComponent, data: { module: 'hebergement', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
-  { path: 'finance', component: ReportingHomeComponent, data: { module: 'finance', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
+  { path: 'hebergement', component: ReportingHomeComponent, data: { module: 'hebergement', roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
+  { path: 'finance', component: ReportingHomeComponent, data: { module: 'finance', roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
   { path: 'inventory', component: ReportingHomeComponent, data: { module: 'inventory', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
   { path: 'restaurant', component: ReportingHomeComponent, data: { module: 'restaurant', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
   { path: 'menage', component: ReportingHomeComponent, data: { module: 'menage', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },

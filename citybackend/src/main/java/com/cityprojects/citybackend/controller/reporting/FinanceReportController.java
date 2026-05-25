@@ -35,7 +35,9 @@ public class FinanceReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-    private static final String ROLES_FIN = "hasAnyRole('SUPERADMIN','ADMIN','GERANT')";
+    // NIGHTAUDIT inclus : l'auditeur de nuit consulte les encours / TVA / top
+    // sociétés dans le cadre de la clôture quotidienne (lecture seule).
+    private static final String ROLES_FIN = "hasAnyRole('SUPERADMIN','ADMIN','GERANT','NIGHTAUDIT')";
 
     private final EncoursClientsReportService encoursService;
     private final TvaCollecteeReportService tvaService;

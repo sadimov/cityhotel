@@ -37,7 +37,12 @@ import java.util.List;
  * <p>Roles :
  * <ul>
  *   <li>Lecture : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC/NIGHTAUDIT.</li>
- *   <li>Creation/check-in/check-out/cancel/update/delete : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC.</li>
+ *   <li>Creation/cancel/update/delete : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC.</li>
+ *   <li>{@code check-in} / {@code check-out} : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC + NIGHTAUDIT
+ *       (l'auditeur de nuit termine les arrivees tardives et les departs en
+ *       suspens lors du night audit — cf. CLAUDE.md §6.4). Le
+ *       {@code check-out-express} (transfert de dette sur societe) reste
+ *       reserve aux roles operationnels (decision financiere).</li>
  *   <li>{@code rechercher-disponibilite} : ouvert aussi a NIGHTAUDIT (consultation).</li>
  * </ul>
  *
@@ -159,13 +164,13 @@ public class ReservationController {
     }
 
     @PostMapping("/{id}/check-in")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
     public ResponseEntity<ReservationDto> checkIn(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.checkIn(id));
     }
 
     @PostMapping("/{id}/check-out")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
     public ResponseEntity<ReservationDto> checkOut(@PathVariable("id") Long id) {
         return ResponseEntity.ok(reservationService.checkOut(id));
     }

@@ -50,7 +50,7 @@ const routes: Routes = [
     path: 'check-in',
     component: CheckInFormComponent,
     canActivate: [RoleGuard],
-    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION'] },
+    data: { roles: ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION', 'NIGHTAUDIT'] },
   },
   {
     // Tour 48 — Page Night Audit (préparation de la clôture)

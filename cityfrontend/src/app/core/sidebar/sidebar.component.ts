@@ -94,14 +94,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
       id: 'hebergement',
       label: 'Hébergement',
       icon: 'fas fa-bed',
-      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN'],
+      roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT', 'SUPERADMIN'],
       children: [
         {
           id: 'reservations',
           label: 'Réservations',
           icon: 'fas fa-calendar-alt',
           route: '/hebergement/reservations',
-          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT', 'SUPERADMIN']
         },
         {
           id: 'reservation-new',
@@ -115,7 +115,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
           label: 'Check-in / Check-out',
           icon: 'fas fa-key',
           route: '/hebergement/check-in',
-          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
+          roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'NIGHTAUDIT', 'SUPERADMIN']
         },
         {
           // Tour 48 — page Night Audit (préparation de la clôture)
@@ -385,10 +385,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       id: 'reporting',
       label: 'menu.reporting',
       icon: 'fas fa-chart-line',
-      roles: ['ADMIN', 'GERANT', 'SUPERADMIN'],
+      roles: ['ADMIN', 'GERANT', 'NIGHTAUDIT', 'SUPERADMIN'],
       children: [
-        { id: 'reporting-hebergement', label: 'submenu.reporting.hebergement', icon: 'fas fa-bed', route: '/reporting/hebergement', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
-        { id: 'reporting-finance', label: 'submenu.reporting.finance', icon: 'fas fa-credit-card', route: '/reporting/finance', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
+        { id: 'reporting-hebergement', label: 'submenu.reporting.hebergement', icon: 'fas fa-bed', route: '/reporting/hebergement', roles: ['ADMIN', 'GERANT', 'NIGHTAUDIT', 'SUPERADMIN'] },
+        { id: 'reporting-finance', label: 'submenu.reporting.finance', icon: 'fas fa-credit-card', route: '/reporting/finance', roles: ['ADMIN', 'GERANT', 'NIGHTAUDIT', 'SUPERADMIN'] },
         { id: 'reporting-inventory', label: 'submenu.reporting.inventory', icon: 'fas fa-boxes', route: '/reporting/inventory', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
         { id: 'reporting-restaurant', label: 'submenu.reporting.restaurant', icon: 'fas fa-utensils', route: '/reporting/restaurant', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
         { id: 'reporting-menage', label: 'submenu.reporting.menage', icon: 'fas fa-broom', route: '/reporting/menage', roles: ['ADMIN', 'GERANT', 'SUPERADMIN'] },
