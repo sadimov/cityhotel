@@ -201,7 +201,7 @@ public class SecurityConfig {
             configuration.setAllowedMethods(allowedMethods);
         } else {
             configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "DELETE", "OPTIONS"
+                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
             ));
         }
 
