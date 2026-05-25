@@ -300,6 +300,8 @@
           "phone": "Phone",
           "email": "Email",
           "cni": "ID document",
+          "nationalite": "Nationality",
+          "nationalitePlaceholder": "Type to filter (e.g. Mauritania, France, ...)",
           "create": "Create & select",
           "cancel": "Cancel",
           "success": "Client created and selected."

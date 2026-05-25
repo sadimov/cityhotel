@@ -41,8 +41,13 @@ import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
 import { AuthService } from '../../../../services/auth.service';
+import { DonneesReferentiellesService } from '../../../../services/donnees-referentielles.service';
 import { ClientsService } from '../../../clients/services/clients.service';
-import { Client, ClientCreate } from '../../../clients/models/client.model';
+import {
+  Client,
+  ClientCreate,
+  DonneesReferentielles,
+} from '../../../clients/models/client.model';
 import { Societe, SocieteCreate } from '../../../clients/models/societe.model';
 import { Chambre } from '../../models/chambre.model';
 import {
@@ -261,6 +266,13 @@ export class ReservationsCalendarComponent
   /** Index `societeId → Societe`. */
   private societesById = new Map<number, Societe>();
 
+  /**
+   * Référentiel des nationalités (ISO 3166-1) — chargé une fois au mount via
+   * `DonneesReferentiellesService` (cache global partagé). Utilisé par le
+   * quick-create client (datalist HTML5 filtrable).
+   */
+  nationalites: DonneesReferentielles[] = [];
+
   reservations: Reservation[] = [];
   private reservationsByRoom = new Map<number, Reservation[]>();
 
@@ -423,6 +435,7 @@ export class ReservationsCalendarComponent
     private readonly calendarLive: CalendarLiveService,
     private readonly i18n: TranslationService,
     private readonly authService: AuthService,
+    private readonly referentielsService: DonneesReferentiellesService,
   ) {}
 
   ngOnInit(): void {
@@ -1116,6 +1129,7 @@ export class ReservationsCalendarComponent
       telephone: '',
       email: '',
       cni: '',
+      nationaliteLibelle: '',
     });
     this.quickCreateContext = context;
     this.quickCreateClientVisible = true;
@@ -1135,14 +1149,19 @@ export class ReservationsCalendarComponent
     }
     const v = this.clientQuickCreateForm.value;
     // Le backend accepte un body minimal {prenom, nom, telephone?, email?,
-    // cni?, adresse?}. Le modèle TypeScript local mappe `cni` →
-    // `numeroIdentification` (déjà la convention DTO).
+    // cni?, adresse?, nationaliteId?}. Le modèle TypeScript local mappe
+    // `cni` → `numeroIdentification`. La nationalité est résolue depuis le
+    // libellé tapé via la liste référentielle préchargée ; si l'utilisateur
+    // a tapé un texte libre qui ne matche aucune nationalité, on envoie
+    // simplement `nationaliteId: undefined` (le champ est optionnel).
+    const nationaliteId = this.resolveNationaliteId(v.nationaliteLibelle);
     const dto: ClientCreate = {
       prenom: String(v.prenom ?? '').trim(),
       nom: String(v.nom ?? '').trim(),
       telephone: v.telephone ? String(v.telephone).trim() : undefined,
       email: v.email ? String(v.email).trim() : undefined,
       numeroIdentification: v.cni ? String(v.cni).trim() : undefined,
+      nationaliteId,
     };
     this.saving = true;
     this.cdr.markForCheck();
@@ -1173,6 +1192,21 @@ export class ReservationsCalendarComponent
         error: (err: HttpErrorResponse) =>
           this.toastError(this.mapBackendError(err)),
       });
+  }
+
+  /**
+   * Résout un libellé tapé (datalist) vers le `refId` de la nationalité
+   * correspondante. Tolère casse et espaces. Retourne `undefined` si vide
+   * ou si aucune nationalité ne matche (le champ est optionnel côté backend).
+   */
+  private resolveNationaliteId(libelle: unknown): number | undefined {
+    if (libelle == null) return undefined;
+    const needle = String(libelle).trim().toLocaleLowerCase();
+    if (!needle) return undefined;
+    const match = this.nationalites.find(
+      (n) => (n.libelle ?? '').trim().toLocaleLowerCase() === needle,
+    );
+    return match?.refId;
   }
 
   // ── Tour 45 F4 — Quick-create société dans la modale création ─────────
@@ -2471,14 +2505,18 @@ export class ReservationsCalendarComponent
           catchError(() => of<Societe[]>([])),
         ),
       reservations: this.fetchReservations(),
+      nationalites: this.referentielsService
+        .nationalites()
+        .pipe(catchError(() => of<DonneesReferentielles[]>([]))),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: ({ types, rooms, clients, societes, reservations }) => {
+        next: ({ types, rooms, clients, societes, reservations, nationalites }) => {
           this.types = types;
           this.rooms = rooms;
           this.clients = clients;
           this.societes = societes;
+          this.nationalites = nationalites;
           this.reindexClients();
           this.reindexSocietes();
           this.reindexRooms();
@@ -2564,6 +2602,9 @@ export class ReservationsCalendarComponent
       telephone: ['', [Validators.maxLength(40)]],
       email: ['', [Validators.email, Validators.maxLength(120)]],
       cni: ['', [Validators.maxLength(40)]],
+      // Libellé tapé par l'utilisateur (datalist HTML5). Résolu en
+      // nationaliteId au moment du submit via `this.nationalites`.
+      nationaliteLibelle: ['', [Validators.maxLength(120)]],
     });
     // Tour 45 — F4 quick-create société
     this.societeQuickCreateForm = this.fb.group({

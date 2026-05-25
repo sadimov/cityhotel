@@ -377,6 +377,8 @@
           "phone": "Téléphone",
           "email": "Email",
           "cni": "Pièce d'identité",
+          "nationalite": "Nationalité",
+          "nationalitePlaceholder": "Taper pour filtrer (ex. Mauritanie, France, ...)",
           "create": "Créer & sélectionner",
           "cancel": "Annuler",
           "success": "Client créé et sélectionné."
