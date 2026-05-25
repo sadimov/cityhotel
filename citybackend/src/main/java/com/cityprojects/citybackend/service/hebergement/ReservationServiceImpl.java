@@ -16,6 +16,7 @@ import com.cityprojects.citybackend.dto.hebergement.ReservationChambreDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationClientCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
+import com.cityprojects.citybackend.dto.hebergement.ReservationUpdateDto;
 import com.cityprojects.citybackend.entity.client.Client;
 import com.cityprojects.citybackend.entity.client.Societe;
 import com.cityprojects.citybackend.entity.hebergement.Chambre;
@@ -599,7 +600,7 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     @Transactional
-    public ReservationDto update(Long reservationId, ReservationCreateDto dto) {
+    public ReservationDto update(Long reservationId, ReservationUpdateDto dto) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
 
@@ -609,7 +610,17 @@ public class ReservationServiceImpl implements ReservationService {
                 || reservation.getStatut() == StatutReservation.NO_SHOW) {
             throw new BusinessException("error.reservation.update.terminated");
         }
-        if (!dto.dateDepart().isAfter(dto.dateArrivee())) {
+
+        // Semantique partial update : null = ne pas toucher. La garde
+        // dateDepart > dateArrivee est calculee avec les valeurs effectives
+        // (nouvelle si fournie, sinon courante) pour ne pas se declencher
+        // sur un partial update qui ne touche pas aux dates.
+        LocalDate effectiveArrivee = dto.dateArrivee() != null
+                ? dto.dateArrivee() : reservation.getDateArrivee();
+        LocalDate effectiveDepart = dto.dateDepart() != null
+                ? dto.dateDepart() : reservation.getDateDepart();
+        if (effectiveArrivee == null || effectiveDepart == null
+                || !effectiveDepart.isAfter(effectiveArrivee)) {
             throw new BusinessException("error.reservation.dates.invalid");
         }
 
@@ -642,18 +653,34 @@ public class ReservationServiceImpl implements ReservationService {
             }
         }
 
-        // Champs editables (les chambres / nuitees / pivots ne sont PAS modifiables ici).
-        reservation.setDateArrivee(dto.dateArrivee());
-        reservation.setDateDepart(dto.dateDepart());
-        reservation.setNbAdultes(dto.nbAdultes() != null ? dto.nbAdultes() : reservation.getNbAdultes());
-        reservation.setNbEnfants(dto.nbEnfants() != null ? dto.nbEnfants() : reservation.getNbEnfants());
-        reservation.setMotifSejour(dto.motifSejour());
-        reservation.setCommentaires(dto.commentaires());
+        // Champs editables partial : null = ne pas toucher (les chambres /
+        // nuitees / pivots ne sont PAS modifiables ici - cf. changerChambre).
+        if (dto.dateArrivee() != null) {
+            reservation.setDateArrivee(dto.dateArrivee());
+        }
+        if (dto.dateDepart() != null) {
+            reservation.setDateDepart(dto.dateDepart());
+        }
+        if (dto.nbAdultes() != null) {
+            reservation.setNbAdultes(dto.nbAdultes());
+        }
+        if (dto.nbEnfants() != null) {
+            reservation.setNbEnfants(dto.nbEnfants());
+        }
+        if (dto.motifSejour() != null) {
+            reservation.setMotifSejour(dto.motifSejour());
+        }
+        if (dto.commentaires() != null) {
+            reservation.setCommentaires(dto.commentaires());
+        }
         if (dto.reductionPourcentage() != null) {
             reservation.setReductionPourcentage(dto.reductionPourcentage());
         }
-        // Tour 41 R-HEB-004 : canal de distribution editable (null permis = effacer).
-        reservation.setSourceCanal(dto.sourceCanal());
+        // Tour 41 R-HEB-004 : canal de distribution editable. Pour conserver
+        // la possibilite d'effacer (string vide = effacer), null = ne pas toucher.
+        if (dto.sourceCanal() != null) {
+            reservation.setSourceCanal(dto.sourceCanal().isBlank() ? null : dto.sourceCanal());
+        }
         // nbNuits sera recalcule par @PreUpdate (cf. Reservation.recalcNbNuits).
         Reservation persisted = reservationRepository.save(reservation);
         // Tour 44 Phase 1 : notification calendrier temps reel.

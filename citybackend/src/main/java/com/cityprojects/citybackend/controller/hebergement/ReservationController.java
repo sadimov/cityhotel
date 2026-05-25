@@ -9,6 +9,7 @@ import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
 import com.cityprojects.citybackend.dto.hebergement.RechercheDisponibiliteRequest;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
+import com.cityprojects.citybackend.dto.hebergement.ReservationUpdateDto;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import com.cityprojects.citybackend.service.finance.ReservationFinanceService;
 import com.cityprojects.citybackend.service.hebergement.ReservationService;
@@ -149,7 +150,7 @@ public class ReservationController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
     public ResponseEntity<ReservationDto> update(@PathVariable("id") Long id,
-                                                  @Valid @RequestBody ReservationCreateDto dto) {
+                                                  @Valid @RequestBody ReservationUpdateDto dto) {
         return ResponseEntity.ok(reservationService.update(id, dto));
     }
 

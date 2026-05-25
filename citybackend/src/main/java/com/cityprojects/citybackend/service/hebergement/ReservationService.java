@@ -7,6 +7,7 @@ import com.cityprojects.citybackend.dto.hebergement.NuiteeDto;
 import com.cityprojects.citybackend.dto.hebergement.RechercheDisponibiliteRequest;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
+import com.cityprojects.citybackend.dto.hebergement.ReservationUpdateDto;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,16 +38,21 @@ public interface ReservationService {
     ReservationDto create(ReservationCreateDto dto);
 
     /**
-     * Met a jour les champs editables d'une reservation existante (Tour 14 B2 API).
+     * Met a jour les champs editables d'une reservation existante (partial update).
      *
-     * <p>Periode {@code (dateArrivee, dateDepart)}, {@code nbAdultes},
-     * {@code nbEnfants}, {@code motifSejour}, {@code commentaires},
-     * {@code reductionPourcentage}. Refuse si la reservation est terminee
-     * ({@code PARTIE}, {@code ANNULEE}, {@code NO_SHOW}). Les modifications
-     * de chambres / clients additionnels ne sont PAS prises en charge ici
-     * (workflow dedie a venir).</p>
+     * <p>Champs editables : {@code clientPrincipalId}, {@code societeId}
+     * (sentinelle {@code -1L} = detacher), {@code dateArrivee},
+     * {@code dateDepart}, {@code nbAdultes}, {@code nbEnfants},
+     * {@code motifSejour}, {@code commentaires}, {@code reductionPourcentage},
+     * {@code sourceCanal}.</p>
+     *
+     * <p><b>Semantique null = ne pas toucher</b> (cf. {@link ReservationUpdateDto}).
+     * Refuse si la reservation est terminee ({@code PARTIE}, {@code ANNULEE},
+     * {@code NO_SHOW}). Les modifications de chambres / clients additionnels
+     * ne sont PAS prises en charge ici (workflow dedie via
+     * {@link #changerChambre(Long, ChangerChambreRequest)}).</p>
      */
-    ReservationDto update(Long reservationId, ReservationCreateDto dto);
+    ReservationDto update(Long reservationId, ReservationUpdateDto dto);
 
     /**
      * Recupere une reservation par son id (filtre tenant via Hibernate).

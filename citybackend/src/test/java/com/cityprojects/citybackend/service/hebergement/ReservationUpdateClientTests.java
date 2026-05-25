@@ -4,6 +4,7 @@ import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.hebergement.ReservationChambreCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationCreateDto;
 import com.cityprojects.citybackend.dto.hebergement.ReservationDto;
+import com.cityprojects.citybackend.dto.hebergement.ReservationUpdateDto;
 import com.cityprojects.citybackend.entity.client.Client;
 import com.cityprojects.citybackend.entity.core.DBUser;
 import com.cityprojects.citybackend.entity.core.Hotel;
@@ -45,7 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests Surefire (H2) du Tour 49 : changement du client principal dans
- * {@link ReservationService#update(Long, ReservationCreateDto)}.
+ * {@link ReservationService#update(Long, ReservationUpdateDto)}.
  *
  * <h3>Couverture</h3>
  * <ol>
@@ -273,17 +274,10 @@ class ReservationUpdateClientTests {
         assertEquals(clientMrId, created.clientPrincipalId());
 
         // Update : passer du clientMr au clientMrAlt
-        ReservationCreateDto updateDto = new ReservationCreateDto(
+        // (partial update : seul clientPrincipalId est envoye)
+        ReservationUpdateDto updateDto = new ReservationUpdateDto(
                 clientMrAltId, null,
-                created.dateArrivee(), created.dateDepart(),
-                created.nbAdultes(), created.nbEnfants(),
-                created.motifSejour(), created.commentaires(),
-                created.reductionPourcentage(),
-                // chambres : on n'autorise pas la modification ici, mais le DTO
-                // exige @NotEmpty - on reutilise la meme chambre.
-                List.of(new ReservationChambreCreateDto(
-                        chambreMrId, null, null, new BigDecimal("80.00"))),
-                null);
+                null, null, null, null, null, null, null, null);
 
         ReservationDto updated = transactionTemplate.execute(s ->
                 reservationService.update(created.reservationId(), updateDto));
@@ -299,13 +293,9 @@ class ReservationUpdateClientTests {
         ReservationDto created = createBaseReservation();
         Long resId = created.reservationId();
 
-        ReservationCreateDto updateDto = new ReservationCreateDto(
+        ReservationUpdateDto updateDto = new ReservationUpdateDto(
                 clientMrInactifId, null,
-                created.dateArrivee(), created.dateDepart(),
-                1, 0, null, null, BigDecimal.ZERO,
-                List.of(new ReservationChambreCreateDto(
-                        chambreMrId, null, null, new BigDecimal("80.00"))),
-                null);
+                null, null, null, null, null, null, null, null);
 
         BusinessException ex = assertThrows(BusinessException.class,
                 () -> transactionTemplate.execute(s ->
@@ -323,13 +313,9 @@ class ReservationUpdateClientTests {
 
         // clientFrId existe en BDD mais n'est PAS visible depuis hotelMr
         // (Hibernate @TenantId ajoute WHERE hotel_id = ?).
-        ReservationCreateDto updateDto = new ReservationCreateDto(
+        ReservationUpdateDto updateDto = new ReservationUpdateDto(
                 clientFrId, null,
-                created.dateArrivee(), created.dateDepart(),
-                1, 0, null, null, BigDecimal.ZERO,
-                List.of(new ReservationChambreCreateDto(
-                        chambreMrId, null, null, new BigDecimal("80.00"))),
-                null);
+                null, null, null, null, null, null, null, null);
 
         ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
                 () -> transactionTemplate.execute(s ->
