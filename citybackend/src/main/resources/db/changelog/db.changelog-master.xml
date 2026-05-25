@@ -386,6 +386,13 @@
          initial 011 n'avait insere que 6 des 9 roles documentes). -->
     <include file="db/changelog/changes/060-add-missing-roles.sql"/>
 
+	<!-- 061 - Seed exhaustif des nationalites (ISO 3166-1 alpha-2, ~249 pays)
+	   dans core.donnees_referentielles (categorie 'nationalite').
+	   Necessaire pour le champ nationalite du quick-create client depuis
+	   le calendar de reservations. Idempotent via precondition
+	   expectedResult:0 sur COUNT(*) WHERE categorie='nationalite'. -->
+	<include file="db/changelog/changes/061-seed-nationalites.sql"/>
+	
     <!--
     TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql
