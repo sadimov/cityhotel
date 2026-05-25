@@ -12,7 +12,7 @@ import { ArticlesMenusService } from './articles-menus.service';
  *  - Le wrapper `ApiResponse<T>` est dépiéccé en `T`
  *  - `hotelId` n'est jamais transmis (CLAUDE.md §6.1)
  *  - `page()` propage correctement les filtres
- *  - `setDisponibilite()` PUT vers /{id}/disponibilite
+ *  - `setDisponibilite()` PATCH vers /{id}/statut
  */
 describe('ArticlesMenusService', () => {
   let service: ArticlesMenusService;
@@ -88,19 +88,29 @@ describe('ArticlesMenusService', () => {
     req.flush({ success: true, data: [] } as ApiResponse<ArticleMenu[]>);
   });
 
-  it('setDisponibilite() PUT vers /{id}/disponibilite avec body { disponible }', () => {
+  it('setDisponibilite(false) PATCH vers /{id}/statut avec { statut: RUPTURE }', () => {
     service.setDisponibilite(42, false).subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/api/restaurant/articles/42/disponibilite`);
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ disponible: false });
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/restaurant/articles/42/statut`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ statut: 'RUPTURE' });
     req.flush({ success: true, data: {} as ArticleMenu });
   });
 
-  it('setRupture() PUT vers /{id}/rupture avec motif optionnel', () => {
+  it('setDisponibilite(true) PATCH vers /{id}/statut avec { statut: ACTIF }', () => {
+    service.setDisponibilite(42, true).subscribe();
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/restaurant/articles/42/statut`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ statut: 'ACTIF' });
+    req.flush({ success: true, data: {} as ArticleMenu });
+  });
+
+  it('setRupture() PATCH vers /{id}/statut avec { statut: RUPTURE } (motif ignoré)', () => {
+    // Le paramètre motif est conservé pour compat de signature mais n'est
+    // pas transmis au backend (pas de champ persistant côté ArticleMenu).
     service.setRupture(42, 'rupture stock fromage').subscribe();
-    const req = httpMock.expectOne(`${environment.apiUrl}/api/restaurant/articles/42/rupture`);
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.body).toEqual({ motif: 'rupture stock fromage' });
+    const req = httpMock.expectOne(`${environment.apiUrl}/api/restaurant/articles/42/statut`);
+    expect(req.request.method).toBe('PATCH');
+    expect(req.request.body).toEqual({ statut: 'RUPTURE' });
     req.flush({ success: true, data: {} as ArticleMenu });
   });
 

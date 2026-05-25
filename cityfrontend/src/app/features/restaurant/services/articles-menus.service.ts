@@ -13,17 +13,30 @@ import {
 /**
  * Service HTTP — Articles du menu (module restaurant, catalogue).
  *
- * Spec (alignée Tours 16/19) :
+ * Spec :
  *   - GET    /api/restaurant/articles                       — page (search, filtres, sort)
  *   - GET    /api/restaurant/articles/disponibles           — liste articles disponibles (POS futur)
  *   - GET    /api/restaurant/articles/{id}                  — read
  *   - POST   /api/restaurant/articles                       — create
  *   - PUT    /api/restaurant/articles/{id}                  — update
  *   - DELETE /api/restaurant/articles/{id}                  — delete (soft)
- *   - PUT    /api/restaurant/articles/{id}/disponibilite    — bascule disponible (rupture courte)
- *   - PUT    /api/restaurant/articles/{id}/rupture          — déclare une rupture longue
+ *   - PATCH  /api/restaurant/articles/{id}/statut           — change statut (ACTIF/RUPTURE/INACTIF)
  *
  * ⚠️ `hotelId` n'est JAMAIS transmis (JWT côté serveur).
+ *
+ * <h2>Note sur la rupture (alignement Tour audit PATCH/CORS)</h2>
+ * <p>Le backend n'expose qu'un seul endpoint {@code PATCH /statut} avec
+ * l'enum {@code StatutArticle = ACTIF | RUPTURE | INACTIF}. Les anciennes
+ * méthodes du service envoyaient des PUT vers des routes inexistantes
+ * (/disponibilite, /rupture) qui retournaient 404. Désormais :
+ * <ul>
+ *   <li>{@link #setDisponibilite}(id, true)  → {@code PATCH /statut {ACTIF}}</li>
+ *   <li>{@link #setDisponibilite}(id, false) → {@code PATCH /statut {RUPTURE}}</li>
+ *   <li>{@link #setRupture}(id, motif?)      → {@code PATCH /statut {RUPTURE}}</li>
+ * </ul>
+ * Le paramètre {@code motif} de {@link #setRupture} est conservé pour
+ * compatibilité de signature mais <b>ignoré</b> par le backend (pas de champ
+ * persistant côté entité {@code ArticleMenu}).</p>
  */
 @Injectable({ providedIn: 'root' })
 export class ArticlesMenusService {
@@ -103,21 +116,28 @@ export class ArticlesMenusService {
    * Bascule rapide « disponible » <-> « non disponible ». Utilisé pour
    * marquer un plat indisponible le temps d'un service. Distinct du soft
    * delete (`actif`).
+   *
+   * Mappe sur l'enum backend {@code StatutArticle} :
+   * {@code disponible=true} → {@code ACTIF}, {@code false} → {@code RUPTURE}.
+   * Pour réactiver depuis {@code INACTIF}, utiliser plutôt le bouton
+   * "réactiver" qui passe par l'endpoint dédié.
    */
   setDisponibilite(id: number, disponible: boolean): Observable<ArticleMenu> {
+    const statut: 'ACTIF' | 'RUPTURE' = disponible ? 'ACTIF' : 'RUPTURE';
     return this.http
-      .put<ApiResponse<ArticleMenu>>(`${this.base}/${id}/disponibilite`, { disponible })
+      .patch<ApiResponse<ArticleMenu>>(`${this.base}/${id}/statut`, { statut })
       .pipe(map((r) => r.data as ArticleMenu));
   }
 
   /**
-   * Déclare une rupture (typiquement liée au stock ingrédients). Côté
-   * backend, met `disponible=false` et trace la raison. Le client se
-   * contente de transmettre la décision.
+   * Déclare une rupture (rupture stock ingrédients, plat momentanément
+   * indisponible). Équivalent à {@code setDisponibilite(id, false)} —
+   * le paramètre {@code motif} est conservé pour compatibilité mais
+   * ignoré côté serveur (cf. JSDoc en-tête du service).
    */
-  setRupture(id: number, motif?: string): Observable<ArticleMenu> {
+  setRupture(id: number, _motif?: string): Observable<ArticleMenu> {
     return this.http
-      .put<ApiResponse<ArticleMenu>>(`${this.base}/${id}/rupture`, { motif: motif ?? null })
+      .patch<ApiResponse<ArticleMenu>>(`${this.base}/${id}/statut`, { statut: 'RUPTURE' })
       .pipe(map((r) => r.data as ArticleMenu));
   }
 }
