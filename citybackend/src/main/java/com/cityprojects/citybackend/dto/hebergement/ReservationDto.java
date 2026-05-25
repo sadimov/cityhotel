@@ -42,12 +42,21 @@ public record ReservationDto(
          * rectangles de réservation sur la bonne ligne chambre.
          */
         List<ReservationChambreDto> chambres,
-        /** Canal de distribution (Tour 41, R-HEB-004). Place en dernier. */
+        /** Canal de distribution (Tour 41, R-HEB-004). */
         String sourceCanal,
         /** Nom complet du client principal (résolu côté service). */
         String nomClientPrincipal,
         /** Raison sociale de la société (résolue côté service). */
-        String nomSociete) {
+        String nomSociete,
+        /**
+         * Suivi structuré de l'annulation (changeset 062). Renseignés uniquement
+         * quand {@code statut = ANNULEE}. La trace textuelle dans
+         * {@code commentaires} reste pour rétro-compat tant que l'UI ne lit
+         * pas encore ces champs structurés.
+         */
+        String motifAnnulation,
+        Instant dateAnnulation,
+        Long annuleParUserId) {
 
     /**
      * Reconstruit un {@link ReservationDto} en injectant les noms résolus,
@@ -59,6 +68,7 @@ public record ReservationDto(
                 dateArrivee, dateDepart, nbNuits, nbAdultes, nbEnfants,
                 statut, motifSejour, commentaires, reductionPourcentage, montantTotal,
                 userId, createdAt, updatedAt, chambres, sourceCanal,
-                nomClient, nomSoc);
+                nomClient, nomSoc,
+                motifAnnulation, dateAnnulation, annuleParUserId);
     }
 }

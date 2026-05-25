@@ -19,6 +19,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.TenantId;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
@@ -163,6 +164,23 @@ public class Reservation extends AuditableEntity implements TenantAware {
     @Size(max = 50)
     @Column(name = "source_canal", length = 50)
     private String sourceCanal;
+
+    /**
+     * Suivi structuré de l'annulation (changeset 062). Renseigne par
+     * {@code ReservationServiceImpl.cancel} en complement de
+     * {@code statut = ANNULEE} et de la trace textuelle dans {@code commentaires}.
+     * Reste {@code null} sur les reservations non annulees.
+     */
+    @Size(max = 500)
+    @Column(name = "motif_annulation", length = 500)
+    private String motifAnnulation;
+
+    @Column(name = "date_annulation")
+    private Instant dateAnnulation;
+
+    /** FK logique vers {@code core.dbusers} (cf. pattern {@code userId}). */
+    @Column(name = "annule_par_user_id")
+    private Long annuleParUserId;
 
     /** Constructeur JPA. */
     public Reservation() {
@@ -324,5 +342,29 @@ public class Reservation extends AuditableEntity implements TenantAware {
 
     public void setSourceCanal(String sourceCanal) {
         this.sourceCanal = sourceCanal;
+    }
+
+    public String getMotifAnnulation() {
+        return motifAnnulation;
+    }
+
+    public void setMotifAnnulation(String motifAnnulation) {
+        this.motifAnnulation = motifAnnulation;
+    }
+
+    public Instant getDateAnnulation() {
+        return dateAnnulation;
+    }
+
+    public void setDateAnnulation(Instant dateAnnulation) {
+        this.dateAnnulation = dateAnnulation;
+    }
+
+    public Long getAnnuleParUserId() {
+        return annuleParUserId;
+    }
+
+    public void setAnnuleParUserId(Long annuleParUserId) {
+        this.annuleParUserId = annuleParUserId;
     }
 }

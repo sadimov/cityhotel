@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Ajout du suivi structure de l'annulation sur hebergement.reservations.
+
+  Avant ce changeset, l'annulation d'une reservation se traduisait par :
+    - statut = ANNULEE
+    - log textuel concatene dans `commentaires` ("ANNULEE le YYYY-MM-DD - Motif: ...")
+
+  Limites du log textuel : impossible de requeter analytiquement
+  (raisons frequentes d'annulation, taux d'annulation par receptionniste,
+  delai moyen entre creation et annulation, etc.).
+
+  Nouvelles colonnes :
+    - motif_annulation         VARCHAR(500) NULL — texte du motif
+    - date_annulation          TIMESTAMP WITH TIME ZONE NULL — horodatage UTC
+    - annule_par_user_id       BIGINT NULL — auteur de l'annulation
+                                              (cf. pattern user_id existant)
+
+  Toutes nullable : les reservations historiques annulees avant ce changeset
+  conservent leur trace uniquement dans `commentaires`. La concatenation
+  textuelle reste en place cote service tant que l'UI ne lit pas encore les
+  nouveaux champs (retro-compat).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="062-1-add-annulation-tracking-reservations" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists schemaName="hebergement" tableName="reservations" columnName="motif_annulation"/>
+            </not>
+        </preConditions>
+
+        <addColumn schemaName="hebergement" tableName="reservations">
+            <column name="motif_annulation" type="VARCHAR(500)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="date_annulation" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="true"/>
+            </column>
+            <column name="annule_par_user_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+
+        <createIndex tableName="reservations" schemaName="hebergement"
+                     indexName="ix_reservations_date_annulation">
+            <column name="date_annulation"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex schemaName="hebergement" tableName="reservations"
+                       indexName="ix_reservations_date_annulation"/>
+            <dropColumn schemaName="hebergement" tableName="reservations"
+                        columnName="annule_par_user_id"/>
+            <dropColumn schemaName="hebergement" tableName="reservations"
+                        columnName="date_annulation"/>
+            <dropColumn schemaName="hebergement" tableName="reservations"
+                        columnName="motif_annulation"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

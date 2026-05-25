@@ -109,6 +109,19 @@ export interface Reservation {
   // Détails (chargés à la demande)
   chambres?: ReservationChambre[];
   clients?: ReservationClient[];
+
+  // ────────────────────────────────────────────────────────────────────────
+  // Suivi structuré de l'annulation (changeset back 062).
+  // Renseignés uniquement quand statut = ANNULEE. Lecture seule côté front
+  // (jamais envoyés en payload — populés par le service backend cancel()).
+  // La trace textuelle dans `commentaires` reste pour rétro-compat.
+  // ────────────────────────────────────────────────────────────────────────
+  /** Motif saisi lors de l'annulation (texte libre, max 500 chars). */
+  motifAnnulation?: string;
+  /** Horodatage ISO de l'annulation (UTC). */
+  dateAnnulation?: string;
+  /** ID de l'utilisateur ayant annulé (FK vers core.dbusers). */
+  annuleParUserId?: number;
 }
 
 // ============= Requests création / modification =============

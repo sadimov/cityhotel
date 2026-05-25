@@ -55,6 +55,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -715,9 +716,20 @@ public class ReservationServiceImpl implements ReservationService {
         }
         reservation.setStatut(StatutReservation.ANNULEE);
         String motifTrim = (motif != null) ? motif.trim() : "(non specifie)";
+
+        // Suivi structure (changeset 062) : champs persistes utilisables
+        // analytiquement (taux d'annulation, raisons frequentes, auteur).
+        reservation.setMotifAnnulation(motifTrim);
+        reservation.setDateAnnulation(Instant.now());
+        reservation.setAnnuleParUserId(SecurityUtils.currentUserIdOrNull());
+
+        // Trace textuelle dans commentaires : retro-compat tant que l'UI
+        // n'affiche pas les champs structures ci-dessus. A retirer une fois
+        // le composant de detail reservation lit motifAnnulation / dateAnnulation.
         String previous = (reservation.getCommentaires() != null) ? reservation.getCommentaires() : "";
         reservation.setCommentaires(previous + "\nANNULEE le "
                 + LocalDate.now() + " - Motif: " + motifTrim);
+
         Reservation persisted = reservationRepository.save(reservation);
         // Tour 44 Phase 1 : notification calendrier temps reel.
         // DELETED car cote calendrier la reservation disparait (filtre statut !=ANNULEE).
@@ -841,7 +853,10 @@ public class ReservationServiceImpl implements ReservationService {
                 chambres,
                 base.sourceCanal(),
                 base.nomClientPrincipal(),
-                base.nomSociete());
+                base.nomSociete(),
+                base.motifAnnulation(),
+                base.dateAnnulation(),
+                base.annuleParUserId());
     }
 
     @Override
