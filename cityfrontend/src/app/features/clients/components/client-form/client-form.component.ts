@@ -6,10 +6,12 @@ import { finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
 import { TranslationService } from '../../../../services/translation.service';
+import { DonneesReferentiellesService } from '../../../../services/donnees-referentielles.service';
 import {
   Client,
   ClientCreate,
   ClientUpdate,
+  DonneesReferentielles,
 } from '../../models/client.model';
 import { ClientsService } from '../../services/clients.service';
 
@@ -34,6 +36,13 @@ export class ClientFormComponent implements OnInit, OnDestroy {
   /** ID du client édité, ou `null` en mode création. */
   editingId: number | null = null;
 
+  /**
+   * Liste des pays / nationalités (catégorie `nationalite` du référentiel
+   * global ISO 3166-1). Chargée une fois au mount via cache mémoire du
+   * service. Utilisée par le datalist HTML5 du champ "Pays".
+   */
+  pays: DonneesReferentielles[] = [];
+
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -42,10 +51,19 @@ export class ClientFormComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly clientsService: ClientsService,
     private readonly i18n: TranslationService,
+    private readonly referentielsService: DonneesReferentiellesService,
   ) {}
 
   ngOnInit(): void {
     this.form = this.buildForm();
+
+    this.referentielsService
+      .nationalites()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (list) => (this.pays = list),
+        error: () => (this.pays = []),
+      });
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam && idParam !== 'new') {

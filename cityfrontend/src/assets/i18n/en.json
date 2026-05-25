@@ -121,7 +121,8 @@
     "form": {
       "titleCreate": "New client",
       "titleEdit": "Edit client",
-      "loadError": "Unable to load this client."
+      "loadError": "Unable to load this client.",
+      "paysPlaceholder": "Type to filter (e.g. Mauritania, France, ...)"
     },
     "actions": {
       "create": "New client",

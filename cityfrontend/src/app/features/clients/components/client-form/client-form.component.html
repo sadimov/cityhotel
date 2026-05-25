@@ -124,7 +124,15 @@
             type="text"
             class="form-control"
             formControlName="pays"
+            list="client-pays-list"
+            autocomplete="off"
+            [placeholder]="'clients.form.paysPlaceholder' | translate"
           />
+          <datalist id="client-pays-list">
+            @for (p of pays; track p.refId) {
+              <option [value]="p.libelle">{{ p.code }}</option>
+            }
+          </datalist>
         </div>
 
         <div class="col-md-6">

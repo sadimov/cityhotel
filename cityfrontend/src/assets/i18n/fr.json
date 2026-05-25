@@ -247,7 +247,8 @@
     "form": {
       "titleCreate": "Nouveau client",
       "titleEdit": "Modifier le client",
-      "loadError": "Impossible de charger ce client."
+      "loadError": "Impossible de charger ce client.",
+      "paysPlaceholder": "Taper pour filtrer (ex. Mauritanie, France, ...)"
     },
     "actions": {
       "create": "Nouveau client",
