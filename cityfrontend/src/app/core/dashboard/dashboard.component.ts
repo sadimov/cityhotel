@@ -15,6 +15,11 @@ interface DashboardCard {
   value: string | number;
   icon: string;
   color: string;
+  /**
+   * Tendance vs hier. Non câblée à un calcul réel pour le moment — laissée
+   * absente sur toutes les cartes pour éviter d'afficher de fausses données.
+   * À réintégrer quand un endpoint /comparaison-veille sera disponible.
+   */
   trend?: {
     value: number;
     isPositive: boolean;
@@ -43,68 +48,64 @@ export class DashboardComponent implements OnInit, OnDestroy {
   currentUser: UserInfo | null = null;
   isLoading = true;
 
-  // Cartes de statistiques
+  // Cartes de statistiques. `value` est un placeholder neutre ('—') et est
+  // remplacé par les vraies valeurs dans `loadDashboardData()` (forkJoin sur
+  // les services métier). `trend` n'est intentionnellement pas renseigné
+  // (cf. interface DashboardCard).
   dashboardCards: DashboardCard[] = [
     {
       title: 'Réservations Aujourd\'hui',
-      value: 12,
+      value: '—',
       icon: 'fas fa-calendar-check',
       color: 'primary',
-      trend: { value: 8, isPositive: true },
       route: '/hebergement/reservations/list',
       roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
     },
     {
       title: 'Chambres Occupées',
-      value: '85%',
+      value: '—',
       icon: 'fas fa-bed',
       color: 'success',
-      trend: { value: 5, isPositive: true },
       route: '/hebergement/calendar',
       roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
     },
     {
       title: 'Revenus du Jour',
-      value: '2,450 MRU',
+      value: '—',
       icon: 'fas fa-coins',
       color: 'warning',
-      trend: { value: 12, isPositive: true },
       route: '/finance/paiements',
       roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
     },
     {
       title: 'Clients Nouveaux',
-      value: 8,
+      value: '—',
       icon: 'fas fa-user-plus',
       color: 'info',
-      trend: { value: 3, isPositive: false },
       route: '/clients',
       roles: ['ADMIN', 'GERANT', 'RECEPTION', 'RESREC', 'SUPERADMIN']
     },
     {
       title: 'Commandes Restaurant',
-      value: 24,
+      value: '—',
       icon: 'fas fa-utensils',
       color: 'danger',
-      trend: { value: 15, isPositive: true },
       route: '/restaurant',
       roles: ['RESTAURANT', 'RESREC', 'SUPERADMIN']
     },
     {
       title: 'Tâches Ménage',
-      value: 6,
+      value: '—',
       icon: 'fas fa-broom',
       color: 'secondary',
-      trend: { value: 2, isPositive: false },
       route: '/menage/dashboard',
       roles: ['MENAGE', 'GERANT', 'SUPERADMIN']
     },
     {
       title: 'Produits en Stock',
-      value: 156,
+      value: '—',
       icon: 'fas fa-boxes',
       color: 'primary',
-      trend: { value: 4, isPositive: false },
       route: '/inventory/produits',
       roles: ['ADMIN', 'GERANT', 'MAGASIN', 'SUPERADMIN']
     }
@@ -197,23 +198,45 @@ export class DashboardComponent implements OnInit, OnDestroy {
    *  - Réservations / Chambres / Produits / Tâches : services métier dédiés.
    *  - Revenus du Jour : R-DIR-001 dashboard direction (CA jour caEmisTtc).
    *  - Commandes Restaurant : commandesService.page filtré sur date du jour.
-   *  - Clients Nouveaux : aucun endpoint dédié → laissé en "—" (TODO).
+   *  - Clients Nouveaux : /api/clients/nouveaux-du-jour.
+   *
+   * Chaque appel est conditionné par la visibilité de sa carte (rôle).
+   * Inutile de tirer un endpoint qui retournera 403 — ça pollue les logs et
+   * ralentit le dashboard.
    */
   private loadDashboardData(): void {
     this.isLoading = true;
     const today = new Date().toISOString().slice(0, 10);
 
+    const canRead = (cardTitle: string): boolean => {
+      const card = this.dashboardCards.find((c) => c.title === cardTitle);
+      return card != null && this.isCardVisible(card);
+    };
+
     forkJoin({
-      arrivees: this.reservationsService.arriveesToday().pipe(catchError(() => of([] as unknown[]))),
-      enCours: this.reservationsService.enCours().pipe(catchError(() => of([] as unknown[]))),
-      produits: this.produitsService.findActifs().pipe(catchError(() => of([] as unknown[]))),
-      menage: this.dashboardMenageService.getDashboard().pipe(catchError(() => of(null))),
-      direction: this.reportingDashboardService.getDashboard().pipe(catchError(() => of(null))),
-      commandesJour: this.commandesService
-        .page({ dateDebut: today, dateFin: today }, 0, 1)
-        .pipe(catchError(() => of(null))),
-      clientsNouveaux: this.clientsService.countNouveauxDuJour()
-        .pipe(catchError(() => of(null))),
+      arrivees: canRead("Réservations Aujourd'hui")
+        ? this.reservationsService.arriveesToday().pipe(catchError(() => of([] as unknown[])))
+        : of([] as unknown[]),
+      enCours: canRead('Chambres Occupées')
+        ? this.reservationsService.enCours().pipe(catchError(() => of([] as unknown[])))
+        : of([] as unknown[]),
+      produits: canRead('Produits en Stock')
+        ? this.produitsService.findActifs().pipe(catchError(() => of([] as unknown[])))
+        : of([] as unknown[]),
+      menage: canRead('Tâches Ménage')
+        ? this.dashboardMenageService.getDashboard().pipe(catchError(() => of(null)))
+        : of(null),
+      direction: canRead('Revenus du Jour')
+        ? this.reportingDashboardService.getDashboard().pipe(catchError(() => of(null)))
+        : of(null),
+      commandesJour: canRead('Commandes Restaurant')
+        ? this.commandesService
+            .page({ dateDebut: today, dateFin: today }, 0, 1)
+            .pipe(catchError(() => of(null)))
+        : of(null),
+      clientsNouveaux: canRead('Clients Nouveaux')
+        ? this.clientsService.countNouveauxDuJour().pipe(catchError(() => of(null)))
+        : of(null),
     })
       .pipe(takeUntil(this.destroy$))
       .subscribe(({ arrivees, enCours, produits, menage, direction, commandesJour, clientsNouveaux }) => {

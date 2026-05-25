@@ -128,39 +128,10 @@
               </h5>
             </div>
             <div class="card-body">
-              <div class="activity-timeline">
-                <div class="timeline-item">
-                  <div class="timeline-marker bg-success"></div>
-                  <div class="timeline-content">
-                    <h6 class="mb-1">Nouvelle réservation</h6>
-                    <p class="text-muted mb-1">Chambre 101 - Jean Dupont</p>
-                    <small class="text-muted">Il y a 5 minutes</small>
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-marker bg-primary"></div>
-                  <div class="timeline-content">
-                    <h6 class="mb-1">Check-in effectué</h6>
-                    <p class="text-muted mb-1">Chambre 205 - Marie Martin</p>
-                    <small class="text-muted">Il y a 15 minutes</small>
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-marker bg-warning"></div>
-                  <div class="timeline-content">
-                    <h6 class="mb-1">Commande restaurant</h6>
-                    <p class="text-muted mb-1">Table 8 - Menu déjeuner</p>
-                    <small class="text-muted">Il y a 30 minutes</small>
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-marker bg-info"></div>
-                  <div class="timeline-content">
-                    <h6 class="mb-1">Tâche ménage terminée</h6>
-                    <p class="text-muted mb-1">Nettoyage chambre 302</p>
-                    <small class="text-muted">Il y a 45 minutes</small>
-                  </div>
-                </div>
+              <div class="text-center py-5 text-muted">
+                <i class="fas fa-history fa-2x mb-3 d-block"></i>
+                <p class="mb-1">Aucune activité à afficher pour le moment.</p>
+                <small>Le flux d'activité temps réel sera branché ultérieurement.</small>
               </div>
             </div>
           </div>
@@ -187,22 +158,10 @@
           </div>
         </div>
       </div>
-      <!-- Alertes et notifications -->
-      @if (currentUser && (currentUser.roleCode === 'ADMIN' || currentUser.roleCode === 'GERANT' || currentUser.roleCode === 'SUPERADMIN')) {
-        <div class="row mt-4">
-          <div class="col-12">
-            <div class="alert alert-warning border-0 shadow-sm">
-              <div class="d-flex align-items-center">
-                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                <div>
-                  <h6 class="alert-heading mb-1">Alertes de Stock</h6>
-                  <p class="mb-0">3 produits sont en rupture de stock et nécessitent votre attention.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      }
+<!-- Alertes Stock retirées : la donnée "3 produits en rupture" était hard-codée
+           et trompeuse. À réintégrer quand `inventoryService.findAlertesStock()`
+           sera câblé (TODO 33B — cf. composant TS). -->
+
     </div>
   }
 </div>
