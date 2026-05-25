@@ -26,8 +26,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Configuration de securite pour l'application.
@@ -180,12 +178,9 @@ public class SecurityConfig {
     }
 
     /**
-     * Configuration CORS - Tour 38 H2 : whitelist headers explicite, plus de fallback '*'.
-     *
-     * <p>Origins / methods / credentials / maxAge sont liés à {@link CorsProperties}
-     * (lecture YAML + env). Headers in/out restent codés en dur tant que les
-     * 3 application*.yml n'auront pas été nettoyés (allowed-headers: ["*"]
-     * incompatible avec allowCredentials=true).</p>
+     * Configuration CORS — Tour 38 H2 : whitelist headers explicite, plus de
+     * fallback '*'. Tous les champs sont liés à {@link CorsProperties}
+     * (binder Spring Boot natif, lit correctement les listes YAML).
      */
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
@@ -193,20 +188,10 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
         configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowedHeaders(corsProperties.getAllowedHeaders());
+        configuration.setExposedHeaders(corsProperties.getExposedHeaders());
         configuration.setAllowCredentials(corsProperties.isAllowCredentials());
         configuration.setMaxAge(corsProperties.getMaxAge());
-
-        // Tour 38 H2 : whitelist explicite, plus de '*'. Refuser tout header
-        // non liste (Origin, Authorization, Content-Type, X-Requested-With,
-        // Accept-Language pour i18n).
-        configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Requested-With", "Accept-Language"
-        ));
-
-        // Headers exposes au front (lecture cote JS).
-        configuration.setExposedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "X-Total-Count"
-        ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

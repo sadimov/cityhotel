@@ -22,15 +22,16 @@ import java.util.List;
  * binder Spring Boot qui sait lire les listes YAML.</p>
  *
  * <h2>Périmètre de la migration</h2>
- * <p>Seules les 4 propriétés historiquement portées par {@code @Value} sont
- * migrées : {@code allowedOrigins}, {@code allowedMethods},
- * {@code allowCredentials}, {@code maxAge}. Les listes
- * {@code allowedHeaders} et {@code exposedHeaders} restent codées en dur
- * dans {@code SecurityConfig#corsConfigurationSource} : les YAML existants
- * déclarent {@code allowed-headers: ["*"]}, valeur incompatible avec
- * {@code allowCredentials=true} en Spring Security (rejet immédiat). Pour
- * étendre la migration à ces deux listes, nettoyer d'abord les 3
- * {@code application*.yml} (retirer la clé ou expliciter la whitelist).</p>
+ * <p>Tous les champs CORS configurables sont liés ici : {@code allowedOrigins},
+ * {@code allowedMethods}, {@code allowedHeaders}, {@code exposedHeaders},
+ * {@code allowCredentials}, {@code maxAge}. Defaults Java prudents (whitelist
+ * explicite, jamais {@code *} avec credentials).</p>
+ *
+ * <p><b>Important</b> : la valeur {@code "*"} dans {@code allowed-headers}
+ * <b>n'est pas supportée</b> par Spring Security quand {@code allowCredentials=true}
+ * (le bean refuse de se construire et le démarrage échoue avec une erreur
+ * explicite). Les 3 {@code application*.yml} doivent lister la whitelist
+ * explicite, jamais {@code "*"}.</p>
  */
 @ConfigurationProperties("app.cors")
 public class CorsProperties {
@@ -44,6 +45,18 @@ public class CorsProperties {
     private List<String> allowedMethods = new ArrayList<>(Arrays.asList(
             "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
 
+    /**
+     * Headers acceptés sur la requête entrante. Tour 38 H2 : whitelist
+     * explicite, jamais {@code "*"} (incompatible avec credentials).
+     * {@code Accept-Language} pour i18n côté ngx-translate / locale serveur.
+     */
+    private List<String> allowedHeaders = new ArrayList<>(Arrays.asList(
+            "Authorization", "Content-Type", "X-Requested-With", "Accept-Language"));
+
+    /** Headers exposés au front (lecture côté JS via fetch/XHR). */
+    private List<String> exposedHeaders = new ArrayList<>(Arrays.asList(
+            "Authorization", "Content-Type", "X-Total-Count"));
+
     /** Autorise les credentials (cookies / Authorization). */
     private boolean allowCredentials = true;
 
@@ -55,6 +68,12 @@ public class CorsProperties {
 
     public List<String> getAllowedMethods() { return allowedMethods; }
     public void setAllowedMethods(List<String> allowedMethods) { this.allowedMethods = allowedMethods; }
+
+    public List<String> getAllowedHeaders() { return allowedHeaders; }
+    public void setAllowedHeaders(List<String> allowedHeaders) { this.allowedHeaders = allowedHeaders; }
+
+    public List<String> getExposedHeaders() { return exposedHeaders; }
+    public void setExposedHeaders(List<String> exposedHeaders) { this.exposedHeaders = exposedHeaders; }
 
     public boolean isAllowCredentials() { return allowCredentials; }
     public void setAllowCredentials(boolean allowCredentials) { this.allowCredentials = allowCredentials; }

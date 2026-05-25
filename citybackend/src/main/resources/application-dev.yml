@@ -111,8 +111,13 @@ app:
         - PATCH
         - DELETE
         - OPTIONS
+    # Whitelist explicite : Spring Security refuse "*" quand allow-credentials=true.
+      # Defaults Java alignés dans CorsProperties.
     allowed-headers:
-      - "*"
+      - Authorization
+      - Content-Type
+      - X-Requested-With
+      - Accept-Language
     allow-credentials: true
   
   security:
