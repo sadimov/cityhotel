@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>City Hotel — Cycle de vie d'une réservation</title>
+  <style>
+    /* ─── Palette City Hotel (bleu Bootstrap) ─────────────────────── */
+    :root {
+      --c-primary: #0d6efd;
+      --c-text: #212529;
+      --c-muted: #6c757d;
+      --c-border: #dee2e6;
+      --c-bg-alt: #f8f9fa;
+      --c-code-bg: #f6f8fa;
+      --c-code-fg: #d63384;
+      --c-note-bg: #fff3cd;
+      --c-note-border: #ffeaa7;
+      --c-success: #198754;
+      --c-danger: #dc3545;
+      --c-warning: #fd7e14;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, sans-serif;
+      color: var(--c-text);
+      font-size: 11pt;
+      line-height: 1.55;
+    }
+
+    body {
+      max-width: 18cm;
+      margin: 1.5cm auto;
+      padding: 0 1cm;
+    }
+
+    /* ─── Typographie ─────────────────────────────────────────────── */
+    h1 {
+      font-size: 22pt;
+      color: var(--c-primary);
+      border-bottom: 3px solid var(--c-primary);
+      padding-bottom: 0.3em;
+      margin: 0 0 0.2em;
+    }
+    h2 {
+      font-size: 16pt;
+      color: var(--c-primary);
+      margin-top: 1.8em;
+      padding-top: 0.4em;
+      border-top: 1px solid var(--c-border);
+    }
+    h3 { font-size: 13pt; color: var(--c-text); margin-top: 1.3em; }
+    h4 { font-size: 11pt; color: var(--c-muted); margin-top: 1em;
+         text-transform: uppercase; letter-spacing: 0.5px; }
+
+    p { margin: 0 0 0.7em; text-align: justify; }
+    strong { color: var(--c-text); }
+    em { color: var(--c-muted); }
+
+    /* ─── Note d'introduction (citation) ──────────────────────────── */
+    blockquote {
+      background: var(--c-note-bg);
+      border-left: 4px solid var(--c-note-border);
+      padding: 0.6em 1em;
+      margin: 1em 0;
+      font-style: italic;
+      color: var(--c-muted);
+      border-radius: 3px;
+    }
+    blockquote p { margin: 0; }
+
+    /* ─── Listes ──────────────────────────────────────────────────── */
+    ul, ol { margin: 0.5em 0 1em 1.5em; padding: 0; }
+    li { margin-bottom: 0.3em; }
+
+    /* ─── Code ────────────────────────────────────────────────────── */
+    code {
+      font-family: "Consolas", "Courier New", monospace;
+      font-size: 9.5pt;
+      color: var(--c-code-fg);
+      background: var(--c-code-bg);
+      padding: 0.1em 0.4em;
+      border-radius: 3px;
+      border: 1px solid var(--c-border);
+    }
+    pre {
+      background: var(--c-code-bg);
+      border: 1px solid var(--c-border);
+      border-radius: 4px;
+      padding: 1em;
+      overflow-x: auto;
+      font-size: 9pt;
+      line-height: 1.4;
+      page-break-inside: avoid;
+    }
+    pre code {
+      background: transparent;
+      border: none;
+      color: var(--c-text);
+      padding: 0;
+    }
+
+    /* ─── Tableaux ────────────────────────────────────────────────── */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin: 0.8em 0 1.4em;
+      font-size: 9.5pt;
+      page-break-inside: auto;
+    }
+    th {
+      background: var(--c-primary);
+      color: white;
+      font-weight: 600;
+      text-align: left;
+      padding: 0.6em 0.8em;
+    }
+    td {
+      padding: 0.5em 0.8em;
+      border-bottom: 1px solid var(--c-border);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: var(--c-bg-alt); }
+    th:last-child, td:last-child { text-align: center; }
+    /* sauf pour les tableaux qui ne sont pas matrices */
+    .no-center th:last-child, .no-center td:last-child { text-align: left; }
+
+    /* ─── Séparateur ──────────────────────────────────────────────── */
+    hr {
+      border: 0;
+      border-top: 1px solid var(--c-border);
+      margin: 2em 0;
+    }
+
+    /* ─── Page break avant chaque grosse section ──────────────────── */
+    h2 { page-break-before: auto; }
+
+    /* ─── Print : marges, sauts de page, suppression ombres ───────── */
+    @page {
+      size: A4;
+      margin: 1.5cm 1.5cm 2cm 1.5cm;
+      @bottom-center { content: "— Page " counter(page) " —"; }
+      @top-left { content: "City Hotel — Guide utilisateur"; }
+      @top-right { content: "Cycle de vie d'une réservation"; }
+    }
+
+    @media print {
+      body { margin: 0; max-width: 100%; padding: 0; font-size: 10.5pt; }
+      h2 { page-break-after: avoid; }
+      h3, h4 { page-break-after: avoid; }
+      pre, table, blockquote { page-break-inside: avoid; }
+    }
+
+    /* ─── Diagramme statuts (ASCII art) ───────────────────────────── */
+    .diagram {
+      background: var(--c-bg-alt);
+      border-left: 4px solid var(--c-primary);
+      padding: 1em 1.5em;
+      font-family: "Consolas", monospace;
+      font-size: 9pt;
+      line-height: 1.3;
+      white-space: pre;
+      margin: 1em 0;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* ─── Footer en bas du document ───────────────────────────────── */
+    .doc-footer {
+      margin-top: 3em;
+      padding-top: 1em;
+      border-top: 1px solid var(--c-border);
+      color: var(--c-muted);
+      font-size: 9pt;
+      font-style: italic;
+      text-align: center;
+    }
+
+    /* ─── Astuce d'impression visible à l'écran seulement ─────────── */
+    .print-hint {
+      background: #e7f1ff;
+      border: 1px solid #b6d4fe;
+      color: #084298;
+      padding: 1em;
+      border-radius: 4px;
+      margin: 1em 0 2em;
+      font-size: 10pt;
+    }
+    @media print { .print-hint { display: none; } }
+  </style>
+</head>
+<body>
+
+  <div class="print-hint">
+    <strong>Pour exporter en PDF :</strong> ouvrir ce fichier dans votre navigateur (Chrome, Edge, Firefox)
+    puis utiliser <code>Ctrl + P</code> → « Destination : Enregistrer au format PDF » →
+    <em>Enregistrer</em>. Les marges et numéros de page sont déjà configurés.
+  </div>
+
+  <h1>Cycle de vie d'une réservation — City Hotel</h1>
+  <blockquote>
+    <p>Guide utilisateur — Hôtel multi-tenant SaaS.
+       Public visé : réceptionniste, gérant, administrateur d'hôtel.</p>
+  </blockquote>
+
+  <h2>1. Vue d'ensemble du cycle de vie</h2>
+  <p>Une réservation traverse 5 statuts possibles. Le chemin nominal est en gras.</p>
+
+  <div class="diagram">                                ┌──────────┐
+                                │ CONFIRMEE│  ← création
+                                └────┬─────┘
+                                     │ check-in
+                                     ▼
+                                ┌──────────┐
+                                │  ARRIVEE │  ← client présent dans l'hôtel
+                                └────┬─────┘
+                                     │ check-out
+                                     ▼
+                                ┌──────────┐
+                                │  PARTIE  │  ← séjour terminé (état final nominal)
+                                └──────────┘
+
+Branches d'exception (à tout moment AVANT check-out) :
+  CONFIRMEE / ARRIVEE  ──── annulation manuelle ────► ANNULEE
+  CONFIRMEE            ──── night audit (midi UTC) ──► NO_SHOW (arrivée non honorée)
+  </div>
+
+  <h3>Numérotation automatique</h3>
+  <p>Chaque réservation reçoit un numéro unique généré côté serveur, scopé par hôtel et par exercice :</p>
+  <pre><code>RES-{exercice}-{codePays}-{6 chiffres}
+RES-2026-MR-000123</code></pre>
+  <p>Pas d'intercalaire, pas de trou. La séquence est protégée par un lock pessimiste BD pour éviter les collisions sous concurrence.</p>
+
+  <hr>
+
+  <h2>2. Créer une réservation</h2>
+
+  <h3>2.1 Méthode 1 — Depuis le calendrier (la plus rapide)</h3>
+  <ol>
+    <li>Aller dans <strong>Hébergement → Calendrier</strong> (<code>/hebergement/calendar</code>).</li>
+    <li>Repérer la <strong>ligne de la chambre</strong> souhaitée et la <strong>date d'arrivée</strong>.</li>
+    <li><strong>Cliquer-glisser</strong> depuis la cellule « date d'arrivée » jusqu'à la veille du jour de départ. La sélection s'affiche en surbrillance.</li>
+    <li>La <strong>modale « Nouvelle réservation »</strong> s'ouvre automatiquement.</li>
+    <li>Remplir les champs obligatoires :
+      <ul>
+        <li><strong>Client principal</strong> : taper le nom dans le champ de recherche, ou cliquer sur <em>« + Nouveau client »</em> pour ouvrir le quick-create.</li>
+        <li><strong>Société</strong> (optionnel, pour le B2B) : idem avec quick-create via <em>« + Nouvelle société »</em>.</li>
+        <li><strong>Dates d'arrivée et de départ</strong> : déjà pré-remplies par la sélection calendrier, modifiables.</li>
+        <li><strong>Nombre d'adultes / d'enfants</strong>.</li>
+      </ul>
+    </li>
+    <li>Champs optionnels : motif du séjour, canal de distribution (Direct, Booking.com, agence…), commentaires libres, réduction en %.</li>
+    <li>Cliquer sur <strong>« Créer la réservation »</strong>.</li>
+  </ol>
+  <p>Le numéro de réservation est généré et la réservation apparaît en rouge (statut <code>CONFIRMEE</code>) sur le calendrier.</p>
+
+  <h4>Quick-create client embarqué</h4>
+  <p>Si le client n'existe pas, le panel quick-create dans la modale demande : prénom, nom, téléphone, email, pièce d'identité, <strong>nationalité</strong> (champ filtrable parmi ~249 pays ISO 3166-1 — taper « France », « Mauritanie », « Sénégal », etc.).</p>
+  <p>Le client créé est automatiquement sélectionné dans la réservation.</p>
+
+  <h4>Quick-create société</h4>
+  <p>Pour les réservations payées par une société (notes de frais, contrat B2B) : nom, NIF, contact, adresse. Idem auto-sélectionnée.</p>
+
+  <h3>2.2 Méthode 2 — Depuis le menu Réservations</h3>
+  <ol>
+    <li><strong>Hébergement → Réservations → Nouvelle réservation</strong> (<code>/hebergement/reservations/new</code>).</li>
+    <li>Formulaire complet, plus structuré (utile pour les saisies « à la main » sans contexte calendrier).</li>
+    <li>Sélection des chambres dans une liste paginée.</li>
+  </ol>
+
+  <h4>Rôles autorisés à créer</h4>
+  <p><code>SUPERADMIN</code>, <code>ADMIN</code>, <code>GERANT</code>, <code>RECEPTION</code>, <code>RESREC</code>.</p>
+
+  <hr>
+
+  <h2>3. Modifier une réservation</h2>
+
+  <h3>3.1 Modification rapide (depuis le calendrier)</h3>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation dans le calendrier → menu contextuel.</li>
+    <li>Cliquer sur <strong>« Modifier »</strong>.</li>
+    <li>La modale « Modifier la réservation » s'ouvre.</li>
+    <li>Champs éditables : client principal et société (changement possible), dates, nombre d'adultes/enfants, motif, commentaires, réduction, canal.</li>
+    <li>Cliquer sur <strong>« Enregistrer »</strong>.</li>
+  </ol>
+  <p><strong>Sémantique partial</strong> : seuls les champs réellement modifiés sont envoyés au serveur. Si vous ne touchez pas à la date d'arrivée, elle ne sera pas re-validée.</p>
+
+  <h3>3.2 Changer de chambre (action dédiée)</h3>
+  <p>Le changement de chambre n'est <strong>pas</strong> dans le formulaire de modification standard — il a sa propre action pour traçabilité.</p>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Modifier »</strong>.</li>
+    <li>Dans la modale, cliquer sur le bouton <strong>« Changer chambre »</strong>.</li>
+    <li>Sélectionner la nouvelle chambre dans la liste.</li>
+    <li>Saisir la <strong>raison</strong> du changement (obligatoire).</li>
+    <li>Confirmer.</li>
+  </ol>
+  <p>Le système vérifie l'absence de conflit sur la nouvelle chambre pour la période et que le statut autorise la transition.</p>
+  <p><strong>Effet</strong> : ancienne chambre libérée (<code>NETTOYAGE</code> ou <code>DISPONIBLE</code> selon contexte), nouvelle chambre marquée <code>OCCUPEE</code> si la réservation est déjà <code>ARRIVEE</code>, pivot <code>ReservationChambre</code> mis à jour, nuitées non facturées réaffectées, trace dans <code>commentaires</code>.</p>
+
+  <h3>3.3 Modifier les nuitées (montants individuels)</h3>
+  <p>Pour ajuster le prix d'une ou plusieurs nuits (geste commercial, erreur de tarif…) :</p>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Modifier les nuitées »</strong>.</li>
+    <li>Tableau ligne par ligne des nuits, avec colonne montant éditable.</li>
+    <li>Modifier les valeurs, cliquer sur <strong>« Enregistrer »</strong>.</li>
+  </ol>
+  <p><strong>Bloqué si</strong> facture déjà émise sur ces nuitées (cohérence comptable).</p>
+
+  <h4>Rôles autorisés à modifier</h4>
+  <p><code>SUPERADMIN</code>, <code>ADMIN</code>, <code>GERANT</code>, <code>RECEPTION</code>, <code>RESREC</code>.</p>
+
+  <hr>
+
+  <h2>4. Check-in (arrivée du client)</h2>
+  <p>Deux entrées possibles.</p>
+
+  <h3>4.1 Depuis le calendrier</h3>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Check-in »</strong>.</li>
+    <li>SweetAlert de confirmation → cliquer sur <strong>« Check-in »</strong>.</li>
+  </ol>
+
+  <h3>4.2 Depuis la page Check-in</h3>
+  <ol>
+    <li><strong>Hébergement → Check-in / Check-out</strong> (<code>/hebergement/check-in</code>).</li>
+    <li>Taper le numéro de réservation ou le nom du client.</li>
+    <li>Sélectionner la réservation dans les résultats.</li>
+    <li>Cliquer sur <strong>« Confirmer le check-in »</strong>.</li>
+  </ol>
+
+  <h4>Effets serveur</h4>
+  <ul>
+    <li><strong>Statut</strong> : <code>CONFIRMEE</code> → <code>ARRIVEE</code>.</li>
+    <li><strong>Chambres</strong> : <code>DISPONIBLE</code> → <code>OCCUPEE</code>.</li>
+    <li><strong>Nuitées</strong> : créées en statut <code>PREVUE</code> (consommées au check-out).</li>
+  </ul>
+
+  <h4>Rôles autorisés</h4>
+  <p><code>SUPERADMIN</code>, <code>ADMIN</code>, <code>GERANT</code>, <code>RECEPTION</code>, <code>RESREC</code>, <code>NIGHTAUDIT</code> (le night audit peut finaliser les arrivées tardives).</p>
+
+  <hr>
+
+  <h2>5. Gérer les paiements</h2>
+  <p>Pendant le séjour (statut <code>ARRIVEE</code>), plusieurs encaissements possibles.</p>
+
+  <h3>Modes de paiement supportés (12)</h3>
+  <table class="no-center">
+    <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>ESPECES</code></td><td>Espèces</td></tr>
+      <tr><td><code>CHEQUE</code></td><td>Chèque</td></tr>
+      <tr><td><code>CARTE_BANCAIRE</code></td><td>Carte bancaire (TPE)</td></tr>
+      <tr><td><code>VIREMENT</code></td><td>Virement bancaire</td></tr>
+      <tr><td><code>BANKILY</code></td><td>Mobile money — Bankily (Banque Mauritanienne)</td></tr>
+      <tr><td><code>MASRIVI</code></td><td>Mobile money — MASRIVI</td></tr>
+      <tr><td><code>SEDAD</code></td><td>Mobile money — SEDAD</td></tr>
+      <tr><td><code>CLICK</code></td><td>Mobile money — CLICK</td></tr>
+      <tr><td><code>AMANETY</code></td><td>Mobile money — AMANETY</td></tr>
+      <tr><td><code>BFI_CASH</code></td><td>BFI Cash</td></tr>
+      <tr><td><code>MOOV_MONEY</code></td><td>Moov Money</td></tr>
+      <tr><td><code>GAZAPAY</code></td><td>GazaPay</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Modale Paiements (depuis le calendar)</h3>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Paiements »</strong>.</li>
+    <li>La modale 3 sections s'ouvre : <em>Détails réservation</em> (chambre, dates, montants), <em>Folio</em> (factures + paiements consolidés), <em>Lignes facturées</em> (tableau par ligne avec sélection).</li>
+    <li>Actions possibles : <strong>paiement global</strong> (ventilation auto), <strong>paiement par ligne</strong> (sélection multiple), <strong>transfert de lignes</strong> vers une autre facture/compte.</li>
+  </ol>
+
+  <h4>Devise</h4>
+  <p><strong>MRU (Ouguiya mauritanienne)</strong> sur toute l'application.</p>
+
+  <h4>Rôles autorisés (lecture/écriture paiements)</h4>
+  <p><code>SUPERADMIN</code>, <code>ADMIN</code>, <code>GERANT</code>, <code>RECEPTION</code>, <code>RESREC</code>.</p>
+
+  <hr>
+
+  <h2>6. Check-out (départ du client)</h2>
+
+  <h3>6.1 Check-out standard</h3>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Check-out »</strong>.</li>
+    <li>Confirmation → cliquer sur <strong>« Check-out »</strong>.</li>
+  </ol>
+
+  <h4>Effets serveur</h4>
+  <ul>
+    <li><strong>Statut</strong> : <code>ARRIVEE</code> → <code>PARTIE</code>.</li>
+    <li><strong>Chambres</strong> : <code>OCCUPEE</code> → <code>NETTOYAGE</code> (génère une tâche ménage automatique pour le personnel d'entretien).</li>
+    <li><strong>Nuitées</strong> : <code>PREVUE</code> → <code>CONSOMMEE</code>.</li>
+    <li>Notification temps réel au calendrier (mise à jour des grilles ouvertes).</li>
+  </ul>
+
+  <h3>6.2 Check-out express (transfert sur société)</h3>
+  <p>Pour les clients corporate où la société règle l'addition après coup :</p>
+  <ol>
+    <li><strong>Clic droit</strong> → <strong>« Check-out »</strong> → bouton <strong>« Check-out express »</strong> dans la modale paiements.</li>
+    <li>Sélectionner la société qui assume la dette.</li>
+    <li>Confirmer.</li>
+  </ol>
+  <p>Effets supplémentaires : le reste-à-payer est transféré sur le compte de la société, la facture est marquée <code>PARTIELLEMENT_PAYEE</code> (ou <code>PAYEE</code> si déjà soldé), la société sera relancée séparément.</p>
+
+  <h4>Rôles autorisés</h4>
+  <ul>
+    <li><strong>Check-out standard</strong> : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC, NIGHTAUDIT.</li>
+    <li><strong>Check-out express</strong> : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC (sans NIGHTAUDIT — décision financière hors périmètre audit).</li>
+  </ul>
+
+  <hr>
+
+  <h2>7. Annuler une réservation</h2>
+  <p>Possible à tout moment <strong>avant</strong> un check-out (<code>PARTIE</code>).</p>
+
+  <h3>Marche à suivre</h3>
+  <ol>
+    <li><strong>Clic droit</strong> sur la réservation → <strong>« Annuler la réservation »</strong> (bouton rouge en bas du menu contextuel).</li>
+    <li><strong>SweetAlert</strong> demande un motif d'annulation (champ textarea obligatoire, max 500 caractères).</li>
+    <li>Saisir le motif (ex. « Client a annulé pour raisons personnelles », « Erreur de saisie », « No-show »…).</li>
+    <li>Confirmer.</li>
+  </ol>
+
+  <h3>Effets serveur</h3>
+  <ul>
+    <li><strong>Statut</strong> : <code>CONFIRMEE</code> / <code>ARRIVEE</code> → <code>ANNULEE</code>.</li>
+    <li>Si statut était <code>ARRIVEE</code> (client déjà checké-in) → les chambres passent en <code>NETTOYAGE</code> automatiquement.</li>
+    <li><strong>Suivi structuré</strong> (depuis le tour récent) : <code>motif_annulation</code> (texte 500 chars), <code>date_annulation</code> (horodatage UTC), <code>annule_par_user_id</code> (auteur — FK vers utilisateurs).</li>
+    <li>Le motif est aussi annexé au champ <code>commentaires</code> pour visibilité rétro-compatible.</li>
+    <li>La réservation <strong>disparaît du calendrier</strong> (les statuts <code>ANNULEE</code> et <code>NO_SHOW</code> ne sont pas affichés).</li>
+  </ul>
+
+  <h3>Rôles autorisés</h3>
+  <p><code>SUPERADMIN</code>, <code>ADMIN</code>, <code>GERANT</code>, <code>RECEPTION</code>.</p>
+  <p>Le bouton est <strong>masqué</strong> pour les autres rôles (RESREC, NIGHTAUDIT, RESTAURANT, MENAGE, MAGASIN).</p>
+
+  <h3>Cas du DELETE physique</h3>
+  <p>Le DELETE physique (suppression complète de la ligne BD) <strong>n'est pas exposé</strong> dans l'interface — c'est une opération réservée aux SUPERADMIN/ADMIN via API directe. Le service la traite comme une annulation avec motif technique fixe (« Suppression via API DELETE »).</p>
+
+  <hr>
+
+  <h2>8. Night audit (automatique, midi UTC)</h2>
+  <p>Procédure quotidienne <strong>automatique</strong> déclenchée par le scheduler serveur.</p>
+
+  <h3>Planning</h3>
+  <ul>
+    <li><strong>Alerte préalable</strong> : 11:57 UTC (envoyée aux SUPERADMIN/ADMIN/NIGHTAUDIT via notification interne).</li>
+    <li><strong>Exécution</strong> : 12:00 UTC.</li>
+    <li><strong>Timezone serveur</strong> : <code>Africa/Nouakchott</code> (équivalent UTC sans DST).</li>
+  </ul>
+
+  <h3>Effets</h3>
+  <ol>
+    <li>Identifie toutes les réservations en statut <code>CONFIRMEE</code> dont la date d'arrivée est <strong>strictement antérieure à aujourd'hui</strong> (= no-show présumé).</li>
+    <li>Bascule leur statut en <code>NO_SHOW</code>.</li>
+    <li>Libère les chambres qui leur étaient affectées.</li>
+  </ol>
+
+  <h3>Déclenchement manuel</h3>
+  <p>Un utilisateur SUPERADMIN/ADMIN/GERANT/NIGHTAUDIT peut <strong>déclencher le night audit à la demande</strong> depuis la page <strong>Hébergement → Night audit</strong> (<code>/hebergement/night-audit</code>) — utile en cas de re-traitement manuel.</p>
+
+  <hr>
+
+  <h2>9. Matrice rôles × actions</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Action</th>
+        <th>SUPERADMIN</th><th>ADMIN</th><th>GERANT</th>
+        <th>RECEPTION</th><th>RESREC</th><th>NIGHTAUDIT</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Voir le calendrier</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Créer une réservation</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Modifier (partial)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Changer de chambre</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Modifier les nuitées</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Check-in</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Check-out</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+      <tr><td>Check-out express</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td>Gérer paiements</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td></tr>
+      <tr><td><strong>Annuler</strong></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td></tr>
+      <tr><td>DELETE physique (API)</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>Déclencher night audit</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+      <tr><td>Reporting hébergement</td><td>✓</td><td>✓</td><td>✓</td><td>—</td><td>—</td><td>✓</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h2>10. Annexe — Référence technique</h2>
+
+  <h3>10.1 Endpoints REST principaux</h3>
+  <table class="no-center">
+    <thead><tr><th>Méthode</th><th>Path</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/api/hebergement/reservations</code></td><td>Créer</td></tr>
+      <tr><td><code>PUT</code></td><td><code>/api/hebergement/reservations/{id}</code></td><td>Modifier (partial)</td></tr>
+      <tr><td><code>PATCH</code></td><td><code>/api/hebergement/reservations/{id}/chambre</code></td><td>Changer chambre</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/hebergement/reservations/{id}/check-in</code></td><td>Check-in</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/hebergement/reservations/{id}/check-out</code></td><td>Check-out</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/hebergement/reservations/{id}/check-out-express</code></td><td>Check-out express</td></tr>
+      <tr><td><code>POST</code></td><td><code>/api/hebergement/reservations/{id}/cancel</code></td><td>Annuler (motif obligatoire)</td></tr>
+      <tr><td><code>DELETE</code></td><td><code>/api/hebergement/reservations/{id}</code></td><td>Suppression logique (= cancel)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/hebergement/reservations/{id}/paiements-recap</code></td><td>Récap paiements</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/hebergement/reservations/arrivees-today</code></td><td>Arrivées du jour</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/hebergement/reservations/departs-today</code></td><td>Départs du jour</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/hebergement/reservations/check-ins-retard</code></td><td>Check-ins en retard</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.2 Statuts détaillés</h3>
+  <table class="no-center">
+    <thead><tr><th>Statut</th><th>Couleur calendrier</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>CONFIRMEE</code></td><td>Rouge</td><td>Réservation créée, client non encore arrivé</td></tr>
+      <tr><td><code>ARRIVEE</code></td><td>Vert</td><td>Check-in effectué, client présent</td></tr>
+      <tr><td><code>PARTIE</code></td><td>Orange</td><td>Check-out effectué, séjour terminé</td></tr>
+      <tr><td><code>ANNULEE</code></td><td>Masqué</td><td>Annulation manuelle, conservée en historique</td></tr>
+      <tr><td><code>NO_SHOW</code></td><td>Masqué</td><td>Non-présentation détectée par le night audit</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.3 Isolation multi-tenant</h3>
+  <p>Toutes les opérations sont <strong>filtrées automatiquement par l'hôtel courant</strong> via JWT côté serveur. Un utilisateur de l'hôtel A ne peut jamais voir, modifier ou annuler une réservation de l'hôtel B — même en forgeant manuellement l'URL avec un identifiant cross-tenant.</p>
+
+  <h3>10.4 Multi-occupants (clients additionnels)</h3>
+  <p>Une réservation peut contenir plusieurs <code>ReservationClient</code> au-delà du client principal (couples, familles, groupes). Chacun peut être marqué « payant » avec un pourcentage de charge — utile pour les notes de frais partagées.</p>
+
+  <div class="doc-footer">
+    Document généré à partir du code source City Hotel — branche <code>fix/menage-completion</code>, mai 2026.
+  </div>
+
+</body>
+</html>
