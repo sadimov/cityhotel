@@ -5,7 +5,7 @@ import com.cityprojects.citybackend.security.JwtAuthenticationFilter;
 import com.cityprojects.citybackend.security.RateLimitFilter;
 import com.cityprojects.citybackend.security.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -44,6 +44,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@EnableConfigurationProperties(CorsProperties.class)
 public class SecurityConfig {
 
     @Autowired
@@ -58,18 +59,16 @@ public class SecurityConfig {
     @Autowired
     private RateLimitFilter rateLimitFilter;
 
-    // Configuration CORS avec valeurs par defaut
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:4200}")
-    private List<String> allowedOrigins;
+    /**
+     * Configuration CORS chargée depuis {@code app.cors.*} via
+     * {@link CorsProperties} (@ConfigurationProperties — lit correctement
+     * les listes YAML, contrairement à @Value qui était utilisé auparavant).
+     */
+    private final CorsProperties corsProperties;
 
-    @Value("${app.cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}")
-    private List<String> allowedMethods;
-
-    @Value("${app.cors.allow-credentials:true}")
-    private boolean allowCredentials;
-
-    @Value("${app.cors.max-age:3600}")
-    private long maxAge;
+    public SecurityConfig(CorsProperties corsProperties) {
+        this.corsProperties = corsProperties;
+    }
 
     /**
      * Configuration du filtre de securite principal.
@@ -182,28 +181,20 @@ public class SecurityConfig {
 
     /**
      * Configuration CORS - Tour 38 H2 : whitelist headers explicite, plus de fallback '*'.
+     *
+     * <p>Origins / methods / credentials / maxAge sont liés à {@link CorsProperties}
+     * (lecture YAML + env). Headers in/out restent codés en dur tant que les
+     * 3 application*.yml n'auront pas été nettoyés (allowed-headers: ["*"]
+     * incompatible avec allowCredentials=true).</p>
      */
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Origines : doivent etre fournies, sinon default explicite (pas de '*').
-        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
-            configuration.setAllowedOrigins(allowedOrigins);
-        } else {
-            configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:4200"
-            ));
-        }
-
-        if (allowedMethods != null && !allowedMethods.isEmpty()) {
-            configuration.setAllowedMethods(allowedMethods);
-        } else {
-            configuration.setAllowedMethods(Arrays.asList(
-                "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-            ));
-        }
+        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedMethods(corsProperties.getAllowedMethods());
+        configuration.setAllowCredentials(corsProperties.isAllowCredentials());
+        configuration.setMaxAge(corsProperties.getMaxAge());
 
         // Tour 38 H2 : whitelist explicite, plus de '*'. Refuser tout header
         // non liste (Origin, Authorization, Content-Type, X-Requested-With,
@@ -216,9 +207,6 @@ public class SecurityConfig {
         configuration.setExposedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "X-Total-Count"
         ));
-
-        configuration.setAllowCredentials(allowCredentials);
-        configuration.setMaxAge(maxAge);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
