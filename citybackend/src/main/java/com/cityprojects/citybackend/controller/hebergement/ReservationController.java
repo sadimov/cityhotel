@@ -38,7 +38,10 @@ import java.util.List;
  * <p>Roles :
  * <ul>
  *   <li>Lecture : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC/NIGHTAUDIT.</li>
- *   <li>Creation/cancel/update/delete : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC.</li>
+ *   <li>Creation/update : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC.</li>
+ *   <li>{@code cancel} : SUPERADMIN/ADMIN/GERANT/RECEPTION (option "Annuler"
+ *       du menu contextuel calendar — gestion no-show / désistement).</li>
+ *   <li>{@code delete} (physique) : SUPERADMIN/ADMIN uniquement.</li>
  *   <li>{@code check-in} / {@code check-out} : SUPERADMIN/ADMIN/GERANT/RECEPTION/RESREC + NIGHTAUDIT
  *       (l'auditeur de nuit termine les arrivees tardives et les departs en
  *       suspens lors du night audit — cf. CLAUDE.md §6.4). Le
@@ -188,11 +191,13 @@ public class ReservationController {
     }
 
     /**
-     * Annulation explicite avec motif. Règle métier : seul ADMIN/SUPERADMIN
-     * peut annuler une réservation (cf. règle hébergement).
+     * Annulation explicite avec motif. Rôles autorisés : SUPERADMIN, ADMIN,
+     * GERANT, RECEPTION (l'annulation depuis le menu contextuel du calendar
+     * fait partie du workflow opérationnel récurrent — gestion des no-show,
+     * désistement client). Le DELETE physique reste réservé SUPERADMIN/ADMIN.
      */
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION')")
     public ResponseEntity<ReservationDto> cancel(@PathVariable("id") Long id,
                                                   @Valid @RequestBody CancelReservationDto dto) {
         return ResponseEntity.ok(reservationService.cancel(id, dto.motif()));

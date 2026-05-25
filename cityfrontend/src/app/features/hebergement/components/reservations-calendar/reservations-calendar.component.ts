@@ -950,13 +950,17 @@ export class ReservationsCalendarComponent
   }
 
   /**
-   * Règle métier hébergement : seul ADMIN/SUPERADMIN peut annuler une
-   * réservation. Le menu contextuel masque l'item "Annuler" pour les
-   * autres rôles (GERANT, RECEPTION, RESREC...). Double check côté
-   * backend via @PreAuthorize sur /cancel et DELETE.
+   * Rôles autorisés à annuler une réservation depuis le menu contextuel :
+   * SUPERADMIN, ADMIN, GERANT, RECEPTION (gestion no-show / désistement
+   * = workflow opérationnel récurrent). RESREC et NIGHTAUDIT n'ont pas
+   * cette action. Double check côté backend via {@code @PreAuthorize}
+   * sur {@code POST /api/hebergement/reservations/{id}/cancel}.
+   *
+   * NB : le DELETE physique (hard) reste réservé à SUPERADMIN/ADMIN —
+   * pas exposé dans ce menu.
    */
   get canCancelReservation(): boolean {
-    return this.authService.hasAnyRole(['ADMIN', 'SUPERADMIN']);
+    return this.authService.hasAnyRole(['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION']);
   }
 
   /**
