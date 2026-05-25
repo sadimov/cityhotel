@@ -592,6 +592,124 @@
           "snoozed": "تم تأجيل التدقيق الليلي لهذا اليوم"
         }
       }
+    },
+    "typesChambre": {
+      "list": {
+        "title": "أنواع الغرف",
+        "empty": "لا يوجد نوع غرفة مسجل.",
+        "error": "تعذر تحميل أنواع الغرف.",
+        "actions": "إجراءات",
+        "showInactive": "عرض الأنواع المعطلة"
+      },
+      "form": {
+        "titleCreate": "نوع غرفة جديد",
+        "titleEdit": "تعديل نوع الغرفة",
+        "loadError": "تعذر تحميل هذا النوع."
+      },
+      "fields": {
+        "code": "رمز",
+        "nom": "الاسم",
+        "description": "الوصف",
+        "categorie": "الفئة",
+        "superficie": "المساحة (م²)",
+        "nbLitsMax": "أقصى عدد أسرّة",
+        "nbPersonnesMax": "أقصى عدد أشخاص",
+        "prixBase": "السعر الأساسي (MRU)",
+        "actif": "نشط"
+      },
+      "actions": {
+        "create": "نوع جديد",
+        "deactivate": "تعطيل",
+        "reactivate": "إعادة تفعيل"
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء نوع الغرفة",
+        "updateSuccess": "تم تعديل نوع الغرفة",
+        "deactivateConfirm": "هل تريد تعطيل هذا النوع؟",
+        "deactivateSuccess": "تم تعطيل النوع",
+        "deactivateError": "تعذر تعطيل هذا النوع.",
+        "reactivateSuccess": "تمت إعادة تفعيل النوع",
+        "reactivateError": "تعذر إعادة تفعيل هذا النوع.",
+        "saveError": "تعذر حفظ نوع الغرفة."
+      }
+    },
+    "chambres": {
+      "list": {
+        "title": "الغرف",
+        "empty": "لا توجد غرفة مسجلة.",
+        "error": "تعذر تحميل قائمة الغرف.",
+        "actions": "إجراءات",
+        "showInactive": "عرض الغرف المعطلة"
+      },
+      "form": {
+        "titleCreate": "غرفة جديدة",
+        "titleEdit": "تعديل الغرفة",
+        "loadError": "تعذر تحميل هذه الغرفة."
+      },
+      "fields": {
+        "numeroChambre": "الرقم",
+        "type": "النوع",
+        "etage": "الطابق",
+        "statut": "الحالة",
+        "nbLits": "عدد الأسرّة",
+        "nbPersonnesMax": "أقصى عدد أشخاص",
+        "equipements": "التجهيزات",
+        "description": "الوصف",
+        "actif": "نشط"
+      },
+      "actions": {
+        "create": "غرفة جديدة",
+        "deactivate": "تعطيل",
+        "reactivate": "إعادة تفعيل"
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء الغرفة",
+        "updateSuccess": "تم تعديل الغرفة",
+        "deactivateConfirm": "هل تريد تعطيل هذه الغرفة؟",
+        "deactivateSuccess": "تم تعطيل الغرفة",
+        "deactivateError": "تعذر تعطيل هذه الغرفة.",
+        "reactivateSuccess": "تمت إعادة تفعيل الغرفة",
+        "reactivateError": "تعذر إعادة تفعيل الغرفة.",
+        "saveError": "تعذر حفظ الغرفة."
+      }
+    },
+    "tarifsChambre": {
+      "list": {
+        "title": "الأسعار",
+        "empty": "لا يوجد سعر لهذا النوع من الغرف.",
+        "error": "تعذر تحميل الأسعار.",
+        "actions": "إجراءات",
+        "selectType": "اختر نوع غرفة لعرض أسعاره.",
+        "period": "الفترة",
+        "noEnd": "بدون نهاية"
+      },
+      "form": {
+        "titleCreate": "سعر جديد",
+        "titleEdit": "تعديل السعر",
+        "loadError": "تعذر تحميل هذا السعر.",
+        "dateFinHint": "اتركه فارغاً لسعر ساري حتى إشعار آخر."
+      },
+      "fields": {
+        "type": "نوع الغرفة",
+        "nomTarif": "اسم السعر",
+        "dateDebut": "تاريخ البدء",
+        "dateFin": "تاريخ الانتهاء",
+        "prixNuit": "سعر الليلة (MRU)",
+        "priorite": "الأولوية",
+        "actif": "نشط"
+      },
+      "actions": {
+        "create": "سعر جديد",
+        "delete": "حذف"
+      },
+      "messages": {
+        "createSuccess": "تم إنشاء السعر",
+        "updateSuccess": "تم تعديل السعر",
+        "deleteConfirm": "حذف هذا السعر نهائيًا؟",
+        "deleteSuccess": "تم حذف السعر",
+        "deleteError": "تعذر حذف هذا السعر.",
+        "saveError": "تعذر حفظ هذا السعر."
+      }
     }
   },
   "nightAudit": {

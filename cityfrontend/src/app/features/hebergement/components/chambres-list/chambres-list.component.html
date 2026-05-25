@@ -1,0 +1,176 @@
+<section class="chambres-list">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'hebergement.chambres.list.title' | translate }}</h2>
+    @if (canWrite) {
+      <button type="button" class="btn btn-primary" (click)="createNew()">
+        <i class="fas fa-plus me-1" aria-hidden="true"></i>
+        {{ 'hebergement.chambres.actions.create' | translate }}
+      </button>
+    }
+  </header>
+
+  <div class="row g-2 mb-3 align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">{{ 'hebergement.chambres.fields.type' | translate }}</label>
+      <select
+        class="form-select"
+        [value]="filtres.typeId ?? ''"
+        (change)="onFilterTypeChange($any($event.target).value)"
+      >
+        <option value="">{{ 'common.none' | translate }}</option>
+        @for (t of types; track t.typeId) {
+          <option [value]="t.typeId">{{ t.typeNom }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">{{ 'hebergement.chambres.fields.statut' | translate }}</label>
+      <select
+        class="form-select"
+        [value]="filtres.statut ?? ''"
+        (change)="onFilterStatutChange($any($event.target).value)"
+      >
+        <option value="">{{ 'common.none' | translate }}</option>
+        @for (s of statuts; track s) {
+          <option [value]="s">{{ s }}</option>
+        }
+      </select>
+    </div>
+    <div class="col-md-2">
+      <label class="form-label">{{ 'hebergement.chambres.fields.etage' | translate }}</label>
+      <input
+        type="number"
+        class="form-control"
+        [value]="filtres.etage ?? ''"
+        (change)="onFilterEtageChange($any($event.target).value)"
+      />
+    </div>
+    <div class="col-md-4">
+      <div class="form-check form-switch mt-4">
+        <input
+          type="checkbox"
+          class="form-check-input"
+          id="chambres-show-inactive"
+          [checked]="showInactive"
+          (change)="onToggleShowInactive($any($event.target).checked)"
+        />
+        <label class="form-check-label" for="chambres-show-inactive">
+          {{ 'hebergement.chambres.list.showInactive' | translate }}
+        </label>
+      </div>
+    </div>
+  </div>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger">
+      {{ 'hebergement.chambres.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="load()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info">{{ 'hebergement.chambres.list.empty' | translate }}</div>
+  } @else if (page) {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'hebergement.chambres.fields.numeroChambre' | translate }}</th>
+            <th>{{ 'hebergement.chambres.fields.type' | translate }}</th>
+            <th class="text-end">{{ 'hebergement.chambres.fields.etage' | translate }}</th>
+            <th>{{ 'hebergement.chambres.fields.statut' | translate }}</th>
+            <th class="text-end">{{ 'hebergement.chambres.fields.nbLits' | translate }}</th>
+            <th class="text-end">{{ 'hebergement.chambres.fields.nbPersonnesMax' | translate }}</th>
+            <th>{{ 'hebergement.chambres.fields.actif' | translate }}</th>
+            @if (canWrite) {
+              <th class="text-end">{{ 'hebergement.chambres.list.actions' | translate }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of chambres; track c.chambreId) {
+            <tr [class.chambre-inactive]="c.actif === false">
+              <td><strong>{{ c.numeroChambre }}</strong></td>
+              <td>{{ c.nomTypeChambre || c.typeNom || '-' }}</td>
+              <td class="text-end">{{ c.etage ?? '-' }}</td>
+              <td>
+                <span class="badge" [ngClass]="statutBadge(c.statut)">{{ c.statut }}</span>
+              </td>
+              <td class="text-end">{{ c.nbLits }}</td>
+              <td class="text-end">{{ c.nbPersonnesMax }}</td>
+              <td>
+                @if (c.actif === false) {
+                  <span class="badge text-bg-secondary">
+                    <i class="bi bi-slash-circle me-1" aria-hidden="true"></i>
+                    {{ 'common.inactive' | translate }}
+                  </span>
+                } @else {
+                  <span class="badge text-bg-success">
+                    {{ 'hebergement.chambres.fields.actif' | translate }}
+                  </span>
+                }
+              </td>
+              @if (canWrite) {
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary me-1"
+                    (click)="edit(c)"
+                    [title]="'common.edit' | translate"
+                  >
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                  @if (c.actif !== false) {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-warning"
+                      (click)="deactivate(c)"
+                      [disabled]="busy"
+                      [title]="'hebergement.chambres.actions.deactivate' | translate"
+                    >
+                      <i class="bi bi-slash-circle" aria-hidden="true"></i>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-outline-success"
+                      (click)="reactivate(c)"
+                      [disabled]="busy"
+                      [title]="'hebergement.chambres.actions.reactivate' | translate"
+                    >
+                      <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                    </button>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (page.totalPages > 1) {
+      <nav>
+        <ul class="pagination justify-content-end">
+          <li class="page-item" [class.disabled]="page.first">
+            <button type="button" class="page-link" (click)="goToPage(page.number - 1)" [disabled]="page.first">&laquo;</button>
+          </li>
+          @for (p of pagesArray; track p) {
+            <li class="page-item" [class.active]="p === page.number">
+              <button type="button" class="page-link" (click)="goToPage(p)">{{ p + 1 }}</button>
+            </li>
+          }
+          <li class="page-item" [class.disabled]="page.last">
+            <button type="button" class="page-link" (click)="goToPage(page.number + 1)" [disabled]="page.last">&raquo;</button>
+          </li>
+        </ul>
+      </nav>
+    }
+  }
+</section>

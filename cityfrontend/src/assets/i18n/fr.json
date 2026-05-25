@@ -669,6 +669,124 @@
           "snoozed": "Night audit reporté pour aujourd'hui"
         }
       }
+    },
+    "typesChambre": {
+      "list": {
+        "title": "Types de chambre",
+        "empty": "Aucun type de chambre enregistré.",
+        "error": "Impossible de charger la liste des types de chambre.",
+        "actions": "Actions",
+        "showInactive": "Afficher les types désactivés"
+      },
+      "form": {
+        "titleCreate": "Nouveau type de chambre",
+        "titleEdit": "Modifier le type de chambre",
+        "loadError": "Impossible de charger ce type de chambre."
+      },
+      "fields": {
+        "code": "Code",
+        "nom": "Nom",
+        "description": "Description",
+        "categorie": "Catégorie",
+        "superficie": "Superficie (m²)",
+        "nbLitsMax": "Nb lits max",
+        "nbPersonnesMax": "Nb personnes max",
+        "prixBase": "Prix base (MRU)",
+        "actif": "Actif"
+      },
+      "actions": {
+        "create": "Nouveau type",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver"
+      },
+      "messages": {
+        "createSuccess": "Type de chambre créé",
+        "updateSuccess": "Type de chambre modifié",
+        "deactivateConfirm": "Désactiver ce type de chambre ?",
+        "deactivateSuccess": "Type de chambre désactivé",
+        "deactivateError": "Impossible de désactiver ce type.",
+        "reactivateSuccess": "Type de chambre réactivé",
+        "reactivateError": "Impossible de réactiver ce type.",
+        "saveError": "Impossible d'enregistrer ce type de chambre."
+      }
+    },
+    "chambres": {
+      "list": {
+        "title": "Chambres",
+        "empty": "Aucune chambre enregistrée.",
+        "error": "Impossible de charger la liste des chambres.",
+        "actions": "Actions",
+        "showInactive": "Afficher les chambres désactivées"
+      },
+      "form": {
+        "titleCreate": "Nouvelle chambre",
+        "titleEdit": "Modifier la chambre",
+        "loadError": "Impossible de charger cette chambre."
+      },
+      "fields": {
+        "numeroChambre": "Numéro",
+        "type": "Type",
+        "etage": "Étage",
+        "statut": "Statut",
+        "nbLits": "Nb lits",
+        "nbPersonnesMax": "Nb personnes max",
+        "equipements": "Équipements",
+        "description": "Description",
+        "actif": "Actif"
+      },
+      "actions": {
+        "create": "Nouvelle chambre",
+        "deactivate": "Désactiver",
+        "reactivate": "Réactiver"
+      },
+      "messages": {
+        "createSuccess": "Chambre créée",
+        "updateSuccess": "Chambre modifiée",
+        "deactivateConfirm": "Désactiver cette chambre ?",
+        "deactivateSuccess": "Chambre désactivée",
+        "deactivateError": "Impossible de désactiver cette chambre.",
+        "reactivateSuccess": "Chambre réactivée",
+        "reactivateError": "Impossible de réactiver cette chambre.",
+        "saveError": "Impossible d'enregistrer cette chambre."
+      }
+    },
+    "tarifsChambre": {
+      "list": {
+        "title": "Tarifs",
+        "empty": "Aucun tarif pour ce type de chambre.",
+        "error": "Impossible de charger les tarifs.",
+        "actions": "Actions",
+        "selectType": "Sélectionnez un type de chambre pour afficher ses tarifs.",
+        "period": "Période",
+        "noEnd": "Pas de fin"
+      },
+      "form": {
+        "titleCreate": "Nouveau tarif",
+        "titleEdit": "Modifier le tarif",
+        "loadError": "Impossible de charger ce tarif.",
+        "dateFinHint": "Laissez vide pour un tarif valable jusqu'à nouvel ordre."
+      },
+      "fields": {
+        "type": "Type de chambre",
+        "nomTarif": "Nom du tarif",
+        "dateDebut": "Date de début",
+        "dateFin": "Date de fin",
+        "prixNuit": "Prix nuit (MRU)",
+        "priorite": "Priorité",
+        "actif": "Actif"
+      },
+      "actions": {
+        "create": "Nouveau tarif",
+        "delete": "Supprimer"
+      },
+      "messages": {
+        "createSuccess": "Tarif créé",
+        "updateSuccess": "Tarif modifié",
+        "deleteConfirm": "Supprimer définitivement ce tarif ?",
+        "deleteSuccess": "Tarif supprimé",
+        "deleteError": "Impossible de supprimer ce tarif.",
+        "saveError": "Impossible d'enregistrer ce tarif."
+      }
     }
   },
   "nightAudit": {

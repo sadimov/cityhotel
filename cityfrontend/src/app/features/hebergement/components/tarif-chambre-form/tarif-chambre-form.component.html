@@ -1,0 +1,150 @@
+<section class="tarif-chambre-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      @if (isEditing) {
+        {{ 'hebergement.tarifsChambre.form.titleEdit' | translate }}
+      } @else {
+        {{ 'hebergement.tarifsChambre.form.titleCreate' | translate }}
+      }
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger">
+      {{ 'hebergement.tarifsChambre.form.loadError' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="cancel()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="typeId" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.type' | translate }} <span class="text-danger">*</span>
+          </label>
+          <select
+            id="typeId"
+            class="form-select"
+            formControlName="typeId"
+            [class.is-invalid]="form.controls['typeId'].invalid && form.controls['typeId'].touched"
+          >
+            <option [ngValue]="null">{{ 'common.select' | translate }}</option>
+            @for (t of types; track t.typeId) {
+              <option [ngValue]="t.typeId">{{ t.typeNom }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label for="nomTarif" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.nomTarif' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="nomTarif"
+            type="text"
+            class="form-control"
+            formControlName="nomTarif"
+            maxlength="100"
+            [class.is-invalid]="form.controls['nomTarif'].invalid && form.controls['nomTarif'].touched"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="dateDebut" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.dateDebut' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="dateDebut"
+            type="date"
+            class="form-control"
+            formControlName="dateDebut"
+            [class.is-invalid]="form.controls['dateDebut'].invalid && form.controls['dateDebut'].touched"
+          />
+        </div>
+        <div class="col-md-4">
+          <label for="dateFin" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.dateFin' | translate }}
+          </label>
+          <input
+            id="dateFin"
+            type="date"
+            class="form-control"
+            formControlName="dateFin"
+          />
+          <div class="form-text">
+            {{ 'hebergement.tarifsChambre.form.dateFinHint' | translate }}
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="prixNuit" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.prixNuit' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="prixNuit"
+            type="number"
+            min="0"
+            step="1"
+            class="form-control"
+            formControlName="prixNuit"
+            [class.is-invalid]="form.controls['prixNuit'].invalid && form.controls['prixNuit'].touched"
+          />
+        </div>
+
+        <div class="col-md-4">
+          <label for="priorite" class="form-label">
+            {{ 'hebergement.tarifsChambre.fields.priorite' | translate }}
+          </label>
+          <input
+            id="priorite"
+            type="number"
+            min="0"
+            step="1"
+            class="form-control"
+            formControlName="priorite"
+          />
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">&nbsp;</label>
+          <div class="form-check form-switch mt-2">
+            <input
+              type="checkbox"
+              class="form-check-input"
+              id="tarif-actif"
+              formControlName="actif"
+            />
+            <label class="form-check-label" for="tarif-actif">
+              {{ 'hebergement.tarifsChambre.fields.actif' | translate }}
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

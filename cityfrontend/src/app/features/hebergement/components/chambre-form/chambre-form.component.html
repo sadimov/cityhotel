@@ -1,0 +1,152 @@
+<section class="chambre-form">
+  <header class="mb-3">
+    <h2 class="h4 m-0">
+      @if (isEditing) {
+        {{ 'hebergement.chambres.form.titleEdit' | translate }}
+      } @else {
+        {{ 'hebergement.chambres.form.titleCreate' | translate }}
+      }
+    </h2>
+  </header>
+
+  @if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger">
+      {{ 'hebergement.chambres.form.loadError' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-secondary ms-2" (click)="cancel()">
+        {{ 'common.back' | translate }}
+      </button>
+    </div>
+  } @else {
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label for="numeroChambre" class="form-label">
+            {{ 'hebergement.chambres.fields.numeroChambre' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="numeroChambre"
+            type="text"
+            class="form-control"
+            formControlName="numeroChambre"
+            maxlength="20"
+            [class.is-invalid]="form.controls['numeroChambre'].invalid && form.controls['numeroChambre'].touched"
+          />
+        </div>
+        <div class="col-md-5">
+          <label for="typeId" class="form-label">
+            {{ 'hebergement.chambres.fields.type' | translate }} <span class="text-danger">*</span>
+          </label>
+          <select
+            id="typeId"
+            class="form-select"
+            formControlName="typeId"
+            [class.is-invalid]="form.controls['typeId'].invalid && form.controls['typeId'].touched"
+          >
+            <option [ngValue]="null">{{ 'common.select' | translate }}</option>
+            @for (t of types; track t.typeId) {
+              <option [ngValue]="t.typeId">{{ t.typeNom }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label for="etage" class="form-label">
+            {{ 'hebergement.chambres.fields.etage' | translate }}
+          </label>
+          <input
+            id="etage"
+            type="number"
+            class="form-control"
+            formControlName="etage"
+          />
+        </div>
+        <div class="col-md-2">
+          <label for="statut" class="form-label">
+            {{ 'hebergement.chambres.fields.statut' | translate }} <span class="text-danger">*</span>
+          </label>
+          <select id="statut" class="form-select" formControlName="statut">
+            @for (s of statuts; track s) {
+              <option [ngValue]="s">{{ s }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label for="nbLits" class="form-label">
+            {{ 'hebergement.chambres.fields.nbLits' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="nbLits"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="nbLits"
+            [class.is-invalid]="form.controls['nbLits'].invalid && form.controls['nbLits'].touched"
+          />
+        </div>
+        <div class="col-md-3">
+          <label for="nbPersonnesMax" class="form-label">
+            {{ 'hebergement.chambres.fields.nbPersonnesMax' | translate }} <span class="text-danger">*</span>
+          </label>
+          <input
+            id="nbPersonnesMax"
+            type="number"
+            min="1"
+            class="form-control"
+            formControlName="nbPersonnesMax"
+            [class.is-invalid]="form.controls['nbPersonnesMax'].invalid && form.controls['nbPersonnesMax'].touched"
+          />
+        </div>
+
+        <div class="col-12">
+          <label for="equipements" class="form-label">
+            {{ 'hebergement.chambres.fields.equipements' | translate }}
+          </label>
+          <textarea
+            id="equipements"
+            class="form-control"
+            rows="2"
+            formControlName="equipements"
+          ></textarea>
+        </div>
+        <div class="col-12">
+          <label for="description" class="form-label">
+            {{ 'hebergement.chambres.fields.description' | translate }}
+          </label>
+          <textarea
+            id="description"
+            class="form-control"
+            rows="3"
+            formControlName="description"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button
+          type="button"
+          class="btn btn-outline-secondary"
+          (click)="cancel()"
+          [disabled]="state === 'submitting'"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="submit"
+          class="btn btn-primary"
+          [disabled]="state === 'submitting'"
+        >
+          @if (state === 'submitting') {
+            <span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+          }
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </form>
+  }
+</section>

@@ -4,11 +4,17 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { TranslateModule } from '@ngx-translate/core';
 
+import { ChambreFormComponent } from './components/chambre-form/chambre-form.component';
+import { ChambresListComponent } from './components/chambres-list/chambres-list.component';
 import { CheckInFormComponent } from './components/check-in-form/check-in-form.component';
 import { NightAuditPageComponent } from './components/night-audit-page/night-audit-page.component';
 import { ReservationFormComponent } from './components/reservation-form/reservation-form.component';
 import { ReservationsCalendarComponent } from './components/reservations-calendar/reservations-calendar.component';
 import { ReservationsListComponent } from './components/reservations-list/reservations-list.component';
+import { TarifChambreFormComponent } from './components/tarif-chambre-form/tarif-chambre-form.component';
+import { TarifsChambreListComponent } from './components/tarifs-chambre-list/tarifs-chambre-list.component';
+import { TypesChambreFormComponent } from './components/types-chambre-form/types-chambre-form.component';
+import { TypesChambreListComponent } from './components/types-chambre-list/types-chambre-list.component';
 import { HebergementRoutingModule } from './hebergement-routing.module';
 
 /**
@@ -27,6 +33,12 @@ import { HebergementRoutingModule } from './hebergement-routing.module';
     ReservationFormComponent,
     CheckInFormComponent,
     NightAuditPageComponent,
+    TypesChambreListComponent,
+    TypesChambreFormComponent,
+    ChambresListComponent,
+    ChambreFormComponent,
+    TarifsChambreListComponent,
+    TarifChambreFormComponent,
   ],
   imports: [
     CommonModule,

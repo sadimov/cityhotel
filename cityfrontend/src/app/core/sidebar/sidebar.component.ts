@@ -124,6 +124,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
           icon: 'fas fa-moon',
           route: '/hebergement/night-audit',
           roles: ['ADMIN', 'GERANT', 'NIGHTAUDIT', 'SUPERADMIN']
+        },
+        {
+          id: 'types-chambre',
+          label: 'Types de chambre',
+          icon: 'fas fa-tags',
+          route: '/hebergement/types-chambre',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'chambres',
+          label: 'Chambres',
+          icon: 'fas fa-door-open',
+          route: '/hebergement/chambres',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
+        },
+        {
+          id: 'tarifs-chambre',
+          label: 'Tarifs',
+          icon: 'fas fa-tag',
+          route: '/hebergement/tarifs-chambre',
+          roles: ['ADMIN', 'GERANT', 'SUPERADMIN']
         }
       ]
     },

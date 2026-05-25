@@ -158,9 +158,7 @@ public class TarifChambreServiceImpl implements TarifChambreService {
                 BigDecimal prixCandidat = pickPrix(tarif, jour);
                 if (prixCandidat != null) {
                     prix = prixCandidat;
-                    origine = isWeekend(jour) && tarif.getPrixWeekend() != null
-                            ? "TARIF_WEEKEND:" + tarif.getNomTarif()
-                            : "TARIF:" + tarif.getNomTarif();
+                    origine = "TARIF:" + tarif.getNomTarif();
                 } else {
                     prix = typeChambre.getPrixBase() != null ? typeChambre.getPrixBase() : BigDecimal.ZERO;
                     origine = "PRIX_BASE";
@@ -180,19 +178,26 @@ public class TarifChambreServiceImpl implements TarifChambreService {
     }
 
     /**
-     * Selectionne le prix applicable pour un tarif et une date :
-     * {@code prixWeekend} si samedi/dimanche ET non null, sinon {@code prixNuit}.
+     * Sélectionne le prix applicable pour un tarif. Tour mai-2026 :
+     * <b>la majoration weekend est désactivée</b> — on retourne systématiquement
+     * {@code prixNuit}. Le champ {@code prixWeekend} reste persisté (rétro-compat
+     * BD), mais n'est plus appliqué côté calcul. L'UI de gestion des tarifs
+     * n'expose plus ce champ (cf. tarifs-chambre-form).
      */
     private BigDecimal pickPrix(TarifChambre tarif, LocalDate date) {
-        if (isWeekend(date) && tarif.getPrixWeekend() != null) {
-            return tarif.getPrixWeekend();
-        }
         return tarif.getPrixNuit();
     }
 
+    /**
+     * Calendrier "weekend" pour la Mauritanie : <b>vendredi + samedi</b>
+     * (vs samedi/dimanche occidental). Conservé pour future réactivation
+     * d'une politique tarifaire weekend ; aucune logique ne l'utilise
+     * actuellement (cf. {@link #pickPrix(TarifChambre, LocalDate)}).
+     */
+    @SuppressWarnings("unused")
     private boolean isWeekend(LocalDate date) {
         DayOfWeek d = date.getDayOfWeek();
-        return d == DayOfWeek.SATURDAY || d == DayOfWeek.SUNDAY;
+        return d == DayOfWeek.FRIDAY || d == DayOfWeek.SATURDAY;
     }
 
     private void validateDates(TarifChambreCreateDto dto) {

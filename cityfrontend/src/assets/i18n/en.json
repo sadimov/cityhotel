@@ -592,6 +592,124 @@
           "snoozed": "Night audit postponed for today"
         }
       }
+    },
+    "typesChambre": {
+      "list": {
+        "title": "Room types",
+        "empty": "No room type registered.",
+        "error": "Unable to load room types.",
+        "actions": "Actions",
+        "showInactive": "Show disabled types"
+      },
+      "form": {
+        "titleCreate": "New room type",
+        "titleEdit": "Edit room type",
+        "loadError": "Unable to load this room type."
+      },
+      "fields": {
+        "code": "Code",
+        "nom": "Name",
+        "description": "Description",
+        "categorie": "Category",
+        "superficie": "Surface (m²)",
+        "nbLitsMax": "Max beds",
+        "nbPersonnesMax": "Max guests",
+        "prixBase": "Base price (MRU)",
+        "actif": "Active"
+      },
+      "actions": {
+        "create": "New type",
+        "deactivate": "Disable",
+        "reactivate": "Re-enable"
+      },
+      "messages": {
+        "createSuccess": "Room type created",
+        "updateSuccess": "Room type updated",
+        "deactivateConfirm": "Disable this room type?",
+        "deactivateSuccess": "Room type disabled",
+        "deactivateError": "Unable to disable this type.",
+        "reactivateSuccess": "Room type re-enabled",
+        "reactivateError": "Unable to re-enable this type.",
+        "saveError": "Unable to save this room type."
+      }
+    },
+    "chambres": {
+      "list": {
+        "title": "Rooms",
+        "empty": "No room registered.",
+        "error": "Unable to load rooms.",
+        "actions": "Actions",
+        "showInactive": "Show disabled rooms"
+      },
+      "form": {
+        "titleCreate": "New room",
+        "titleEdit": "Edit room",
+        "loadError": "Unable to load this room."
+      },
+      "fields": {
+        "numeroChambre": "Number",
+        "type": "Type",
+        "etage": "Floor",
+        "statut": "Status",
+        "nbLits": "Beds",
+        "nbPersonnesMax": "Max guests",
+        "equipements": "Equipment",
+        "description": "Description",
+        "actif": "Active"
+      },
+      "actions": {
+        "create": "New room",
+        "deactivate": "Disable",
+        "reactivate": "Re-enable"
+      },
+      "messages": {
+        "createSuccess": "Room created",
+        "updateSuccess": "Room updated",
+        "deactivateConfirm": "Disable this room?",
+        "deactivateSuccess": "Room disabled",
+        "deactivateError": "Unable to disable this room.",
+        "reactivateSuccess": "Room re-enabled",
+        "reactivateError": "Unable to re-enable this room.",
+        "saveError": "Unable to save this room."
+      }
+    },
+    "tarifsChambre": {
+      "list": {
+        "title": "Rates",
+        "empty": "No rate for this room type.",
+        "error": "Unable to load rates.",
+        "actions": "Actions",
+        "selectType": "Select a room type to display its rates.",
+        "period": "Period",
+        "noEnd": "No end"
+      },
+      "form": {
+        "titleCreate": "New rate",
+        "titleEdit": "Edit rate",
+        "loadError": "Unable to load this rate.",
+        "dateFinHint": "Leave empty for a rate valid until further notice."
+      },
+      "fields": {
+        "type": "Room type",
+        "nomTarif": "Rate name",
+        "dateDebut": "Start date",
+        "dateFin": "End date",
+        "prixNuit": "Night price (MRU)",
+        "priorite": "Priority",
+        "actif": "Active"
+      },
+      "actions": {
+        "create": "New rate",
+        "delete": "Delete"
+      },
+      "messages": {
+        "createSuccess": "Rate created",
+        "updateSuccess": "Rate updated",
+        "deleteConfirm": "Permanently delete this rate?",
+        "deleteSuccess": "Rate deleted",
+        "deleteError": "Unable to delete this rate.",
+        "saveError": "Unable to save this rate."
+      }
     }
   },
   "nightAudit": {

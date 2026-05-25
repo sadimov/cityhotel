@@ -1,0 +1,118 @@
+<section class="tarifs-chambre-list">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'hebergement.tarifsChambre.list.title' | translate }}</h2>
+    @if (canWrite) {
+      <button
+        type="button"
+        class="btn btn-primary"
+        (click)="createNew()"
+        [disabled]="types.length === 0"
+      >
+        <i class="fas fa-plus me-1" aria-hidden="true"></i>
+        {{ 'hebergement.tarifsChambre.actions.create' | translate }}
+      </button>
+    }
+  </header>
+
+  <div class="row g-2 mb-3 align-items-end">
+    <div class="col-md-6">
+      <label for="tarifs-type-select" class="form-label">
+        {{ 'hebergement.tarifsChambre.fields.type' | translate }}
+      </label>
+      <select
+        id="tarifs-type-select"
+        class="form-select"
+        [value]="selectedTypeId ?? ''"
+        (change)="onTypeChange($any($event.target).value)"
+      >
+        <option value="">{{ 'common.select' | translate }}</option>
+        @for (t of types; track t.typeId) {
+          <option [value]="t.typeId">{{ t.typeNom }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (state === 'idle') {
+    <div class="alert alert-info">{{ 'hebergement.tarifsChambre.list.selectType' | translate }}</div>
+  } @else if (state === 'loading') {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">{{ 'common.loading' | translate }}</span>
+      </div>
+    </div>
+  } @else if (state === 'error') {
+    <div class="alert alert-danger">
+      {{ 'hebergement.tarifsChambre.list.error' | translate }}
+      <button type="button" class="btn btn-sm btn-outline-danger ms-2" (click)="loadTarifs()">
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+  } @else if (state === 'empty') {
+    <div class="alert alert-info">{{ 'hebergement.tarifsChambre.list.empty' | translate }}</div>
+  } @else if (state === 'ready') {
+    <div class="table-responsive">
+      <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>{{ 'hebergement.tarifsChambre.fields.nomTarif' | translate }}</th>
+            <th>{{ 'hebergement.tarifsChambre.list.period' | translate }}</th>
+            <th class="text-end">{{ 'hebergement.tarifsChambre.fields.prixNuit' | translate }}</th>
+            <th class="text-end">{{ 'hebergement.tarifsChambre.fields.priorite' | translate }}</th>
+            <th>{{ 'hebergement.tarifsChambre.fields.actif' | translate }}</th>
+            @if (canWrite) {
+              <th class="text-end">{{ 'hebergement.tarifsChambre.list.actions' | translate }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of tarifs; track t.tarifId) {
+            <tr [class.tarif-inactif]="t.actif === false">
+              <td><strong>{{ t.nomTarif }}</strong></td>
+              <td>
+                {{ t.dateDebut }}
+                &rarr;
+                {{ t.dateFin || ('hebergement.tarifsChambre.list.noEnd' | translate) }}
+              </td>
+              <td class="text-end">{{ t.prixNuit | number:'1.0-2' }}</td>
+              <td class="text-end">{{ t.priorite ?? 0 }}</td>
+              <td>
+                @if (t.actif === false) {
+                  <span class="badge text-bg-secondary">
+                    <i class="bi bi-slash-circle me-1" aria-hidden="true"></i>
+                    {{ 'common.inactive' | translate }}
+                  </span>
+                } @else {
+                  <span class="badge text-bg-success">
+                    {{ 'hebergement.tarifsChambre.fields.actif' | translate }}
+                  </span>
+                }
+              </td>
+              @if (canWrite) {
+                <td class="text-end">
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary me-1"
+                    (click)="edit(t)"
+                    [title]="'common.edit' | translate"
+                  >
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="remove(t)"
+                    [disabled]="busy"
+                    [title]="'hebergement.tarifsChambre.actions.delete' | translate"
+                  >
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
