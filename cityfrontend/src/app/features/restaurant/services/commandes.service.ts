@@ -102,11 +102,14 @@ export class CommandesService {
     commandeId: number,
     dto: EncaissementCommandeRequest,
   ): Observable<Commande> {
-    // Strip champs locaux non sÃ©rialisÃ©s (cf. EncaissementCommandeRequest).
+    // Strip champs locaux non sérialisés (cf. EncaissementCommandeRequest).
+    // Tour 70 : `services` est inclus pour facturer articles + services dans
+    // la même facture (cf. backend CommandeServiceImpl.encaisserComptant).
     const payload = {
       modePaiement: dto.modePaiement,
       montant: dto.montant,
       referencePaiement: dto.referencePaiement,
+      services: dto.services ?? [],
     };
     return this.http
       .post<ApiResponse<Commande>>(

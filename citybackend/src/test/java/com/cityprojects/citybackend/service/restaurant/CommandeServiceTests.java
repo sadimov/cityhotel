@@ -12,9 +12,14 @@ import com.cityprojects.citybackend.dto.restaurant.ArticleMenuCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.ArticleMenuDto;
 import com.cityprojects.citybackend.dto.restaurant.CategorieMenuCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.CategorieMenuDto;
+import com.cityprojects.citybackend.dto.inventory.ServiceHotelierCreateDto;
+import com.cityprojects.citybackend.dto.inventory.ServiceHotelierDto;
+import com.cityprojects.citybackend.dto.inventory.TypeServiceHotelierCreateDto;
+import com.cityprojects.citybackend.dto.inventory.TypeServiceHotelierDto;
 import com.cityprojects.citybackend.dto.restaurant.CommandeCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.CommandeDto;
 import com.cityprojects.citybackend.dto.restaurant.EncaissementCommandeDto;
+import com.cityprojects.citybackend.dto.restaurant.EncaissementServiceDto;
 import com.cityprojects.citybackend.dto.restaurant.LigneCommandeCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.RecetteArticleCreateDto;
 import com.cityprojects.citybackend.entity.core.DBUser;
@@ -41,6 +46,8 @@ import com.cityprojects.citybackend.security.UserPrincipal;
 import com.cityprojects.citybackend.service.client.ClientService;
 import com.cityprojects.citybackend.service.inventory.CategorieProduitService;
 import com.cityprojects.citybackend.service.inventory.ProduitService;
+import com.cityprojects.citybackend.service.inventory.ServiceHotelierService;
+import com.cityprojects.citybackend.service.inventory.TypeServiceHotelierService;
 import com.cityprojects.citybackend.service.restaurant.ArticleMenuService;
 import com.cityprojects.citybackend.service.restaurant.CategorieMenuService;
 import com.cityprojects.citybackend.service.restaurant.CommandeService;
@@ -105,6 +112,8 @@ class CommandeServiceTests {
     @Autowired private RecetteArticleService recetteService;
     @Autowired private CategorieProduitService categorieProduitService;
     @Autowired private ProduitService produitService;
+    @Autowired private TypeServiceHotelierService typeServiceHotelierService;
+    @Autowired private ServiceHotelierService serviceHotelierService;
 
     @Autowired private HotelRepository hotelRepository;
     @Autowired private RoleRepository roleRepository;
@@ -173,6 +182,8 @@ class CommandeServiceTests {
         jdbcTemplate.update("DELETE FROM inventory.produits");
         jdbcTemplate.update("DELETE FROM inventory.fournisseurs");
         jdbcTemplate.update("DELETE FROM inventory.categories_produits");
+        jdbcTemplate.update("DELETE FROM inventory.services_hoteliers");
+        jdbcTemplate.update("DELETE FROM inventory.types_services_hoteliers");
         jdbcTemplate.update("DELETE FROM hebergement.nuitees");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_clients");
         jdbcTemplate.update("DELETE FROM hebergement.reservations_chambres");
@@ -341,6 +352,63 @@ class CommandeServiceTests {
             assertEquals(StatutPaiement.VALIDE, p.getStatut());
             assertEquals(ModePaiement.BANKILY, p.getModePaiement());
             assertEquals(0, p.getMontantTotal().compareTo(total));
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Test
+    @DisplayName("T4bis (Tour 70) - encaisserComptant avec services -> facture EMISE avec lignes COMMANDE + SERVICE, paiement total")
+    void shouldEncaisserComptantWithServices() {
+        TenantContext.set(hotelMrId);
+        Long clientId = seedClient();
+        ArticleMenuDto art = seedCatalogue();
+
+        // Seed service hotelier a 2000 MRU
+        TypeServiceHotelierDto typeSvc = tx.execute(s -> typeServiceHotelierService.create(
+                new TypeServiceHotelierCreateDto("BIENETRE", "Bien-etre", null)));
+        ServiceHotelierDto svc = tx.execute(s -> serviceHotelierService.create(
+                new ServiceHotelierCreateDto(typeSvc.typeServiceId(), "MASSAGE",
+                        "Massage 30min", null, BigDecimal.valueOf(2000), "prestation")));
+
+        CommandeDto created = tx.execute(s -> commandeService.create(new CommandeCreateDto(
+                ModeReglementCommande.COMPTANT, clientId, null, "MRU", null,
+                List.of(new LigneCommandeCreateDto(art.articleId(),
+                        BigDecimal.valueOf(2), null, null))))); // 2 * 1500 = 3000
+        BigDecimal totalArticles = created.montantTtc();
+        assertEquals(0, totalArticles.compareTo(new BigDecimal("3000.00")));
+
+        // Encaisse 3000 (articles) + 2000 (1 service) = 5000
+        BigDecimal totalAttendu = new BigDecimal("5000.00");
+        CommandeDto encaissee = tx.execute(s -> commandeService.encaisserComptant(
+                created.commandeId(),
+                new EncaissementCommandeDto(ModePaiement.ESPECES, totalAttendu, null,
+                        List.of(new EncaissementServiceDto(
+                                svc.serviceId(),
+                                BigDecimal.ONE,
+                                BigDecimal.valueOf(2000),
+                                "Massage 30min")))));
+
+        assertNotNull(encaissee.factureId(), "factureId set apres encaissement");
+        // montantPaye sur la commande = uniquement articles (la commande ne porte
+        // pas les services — ils sont sur la facture).
+        assertEquals(0, encaissee.montantPaye().compareTo(totalArticles));
+
+        TenantContext.set(hotelMrId);
+        try {
+            // 1 seule facture, PAYEE, total = 5000 (articles + service)
+            assertEquals(1, factureRepository.count());
+            var facture = factureRepository.findById(encaissee.factureId()).orElseThrow();
+            assertEquals(StatutFacture.PAYEE, facture.getStatut(),
+                    "Facture passe a PAYEE car paiement = montantTtc");
+            assertEquals(0, facture.getMontantTtc().compareTo(totalAttendu),
+                    "Facture cumule articles + services");
+
+            // 1 paiement VALIDE de 5000
+            var paiements = paiementRepository.findAll();
+            assertEquals(1, paiements.size());
+            assertEquals(StatutPaiement.VALIDE, paiements.get(0).getStatut());
+            assertEquals(0, paiements.get(0).getMontantTotal().compareTo(totalAttendu));
         } finally {
             TenantContext.clear();
         }
