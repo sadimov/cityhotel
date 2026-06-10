@@ -223,7 +223,7 @@
       "confirmCheckOut": "هل تؤكد تسجيل مغادرة هذا الحجز؟",
       "checkInSuccess": "تم تسجيل الوصول.",
       "checkInError": "تعذر تسجيل الوصول.",
-      "checkInRequiresPayment": "هناك رصيد مستحق. سدّد المتبقي قبل تسجيل الوصول.",
+      "checkOutRequiresPayment": "هناك رصيد مستحق. سدّد المتبقي قبل تسجيل المغادرة.",
       "checkOutSuccess": "تم تسجيل المغادرة.",
       "checkOutError": "تعذر تسجيل المغادرة.",
       "weekday": {

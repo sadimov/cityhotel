@@ -835,30 +835,6 @@ export class ReservationsCalendarComponent
     const r = this.contextMenu.reservation;
     this.closeContextMenu();
     if (!r || r.reservationId == null) return;
-    // Tour 71 — si la résa n'est pas totalement payée, on bascule l'opérateur
-    // sur la modale "Paiements" pour solder le reste avant l'accueil. Pas de
-    // check-in tant qu'il y a un reste positif.
-    this.paiementsRecapService
-      .getRecapForReservation(r.reservationId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (recap) => {
-          if ((recap?.resteGlobal ?? 0) > 0.005) {
-            this.toastInfo('hebergement.calendar.checkInRequiresPayment');
-            this.openPaymentsModal(r);
-            return;
-          }
-          this.doCheckIn(r);
-        },
-        error: () => {
-          // Échec lecture du récap : on tente quand même le check-in,
-          // le backend rejettera proprement si problème métier.
-          this.doCheckIn(r);
-        },
-      });
-  }
-
-  private doCheckIn(r: Reservation): void {
     this.translateAlertConfirm('hebergement.calendar.confirmCheckIn').then(
       (ok) => {
         if (!ok) return;
@@ -889,6 +865,30 @@ export class ReservationsCalendarComponent
     const r = this.contextMenu.reservation;
     this.closeContextMenu();
     if (!r || r.reservationId == null) return;
+    // Tour 71 — si la résa n'est pas totalement payée, on bascule l'opérateur
+    // sur la modale "Paiements" pour solder le reste avant le check-out. Le
+    // client ne quitte pas l'hôtel sans avoir soldé sa facture.
+    this.paiementsRecapService
+      .getRecapForReservation(r.reservationId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (recap) => {
+          if ((recap?.resteGlobal ?? 0) > 0.005) {
+            this.toastInfo('hebergement.calendar.checkOutRequiresPayment');
+            this.openPaymentsModal(r);
+            return;
+          }
+          this.doCheckOut(r);
+        },
+        error: () => {
+          // Échec lecture du récap : on tente quand même le check-out,
+          // le backend rejettera proprement si problème métier.
+          this.doCheckOut(r);
+        },
+      });
+  }
+
+  private doCheckOut(r: Reservation): void {
     this.translateAlertConfirm('hebergement.calendar.confirmCheckOut').then(
       (ok) => {
         if (!ok) return;
