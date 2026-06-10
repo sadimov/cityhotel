@@ -223,6 +223,7 @@
       "confirmCheckOut": "Confirm check-out for this reservation?",
       "checkInSuccess": "Check-in completed.",
       "checkInError": "Unable to perform check-in.",
+      "checkInRequiresPayment": "Outstanding balance. Settle the remainder before check-in.",
       "checkOutSuccess": "Check-out completed.",
       "checkOutError": "Unable to perform check-out.",
       "weekday": {

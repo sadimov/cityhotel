@@ -300,6 +300,7 @@
       "confirmCheckOut": "Confirmer le check-out de cette réservation ?",
       "checkInSuccess": "Check-in effectué.",
       "checkInError": "Impossible d'effectuer le check-in.",
+      "checkInRequiresPayment": "Solde restant à payer. Encaissez le reste avant le check-in.",
       "checkOutSuccess": "Check-out effectué.",
       "checkOutError": "Impossible d'effectuer le check-out.",
       "weekday": {

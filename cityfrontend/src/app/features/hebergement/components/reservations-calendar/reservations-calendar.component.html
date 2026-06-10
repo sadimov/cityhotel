@@ -323,11 +323,21 @@
     <i class="bi bi-pencil me-2" aria-hidden="true"></i>
     {{ 'hebergement.calendar.menu.modify' | translate }}
   </button>
-  <button type="button" class="dropdown-item" (click)="ctxCheckIn()">
+  <button
+    *ngIf="canShowCheckIn(contextMenu.reservation)"
+    type="button"
+    class="dropdown-item"
+    (click)="ctxCheckIn()"
+  >
     <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
     {{ 'hebergement.calendar.menu.checkIn' | translate }}
   </button>
-  <button type="button" class="dropdown-item" (click)="ctxCheckOut()">
+  <button
+    *ngIf="canShowCheckOut(contextMenu.reservation)"
+    type="button"
+    class="dropdown-item"
+    (click)="ctxCheckOut()"
+  >
     <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>
     {{ 'hebergement.calendar.menu.checkOut' | translate }}
   </button>

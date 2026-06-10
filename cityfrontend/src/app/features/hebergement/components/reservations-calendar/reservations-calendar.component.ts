@@ -811,10 +811,54 @@ export class ReservationsCalendarComponent
     if (r) this.openEditModal(r);
   }
 
+  /**
+   * Tour 71 — Le check-in n'est proposé que pour les réservations non encore
+   * arrivées (statuts métier : CONFIRMEE ou NO_SHOW réversible). Une résa déjà
+   * en ARRIVEE / PARTIE / ANNULEE ne peut plus être check-in.
+   */
+  canShowCheckIn(reservation: Reservation | null): boolean {
+    if (!reservation) return false;
+    return reservation.statut === StatutReservation.CONFIRMEE;
+  }
+
+  /**
+   * Tour 71 — Le check-out n'a de sens que pour une résa actuellement en
+   * ARRIVEE. Si elle n'est pas check-in (CONFIRMEE), ou déjà partie / annulée,
+   * on masque l'option.
+   */
+  canShowCheckOut(reservation: Reservation | null): boolean {
+    if (!reservation) return false;
+    return reservation.statut === StatutReservation.ARRIVEE;
+  }
+
   ctxCheckIn(): void {
     const r = this.contextMenu.reservation;
     this.closeContextMenu();
     if (!r || r.reservationId == null) return;
+    // Tour 71 — si la résa n'est pas totalement payée, on bascule l'opérateur
+    // sur la modale "Paiements" pour solder le reste avant l'accueil. Pas de
+    // check-in tant qu'il y a un reste positif.
+    this.paiementsRecapService
+      .getRecapForReservation(r.reservationId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (recap) => {
+          if ((recap?.resteGlobal ?? 0) > 0.005) {
+            this.toastInfo('hebergement.calendar.checkInRequiresPayment');
+            this.openPaymentsModal(r);
+            return;
+          }
+          this.doCheckIn(r);
+        },
+        error: () => {
+          // Échec lecture du récap : on tente quand même le check-in,
+          // le backend rejettera proprement si problème métier.
+          this.doCheckIn(r);
+        },
+      });
+  }
+
+  private doCheckIn(r: Reservation): void {
     this.translateAlertConfirm('hebergement.calendar.confirmCheckIn').then(
       (ok) => {
         if (!ok) return;
