@@ -708,6 +708,13 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
 
         // Cree 1 ligne facture COMMANDE par ligne de commande (snapshot prix).
         // Pas de TVA POS (doctrine prompt_restaurant_pos.txt).
+        // datePrestation = date de prise de commande (timezone Africa/Nouakchott)
+        // pour affichage dans la modale "Paiements" du calendrier hebergement.
+        LocalDate datePrestation = commande.getDateCommande() != null
+                ? commande.getDateCommande()
+                        .atZone(java.time.ZoneId.of("Africa/Nouakchott"))
+                        .toLocalDate()
+                : LocalDate.now();
         List<LigneCommande> lignesCmd = ligneCommandeRepository
                 .findByCommandeIdOrderByLigneIdAsc(commandeId);
         for (LigneCommande lc : lignesCmd) {
@@ -719,6 +726,7 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
             lf.setQuantite(lc.getQuantite());
             lf.setPrixUnitaire(lc.getPrixUnitaire());
             lf.setTauxTva(BigDecimal.ZERO);
+            lf.setDatePrestation(datePrestation);
             ligneRepository.save(lf);
         }
 

@@ -5,16 +5,24 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 
 /**
- * Service HTTP — Bridge ServiceHotelier ↔ LigneFacture (Tour 51bis).
+ * Service HTTP — Bridge ServiceHotelier → LigneFacture (Tour 51bis + Tour 70).
  *
- * Permet d'ajouter une ligne de facture de type SERVICE à une facture
- * existante (ou de créer la facture brouillon si elle n'existe pas encore)
- * pour une réservation. Backend cible :
- *   - POST /api/finance/factures (FactureCreateDto avec lignes[serviceId,typeLigne=SERVICE])
- *     → côté Tour 51bis on s'appuie sur l'endpoint déjà câblé qui accepte
- *       un `serviceId` dans `LigneFactureCreateDto`.
+ * Ajoute une ligne `SERVICE` à la facture **existante** rattachée à une
+ * réservation, sans en créer une nouvelle. Cible l'endpoint dédié
+ * `POST /api/finance/factures/lignes-service` (cf. `FactureController` +
+ * `FactureServiceImpl.addLigneService` côté backend) qui :
+ *   1. Résout la facture cible via `factureId` (prioritaire) ou
+ *      `reservationId` (sélectionne la facture non terminale la plus récente).
+ *   2. Crée la `LigneFacture` SERVICE avec `datePrestation = LocalDate.now()`.
+ *   3. Recalcule les montants + passe un DEBIT complémentaire compte client
+ *      si la facture est déjà EMISE/PARTIELLEMENT_PAYEE.
  *
- * ⚠️ `hotelId` jamais transmis (JWT côté serveur).
+ * Avant Tour 70 : ce service appelait `POST /api/finance/factures` qui créait
+ * une **nouvelle facture BROUILLON** à chaque ajout — invisible dans la modale
+ * "Paiements" tant qu'elle n'était pas émise, et la résa se retrouvait avec
+ * plusieurs factures distinctes.
+ *
+ * ⚠️ `hotelId` jamais transmis (JWT côté serveur — CLAUDE.md §6.1).
  */
 export interface AjouterLigneServiceRequest {
   reservationId: number;
@@ -23,59 +31,37 @@ export interface AjouterLigneServiceRequest {
   /** Override prix unitaire optionnel — sinon prix du service utilisé. */
   prixUnitaire?: number;
   libelle?: string;
+  /** Note : pas envoyé — backend pose LocalDate.now() (Tour 51bis). */
   datePrestation?: string;
 }
 
 export interface AjouterLigneServiceResponse {
   factureId: number;
-  ligneFactureId?: number;
-  numeroFacture?: string;
-  montantTtc?: number;
+  ligneFactureId: number;
+  montantTtc: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class LigneServiceService {
-  /**
-   * Endpoint cible Tour 51bis : on passe par la route `from-reservation`
-   * qui crée/réutilise la facture brouillon, puis on POST sur la facture
-   * pour ajouter la ligne service. Pour rester compatible avec l'API
-   * actuelle (qui ne possède pas d'endpoint "POST ligne-service" dédié),
-   * on utilise `POST /api/finance/factures` avec FactureCreateDto contenant
-   * une seule ligne typeLigne=SERVICE — le service backend `creerLigne`
-   * accepte déjà `serviceId` (cf. FactureServiceImpl#creerLigne L569).
-   */
-  private readonly factureBase = `${environment.apiUrl}/api/finance/factures`;
+  private readonly endpoint = `${environment.apiUrl}/api/finance/factures/lignes-service`;
 
   constructor(private readonly http: HttpClient) {}
 
   /**
    * Ajoute une ligne service à la facture associée à une réservation.
    *
-   * Stratégie :
-   *  1. Tente de récupérer / créer la facture brouillon via
-   *     POST `/factures/from-reservation/{reservationId}` (idempotent côté back).
-   *  2. Construit le payload `FactureCreateDto` minimal — ou idéalement
-   *     ajoute la ligne via un endpoint dédié si exposé ultérieurement.
-   *
-   * Tour 51bis : la version actuelle utilise `POST /factures` avec
-   * `reservationId` + `lignes[serviceId,typeLigne=SERVICE]`. Le backend
-   * crée la facture si elle n'existe pas et la lie à la réservation.
+   * Le backend (`addLigneService`) résout la facture via `reservationId` et
+   * y ajoute la ligne SERVICE — pas de nouvelle facture créée.
    */
   addLigneService(req: AjouterLigneServiceRequest): Observable<AjouterLigneServiceResponse> {
     const payload = {
-      typeFacture: 'FACTURE',
+      serviceId: req.serviceId,
       reservationId: req.reservationId,
-      lignes: [
-        {
-          typeLigne: 'SERVICE',
-          serviceId: req.serviceId,
-          libelle: req.libelle ?? '',
-          quantite: req.quantite,
-          prixUnitaire: req.prixUnitaire ?? 0,
-          datePrestation: req.datePrestation,
-        },
-      ],
+      quantite: req.quantite,
+      prixUnitaireOverride: req.prixUnitaire ?? null,
+      description: req.libelle ?? null,
+      tauxTva: null,
     };
-    return this.http.post<AjouterLigneServiceResponse>(this.factureBase, payload);
+    return this.http.post<AjouterLigneServiceResponse>(this.endpoint, payload);
   }
 }
