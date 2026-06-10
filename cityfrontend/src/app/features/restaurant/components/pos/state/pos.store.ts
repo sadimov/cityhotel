@@ -920,7 +920,31 @@ export class PosStore extends ComponentStore<PosState> {
           this.setError('restaurant.pos.errors.invalidPayload');
           return of(null);
         }
+        // Tour 70 : un clic "Mettre sur facture chambre" doit reporter
+        // ARTICLES *et* SERVICES de la même commande. Les ARTICLES partent
+        // dans la commande POS (matérialisée en LigneFacture COMMANDE par
+        // attacherCommandeFolio côté backend). Les SERVICES sont poussés en
+        // parallèle via addLigneService (bridge ServiceHotelier → LigneFacture
+        // SERVICE) sur la même facture résa.
+        const serviceLines = state.cart.filter(
+          (l) => l.type === 'SERVICE' && l.serviceId != null,
+        );
         return this.commandesService.create(createPayload).pipe(
+          switchMap((commande: Commande) => {
+            if (serviceLines.length === 0) {
+              return of(commande);
+            }
+            const serviceRequests = serviceLines.map((l) =>
+              this.ligneServiceService.addLigneService({
+                reservationId,
+                serviceId: l.serviceId as number,
+                quantite: l.quantite,
+                prixUnitaire: l.prixUnitaire,
+                libelle: l.libelle,
+              }),
+            );
+            return forkJoin(serviceRequests).pipe(map(() => commande));
+          }),
           tap((commande: Commande) => {
             this.setLastCommande(commande);
             this.setSuccess('restaurant.pos.messages.reportSuccess');
