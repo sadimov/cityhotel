@@ -887,12 +887,15 @@ export class PosStore extends ComponentStore<PosState> {
   /**
    * Soumet la commande pour report sur chambre.
    *
-   * <p><b>Doctrine Tour 50</b> : le report sur chambre est entiÃ¨rement
-   * encodÃ© dans le {@code create()} de la commande via
-   * {@code modeReglement = REPORTE_CHAMBRE} + {@code reservationId}. Pas
-   * d'endpoint backend sÃ©parÃ© : la commande est automatiquement picorÃ©e
-   * par {@code FactureServiceImpl.fromReservation} au check-out de la rÃ©sa
-   * (Tour 25 â€“ "rÃ©cupere AUSSI les commandes REPORTE_CHAMBRE non facturÃ©es").</p>
+   * <p><b>Doctrine Tour 70</b> (revision Tour 50) : le report sur chambre passe
+   * par {@code create()} avec {@code modeReglement = REPORTE_CHAMBRE} +
+   * {@code reservationId}. Cote backend, {@code CommandeServiceImpl.create()}
+   * materialise immediatement le folio chambre (facture BROUILLON + lignes
+   * COMMANDE) via {@code FactureService.attacherCommandeFolio()}. Le folio est
+   * donc visible dans la modale "Paiements" du calendrier sans attendre le
+   * check-out. Au check-out, {@code FactureServiceImpl.fromReservation()}
+   * detecte le folio existant, le complete des nuitees CONSOMMEE puis l'emet
+   * (BROUILLON -&gt; EMISE).</p>
    */
   readonly submitOrderReportChambre = this.effect<void>((trigger$) =>
     trigger$.pipe(

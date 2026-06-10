@@ -93,6 +93,47 @@ public interface FactureService {
     FactureDto fromCommande(Long commandeId);
 
     /**
+     * Materialise immediatement le folio chambre (facture BROUILLON) d'une
+     * commande POS reportée. Find-or-create d'une {@link Facture} BROUILLON
+     * rattachee à la réservation, puis synchronisation des {@code LigneFacture}
+     * de type {@code COMMANDE} pour cette commande.
+     *
+     * <p><b>Différence avec {@link #fromReservation(Long)}</b> : pas d'emission,
+     * pas d'ecriture comptable VTE, pas de DEBIT compte auxiliaire. La facture
+     * reste {@code BROUILLON} jusqu'au check-out de la reservation, ou elle est
+     * complétée des nuitées puis emise par {@code fromReservation()}.</p>
+     *
+     * <p><b>Idempotence</b> : peut être appelée plusieurs fois pour la meme
+     * commande (par exemple après ajout/suppression d'une ligne commande). Les
+     * {@code LigneFacture} COMMANDE liees a cette commande sont supprimees puis
+     * recreees a partir de l'etat courant des {@code LigneCommande}.</p>
+     *
+     * <p>Pre-conditions :</p>
+     * <ul>
+     *   <li>{@code commande.modeReglement = REPORTE_CHAMBRE} ;</li>
+     *   <li>{@code commande.reservationId} non null ;</li>
+     *   <li>aucune facture EMISE/PAYEE existante pour la reservation (si une
+     *       facture EMISE/PAYEE existe, le folio BROUILLON ne peut etre cree :
+     *       passer par {@code addLigneService} ou attendre {@code fromReservation}).</li>
+     * </ul>
+     */
+    FactureDto attacherCommandeFolio(Long commandeId);
+
+    /**
+     * Detache une commande POS reportée de son folio chambre {@code BROUILLON}.
+     * Supprime les {@code LigneFacture} de type {@code COMMANDE} liees a cette
+     * commande, remet {@code commande.factureId = null} et recalcule les
+     * montants du folio. Utilisee a l'annulation d'une commande deja attachee
+     * au folio (le folio reste, vide ou avec d'autres commandes).
+     *
+     * <p>No-op si la commande n'a pas de {@code factureId} (idempotent).</p>
+     *
+     * <p>Refus si la facture associee n'est plus en {@code BROUILLON} (les
+     * lignes d'une facture EMISE/PAYEE/ANNULEE ne peuvent etre supprimees).</p>
+     */
+    void detacherCommandeFolio(Long commandeId);
+
+    /**
      * Tour 45 : transfere des lignes selectionnees d'une facture source vers
      * une facture cible. Recalcule les montants des 2 factures et retourne
      * le DTO enrichi de la facture cible.

@@ -331,7 +331,18 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
 
-        if (reservation.getFactureId() != null) {
+        // Tour 70 : réutilise le folio chambre BROUILLON si attacherCommandeFolio
+        // a deja materialise une facture pour cette reservation (cas standard PMS :
+        // commandes POS REPORTE_CHAMBRE deja postees en cours de sejour).
+        Facture folioExistant = null;
+        for (Facture f : factureRepository.findByReservationId(reservationId)) {
+            if (f.getStatut() == StatutFacture.BROUILLON) {
+                folioExistant = f;
+                break;
+            }
+        }
+
+        if (folioExistant == null && reservation.getFactureId() != null) {
             throw new BusinessException("error.facture.reservation.dejaFacturee");
         }
 
@@ -346,27 +357,36 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
 
         // Tour 25 : recupere AUSSI les commandes REPORTE_CHAMBRE non encore facturees
         // pour les rattacher a la meme facture sejour (single source of truth pour
-        // le client a la sortie).
+        // le client a la sortie). Tour 70 : les commandes deja attachees au folio
+        // BROUILLON sont exclues (factureId == folio.id, non null).
         List<Commande> commandesReportees = commandeRepository
                 .findByReservationIdAndModeReglementAndFactureIdIsNull(
                         reservationId, ModeReglementCommande.REPORTE_CHAMBRE);
 
-        if (nuiteesAFacturer.isEmpty() && commandesReportees.isEmpty()) {
+        // Si pas de folio existant ET aucune ligne a facturer, on refuse.
+        // Si folio existant : il a deja des lignes COMMANDE, on accepte meme
+        // sans nuitee a facturer (cas check-out sans nuit non facturee).
+        if (folioExistant == null && nuiteesAFacturer.isEmpty() && commandesReportees.isEmpty()) {
             throw new BusinessException("error.facture.reservation.aucuneNuiteeAFacturer");
         }
 
-        // Cree la facture (BROUILLON puis EMISE en fin de methode)
-        Facture facture = new Facture();
-        facture.setTypeFacture(TypeFacture.FACTURE);
-        facture.setReservationId(reservationId);
-        facture.setClientId(reservation.getClientPrincipalId());
-        facture.setSocieteId(reservation.getSocieteId());
-        facture.setDateFacture(LocalDate.now());
-        facture.setDevise("MRU");
-        facture.setStatut(StatutFacture.BROUILLON);
-        facture.setUserId(currentUserId());
-        facture.setNumeroFacture(numerotationService.next(TypeNumerotation.FACT));
-        Facture savedFacture = factureRepository.save(facture);
+        // Cree ou reutilise la facture (BROUILLON puis EMISE en fin de methode).
+        Facture savedFacture;
+        if (folioExistant != null) {
+            savedFacture = folioExistant;
+        } else {
+            Facture facture = new Facture();
+            facture.setTypeFacture(TypeFacture.FACTURE);
+            facture.setReservationId(reservationId);
+            facture.setClientId(reservation.getClientPrincipalId());
+            facture.setSocieteId(reservation.getSocieteId());
+            facture.setDateFacture(LocalDate.now());
+            facture.setDevise("MRU");
+            facture.setStatut(StatutFacture.BROUILLON);
+            facture.setUserId(currentUserId());
+            facture.setNumeroFacture(numerotationService.next(TypeNumerotation.FACT));
+            savedFacture = factureRepository.save(facture);
+        }
 
         // Cree 1 ligne NUITEE par nuitee. Taux TVA resolu via TauxTvaConfigService
         // (B4) : par defaut HEBERGEMENT_NUITEE = 0% (exoneration de fait
@@ -621,6 +641,179 @@ public class FactureServiceImpl implements FactureService, FactureRecalcInternal
                 lignesCommande.size(), refreshed.getMontantTtc());
 
         return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    @Transactional
+    public FactureDto attacherCommandeFolio(Long commandeId) {
+        exerciceService.assertOuvert(LocalDate.now());
+
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
+
+        if (commande.getModeReglement() != ModeReglementCommande.REPORTE_CHAMBRE) {
+            throw new BusinessException("error.facture.commande.modeReglementInvalide");
+        }
+        if (commande.getReservationId() == null) {
+            throw new BusinessException("error.commande.reservation.required");
+        }
+
+        Long reservationId = commande.getReservationId();
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.reservation.notFound"));
+
+        // Resolution du folio cible. Priorite :
+        // 1) BROUILLON (folio neuf ou matérialise par une commande POS precedente)
+        // 2) EMISE / PARTIELLEMENT_PAYEE (cas Tour 44 : previsionFromReservation
+        //    a deja emis la facture des nuitees a la creation de la resa).
+        // Refus si la seule facture utilisable est PAYEE (sejour deja solde) ou
+        // toutes sont ANNULEE et qu'on ne peut pas en creer une (ne devrait pas
+        // arriver — on cree alors un folio BROUILLON neuf).
+        List<Facture> facturesResa = factureRepository.findByReservationId(reservationId);
+        Facture folio = facturesResa.stream()
+                .filter(f -> f.getStatut() == StatutFacture.BROUILLON)
+                .findFirst()
+                .orElse(null);
+        if (folio == null) {
+            folio = facturesResa.stream()
+                    .filter(f -> f.getStatut() == StatutFacture.EMISE
+                            || f.getStatut() == StatutFacture.PARTIELLEMENT_PAYEE)
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (folio == null) {
+            boolean hasSolde = facturesResa.stream()
+                    .anyMatch(f -> f.getStatut() == StatutFacture.PAYEE);
+            if (hasSolde) {
+                throw new BusinessException("error.facture.reservation.dejaFacturee");
+            }
+            folio = creerFolioBrouillon(reservation);
+        }
+
+        // Capture le montant TTC avant pour calculer le delta DEBIT si la facture
+        // est deja "comptablement engagee" (cf. addLigneService).
+        BigDecimal montantAvant = folio.getMontantTtc() != null
+                ? folio.getMontantTtc() : BigDecimal.ZERO;
+
+        // Idempotence : purge les LigneFacture COMMANDE deja liees a cette commande
+        // dans le folio (resync apres ajout/suppression de ligne commande).
+        List<LigneFacture> lignesExistantes = ligneRepository
+                .findByFactureIdOrderByLigneFactureIdAsc(folio.getFactureId())
+                .stream()
+                .filter(l -> commandeId.equals(l.getCommandeId()))
+                .toList();
+        for (LigneFacture l : lignesExistantes) {
+            ligneRepository.delete(l);
+        }
+
+        // Cree 1 ligne facture COMMANDE par ligne de commande (snapshot prix).
+        // Pas de TVA POS (doctrine prompt_restaurant_pos.txt).
+        List<LigneCommande> lignesCmd = ligneCommandeRepository
+                .findByCommandeIdOrderByLigneIdAsc(commandeId);
+        for (LigneCommande lc : lignesCmd) {
+            LigneFacture lf = new LigneFacture();
+            lf.setFactureId(folio.getFactureId());
+            lf.setTypeLigne(TypeLigneFacture.COMMANDE);
+            lf.setCommandeId(commandeId);
+            lf.setLibelle(lc.getLibelle());
+            lf.setQuantite(lc.getQuantite());
+            lf.setPrixUnitaire(lc.getPrixUnitaire());
+            lf.setTauxTva(BigDecimal.ZERO);
+            ligneRepository.save(lf);
+        }
+
+        // Rattache la commande au folio (idempotent si deja pose).
+        if (!folio.getFactureId().equals(commande.getFactureId())) {
+            commande.setFactureId(folio.getFactureId());
+            commandeRepository.save(commande);
+        }
+
+        recalcMontantsFacture(folio.getFactureId());
+
+        Facture refreshed = factureRepository.findById(folio.getFactureId())
+                .orElseThrow(() -> new BusinessException("error.facture.notFound"));
+
+        // Si folio EMISE ou PARTIELLEMENT_PAYEE : passe un DEBIT complementaire
+        // sur le compte client pour le delta d'engagement. Aligne sur le pattern
+        // addLigneService. Pour BROUILLON : pas de DEBIT - sera passe a l'emission
+        // via recordDebitOnAccountIfApplicable lors de fromReservation au check-out.
+        if ((refreshed.getStatut() == StatutFacture.EMISE
+                || refreshed.getStatut() == StatutFacture.PARTIELLEMENT_PAYEE)
+                && refreshed.getClientId() != null
+                && refreshed.getTypeFacture() == TypeFacture.FACTURE) {
+            BigDecimal montantApres = refreshed.getMontantTtc() != null
+                    ? refreshed.getMontantTtc() : BigDecimal.ZERO;
+            BigDecimal delta = montantApres.subtract(montantAvant);
+            if (delta.signum() > 0) {
+                var compte = compteService.findOrCreateForClient(refreshed.getClientId());
+                operationCompteService.recordDebit(
+                        compte.getCompteId(),
+                        delta,
+                        refreshed.getFactureId(),
+                        "Commande " + commande.getNumeroCommande()
+                                + " - Facture " + refreshed.getNumeroFacture());
+            }
+        }
+
+        logger.info("Folio chambre attache : commande={}, facture={} (statut={}), lignes={}, total={}",
+                commande.getNumeroCommande(), refreshed.getNumeroFacture(),
+                refreshed.getStatut(), lignesCmd.size(), refreshed.getMontantTtc());
+
+        return toDtoWithLignes(refreshed);
+    }
+
+    @Override
+    @Transactional
+    public void detacherCommandeFolio(Long commandeId) {
+        Commande commande = commandeRepository.findById(commandeId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.commande.notFound"));
+
+        if (commande.getFactureId() == null) {
+            return; // idempotent
+        }
+
+        Long folioId = commande.getFactureId();
+        Facture folio = factureRepository.findById(folioId)
+                .orElseThrow(() -> new ResourceNotFoundException("error.facture.notFound"));
+        if (folio.getStatut() != StatutFacture.BROUILLON) {
+            throw new BusinessException("error.facture.detache.statutInvalide");
+        }
+
+        List<LigneFacture> lignesAretirer = ligneRepository
+                .findByFactureIdOrderByLigneFactureIdAsc(folioId)
+                .stream()
+                .filter(l -> commandeId.equals(l.getCommandeId()))
+                .toList();
+        for (LigneFacture l : lignesAretirer) {
+            ligneRepository.delete(l);
+        }
+
+        commande.setFactureId(null);
+        commandeRepository.save(commande);
+
+        recalcMontantsFacture(folioId);
+
+        logger.info("Folio chambre detache : commande={}, facture={}, lignesRetirees={}",
+                commande.getNumeroCommande(), folio.getNumeroFacture(), lignesAretirer.size());
+    }
+
+    /**
+     * Cree une nouvelle facture {@code BROUILLON} (folio chambre) pour une
+     * reservation. Helper utilise par {@link #attacherCommandeFolio(Long)}
+     * lors de la premiere commande reportée d'une reservation.
+     */
+    private Facture creerFolioBrouillon(Reservation reservation) {
+        Facture facture = new Facture();
+        facture.setTypeFacture(TypeFacture.FACTURE);
+        facture.setReservationId(reservation.getReservationId());
+        facture.setClientId(reservation.getClientPrincipalId());
+        facture.setSocieteId(reservation.getSocieteId());
+        facture.setDateFacture(LocalDate.now());
+        facture.setDevise("MRU");
+        facture.setStatut(StatutFacture.BROUILLON);
+        facture.setUserId(currentUserId());
+        facture.setNumeroFacture(numerotationService.next(TypeNumerotation.FACT));
+        return factureRepository.save(facture);
     }
 
     /**

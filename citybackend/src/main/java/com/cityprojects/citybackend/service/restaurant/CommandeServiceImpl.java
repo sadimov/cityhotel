@@ -11,6 +11,7 @@ import com.cityprojects.citybackend.dto.restaurant.CommandeDto;
 import com.cityprojects.citybackend.dto.restaurant.EncaissementCommandeDto;
 import com.cityprojects.citybackend.dto.restaurant.LigneCommandeCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.LigneCommandeDto;
+import com.cityprojects.citybackend.entity.finance.StatutFacture;
 import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import com.cityprojects.citybackend.entity.restaurant.ArticleMenu;
@@ -192,6 +193,14 @@ public class CommandeServiceImpl implements CommandeService {
         }
         recalcMontants(saved.getCommandeId());
 
+        // Tour 70 : materialise immediatement le folio chambre (facture BROUILLON
+        // + lignes COMMANDE) pour qu'il soit visible dans la modale "Paiements"
+        // du calendrier sans attendre le check-out. Le folio reste BROUILLON
+        // (pas d'ecriture comptable, pas de DEBIT) jusqu'a fromReservation.
+        if (dto.modeReglement() == ModeReglementCommande.REPORTE_CHAMBRE) {
+            factureService.attacherCommandeFolio(saved.getCommandeId());
+        }
+
         Commande refreshed = commandeRepository.findById(saved.getCommandeId())
                 .orElseThrow(() -> new BusinessException("error.commande.notFound"));
 
@@ -372,17 +381,27 @@ public class CommandeServiceImpl implements CommandeService {
         if (commande.getStatut() == StatutCommande.ANNULEE) {
             throw new BusinessException("error.commande.dejaAnnulee");
         }
-        if (commande.getFactureId() != null) {
-            // Si la commande est deja facturee, l'annulation passe par un avoir
-            // cote finance (Tour finance-2). Refus ici.
+        // Tour 70 : tolere le folio chambre BROUILLON (la commande est detachee
+        // du folio avant marquage ANNULEE). Sinon (facture EMISE/PAYEE), refus :
+        // l'annulation doit passer par un avoir cote finance (Tour finance-2).
+        boolean folioBrouillonAttache = isFolioBrouillon(commande);
+        if (commande.getFactureId() != null && !folioBrouillonAttache) {
             throw new BusinessException("error.commande.annulation.dejaFacturee");
+        }
+
+        if (folioBrouillonAttache) {
+            factureService.detacherCommandeFolio(commandeId);
+            // Rafraichit pour avoir factureId remis a null avant le marquage final.
+            commande = commandeRepository.findById(commandeId)
+                    .orElseThrow(() -> new BusinessException("error.commande.notFound"));
         }
 
         commande.setStatut(StatutCommande.ANNULEE);
         commande.setMotifAnnulation(motif);
         commandeRepository.save(commande);
 
-        logger.info("Commande id={} annulee, motif: {}", commandeId, motif);
+        logger.info("Commande id={} annulee, motif: {}, folioDetache={}",
+                commandeId, motif, folioBrouillonAttache);
         return toDtoWithLignes(commande);
     }
 
@@ -468,11 +487,16 @@ public class CommandeServiceImpl implements CommandeService {
         if (commande.getStatut() != StatutCommande.BROUILLON) {
             throw new BusinessException("error.commande.ligne.ajoutInterdit");
         }
-        if (commande.getFactureId() != null) {
+        // Tour 70 : tolere le folio chambre BROUILLON (resync ensuite).
+        if (commande.getFactureId() != null && !isFolioBrouillon(commande)) {
             throw new BusinessException("error.commande.encaissement.dejaFacturee");
         }
         creerLigne(commandeId, ligneDto);
         recalcMontants(commandeId);
+
+        if (commande.getModeReglement() == ModeReglementCommande.REPORTE_CHAMBRE) {
+            factureService.attacherCommandeFolio(commandeId);
+        }
 
         Commande refreshed = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new BusinessException("error.commande.notFound"));
@@ -491,7 +515,8 @@ public class CommandeServiceImpl implements CommandeService {
             // Apres envoi cuisine, la suppression doit passer par annulerLigne avec motif
             throw new BusinessException("error.commande.ligne.suppressionInterdite");
         }
-        if (commande.getFactureId() != null) {
+        // Tour 70 : tolere le folio chambre BROUILLON (resync ensuite).
+        if (commande.getFactureId() != null && !isFolioBrouillon(commande)) {
             throw new BusinessException("error.commande.encaissement.dejaFacturee");
         }
         LigneCommande ligne = ligneCommandeRepository.findById(ligneId)
@@ -507,6 +532,10 @@ public class CommandeServiceImpl implements CommandeService {
         }
         ligneCommandeRepository.delete(ligne);
         recalcMontants(commandeId);
+
+        if (commande.getModeReglement() == ModeReglementCommande.REPORTE_CHAMBRE) {
+            factureService.attacherCommandeFolio(commandeId);
+        }
 
         Commande refreshed = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new BusinessException("error.commande.notFound"));
@@ -527,7 +556,8 @@ public class CommandeServiceImpl implements CommandeService {
                 || commande.getStatut() == StatutCommande.ANNULEE) {
             throw new BusinessException("error.commande.ligne.annulationInterdite");
         }
-        if (commande.getFactureId() != null) {
+        // Tour 70 : tolere le folio chambre BROUILLON (resync ensuite).
+        if (commande.getFactureId() != null && !isFolioBrouillon(commande)) {
             throw new BusinessException("error.commande.encaissement.dejaFacturee");
         }
         LigneCommande ligne = ligneCommandeRepository.findById(ligneId)
@@ -546,6 +576,10 @@ public class CommandeServiceImpl implements CommandeService {
                 commande.getNumeroCommande(), ligneId, ligne.getLibelle(), motif);
         ligneCommandeRepository.delete(ligne);
         recalcMontants(commandeId);
+
+        if (commande.getModeReglement() == ModeReglementCommande.REPORTE_CHAMBRE) {
+            factureService.attacherCommandeFolio(commandeId);
+        }
 
         Commande refreshed = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new BusinessException("error.commande.notFound"));
@@ -588,6 +622,22 @@ public class CommandeServiceImpl implements CommandeService {
         ligne.setNotesCuisine(dto.notesCuisine());
         // montant recalcule par @PrePersist
         ligneCommandeRepository.save(ligne);
+    }
+
+    /**
+     * Tour 70 : indique si la commande est rattachee a un folio chambre encore
+     * modifiable (statut {@code BROUILLON}). Sert a tolerer les mutations de
+     * lignes commande sur les commandes deja attachees au folio (le folio est
+     * resynchronise apres chaque mutation via
+     * {@link FactureService#attacherCommandeFolio(Long)}).
+     */
+    private boolean isFolioBrouillon(Commande commande) {
+        if (commande.getFactureId() == null) {
+            return false;
+        }
+        return factureRepository.findById(commande.getFactureId())
+                .map(f -> f.getStatut() == StatutFacture.BROUILLON)
+                .orElse(false);
     }
 
     /**

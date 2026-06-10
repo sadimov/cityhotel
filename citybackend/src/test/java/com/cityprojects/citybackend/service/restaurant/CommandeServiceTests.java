@@ -83,9 +83,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *       error.commande.annulation.servieInterdite).</li>
  *   <li>T4 : encaisserComptant() cree une Facture EMISE + un Paiement VALIDE,
  *       met a jour commande.factureId et commande.montantPaye.</li>
- *   <li>T5 : create(REPORTE_CHAMBRE) avec reservation ARRIVEE valide ->
- *       commande.reservationId set, modeReglement=REPORTE_CHAMBRE,
- *       PAS de Facture immediate.</li>
+ *   <li>T5 (revision Tour 70) : create(REPORTE_CHAMBRE) avec reservation ARRIVEE
+ *       valide -> commande.reservationId set, modeReglement=REPORTE_CHAMBRE,
+ *       folio chambre BROUILLON materialise immediatement (commande.factureId
+ *       non null, 1 facture BROUILLON, lignes COMMANDE persistees pour
+ *       visibilite dans modale "Paiements" du calendrier).</li>
  *   <li>T10 (Tour 25bis F9) : create(REPORTE_CHAMBRE) avec reservationId
  *       d'un autre tenant -&gt; ResourceNotFoundException.</li>
  *   <li>T11 (Tour 25bis F9) : create() avec ligne dont articleId d'un autre
@@ -345,7 +347,7 @@ class CommandeServiceTests {
     }
 
     @Test
-    @DisplayName("T5 - create(REPORTE_CHAMBRE) avec reservation ARRIVEE -> reservationId set, pas de Facture")
+    @DisplayName("T5 (Tour 70) - create(REPORTE_CHAMBRE) avec reservation ARRIVEE -> folio chambre BROUILLON materialise immediatement")
     void shouldCreateReporteChambre() {
         TenantContext.set(hotelMrId);
         Long clientId = seedClient();
@@ -383,14 +385,162 @@ class CommandeServiceTests {
 
         assertEquals(ModeReglementCommande.REPORTE_CHAMBRE, created.modeReglement());
         assertEquals(reservationId, created.reservationId());
-        assertNull(created.factureId(), "Pas de Facture creee tant qu'on n'a pas check-out");
         assertEquals(StatutCommande.BROUILLON, created.statut());
+        // Tour 70 : folio chambre BROUILLON materialise immediatement.
+        assertNotNull(created.factureId(),
+                "Le folio chambre doit etre materialise immediatement (Tour 70)");
 
-        // Verifie qu'aucune facture n'a ete persistee.
         TenantContext.set(hotelMrId);
         try {
-            assertEquals(0, factureRepository.count(),
-                    "Aucune facture ne doit exister pour une commande REPORTE_CHAMBRE");
+            assertEquals(1, factureRepository.count(),
+                    "Exactement 1 facture BROUILLON doit etre creee (folio chambre)");
+            var folio = factureRepository.findById(created.factureId()).orElseThrow();
+            assertEquals(StatutFacture.BROUILLON, folio.getStatut(),
+                    "Le folio reste BROUILLON jusqu'au check-out");
+            assertEquals(reservationId, folio.getReservationId(),
+                    "Le folio est rattache a la reservation");
+            assertEquals(0, folio.getMontantTtc().compareTo(BigDecimal.valueOf(1500)),
+                    "Le montant folio reflete la commande (1x 1500 MRU)");
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Test
+    @DisplayName("T5bis (Tour 70) - 2e commande REPORTE_CHAMBRE sur meme resa -> meme folio chambre (idempotence)")
+    void shouldReuseFolioForSecondReporteChambre() {
+        TenantContext.set(hotelMrId);
+        Long clientId = seedClient();
+
+        Long reservationId;
+        try {
+            TenantContext.set(hotelMrId);
+            reservationId = tx.execute(s -> {
+                Reservation r = new Reservation();
+                r.setNumeroReservation("RES-2026-MR-999998");
+                r.setClientPrincipalId(clientId);
+                r.setDateArrivee(LocalDate.now().minusDays(1));
+                r.setDateDepart(LocalDate.now().plusDays(2));
+                r.setNbAdultes(1);
+                r.setNbEnfants(0);
+                r.setStatut(StatutReservation.ARRIVEE);
+                r.setReductionPourcentage(BigDecimal.ZERO);
+                r.setMontantTotal(BigDecimal.ZERO);
+                r.setUserId(userGerant.getUserId());
+                return reservationRepository.saveAndFlush(r).getReservationId();
+            });
+        } finally {
+            TenantContext.clear();
+        }
+
+        TenantContext.set(hotelMrId);
+        ArticleMenuDto art = seedCatalogue();
+
+        CommandeDto cmd1 = tx.execute(s -> commandeService.create(new CommandeCreateDto(
+                ModeReglementCommande.REPORTE_CHAMBRE, clientId, reservationId, "MRU", null,
+                List.of(new LigneCommandeCreateDto(art.articleId(),
+                        BigDecimal.ONE, null, null)))));
+        CommandeDto cmd2 = tx.execute(s -> commandeService.create(new CommandeCreateDto(
+                ModeReglementCommande.REPORTE_CHAMBRE, clientId, reservationId, "MRU", null,
+                List.of(new LigneCommandeCreateDto(art.articleId(),
+                        BigDecimal.valueOf(2), null, null)))));
+
+        assertNotNull(cmd1.factureId());
+        assertNotNull(cmd2.factureId());
+        assertEquals(cmd1.factureId(), cmd2.factureId(),
+                "Les 2 commandes doivent partager le meme folio chambre");
+
+        TenantContext.set(hotelMrId);
+        try {
+            assertEquals(1, factureRepository.count(),
+                    "1 seul folio chambre doit exister malgre 2 commandes");
+            var folio = factureRepository.findById(cmd1.factureId()).orElseThrow();
+            // 1 article x 1500 + 2 x 1500 = 4500
+            assertEquals(0, folio.getMontantTtc().compareTo(BigDecimal.valueOf(4500)),
+                    "Le folio cumule les 2 commandes (3 articles x 1500 = 4500 MRU)");
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Test
+    @DisplayName("T5ter (Tour 70) - REPORTE_CHAMBRE sur resa avec facture prevision EMISE -> attache a cette facture")
+    void shouldAttachToExistingEmiseFacture() {
+        TenantContext.set(hotelMrId);
+        Long clientId = seedClient();
+
+        // Cree resa + facture EMISE simulant le flux Tour 44
+        // (previsionFromReservation cree la facture des nuitees a la creation).
+        Long reservationId;
+        Long factureEmiseId;
+        try {
+            TenantContext.set(hotelMrId);
+            reservationId = tx.execute(s -> {
+                Reservation r = new Reservation();
+                r.setNumeroReservation("RES-2026-MR-999997");
+                r.setClientPrincipalId(clientId);
+                r.setDateArrivee(LocalDate.now().minusDays(1));
+                r.setDateDepart(LocalDate.now().plusDays(2));
+                r.setNbAdultes(1);
+                r.setNbEnfants(0);
+                r.setStatut(StatutReservation.ARRIVEE);
+                r.setReductionPourcentage(BigDecimal.ZERO);
+                r.setMontantTotal(BigDecimal.ZERO);
+                r.setUserId(userGerant.getUserId());
+                return reservationRepository.saveAndFlush(r).getReservationId();
+            });
+            final Long resaIdFinal = reservationId;
+            factureEmiseId = tx.execute(s -> {
+                var f = new com.cityprojects.citybackend.entity.finance.Facture();
+                f.setNumeroFacture("FACT-2026-MR-000999");
+                f.setTypeFacture(com.cityprojects.citybackend.entity.finance.TypeFacture.FACTURE);
+                f.setReservationId(resaIdFinal);
+                f.setClientId(clientId);
+                f.setDateFacture(LocalDate.now());
+                f.setDevise("MRU");
+                f.setStatut(StatutFacture.EMISE);
+                f.setUserId(userGerant.getUserId());
+                Long fid = factureRepository.saveAndFlush(f).getFactureId();
+
+                // Simule la ligne NUITEE prévisionnelle (10000 MRU TTC) via SQL
+                // direct, comme l'aurait fait previsionFromReservation.
+                jdbcTemplate.update(
+                        "INSERT INTO finance.lignes_factures "
+                        + "(hotel_id, facture_id, type_ligne, libelle, quantite, prix_unitaire, taux_tva, montant_ht, montant_tva, montant_ttc) "
+                        + "VALUES (?, ?, 'NUITEE', 'Nuit prevision', 1, 10000, 0, 10000, 0, 10000)",
+                        hotelMrId, fid);
+
+                f.setMontantHt(BigDecimal.valueOf(10000));
+                f.setMontantTva(BigDecimal.ZERO);
+                f.setMontantTtc(BigDecimal.valueOf(10000));
+                return factureRepository.saveAndFlush(f).getFactureId();
+            });
+        } finally {
+            TenantContext.clear();
+        }
+
+        TenantContext.set(hotelMrId);
+        ArticleMenuDto art = seedCatalogue();
+        CommandeDto created = tx.execute(s -> commandeService.create(new CommandeCreateDto(
+                ModeReglementCommande.REPORTE_CHAMBRE, clientId, reservationId, "MRU", null,
+                List.of(new LigneCommandeCreateDto(art.articleId(),
+                        BigDecimal.ONE, null, null)))));
+
+        // La commande doit etre attachee a la facture EMISE existante (pas un
+        // nouveau folio).
+        assertEquals(factureEmiseId, created.factureId(),
+                "La commande doit etre attachee a la facture EMISE existante");
+
+        TenantContext.set(hotelMrId);
+        try {
+            assertEquals(1, factureRepository.count(),
+                    "Pas de 2e facture creee : la commande s'attache a celle existante");
+            var f = factureRepository.findById(factureEmiseId).orElseThrow();
+            assertEquals(StatutFacture.EMISE, f.getStatut(),
+                    "Le statut EMISE est preserve");
+            // 10000 (prevision) + 1500 (commande) = 11500
+            assertEquals(0, f.getMontantTtc().compareTo(BigDecimal.valueOf(11500)),
+                    "Le montant TTC est cumule (prevision + commande)");
         } finally {
             TenantContext.clear();
         }
