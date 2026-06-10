@@ -6,9 +6,11 @@ import com.cityprojects.citybackend.dto.finance.PaiementDto;
 import com.cityprojects.citybackend.dto.inventory.BonSortieCreateDto;
 import com.cityprojects.citybackend.dto.inventory.BonSortieDto;
 import com.cityprojects.citybackend.dto.inventory.LigneBonSortieCreateDto;
+import com.cityprojects.citybackend.dto.finance.LigneServiceCreateRequest;
 import com.cityprojects.citybackend.dto.restaurant.CommandeCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.CommandeDto;
 import com.cityprojects.citybackend.dto.restaurant.EncaissementCommandeDto;
+import com.cityprojects.citybackend.dto.restaurant.EncaissementServiceDto;
 import com.cityprojects.citybackend.dto.restaurant.LigneCommandeCreateDto;
 import com.cityprojects.citybackend.dto.restaurant.LigneCommandeDto;
 import com.cityprojects.citybackend.entity.finance.StatutFacture;
@@ -420,14 +422,43 @@ public class CommandeServiceImpl implements CommandeService {
         if (commande.getFactureId() != null) {
             throw new BusinessException("error.commande.encaissement.dejaFacturee");
         }
-        if (dto.montant().compareTo(commande.getMontantTtc()) != 0) {
+
+        // Tour 70 : services hoteliers du panier mixte. Le montant attendu est
+        // la somme commande (articles) + somme services.
+        List<EncaissementServiceDto> services = dto.services() != null
+                ? dto.services()
+                : List.of();
+        BigDecimal totalServices = BigDecimal.ZERO;
+        for (EncaissementServiceDto svc : services) {
+            BigDecimal pu = svc.prixUnitaire() != null ? svc.prixUnitaire() : BigDecimal.ZERO;
+            totalServices = totalServices.add(svc.quantite().multiply(pu));
+        }
+        BigDecimal totalAttendu = commande.getMontantTtc()
+                .add(totalServices)
+                .setScale(2, RoundingMode.HALF_UP);
+        if (dto.montant().setScale(2, RoundingMode.HALF_UP).compareTo(totalAttendu) != 0) {
             throw new BusinessException("error.commande.encaissement.montantIncorrect");
         }
 
         // 1) Cree la Facture (lignes COMMANDE, statut EMISE) via FactureService.
         var facture = factureService.fromCommande(commandeId);
 
-        // 2) Cree le Paiement (statut VALIDE) avec affectation directe a la facture.
+        // 2) Tour 70 : ajoute les lignes SERVICE a la facture deja EMISE
+        //    (addLigneService passe un DEBIT complementaire au compte client pour
+        //    le delta — coherent avec le bridge ServiceHotelier).
+        for (EncaissementServiceDto svc : services) {
+            factureService.addLigneService(new LigneServiceCreateRequest(
+                    svc.serviceId(),
+                    /* reservationId */ null,
+                    facture.factureId(),
+                    svc.quantite(),
+                    svc.prixUnitaire(),
+                    svc.libelle(),
+                    /* tauxTva */ BigDecimal.ZERO));
+        }
+
+        // 3) Cree le Paiement (statut VALIDE) avec affectation directe a la facture.
+        //    Le montant solde la totalite (articles + services).
         PaiementCreateDto paiementDto = new PaiementCreateDto(
                 /* compteId */ null,
                 /* factureId */ facture.factureId(),
@@ -439,16 +470,17 @@ public class CommandeServiceImpl implements CommandeService {
                 /* commentaires */ "Encaissement commande " + commande.getNumeroCommande());
         PaiementDto paiement = paiementService.create(paiementDto);
 
-        // 3) Met a jour la commande : factureId est deja pose par FactureService.fromCommande(),
-        //    on rafraichit puis on positionne montantPaye.
+        // 4) Met a jour la commande : factureId est deja pose par FactureService.fromCommande(),
+        //    on rafraichit puis on positionne montantPaye. montantPaye reflete uniquement
+        //    la part articles (la commande ne porte que ses LigneCommande).
         Commande refreshed = commandeRepository.findById(commandeId)
                 .orElseThrow(() -> new BusinessException("error.commande.notFound"));
-        refreshed.setMontantPaye(dto.montant());
+        refreshed.setMontantPaye(commande.getMontantTtc());
         commandeRepository.save(refreshed);
 
-        logger.info("Commande id={} encaissee comptant : facture={}, paiement={}, mode={}, montant={}",
+        logger.info("Commande id={} encaissee comptant : facture={}, paiement={}, mode={}, montant={} (articles={} + services={})",
                 commandeId, facture.factureId(), paiement.paiementId(),
-                dto.modePaiement(), dto.montant());
+                dto.modePaiement(), dto.montant(), commande.getMontantTtc(), totalServices);
 
         return toDtoWithLignes(refreshed);
     }

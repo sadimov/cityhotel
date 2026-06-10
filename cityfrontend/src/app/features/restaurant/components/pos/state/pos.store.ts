@@ -856,13 +856,28 @@ export class PosStore extends ComponentStore<PosState> {
             this.setError('restaurant.pos.errors.invalidPayload');
             return of(null);
           }
+          // Tour 70 : extrait les lignes SERVICE du panier pour les ajouter
+          // à la facture créée par encaisserComptant côté backend. Le total
+          // payé inclut articles + services.
+          const serviceLines = state.cart.filter(
+            (l) => l.type === 'SERVICE' && l.serviceId != null,
+          );
+          const encaissementEnrichi: EncaissementCommandeRequest = {
+            ...encaissement,
+            services: serviceLines.map((l) => ({
+              serviceId: l.serviceId as number,
+              quantite: l.quantite,
+              prixUnitaire: l.prixUnitaire,
+              libelle: l.libelle,
+            })),
+          };
           return this.commandesService.create(createPayload).pipe(
             switchMap((commande) => {
               if (commande.commandeId == null) {
                 return of<Commande | null>(null);
               }
               return this.commandesService
-                .encaisserComptant(commande.commandeId, encaissement)
+                .encaisserComptant(commande.commandeId, encaissementEnrichi)
                 .pipe(catchError(() => of<Commande | null>(null)));
             }),
             tap((commande: Commande | null) => {

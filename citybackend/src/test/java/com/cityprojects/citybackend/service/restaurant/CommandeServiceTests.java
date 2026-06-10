@@ -310,7 +310,7 @@ class CommandeServiceTests {
 
         CommandeDto encaissee = tx.execute(s -> commandeService.encaisserComptant(
                 created.commandeId(),
-                new EncaissementCommandeDto(ModePaiement.BANKILY, total, "REF-BNK-001")));
+                new EncaissementCommandeDto(ModePaiement.BANKILY, total, "REF-BNK-001", null)));
 
         // commande.factureId pointe sur la facture creee
         assertNotNull(encaissee.factureId(), "factureId doit etre renseigne apres encaissement");

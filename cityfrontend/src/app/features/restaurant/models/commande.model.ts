@@ -177,10 +177,23 @@ export interface CreerLigneCommandeRequest {
  * `commentaires` est conservé en TS pour usage UI local (passé à Swal2 etc.)
  * mais n'est PAS sérialisé dans le payload backend.
  */
+export interface EncaissementServicePayload {
+  serviceId: number;
+  quantite: number;
+  prixUnitaire: number;
+  libelle?: string;
+}
+
 export interface EncaissementCommandeRequest {
   modePaiement: string;
   montant: number;
   referencePaiement?: string;
+  /**
+   * Tour 70 — services hôteliers du panier mixte, ajoutés à la facture créée
+   * par `encaisserComptant` avant le paiement. Garantit que la facture
+   * imprimée contient articles + services.
+   */
+  services?: EncaissementServicePayload[];
   /** Local-only — ne PAS envoyer au backend. */
   commentaires?: string;
 }
