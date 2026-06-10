@@ -152,10 +152,13 @@ public class FactureController {
      * resolue soit par {@code factureId}, soit par {@code reservationId}
      * (derniere facture non terminale rattachee a la reservation).</p>
      *
-     * <p>Roles : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC.</p>
+     * <p>Roles : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC, RESTAURANT.
+     * RESTAURANT ajoute au Tour 70 : le POS pousse les lignes SERVICE
+     * d'un panier mixte (articles + services hoteliers) sur la facture
+     * chambre via cet endpoint lors d'un "Mettre sur facture chambre".</p>
      */
     @PostMapping("/lignes-service")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<LigneFactureDto> addLigneService(
             @Valid @RequestBody LigneServiceCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.addLigneService(request));
