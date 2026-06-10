@@ -234,7 +234,7 @@
           type="button"
           class="btn btn-success pos-cart__checkout"
           [disabled]="!canCheckout || submitting"
-          (click)="onCheckoutComptant(total)"
+          (click)="onCheckoutComptant(articleTotal)"
         >
           @if (submitting) {
             <span class="spinner-border spinner-border-sm me-2"></span>
@@ -245,7 +245,7 @@
             {{ 'restaurant.pos.cart.checkout' | translate }}
           </span>
           <span class="pos-cart__checkout-amount">
-            {{ total | number:'1.0-0' }}
+            {{ articleTotal | number:'1.0-0' }}
             {{ 'restaurant.pos.currency' | translate }}
           </span>
         </button>
