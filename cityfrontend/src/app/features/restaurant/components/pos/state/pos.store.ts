@@ -10,6 +10,7 @@ import {
 } from 'rxjs/operators';
 
 import { Client } from '../../../../clients/models/client.model';
+import { FacturesService } from '../../../../finance/services/factures.service';
 import {
   Reservation,
   StatutReservation,
@@ -186,6 +187,7 @@ export class PosStore extends ComponentStore<PosState> {
     private readonly ticketsService: TicketsService,
     private readonly servicesHoteliersService: ServicesHoteliersService,
     private readonly ligneServiceService: LigneServiceService,
+    private readonly facturesService: FacturesService,
   ) {
     super(INITIAL_STATE);
   }
@@ -872,6 +874,13 @@ export class PosStore extends ComponentStore<PosState> {
               this.setLastCommande(commande);
               this.setSuccess('restaurant.pos.messages.encaissementSuccess');
               this.setSubmitting(false);
+              // Tour 70 : impression automatique de la facture sur place.
+              // Side-effect non bloquant — si le PDF échoue, l'encaissement
+              // reste valide et l'utilisateur peut réimprimer depuis le détail
+              // facture.
+              if (commande.factureId != null) {
+                this.printFactureAtCheckout(commande.factureId);
+              }
               this.resetAfterCheckout();
             }),
             catchError(() => {
@@ -1055,6 +1064,35 @@ export class PosStore extends ComponentStore<PosState> {
     } catch {
       this.setError('restaurant.pos.errors.ticketDecode');
     }
+  }
+
+  /**
+   * Tour 70 - recupere le PDF facture conforme Mauritanie (Bloc B6) et
+   * l'ouvre dans une nouvelle fenetre pour impression immediate, juste
+   * apres l'encaissement comptant. Side-effect non bloquant : si le PDF
+   * echoue, l'encaissement reste valide (reimpression possible depuis le
+   * detail facture).
+   */
+  private printFactureAtCheckout(factureId: number): void {
+    this.facturesService.downloadPdf(factureId).subscribe({
+      next: (blob: Blob) => {
+        const blobUrl = URL.createObjectURL(blob);
+        const w = window.open(blobUrl, '_blank');
+        if (w) {
+          w.addEventListener('load', () => {
+            try {
+              w.print();
+            } catch {
+              /* impression manuelle possible depuis la fenetre */
+            }
+          });
+        }
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+      },
+      error: () => {
+        /* echec PDF non bloquant - encaissement deja valide */
+      },
+    });
   }
 
   /**

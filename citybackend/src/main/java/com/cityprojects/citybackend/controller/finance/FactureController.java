@@ -176,10 +176,12 @@ public class FactureController {
      * PAYEE, ANNULEE) - un filigrane diagonal est pose pour les statuts non
      * opposables (BROUILLON, ANNULEE).</p>
      *
-     * <p>Roles : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC.</p>
+     * <p>Roles : SUPERADMIN, ADMIN, GERANT, RECEPTION, RESREC, RESTAURANT.
+     * RESTAURANT ajoute au Tour 70 : le POS imprime la facture immediatement
+     * apres encaissement comptant (printFactureAtCheckout cote PosStore).</p>
      */
     @GetMapping("/{id}/pdf")
-    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','RESTAURANT')")
     public ResponseEntity<byte[]> getPdf(@PathVariable("id") Long id) {
         // Tour 39 : recupere la facture d'abord pour avoir le numero dans le
         // filename - le findById applique deja le filtre tenant, donc une
