@@ -29,8 +29,8 @@ import java.util.List;
  * <p>Les heures sont configurables via les propriétés Spring (valeurs par
  * défaut entre parenthèses) :</p>
  * <pre>
- *   city.night-audit.alert-cron = "0 57 11 * * *"   (11:57)
- *   city.night-audit.run-cron   = "0 0 12 * * *"    (12:00)
+ *   city.night-audit.alert-cron = "0 7 23 * * *"    (23:07)
+ *   city.night-audit.run-cron   = "0 10 23 * * *"   (23:10)
  *   city.night-audit.timezone   = "Africa/Nouakchott"
  * </pre>
  *
@@ -80,11 +80,11 @@ public class NightAuditScheduler {
      * Alerte 3 minutes avant l'heure du night audit.
      *
      * <p>Cron paramétrable via {@code city.night-audit.alert-cron} (défaut
-     * {@code 0 57 11 * * *} = 11:57). Pour désactiver : mettre la valeur
+     * {@code 0 7 23 * * *} = 23:07). Pour désactiver : mettre la valeur
      * spéciale {@code -} (Spring scheduler ignore le cron).</p>
      */
     @Scheduled(
-            cron = "${city.night-audit.alert-cron:0 57 11 * * *}",
+            cron = "${city.night-audit.alert-cron:0 7 23 * * *}",
             zone = "${city.night-audit.timezone:Africa/Nouakchott}")
     public void alertThreeMinutesBefore() {
         logger.info("Scheduler night audit : alerte 3 minutes avant heure cible");
@@ -97,13 +97,13 @@ public class NightAuditScheduler {
      * ADMIN/SUPERADMIN/NIGHTAUDIT.
      *
      * <p>Cron paramétrable via {@code city.night-audit.run-cron} (défaut
-     * {@code 0 0 12 * * *} = 12:00). Pour test rapide : passer une expression
+     * {@code 0 10 23 * * *} = 23:10). Pour test rapide : passer une expression
      * type {@code 0 *&#47;2 * * * *} (toutes les 2 minutes).</p>
      */
     @Scheduled(
-            cron = "${city.night-audit.run-cron:0 0 12 * * *}",
+            cron = "${city.night-audit.run-cron:0 10 23 * * *}",
             zone = "${city.night-audit.timezone:Africa/Nouakchott}")
-    public void notifyAdminAtNoon() {
+    public void notifyAdminAtTargetTime() {
         logger.info("Scheduler night audit : notification admins (heure cible atteinte)");
         forEachActiveHotel(hotel ->
                 notificationService.notifyAdminsForLaunch(hotel.getHotelId()));
