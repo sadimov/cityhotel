@@ -93,6 +93,7 @@ import { ChambresService } from '../../services/chambres.service';
 import { FolioService } from '../../services/folio.service';
 import { NuiteesModifService } from '../../services/nuitees-modif.service';
 import { PaiementsService } from '../../services/paiements.service';
+import { FacturesService } from '../../../finance/services/factures.service';
 import { PaiementsRecapService } from '../../services/paiements-recap.service';
 import { ReservationsService } from '../../services/reservations.service';
 import { TarifChambreService } from '../../services/tarif-chambre.service';
@@ -430,6 +431,7 @@ export class ReservationsCalendarComponent
     private readonly tarifChambreService: TarifChambreService,
     private readonly paiementsRecapService: PaiementsRecapService,
     private readonly paiementsService: PaiementsService,
+    private readonly facturesService: FacturesService,
     private readonly nuiteesModifService: NuiteesModifService,
     private readonly folioService: FolioService,
     private readonly calendarLive: CalendarLiveService,
@@ -906,6 +908,9 @@ export class ReservationsCalendarComponent
           .subscribe({
             next: () => {
               this.toastSuccess('hebergement.calendar.checkOutSuccess');
+              // Tour 71 — facture soldée : on ouvre directement le PDF
+              // (impression/téléchargement).
+              this.printFactureAfterCheckout(r.reservationId!);
               this.loadReservations();
             },
             error: (err: HttpErrorResponse) =>
@@ -913,6 +918,64 @@ export class ReservationsCalendarComponent
           });
       },
     );
+  }
+
+  /**
+   * Tour 71 — récupère le PDF facture (Bloc B6) et l'ouvre dans une nouvelle
+   * fenêtre pour impression / téléchargement, déclenchée après un check-out
+   * (standard ou express). Side-effect non bloquant : si la facture est
+   * absente ou la génération échoue, le check-out reste valide.
+   *
+   * Le PDF couvre les 5 statuts de facture (BROUILLON, EMISE, PARTIELLEMENT_PAYEE,
+   * PAYEE, ANNULEE) avec filigrane diagonal pour les non opposables — donc le
+   * check-out express imprime un document même en cas de solde partiel/impayé.
+   *
+   * Résolution de la facture cible : on interroge paiements-recap pour
+   * trouver la facture principale (non ANNULEE, la plus récente). Le
+   * ReservationDto backend n'expose pas factureId, donc ce détour est nécessaire.
+   */
+  private printFactureAfterCheckout(reservationId: number): void {
+    this.paiementsRecapService
+      .getRecapForReservation(reservationId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (recap) => {
+          const factures = (recap?.factures ?? [])
+            .filter((f) => f.statut !== 'ANNULEE')
+            .sort((a, b) => (b.factureId ?? 0) - (a.factureId ?? 0));
+          if (factures.length === 0) return;
+          this.openFacturePdf(factures[0].factureId);
+        },
+        error: () => {
+          /* échec récap non bloquant — check-out déjà acté */
+        },
+      });
+  }
+
+  /** Tour 71 — fetch PDF facture + ouverture nouvelle fenêtre + window.print. */
+  private openFacturePdf(factureId: number): void {
+    this.facturesService
+      .downloadPdf(factureId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob: Blob) => {
+          const blobUrl = URL.createObjectURL(blob);
+          const w = window.open(blobUrl, '_blank');
+          if (w) {
+            w.addEventListener('load', () => {
+              try {
+                w.print();
+              } catch {
+                /* impression manuelle / téléchargement possibles depuis la fenêtre */
+              }
+            });
+          }
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+        },
+        error: () => {
+          /* échec PDF non bloquant */
+        },
+      });
   }
 
   ctxPayments(): void {
@@ -2263,6 +2326,10 @@ export class ReservationsCalendarComponent
         .subscribe({
           next: () => {
             this.toastSuccess('hebergement.calendar.payments.checkoutExpress.success');
+            // Tour 71 — check-out express : imprimer la facture quel que
+            // soit son état de paiement (impayée, partielle, ou soldée).
+            // Le filigrane Bloc B6 marque les statuts non opposables.
+            this.printFactureAfterCheckout(r.reservationId!);
             this.closeCheckoutExpressPanel();
             this.closePaymentsModal();
             this.loadReservations();
