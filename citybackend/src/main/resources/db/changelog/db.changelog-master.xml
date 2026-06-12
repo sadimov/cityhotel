@@ -396,8 +396,15 @@
 	<!-- 062 - Suivi structure de l'annulation (motif + date + auteur) sur
            hebergement.reservations. Remplace progressivement la concatenation
            textuelle dans `commentaires`. Toutes nullable (retro-compat). -->
-     <include file="db/changelog/changes/062-add-annulation-tracking-reservations.xml"/>
-	  
+    <include file="db/changelog/changes/062-add-annulation-tracking-reservations.xml"/>
+	
+	<!-- 063 - Table hebergement.journee_hoteliere : matérialise la journée
+           hôtelière (distincte du jour calendrier) et porte l'état OUVERTE /
+           CLOTURE_EN_COURS / CLOTUREE consommé par NightAuditLockFilter pour
+           bloquer les writes pendant l'exécution du night audit. Garde
+           applicative complétée par UNIQUE index partiel Postgres (skip H2). -->
+    <include file="db/changelog/changes/063-create-journee-hoteliere.xml"/>
+	
     <!--
     TODO Tour 5B+ : auditer le contenu des fichiers data/*.sql et créer les changesets correspondants.
        - db/changelog/data/donnees-referentielles.sql
