@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  Table hebergement.journee_hoteliere - matérialise la "journée hôtelière"
+  (cf. règles_night_audit.txt §1).
+
+  La journée hôtelière est une notion comptable distincte du jour calendrier :
+  elle reste ouverte tant que le night audit n'a pas tourné, même si la date
+  calendaire change. Tout endpoint métier qui interrogeait LocalDate.now()
+  doit progressivement passer par HotelDayService.currentDate().
+
+  États (colonne `etat`) :
+    - OUVERTE          : journée en cours, opérations métier autorisées
+    - CLOTURE_EN_COURS : NightAuditService.run() actif, opérations writes
+                         REJETÉES en 423 par NightAuditLockFilter
+    - CLOTUREE         : journée historique, archive (jamais modifiable)
+
+  Garanties :
+    - UNIQUE (hotel_id, date_hotel)        : pas de doublon de journée
+    - UNIQUE PARTIAL sur (hotel_id) WHERE
+      etat IN ('OUVERTE','CLOTURE_EN_COURS') : une seule journée active par
+      hôtel à un instant donné (Postgres-only, garde applicative en complément
+      pour H2)
+    - CHECK (hotel_id > 0)                 : sentinel ROOT (0) interdit
+    - CHECK etat IN (...)                  : valeurs énum applicatives
+
+  @Version : optimistic locking sur les transitions startClosure /
+  completeClosure / abortClosure (deux admins ne peuvent pas lancer le NA
+  en même temps).
+
+  Bootstrap : la première journée OUVERTE est créée par HotelDayService au
+  premier appel pour chaque hôtel (date_hotel = LocalDate.now()). Pas de seed
+  Liquibase nécessaire (les hôtels actifs sont chargés à la demande).
+  ============================================================================
+-->
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="063-1-create-journee-hoteliere" author="cityteam">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists schemaName="hebergement" tableName="journee_hoteliere"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="journee_hoteliere" schemaName="hebergement">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" primaryKeyName="pk_journee_hoteliere" nullable="false"/>
+            </column>
+            <column name="hotel_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="date_hotel" type="DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="etat" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="opened_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="closed_at" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="true"/>
+            </column>
+            <column name="closed_by_user_id" type="BIGINT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="version" type="BIGINT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="VARCHAR(80)"/>
+            <column name="updated_by" type="VARCHAR(80)"/>
+        </createTable>
+
+        <addUniqueConstraint
+                tableName="journee_hoteliere"
+                schemaName="hebergement"
+                columnNames="hotel_id, date_hotel"
+                constraintName="uk_journee_hoteliere_hotel_date"/>
+
+        <addForeignKeyConstraint
+                baseTableName="journee_hoteliere"
+                baseTableSchemaName="hebergement"
+                baseColumnNames="hotel_id"
+                referencedTableName="hotels"
+                referencedTableSchemaName="core"
+                referencedColumnNames="hotel_id"
+                constraintName="fk_journee_hoteliere_hotel"/>
+
+        <createIndex tableName="journee_hoteliere" schemaName="hebergement"
+                     indexName="ix_journee_hoteliere_hotel_etat">
+            <column name="hotel_id"/>
+            <column name="etat"/>
+        </createIndex>
+
+        <sql>
+            ALTER TABLE hebergement.journee_hoteliere
+            ADD CONSTRAINT chk_journee_hoteliere_hotel_id_positive CHECK (hotel_id &gt; 0)
+        </sql>
+
+        <sql>
+            ALTER TABLE hebergement.journee_hoteliere
+            ADD CONSTRAINT chk_journee_hoteliere_etat
+            CHECK (etat IN ('OUVERTE', 'CLOTURE_EN_COURS', 'CLOTUREE'))
+        </sql>
+
+        <rollback>
+            <dropTable tableName="journee_hoteliere" schemaName="hebergement"/>
+        </rollback>
+    </changeSet>
+
+    <!--
+      Garde Postgres-only : une seule journée "active" par hôtel à un instant t.
+      Sur H2, l'index partiel n'existe pas — la garde reste applicative
+      (HotelDayService valide qu'aucune journée active n'existe avant insert).
+    -->
+    <changeSet id="063-2-unique-active-day-postgres" author="cityteam" dbms="postgresql">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">
+                SELECT COUNT(*) FROM pg_indexes
+                WHERE schemaname = 'hebergement'
+                  AND indexname  = 'uk_journee_hoteliere_hotel_actif'
+            </sqlCheck>
+        </preConditions>
+
+        <sql>
+            CREATE UNIQUE INDEX uk_journee_hoteliere_hotel_actif
+            ON hebergement.journee_hoteliere(hotel_id)
+            WHERE etat IN ('OUVERTE', 'CLOTURE_EN_COURS')
+        </sql>
+
+        <rollback>
+            <sql>DROP INDEX IF EXISTS hebergement.uk_journee_hoteliere_hotel_actif</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

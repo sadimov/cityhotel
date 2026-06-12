@@ -2,6 +2,7 @@ package com.cityprojects.citybackend.config;
 
 import com.cityprojects.citybackend.security.JwtAuthenticationEntryPoint;
 import com.cityprojects.citybackend.security.JwtAuthenticationFilter;
+import com.cityprojects.citybackend.security.NightAuditLockFilter;
 import com.cityprojects.citybackend.security.RateLimitFilter;
 import com.cityprojects.citybackend.security.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,6 +57,9 @@ public class SecurityConfig {
 
     @Autowired
     private RateLimitFilter rateLimitFilter;
+
+    @Autowired
+    private NightAuditLockFilter nightAuditLockFilter;
 
     /**
      * Configuration CORS chargée depuis {@code app.cors.*} via
@@ -173,6 +177,10 @@ public class SecurityConfig {
         // 429 doivent court-circuiter avant la validation JWT (sinon DoS via JWT parse).
         http.addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // NightAuditLockFilter APRÈS JwtAuthenticationFilter : on a besoin de
+        // TenantContext positionné pour décider si l'hôtel est en clôture.
+        // Rejette les writes en 423 Locked pendant CLOTURE_EN_COURS.
+        http.addFilterAfter(nightAuditLockFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }

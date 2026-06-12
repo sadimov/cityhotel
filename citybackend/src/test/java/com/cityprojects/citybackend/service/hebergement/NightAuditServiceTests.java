@@ -142,6 +142,9 @@ class NightAuditServiceTests {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private NightAuditLockRegistry lockRegistry;
+
     private TransactionTemplate transactionTemplate;
     private Long hotelMrId;
     private Long hotelFrId;
@@ -270,12 +273,18 @@ class NightAuditServiceTests {
         jdbcTemplate.update("DELETE FROM hebergement.reservations");
         jdbcTemplate.update("DELETE FROM hebergement.chambres");
         jdbcTemplate.update("DELETE FROM hebergement.types_chambres");
+        jdbcTemplate.update("DELETE FROM hebergement.journee_hoteliere");
         jdbcTemplate.update("DELETE FROM client.clients");
         jdbcTemplate.update("DELETE FROM client.societes");
         jdbcTemplate.update("DELETE FROM finance.numerotation_sequence");
         jdbcTemplate.update("DELETE FROM core.dbusers");
         jdbcTemplate.update("DELETE FROM core.hotels");
         jdbcTemplate.update("DELETE FROM core.roles");
+        // Reset le registry mémoire — un test précédent qui plante avant
+        // completeClosure() laisserait l'hôtel verrouillé sinon.
+        if (lockRegistry != null) {
+            lockRegistry.snapshot().forEach(lockRegistry::unlock);
+        }
     }
 
     /**

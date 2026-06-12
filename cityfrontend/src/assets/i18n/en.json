@@ -2311,6 +2311,10 @@
     "server": {
       "unavailable": "Server temporarily unavailable."
     },
+    "nightAudit": {
+      "inProgress": "Night audit is in progress, write operations are temporarily blocked. Please retry shortly.",
+      "alreadyRunning": "Night audit is already running for this hotel."
+    },
     "reservation": {
       "chambre": {
         "conflict": "The room is already booked for the requested date range."

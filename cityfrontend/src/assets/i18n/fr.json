@@ -2388,6 +2388,10 @@
     "server": {
       "unavailable": "Le serveur est temporairement indisponible."
     },
+    "nightAudit": {
+      "inProgress": "Le night audit est en cours, les opérations modifiantes sont temporairement bloquées. Veuillez réessayer dans quelques instants.",
+      "alreadyRunning": "Le night audit est déjà en cours d'exécution pour cet hôtel."
+    },
     "reservation": {
       "chambre": {
         "conflict": "La chambre est déjà réservée sur la plage demandée."
