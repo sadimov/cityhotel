@@ -338,11 +338,18 @@ export class BonCommandeFormComponent implements OnInit, OnDestroy {
   // ────────────────────────────────────────────────────────────────────────
 
   private buildForm(): FormGroup {
-    // dateCommande retiré du form (le backend la pose à now() automatiquement
-    // côté BonCommandeService.create — pas dans BonCommandeCreateDto).
+    // dateCommande : non envoyé au backend (BonCommandeCreateDto ne l'accepte
+    // pas — le service pose now() automatiquement à la création). MAIS le
+    // template a un <input formControlName="dateCommande"> pour afficher la
+    // date en édition. Sans ce control, Angular jetait
+    // "Cannot find control with name: 'dateCommande'" et cassait l'attache
+    // des SelectControlValueAccessor (symptôme : noms des fournisseurs
+    // invisibles dans le dropdown, bloc des lignes non rendu jusqu'à
+    // re-binding via interaction utilisateur).
     return this.fb.group({
       numeroBon: [''],
       fournisseurId: [null, [Validators.required]],
+      dateCommande: [{ value: '', disabled: true }],
       dateLivraisonPrevue: [''],
       commentaires: [''],
       lignes: this.fb.array<FormGroup>([this.buildLigne()]),
