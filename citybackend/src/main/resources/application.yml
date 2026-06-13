@@ -221,11 +221,11 @@ city:
   night-audit:
     # Alerte 3 min avant l'heure cible (broadcast tous les utilisateurs connectÃ©s).
     # Format Spring cron : "sec min hour day month dayOfWeek". Mettre "-" pour dÃ©sactiver.
-    alert-cron: "0 57 11 * * *"
+    alert-cron: "0 7 23 * * *"
     # Heure cible : ouvre la modale de lancement chez les ADMIN/SUPERADMIN/NIGHTAUDIT.
     # Test rapide : "0 */2 * * * *" = toutes les 2 minutes
     # Test trÃ¨s rapide : "0 * * * * *" = toutes les minutes
-    run-cron: "0 0 12 * * *"
+    run-cron: "0 10 23 * * *"
     # Midi Temps Universel (GMT / UTC) â€” consigne user 2026-05-17.
     # ZoneId.of("UTC") Ã©quivaut Ã  GMT (offset fixe +00:00, pas de DST).
     timezone: UTC
