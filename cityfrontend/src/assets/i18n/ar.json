@@ -554,7 +554,7 @@
         },
         "result": {
           "title": "تم الإقفال",
-          "text": "{{nbNoShow}} حجز عدم حضور · {{nbNuitees}} ليلة تم توليدها"
+          "text": "{{nbCheckOut}} تسجيل خروج عادي · {{nbCheckOutExpress}} تسجيل خروج سريع · {{nbNoShow}} عدم حضور · {{nbNuitees}} ليلة تم توليدها · {{nbErreurs}} خطأ"
         },
         "retard": {
           "title": "تسجيلات وصول متأخرة",

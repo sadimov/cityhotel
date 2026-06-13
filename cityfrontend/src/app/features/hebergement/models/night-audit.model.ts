@@ -18,10 +18,16 @@ export interface NightAuditResultDto {
   hotelId: number;
   /** Date hôtelière du run, format `YYYY-MM-DD` (LocalDate sérialisé). */
   dateExecution: string;
-  /** Nombre de réservations CONFIRMEE basculées en NO_SHOW. */
+  /** Nombre de réservations CONFIRMEE basculées en NO_SHOW (incluant les arrivées du jour non check-in). */
   nbReservationsMarkedNoShow: number;
   /** Nombre de nuitées manquantes générées pour les séjours ARRIVEE. */
   nbNuiteesManquantesGenerees: number;
+  /** Nombre de départs du jour passés en PARTIE via check-out standard (payé OU dette résiduelle B2C). */
+  nbCheckOutAuto: number;
+  /** Nombre de départs du jour passés en PARTIE via check-out express B2B (transfert client→société). */
+  nbCheckOutExpressAuto: number;
+  /** Nombre d'erreurs par-réservation rencontrées (loggées côté serveur, n'interrompent pas le run). */
+  nbErreurs: number;
   /** Horodatage technique de fin d'exécution (ISO 8601). */
   executedAt: string;
 }

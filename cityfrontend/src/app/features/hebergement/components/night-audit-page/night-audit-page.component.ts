@@ -515,6 +515,9 @@ export class NightAuditPageComponent implements OnInit, OnDestroy {
       {
         nbNoShow: dto.nbReservationsMarkedNoShow,
         nbNuitees: dto.nbNuiteesManquantesGenerees,
+        nbCheckOut: dto.nbCheckOutAuto,
+        nbCheckOutExpress: dto.nbCheckOutExpressAuto,
+        nbErreurs: dto.nbErreurs,
       },
     );
     // Fallback hardcodé si la clé n'existe pas (ngx-translate renvoie la clé
@@ -522,7 +525,10 @@ export class NightAuditPageComponent implements OnInit, OnDestroy {
     const safeText =
       summary && summary !== 'hebergement.nightAudit.page.result.text'
         ? summary
-        : `${dto.nbReservationsMarkedNoShow} réservation(s) NO_SHOW · ${dto.nbNuiteesManquantesGenerees} nuitée(s) générée(s)`;
+        : `${dto.nbCheckOutAuto + dto.nbCheckOutExpressAuto} check-out(s) auto · `
+          + `${dto.nbReservationsMarkedNoShow} NO_SHOW · `
+          + `${dto.nbNuiteesManquantesGenerees} nuitée(s) générée(s)`
+          + (dto.nbErreurs > 0 ? ` · ${dto.nbErreurs} erreur(s)` : '');
     Swal.fire({
       icon: 'success',
       title: this.i18n.translate(

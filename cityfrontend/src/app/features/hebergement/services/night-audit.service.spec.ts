@@ -29,6 +29,9 @@ describe('NightAuditService', () => {
       dateExecution: '2026-05-11',
       nbReservationsMarkedNoShow: 2,
       nbNuiteesManquantesGenerees: 5,
+      nbCheckOutAuto: 3,
+      nbCheckOutExpressAuto: 1,
+      nbErreurs: 0,
       executedAt: '2026-05-11T10:47:00Z',
     };
     let received: NightAuditResultDto | null = null;

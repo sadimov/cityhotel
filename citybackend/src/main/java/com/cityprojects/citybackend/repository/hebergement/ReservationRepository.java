@@ -75,6 +75,15 @@ public interface ReservationRepository
     List<Reservation> findByStatutAndDateArriveeBefore(StatutReservation statut, LocalDate date);
 
     /**
+     * Reservations dans un statut donne dont la dateArrivee est anterieure ou egale
+     * a la date fournie. Utilise par le night audit (en plus du NO_SHOW classique
+     * sur le passe, traite les arrivees du jour qui ne sont pas en {@code ARRIVEE}).
+     *
+     * <p>Hibernate ajoute automatiquement {@code AND hotel_id = ?} via {@code @TenantId}.</p>
+     */
+    List<Reservation> findByStatutAndDateArriveeLessThanEqual(StatutReservation statut, LocalDate date);
+
+    /**
      * Reservations dans un statut donne (typiquement {@code ARRIVEE}, sejour en cours).
      * Tour 13 - utilise pour generer les nuitees manquantes en cas de trou.
      *

@@ -554,7 +554,7 @@
         },
         "result": {
           "title": "Closing completed",
-          "text": "{{nbNoShow}} NO_SHOW reservation(s) · {{nbNuitees}} night(s) generated"
+          "text": "{{nbCheckOut}} standard check-out(s) · {{nbCheckOutExpress}} express check-out(s) · {{nbNoShow}} NO_SHOW · {{nbNuitees}} night(s) generated · {{nbErreurs}} error(s)"
         },
         "retard": {
           "title": "Late check-ins",

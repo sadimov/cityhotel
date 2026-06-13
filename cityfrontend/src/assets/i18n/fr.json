@@ -631,7 +631,7 @@
         },
         "result": {
           "title": "Clôture effectuée",
-          "text": "{{nbNoShow}} réservation(s) NO_SHOW · {{nbNuitees}} nuitée(s) générée(s)"
+          "text": "{{nbCheckOut}} check-out(s) standard · {{nbCheckOutExpress}} check-out(s) express · {{nbNoShow}} NO_SHOW · {{nbNuitees}} nuitée(s) générée(s) · {{nbErreurs}} erreur(s)"
         },
         "retard": {
           "title": "Check-ins en retard",
