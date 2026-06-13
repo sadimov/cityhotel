@@ -4,6 +4,7 @@ import { of, Subject } from 'rxjs';
 import { catchError, finalize, takeUntil } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 
+import { AuthService } from '../../../../services/auth.service';
 import { TranslationService } from '../../../../services/translation.service';
 import { PageResponse } from '../../models/api.model';
 import {
@@ -47,7 +48,17 @@ export class ServicesHoteliersListComponent implements OnInit, OnDestroy {
     private readonly typesService: TypesServicesHoteliersService,
     private readonly router: Router,
     private readonly i18n: TranslationService,
+    private readonly authService: AuthService,
   ) {}
+
+  /**
+   * Vrai si l'utilisateur a le droit de créer / modifier / supprimer un
+   * service hôtelier. Aligné sur l'inventory-routing.module.ts WRITE_ROLES
+   * et sur ServiceHotelierController @PreAuthorize (qui exclut MAGASIN).
+   */
+  get canWrite(): boolean {
+    return this.authService.hasAnyRole(['SUPERADMIN', 'ADMIN', 'GERANT']);
+  }
 
   ngOnInit(): void {
     this.loadTypes();

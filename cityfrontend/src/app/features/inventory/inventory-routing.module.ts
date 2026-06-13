@@ -42,6 +42,11 @@ import { TypesServicesHoteliersListComponent } from './components/types-services
  */
 const READ_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT', 'MAGASIN'];
 const WRITE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT'];
+// MAGASIN a accès à l'écriture sur les produits (cohérent avec
+// ProduitController @PreAuthorize backend qui autorise MAGASIN sur
+// POST/PUT). Les services hôteliers et types de services restent en
+// WRITE_ROLES car ils ne font pas partie du périmètre magasinier.
+const PRODUIT_WRITE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT', 'MAGASIN'];
 const STOCK_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT', 'MAGASIN'];
 const BRIDGE_SERVICE_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT', 'RECEPTION'];
 
@@ -50,9 +55,9 @@ const routes: Routes = [
 
   // Produits
   { path: 'produits', component: ProduitsListComponent, canActivate: [RoleGuard], data: { roles: READ_ROLES } },
-  { path: 'produits/new', component: ProduitFormComponent, canActivate: [RoleGuard], data: { roles: WRITE_ROLES } },
+  { path: 'produits/new', component: ProduitFormComponent, canActivate: [RoleGuard], data: { roles: PRODUIT_WRITE_ROLES } },
   { path: 'produits/:id/view', component: ProduitDetailComponent, canActivate: [RoleGuard], data: { roles: READ_ROLES } },
-  { path: 'produits/:id', component: ProduitFormComponent, canActivate: [RoleGuard], data: { roles: WRITE_ROLES } },
+  { path: 'produits/:id', component: ProduitFormComponent, canActivate: [RoleGuard], data: { roles: PRODUIT_WRITE_ROLES } },
 
   // Catégories
   { path: 'categories', component: CategoriesListComponent, canActivate: [RoleGuard], data: { roles: READ_ROLES } },

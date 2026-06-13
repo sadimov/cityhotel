@@ -6,10 +6,12 @@
         <i class="bi bi-receipt me-1" aria-hidden="true"></i>
         {{ 'inventory.bridgeService.actions.open' | translate }}
       </button>
-      <button type="button" class="btn btn-primary" (click)="createNew()">
-        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-        {{ 'inventory.services.actions.create' | translate }}
-      </button>
+      @if (canWrite) {
+        <button type="button" class="btn btn-primary" (click)="createNew()">
+          <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+          {{ 'inventory.services.actions.create' | translate }}
+        </button>
+      }
     </div>
   </header>
 
@@ -78,12 +80,14 @@
                 <button type="button" class="btn btn-sm btn-outline-info me-1" (click)="view(s)" [attr.aria-label]="'inventory.actions.view' | translate">
                   <i class="bi bi-eye" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="edit(s)" [attr.aria-label]="'inventory.actions.edit' | translate">
-                  <i class="bi bi-pencil" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(s)" [disabled]="deleting" [attr.aria-label]="'inventory.actions.delete' | translate">
-                  <i class="bi bi-trash" aria-hidden="true"></i>
-                </button>
+                @if (canWrite) {
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="edit(s)" [attr.aria-label]="'inventory.actions.edit' | translate">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(s)" [disabled]="deleting" [attr.aria-label]="'inventory.actions.delete' | translate">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                }
               </td>
             </tr>
           }

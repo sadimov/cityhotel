@@ -1,10 +1,12 @@
 <section class="types-services-list">
   <header class="d-flex justify-content-between align-items-center mb-3">
     <h2 class="h4 m-0">{{ 'inventory.typesServices.list.title' | translate }}</h2>
-    <button type="button" class="btn btn-primary" (click)="createNew()">
-      <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
-      {{ 'inventory.typesServices.actions.create' | translate }}
-    </button>
+    @if (canWrite) {
+      <button type="button" class="btn btn-primary" (click)="createNew()">
+        <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>
+        {{ 'inventory.typesServices.actions.create' | translate }}
+      </button>
+    }
   </header>
 
   <div class="mb-3" style="max-width: 360px;">
@@ -60,12 +62,14 @@
                 <button type="button" class="btn btn-sm btn-outline-info me-1" (click)="view(t)" [attr.aria-label]="'inventory.actions.view' | translate">
                   <i class="bi bi-eye" aria-hidden="true"></i>
                 </button>
-                <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="edit(t)" [attr.aria-label]="'inventory.actions.edit' | translate">
-                  <i class="bi bi-pencil" aria-hidden="true"></i>
-                </button>
-                <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(t)" [disabled]="deleting" [attr.aria-label]="'inventory.actions.delete' | translate">
-                  <i class="bi bi-trash" aria-hidden="true"></i>
-                </button>
+                @if (canWrite) {
+                  <button type="button" class="btn btn-sm btn-outline-primary me-1" (click)="edit(t)" [attr.aria-label]="'inventory.actions.edit' | translate">
+                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm btn-outline-danger" (click)="remove(t)" [disabled]="deleting" [attr.aria-label]="'inventory.actions.delete' | translate">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                  </button>
+                }
               </td>
             </tr>
           }

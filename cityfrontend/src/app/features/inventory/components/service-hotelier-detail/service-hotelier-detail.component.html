@@ -6,10 +6,12 @@
         <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>
         {{ 'inventory.actions.back' | translate }}
       </button>
-      <button type="button" class="btn btn-primary" (click)="edit()" [disabled]="!entity">
-        <i class="bi bi-pencil me-1" aria-hidden="true"></i>
-        {{ 'inventory.actions.edit' | translate }}
-      </button>
+      @if (canEdit) {
+        <button type="button" class="btn btn-primary" (click)="edit()" [disabled]="!entity">
+          <i class="bi bi-pencil me-1" aria-hidden="true"></i>
+          {{ 'inventory.actions.edit' | translate }}
+        </button>
+      }
     </div>
   </header>
 

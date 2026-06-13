@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
+import { AuthService } from '../../../../services/auth.service';
 import { ServiceHotelier } from '../../models/service-hotelier.model';
 import { ServicesHoteliersService } from '../../services/services-hoteliers.service';
 
@@ -24,7 +25,13 @@ export class ServiceHotelierDetailComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly service: ServicesHoteliersService,
+    private readonly authService: AuthService,
   ) {}
+
+  /** Vrai si l'utilisateur peut modifier ce service (exclut MAGASIN). */
+  get canEdit(): boolean {
+    return this.authService.hasAnyRole(['SUPERADMIN', 'ADMIN', 'GERANT']);
+  }
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
