@@ -249,19 +249,56 @@
     },
     "restaurant": {
       "title": "Rapports Restaurant",
+      "pageTitle": "Reporting — Restaurant",
       "r001": "Journal de caisse",
       "r001Desc": "Journal des encaissements restaurant (PDF ou Excel).",
       "r002": "Top articles vendus",
       "r002Desc": "Classement des articles menu par volume et chiffre d'affaires.",
-      "r003": "Ticket moyen",
-      "r003Desc": "Évolution du ticket moyen par jour et par service."
+      "r003": "Ticket moyen + marges",
+      "r003Desc": "Ticket moyen + marge par article sur la période.",
+      "journal": {
+        "nbCommandes": "Nb commandes encaissées",
+        "totalRecettes": "Total recettes",
+        "mode": "Mode paiement",
+        "nbPaiements": "Nb paiements",
+        "montant": "Montant"
+      },
+      "topArticles": {
+        "rang": "Rang",
+        "article": "Article",
+        "qte": "Quantité vendue",
+        "ca": "CA TTC"
+      },
+      "ticket": {
+        "nbCommandes": "Nb commandes",
+        "caTotal": "CA total",
+        "moyen": "Ticket moyen",
+        "article": "Article",
+        "prixVente": "Prix vente",
+        "coutMatiere": "Coût matière",
+        "margeUnitaire": "Marge unitaire",
+        "margePct": "Marge %"
+      }
     },
     "menage": {
       "title": "Rapports Ménage",
+      "pageTitle": "Reporting — Ménage",
       "r001": "Récap des tâches",
       "r001Desc": "Synthèse des tâches ménage par chambre et par statut.",
       "r002": "Charge personnel",
-      "r002Desc": "Charge de travail par employé sur la période."
+      "r002Desc": "Charge de travail par employé sur la période.",
+      "recap": {
+        "total": "Total tâches",
+        "dimension": "Dimension",
+        "nbTaches": "Nb tâches"
+      },
+      "charge": {
+        "personnel": "Personnel",
+        "assignees": "Assignées",
+        "terminees": "Terminées",
+        "dureeMin": "Durée (min)",
+        "taux": "Taux completion"
+      }
     },
     "direction": {
       "title": "Rapports Direction",

@@ -5,7 +5,7 @@ import com.cityprojects.citybackend.dto.reporting.TopArticleDto;
 import com.cityprojects.citybackend.dto.reporting.projection.TopArticleProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.restaurant.LigneCommandeRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,13 +29,13 @@ class TopArticlesReportServiceTests {
     @Mock
     private LigneCommandeRepository ligneCommandeRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private TopArticlesReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new TopArticlesReportServiceImpl(ligneCommandeRepository, xlsxExportService);
+        service = new TopArticlesReportServiceImpl(ligneCommandeRepository, documentExportService);
         TenantContext.set(1L);
     }
 

@@ -1,0 +1,123 @@
+<section class="menage-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.menage.pageTitle' | translate }}</h2>
+  </header>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'recap'" (click)="selectTab('recap')">{{ 'reporting.menage.r001' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'charge'" (click)="selectTab('charge')">{{ 'reporting.menage.r002' | translate }}</button></li>
+  </ul>
+
+  <!-- R-MEN-001 Récap tâches -->
+  @if (activeTab === 'recap') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="rt-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="rt-from" type="date" class="form-control" [(ngModel)]="filters.recap.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="rt-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="rt-to" type="date" class="form-control" [(ngModel)]="filters.recap.to" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="rt-group">{{ 'reporting.filters.groupBy' | translate }}</label>
+          <select id="rt-group" class="form-select" [(ngModel)]="filters.recap.groupBy">
+            @for (g of groupByOptions; track g) { <option [value]="g">{{ g }}</option> }
+          </select>
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('recap')" [disabled]="states.recap === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportRecapXlsx()" [disabled]="exporting.recap || states.recap !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportRecapDocx()" [disabled]="exporting.recap || states.recap !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportRecapPdf()" [disabled]="exporting.recap || states.recap !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.recap === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.recap === 'ready' && recap) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.menage.recap.total' | translate }}</small><div class="h5">{{ recap.totalTaches }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.menage.recap.dimension' | translate }}</th>
+                <th class="text-end">{{ 'reporting.menage.recap.nbTaches' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of recap.breakdown; track b.dimensionKey) {
+                <tr>
+                  <td>{{ b.dimensionKey }}</td>
+                  <td class="text-end">{{ b.nbTaches }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="2" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.recap === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- R-MEN-002 Charge personnel -->
+  @if (activeTab === 'charge') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="cp-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="cp-from" type="date" class="form-control" [(ngModel)]="filters.charge.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="cp-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="cp-to" type="date" class="form-control" [(ngModel)]="filters.charge.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('charge')" [disabled]="states.charge === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportChargeXlsx()" [disabled]="exporting.charge || states.charge !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportChargeDocx()" [disabled]="exporting.charge || states.charge !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportChargePdf()" [disabled]="exporting.charge || states.charge !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.charge === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.charge === 'ready' && charge) {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.menage.charge.personnel' | translate }}</th>
+                <th class="text-end">{{ 'reporting.menage.charge.assignees' | translate }}</th>
+                <th class="text-end">{{ 'reporting.menage.charge.terminees' | translate }}</th>
+                <th class="text-end">{{ 'reporting.menage.charge.dureeMin' | translate }}</th>
+                <th class="text-end">{{ 'reporting.menage.charge.taux' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of charge.personnels; track p.personnelId) {
+                <tr>
+                  <td>{{ p.personnelId }}</td>
+                  <td class="text-end">{{ p.nbAssignees }}</td>
+                  <td class="text-end">{{ p.nbTerminees }}</td>
+                  <td class="text-end">{{ p.dureeTotaleMin }}</td>
+                  <td class="text-end">{{ p.tauxCompletion | number:'1.2-2' }} %</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.charge === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+</section>

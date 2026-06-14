@@ -3021,20 +3021,41 @@
       }
     },
     "restaurant": {
-      "title": "Rapports Restaurant",
-      "r001": "Ventes restaurant",
-      "r002": "Top articles vendus",
-      "r003": "Services poussés sur chambre",
-      "r001Desc": "Journal des encaissements restaurant (PDF ou Excel).",
-      "r002Desc": "Classement des articles menu par volume et chiffre d'affaires.",
-      "r003Desc": "Évolution du ticket moyen par jour et par service."
+      "title": "Restaurant Reports",
+      "pageTitle": "Reporting — Restaurant",
+      "r001": "Cash journal",
+      "r002": "Top selling items",
+      "r003": "Average ticket + margins",
+      "r001Desc": "Daily cash journal (paid orders).",
+      "r002Desc": "Menu items ranked by volume and revenue.",
+      "r003Desc": "Average ticket and per-item margin over the period.",
+      "journal": {
+        "nbCommandes": "Paid orders", "totalRecettes": "Total revenue",
+        "mode": "Payment mode", "nbPaiements": "Payments", "montant": "Amount"
+      },
+      "topArticles": {
+        "rang": "Rank", "article": "Item", "qte": "Quantity sold", "ca": "Revenue TTC"
+      },
+      "ticket": {
+        "nbCommandes": "Orders", "caTotal": "Total revenue", "moyen": "Avg ticket",
+        "article": "Item", "prixVente": "Sale price", "coutMatiere": "Cost",
+        "margeUnitaire": "Unit margin", "margePct": "Margin %"
+      }
     },
     "menage": {
-      "title": "Rapports Ménage",
-      "r001": "Productivité du personnel",
-      "r002": "Tâches en retard",
-      "r001Desc": "Synthèse des tâches ménage par chambre et par statut.",
-      "r002Desc": "Charge de travail par employé sur la période."
+      "title": "Housekeeping Reports",
+      "pageTitle": "Reporting — Housekeeping",
+      "r001": "Tasks recap",
+      "r002": "Staff workload",
+      "r001Desc": "Tasks summary by room and status.",
+      "r002Desc": "Workload per employee over the period.",
+      "recap": {
+        "total": "Total tasks", "dimension": "Dimension", "nbTaches": "Tasks"
+      },
+      "charge": {
+        "personnel": "Staff", "assignees": "Assigned", "terminees": "Done",
+        "dureeMin": "Duration (min)", "taux": "Completion rate"
+      }
     },
     "direction": {
       "title": "Rapports Direction",

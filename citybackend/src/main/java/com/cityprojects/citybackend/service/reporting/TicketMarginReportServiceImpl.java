@@ -13,9 +13,8 @@ import com.cityprojects.citybackend.repository.restaurant.ArticleMenuRepository;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.LigneCommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.RecetteArticleRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,20 +50,20 @@ public class TicketMarginReportServiceImpl implements TicketMarginReportService 
     private final RecetteArticleRepository recetteArticleRepository;
     private final ArticleMenuRepository articleMenuRepository;
     private final ProduitRepository produitRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public TicketMarginReportServiceImpl(CommandeRepository commandeRepository,
                                          LigneCommandeRepository ligneCommandeRepository,
                                          RecetteArticleRepository recetteArticleRepository,
                                          ArticleMenuRepository articleMenuRepository,
                                          ProduitRepository produitRepository,
-                                         XlsxExportService xlsxExportService) {
+                                         DocumentExportService documentExportService) {
         this.commandeRepository = commandeRepository;
         this.ligneCommandeRepository = ligneCommandeRepository;
         this.recetteArticleRepository = recetteArticleRepository;
         this.articleMenuRepository = articleMenuRepository;
         this.produitRepository = produitRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -127,14 +126,49 @@ public class TicketMarginReportServiceImpl implements TicketMarginReportService 
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to) {
+        return documentExportService.toXlsx(buildDocument(from, to));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to) {
+        return documentExportService.toDocx(buildDocument(from, to));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to) {
+        return documentExportService.toPdf(buildDocument(from, to));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to) {
         TicketMarginDto dto = computeMargin(from, to);
-        List<ColumnSpec<ArticleMargeDto>> columns = List.of(
-                new ColumnSpec<>("Article", ColumnType.TEXT, ArticleMargeDto::libelle),
-                new ColumnSpec<>("Prix vente", ColumnType.MONEY, ArticleMargeDto::prixVente),
-                new ColumnSpec<>("Cout matiere", ColumnType.MONEY, ArticleMargeDto::coutMatiere),
-                new ColumnSpec<>("Marge unitaire", ColumnType.MONEY, ArticleMargeDto::margeUnitaire),
-                new ColumnSpec<>("Marge %", ColumnType.DECIMAL, ArticleMargeDto::margePourcentage));
-        return xlsxExportService.export("Ticket_Marge", columns, dto.marges());
+        String title = "Ticket moyen + marges";
+        String period = String.format("Période : %s → %s", from, to);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb commandes", String.valueOf(dto.nbCommandes())),
+                new ReportDocument.Kpi("CA total", money(dto.caTotal())),
+                new ReportDocument.Kpi("Ticket moyen", money(dto.ticketMoyen()))
+        );
+
+        List<String> headers = List.of("Article", "Prix vente", "Coût matière",
+                "Marge unitaire", "Marge %");
+        List<List<Object>> rows = new ArrayList<>(dto.marges().size());
+        for (ArticleMargeDto m : dto.marges()) {
+            rows.add(List.of(
+                    m.libelle() != null ? m.libelle() : "",
+                    money(m.prixVente()),
+                    money(m.coutMatiere()),
+                    money(m.margeUnitaire()),
+                    money(m.margePourcentage())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Marges par article (tri marge décroissante)", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     /**

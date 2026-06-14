@@ -8,8 +8,7 @@ import com.cityprojects.citybackend.entity.restaurant.Commande;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.PaiementRepository;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,16 +34,14 @@ class JournalCaisseReportServiceTests {
     @Mock
     private PaiementRepository paiementRepository;
     @Mock
-    private PdfExportService pdfExportService;
-    @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private JournalCaisseReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new JournalCaisseReportServiceImpl(commandeRepository, paiementRepository,
-                pdfExportService, xlsxExportService);
+                documentExportService);
         TenantContext.set(1L);
     }
 

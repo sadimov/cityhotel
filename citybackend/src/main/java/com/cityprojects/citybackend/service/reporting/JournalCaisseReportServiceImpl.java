@@ -1,7 +1,6 @@
 package com.cityprojects.citybackend.service.reporting;
 
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
-import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.reporting.JournalCaisseDto;
 import com.cityprojects.citybackend.dto.reporting.JournalCaisseDto.ModePaiementLigneDto;
 import com.cityprojects.citybackend.dto.reporting.projection.PaiementModeProjection;
@@ -9,25 +8,25 @@ import com.cityprojects.citybackend.entity.restaurant.Commande;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.PaiementRepository;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
- * Implementation R-RES-001 — Journal de caisse (Tour 41 P2).
+ * Implementation R-RES-001 — Journal de caisse.
+ *
+ * <p>Tour 51ter : exports unifiés via {@link DocumentExportService} avec
+ * bordures partout.</p>
  */
 @Service
 @RequireTenant
@@ -38,17 +37,14 @@ public class JournalCaisseReportServiceImpl implements JournalCaisseReportServic
 
     private final CommandeRepository commandeRepository;
     private final PaiementRepository paiementRepository;
-    private final PdfExportService pdfExportService;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public JournalCaisseReportServiceImpl(CommandeRepository commandeRepository,
                                           PaiementRepository paiementRepository,
-                                          PdfExportService pdfExportService,
-                                          XlsxExportService xlsxExportService) {
+                                          DocumentExportService documentExportService) {
         this.commandeRepository = commandeRepository;
         this.paiementRepository = paiementRepository;
-        this.pdfExportService = pdfExportService;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -80,26 +76,38 @@ public class JournalCaisseReportServiceImpl implements JournalCaisseReportServic
     }
 
     @Override
-    public byte[] exportPdf(LocalDate date) {
+    public byte[] exportXlsx(LocalDate date) { return documentExportService.toXlsx(buildDocument(date)); }
+    @Override
+    public byte[] exportDocx(LocalDate date) { return documentExportService.toDocx(buildDocument(date)); }
+    @Override
+    public byte[] exportPdf(LocalDate date) { return documentExportService.toPdf(buildDocument(date)); }
+
+    private ReportDocument buildDocument(LocalDate date) {
         JournalCaisseDto dto = computeJournal(date);
-        Map<String, Object> params = new HashMap<>();
-        params.put("REPORT_TITLE", "Journal de caisse");
-        params.put("HOTEL_ID", TenantContext.get());
-        params.put("DATE", dto.date());
-        params.put("NB_COMMANDES", dto.nbCommandes());
-        params.put("TOTAL_RECETTES", dto.totalRecettes());
-        return pdfExportService.exportToPdf("journal-caisse", params, dto.breakdownModes());
+        String title = "Journal de caisse";
+        String period = String.format("Date : %s", dto.date());
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb commandes encaissées", String.valueOf(dto.nbCommandes())),
+                new ReportDocument.Kpi("Total recettes", money(dto.totalRecettes()))
+        );
+
+        List<String> headers = List.of("Mode paiement", "Nb paiements", "Montant");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdownModes().size());
+        for (ModePaiementLigneDto m : dto.breakdownModes()) {
+            rows.add(List.of(
+                    m.modePaiement() != null ? m.modePaiement().name() : "",
+                    m.nbPaiements(),
+                    money(m.montantTotal())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Répartition par mode de paiement", headers, rows));
     }
 
-    @Override
-    public byte[] exportXlsx(LocalDate date) {
-        JournalCaisseDto dto = computeJournal(date);
-        List<ColumnSpec<ModePaiementLigneDto>> columns = List.of(
-                new ColumnSpec<>("Mode", ColumnType.TEXT,
-                        m -> m.modePaiement() == null ? "" : m.modePaiement().name()),
-                new ColumnSpec<>("Nb paiements", ColumnType.INTEGER, ModePaiementLigneDto::nbPaiements),
-                new ColumnSpec<>("Montant", ColumnType.MONEY, ModePaiementLigneDto::montantTotal));
-        return xlsxExportService.export("Journal_Caisse", columns, dto.breakdownModes());
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static long nz(Long value) {

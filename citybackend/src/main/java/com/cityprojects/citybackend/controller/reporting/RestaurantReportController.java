@@ -33,6 +33,8 @@ public class RestaurantReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String DOCX_MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String ROLES_RES = "hasAnyRole('SUPERADMIN','ADMIN','GERANT','RESTAURANT')";
 
     private final JournalCaisseReportService journalCaisseService;
@@ -70,6 +72,14 @@ public class RestaurantReportController {
                 journalCaisseService.exportXlsx(date));
     }
 
+    @GetMapping(value = "/journal-caisse/export.docx")
+    @PreAuthorize(ROLES_RES)
+    public ResponseEntity<byte[]> exportJournalDocx(
+            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return attachment("journal-caisse.docx", docxMediaType(),
+                journalCaisseService.exportDocx(date));
+    }
+
     @GetMapping("/top-articles")
     @PreAuthorize(ROLES_RES)
     public ResponseEntity<TopArticleDto> getTopArticles(
@@ -89,6 +99,26 @@ public class RestaurantReportController {
                 topArticlesService.exportXlsx(from, to, limit));
     }
 
+    @GetMapping(value = "/top-articles/export.docx")
+    @PreAuthorize(ROLES_RES)
+    public ResponseEntity<byte[]> exportTopArticlesDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "limit", defaultValue = "20") int limit) {
+        return attachment("top-articles.docx", docxMediaType(),
+                topArticlesService.exportDocx(from, to, limit));
+    }
+
+    @GetMapping(value = "/top-articles/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_RES)
+    public ResponseEntity<byte[]> exportTopArticlesPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "limit", defaultValue = "20") int limit) {
+        return attachment("top-articles.pdf", MediaType.APPLICATION_PDF,
+                topArticlesService.exportPdf(from, to, limit));
+    }
+
     @GetMapping("/ticket-moyen")
     @PreAuthorize(ROLES_RES)
     public ResponseEntity<TicketMarginDto> getTicketMoyen(
@@ -106,8 +136,30 @@ public class RestaurantReportController {
                 ticketMarginService.exportXlsx(from, to));
     }
 
+    @GetMapping(value = "/ticket-moyen/export.docx")
+    @PreAuthorize(ROLES_RES)
+    public ResponseEntity<byte[]> exportTicketMoyenDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("ticket-moyen.docx", docxMediaType(),
+                ticketMarginService.exportDocx(from, to));
+    }
+
+    @GetMapping(value = "/ticket-moyen/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_RES)
+    public ResponseEntity<byte[]> exportTicketMoyenPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("ticket-moyen.pdf", MediaType.APPLICATION_PDF,
+                ticketMarginService.exportPdf(from, to));
+    }
+
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType(XLSX_MEDIA_TYPE);
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType(DOCX_MEDIA_TYPE);
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

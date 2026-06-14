@@ -6,9 +6,8 @@ import com.cityprojects.citybackend.dto.reporting.TopArticleDto.TopArticleLigneD
 import com.cityprojects.citybackend.dto.reporting.projection.TopArticleProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.restaurant.LigneCommandeRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -34,12 +34,12 @@ public class TopArticlesReportServiceImpl implements TopArticlesReportService {
     private static final ZoneId NOUAKCHOTT = ZoneId.of("Africa/Nouakchott");
 
     private final LigneCommandeRepository ligneCommandeRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public TopArticlesReportServiceImpl(LigneCommandeRepository ligneCommandeRepository,
-                                        XlsxExportService xlsxExportService) {
+                                        DocumentExportService documentExportService) {
         this.ligneCommandeRepository = ligneCommandeRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -70,13 +70,54 @@ public class TopArticlesReportServiceImpl implements TopArticlesReportService {
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to, int limit) {
+        return documentExportService.toXlsx(buildDocument(from, to, limit));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to, int limit) {
+        return documentExportService.toDocx(buildDocument(from, to, limit));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to, int limit) {
+        return documentExportService.toPdf(buildDocument(from, to, limit));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to, int limit) {
         TopArticleDto dto = findTopArticles(from, to, limit);
-        List<ColumnSpec<TopArticleLigneDto>> columns = List.of(
-                new ColumnSpec<>("Rang", ColumnType.INTEGER, TopArticleLigneDto::rang),
-                new ColumnSpec<>("Article", ColumnType.TEXT, TopArticleLigneDto::libelle),
-                new ColumnSpec<>("Quantite vendue", ColumnType.DECIMAL, TopArticleLigneDto::quantiteVendue),
-                new ColumnSpec<>("CA TTC", ColumnType.MONEY, TopArticleLigneDto::caTotal));
-        return xlsxExportService.export("Top_Articles", columns, dto.articles());
+        String title = "Top articles vendus";
+        String period = String.format("Période : %s → %s · Limite : %d", from, to, limit);
+
+        BigDecimal caTotal = BigDecimal.ZERO;
+        BigDecimal qteTotal = BigDecimal.ZERO;
+        for (TopArticleLigneDto a : dto.articles()) {
+            caTotal = caTotal.add(a.caTotal() != null ? a.caTotal() : BigDecimal.ZERO);
+            qteTotal = qteTotal.add(a.quantiteVendue() != null ? a.quantiteVendue() : BigDecimal.ZERO);
+        }
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb articles", String.valueOf(dto.articles().size())),
+                new ReportDocument.Kpi("Quantité totale", money(qteTotal)),
+                new ReportDocument.Kpi("CA total (cumul)", money(caTotal))
+        );
+
+        List<String> headers = List.of("Rang", "Article", "Quantité vendue", "CA TTC");
+        List<List<Object>> rows = new ArrayList<>(dto.articles().size());
+        for (TopArticleLigneDto a : dto.articles()) {
+            rows.add(List.of(
+                    a.rang(),
+                    a.libelle() != null ? a.libelle() : "",
+                    money(a.quantiteVendue()),
+                    money(a.caTotal())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Classement", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static BigDecimal nz(BigDecimal value) {

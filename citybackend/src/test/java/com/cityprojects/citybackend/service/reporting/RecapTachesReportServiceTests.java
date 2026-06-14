@@ -8,7 +8,7 @@ import com.cityprojects.citybackend.entity.menage.Tache;
 import com.cityprojects.citybackend.entity.menage.TypeNettoyage;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.menage.TacheRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,13 +31,13 @@ class RecapTachesReportServiceTests {
     @Mock
     private TacheRepository tacheRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private RecapTachesReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new RecapTachesReportServiceImpl(tacheRepository, xlsxExportService);
+        service = new RecapTachesReportServiceImpl(tacheRepository, documentExportService);
         TenantContext.set(1L);
     }
 

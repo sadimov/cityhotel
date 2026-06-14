@@ -1,0 +1,179 @@
+<section class="restaurant-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.restaurant.pageTitle' | translate }}</h2>
+  </header>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'journal'" (click)="selectTab('journal')">{{ 'reporting.restaurant.r001' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'topArticles'" (click)="selectTab('topArticles')">{{ 'reporting.restaurant.r002' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'ticket'" (click)="selectTab('ticket')">{{ 'reporting.restaurant.r003' | translate }}</button></li>
+  </ul>
+
+  <!-- ── R-RES-001 Journal de caisse ─────────────────────────────── -->
+  @if (activeTab === 'journal') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="jc-date">{{ 'reporting.filters.date' | translate }}</label>
+          <input id="jc-date" type="date" class="form-control" [(ngModel)]="filters.journal.date" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('journal')" [disabled]="states.journal === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportJournalXlsx()" [disabled]="exporting.journal || states.journal !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportJournalDocx()" [disabled]="exporting.journal || states.journal !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportJournalPdf()" [disabled]="exporting.journal || states.journal !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.journal === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.journal === 'ready' && journal) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.restaurant.journal.nbCommandes' | translate }}</small><div class="h5">{{ journal.nbCommandes }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.restaurant.journal.totalRecettes' | translate }}</small><div class="h5">{{ journal.totalRecettes | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.restaurant.journal.mode' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.journal.nbPaiements' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.journal.montant' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of journal.breakdownModes; track m.modePaiement) {
+                <tr>
+                  <td>{{ m.modePaiement }}</td>
+                  <td class="text-end">{{ m.nbPaiements }}</td>
+                  <td class="text-end">{{ m.montantTotal | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="3" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.journal === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-RES-002 Top articles ──────────────────────────────────── -->
+  @if (activeTab === 'topArticles') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="ta-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="ta-from" type="date" class="form-control" [(ngModel)]="filters.topArticles.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="ta-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="ta-to" type="date" class="form-control" [(ngModel)]="filters.topArticles.to" />
+        </div>
+        <div class="col-md-1">
+          <label class="form-label" for="ta-limit">{{ 'reporting.filters.limit' | translate }}</label>
+          <input id="ta-limit" type="number" min="1" max="200" class="form-control" [(ngModel)]="filters.topArticles.limit" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('topArticles')" [disabled]="states.topArticles === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportTopXlsx()" [disabled]="exporting.topArticles || states.topArticles !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportTopDocx()" [disabled]="exporting.topArticles || states.topArticles !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportTopPdf()" [disabled]="exporting.topArticles || states.topArticles !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.topArticles === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.topArticles === 'ready' && topArticles) {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.restaurant.topArticles.rang' | translate }}</th>
+                <th>{{ 'reporting.restaurant.topArticles.article' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.topArticles.qte' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.topArticles.ca' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of topArticles.articles; track a.articleId) {
+                <tr>
+                  <td>{{ a.rang }}</td>
+                  <td>{{ a.libelle }}</td>
+                  <td class="text-end">{{ a.quantiteVendue | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ a.caTotal | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.topArticles === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-RES-003 Ticket moyen + marges ─────────────────────────── -->
+  @if (activeTab === 'ticket') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="tm-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="tm-from" type="date" class="form-control" [(ngModel)]="filters.ticket.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="tm-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="tm-to" type="date" class="form-control" [(ngModel)]="filters.ticket.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('ticket')" [disabled]="states.ticket === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportTicketXlsx()" [disabled]="exporting.ticket || states.ticket !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportTicketDocx()" [disabled]="exporting.ticket || states.ticket !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportTicketPdf()" [disabled]="exporting.ticket || states.ticket !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.ticket === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.ticket === 'ready' && ticket) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.restaurant.ticket.nbCommandes' | translate }}</small><div class="h5">{{ ticket.nbCommandes }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.restaurant.ticket.caTotal' | translate }}</small><div class="h5">{{ ticket.caTotal | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.restaurant.ticket.moyen' | translate }}</small><div class="h5">{{ ticket.ticketMoyen | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.restaurant.ticket.article' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.ticket.prixVente' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.ticket.coutMatiere' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.ticket.margeUnitaire' | translate }}</th>
+                <th class="text-end">{{ 'reporting.restaurant.ticket.margePct' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of ticket.marges; track m.articleId) {
+                <tr>
+                  <td>{{ m.libelle }}</td>
+                  <td class="text-end">{{ m.prixVente | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ m.coutMatiere | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ m.margeUnitaire | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ m.margePourcentage | number:'1.2-2' }} %</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.ticket === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+</section>

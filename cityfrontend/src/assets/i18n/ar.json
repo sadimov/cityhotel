@@ -3021,20 +3021,41 @@
       }
     },
     "restaurant": {
-      "title": "Rapports Restaurant",
-      "r001": "Ventes restaurant",
-      "r002": "Top articles vendus",
-      "r003": "Services poussés sur chambre",
-      "r001Desc": "Journal des encaissements restaurant (PDF ou Excel).",
-      "r002Desc": "Classement des articles menu par volume et chiffre d'affaires.",
-      "r003Desc": "Évolution du ticket moyen par jour et par service."
+      "title": "تقارير المطعم",
+      "pageTitle": "التقارير — المطعم",
+      "r001": "دفتر النقدية",
+      "r002": "أكثر الأصناف مبيعًا",
+      "r003": "متوسط الفاتورة + الهوامش",
+      "r001Desc": "دفتر يومي للنقدية (الطلبات المدفوعة).",
+      "r002Desc": "ترتيب الأصناف حسب الحجم والإيرادات.",
+      "r003Desc": "متوسط الفاتورة والهامش لكل صنف خلال الفترة.",
+      "journal": {
+        "nbCommandes": "الطلبات المدفوعة", "totalRecettes": "إجمالي الإيرادات",
+        "mode": "وسيلة الدفع", "nbPaiements": "المدفوعات", "montant": "المبلغ"
+      },
+      "topArticles": {
+        "rang": "الترتيب", "article": "الصنف", "qte": "الكمية المباعة", "ca": "الإيرادات TTC"
+      },
+      "ticket": {
+        "nbCommandes": "الطلبات", "caTotal": "إجمالي الإيرادات", "moyen": "متوسط الفاتورة",
+        "article": "الصنف", "prixVente": "سعر البيع", "coutMatiere": "تكلفة المواد",
+        "margeUnitaire": "هامش الوحدة", "margePct": "الهامش %"
+      }
     },
     "menage": {
-      "title": "Rapports Ménage",
-      "r001": "Productivité du personnel",
-      "r002": "Tâches en retard",
-      "r001Desc": "Synthèse des tâches ménage par chambre et par statut.",
-      "r002Desc": "Charge de travail par employé sur la période."
+      "title": "تقارير التدبير المنزلي",
+      "pageTitle": "التقارير — التدبير المنزلي",
+      "r001": "ملخص المهام",
+      "r002": "عبء عمل الموظفين",
+      "r001Desc": "ملخص المهام حسب الغرفة والحالة.",
+      "r002Desc": "عبء العمل لكل موظف خلال الفترة.",
+      "recap": {
+        "total": "إجمالي المهام", "dimension": "البُعد", "nbTaches": "عدد المهام"
+      },
+      "charge": {
+        "personnel": "الموظف", "assignees": "مُعيَّن", "terminees": "مُنجَز",
+        "dureeMin": "المدة (دقيقة)", "taux": "معدل الإنجاز"
+      }
     },
     "direction": {
       "title": "Rapports Direction",

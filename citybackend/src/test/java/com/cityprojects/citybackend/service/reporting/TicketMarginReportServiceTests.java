@@ -12,7 +12,7 @@ import com.cityprojects.citybackend.repository.restaurant.ArticleMenuRepository;
 import com.cityprojects.citybackend.repository.restaurant.CommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.LigneCommandeRepository;
 import com.cityprojects.citybackend.repository.restaurant.RecetteArticleRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -48,14 +48,14 @@ class TicketMarginReportServiceTests {
     @Mock
     private ProduitRepository produitRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private TicketMarginReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new TicketMarginReportServiceImpl(commandeRepository, ligneCommandeRepository,
-                recetteArticleRepository, articleMenuRepository, produitRepository, xlsxExportService);
+                recetteArticleRepository, articleMenuRepository, produitRepository, documentExportService);
         TenantContext.set(1L);
     }
 

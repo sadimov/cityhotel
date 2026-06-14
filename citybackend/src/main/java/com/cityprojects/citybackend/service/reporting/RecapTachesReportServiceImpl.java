@@ -8,9 +8,8 @@ import com.cityprojects.citybackend.entity.menage.StatutTache;
 import com.cityprojects.citybackend.entity.menage.Tache;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.menage.TacheRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +29,12 @@ import java.util.Map;
 public class RecapTachesReportServiceImpl implements RecapTachesReportService {
 
     private final TacheRepository tacheRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public RecapTachesReportServiceImpl(TacheRepository tacheRepository,
-                                        XlsxExportService xlsxExportService) {
+                                        DocumentExportService documentExportService) {
         this.tacheRepository = tacheRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -59,11 +58,35 @@ public class RecapTachesReportServiceImpl implements RecapTachesReportService {
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to, TacheGroupBy groupBy) {
+        return documentExportService.toXlsx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to, TacheGroupBy groupBy) {
+        return documentExportService.toDocx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to, TacheGroupBy groupBy) {
+        return documentExportService.toPdf(buildDocument(from, to, groupBy));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to, TacheGroupBy groupBy) {
         RecapTacheDto dto = computeRecap(from, to, groupBy);
-        List<ColumnSpec<RecapBreakdownDto>> columns = List.of(
-                new ColumnSpec<>("Dimension", ColumnType.TEXT, RecapBreakdownDto::dimensionKey),
-                new ColumnSpec<>("Nb taches", ColumnType.INTEGER, RecapBreakdownDto::nbTaches));
-        return xlsxExportService.export("Recap_Taches", columns, dto.breakdown());
+        String title = "Récap tâches ménage";
+        String period = String.format("Période : %s → %s · Groupage : %s", from, to, groupBy);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Total tâches", String.valueOf(dto.totalTaches()))
+        );
+
+        List<String> headers = List.of("Dimension", "Nb tâches");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdown().size());
+        for (RecapBreakdownDto b : dto.breakdown()) {
+            rows.add(List.of(b.dimensionKey() != null ? b.dimensionKey() : "", b.nbTaches()));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail par " + groupBy, headers, rows));
     }
 
     @Override

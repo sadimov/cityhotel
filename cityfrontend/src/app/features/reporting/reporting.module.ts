@@ -7,6 +7,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FinanceReportsComponent } from './components/finance-reports/finance-reports.component';
 import { HebergementReportsComponent } from './components/hebergement-reports/hebergement-reports.component';
 import { InventoryReportsComponent } from './components/inventory-reports/inventory-reports.component';
+import { MenageReportsComponent } from './components/menage-reports/menage-reports.component';
+import { RestaurantReportsComponent } from './components/restaurant-reports/restaurant-reports.component';
 import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 import { ReportingRoutingModule } from './reporting-routing.module';
 
@@ -23,7 +25,7 @@ import { ReportingRoutingModule } from './reporting-routing.module';
  *    (à migrer progressivement vers le pattern HebergementReports).
  */
 @NgModule({
-  declarations: [FinanceReportsComponent, HebergementReportsComponent, InventoryReportsComponent, ReportingHomeComponent],
+  declarations: [FinanceReportsComponent, HebergementReportsComponent, InventoryReportsComponent, MenageReportsComponent, RestaurantReportsComponent, ReportingHomeComponent],
   imports: [CommonModule, FormsModule, HttpClientModule, TranslateModule.forChild(), ReportingRoutingModule],
 })
 export class ReportingModule {}

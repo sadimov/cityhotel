@@ -31,6 +31,8 @@ public class MenageReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String DOCX_MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String ROLES_MEN = "hasAnyRole('SUPERADMIN','ADMIN','GERANT','MENAGE')";
 
     private final RecapTachesReportService recapService;
@@ -61,6 +63,26 @@ public class MenageReportController {
                 recapService.exportXlsx(from, to, groupBy));
     }
 
+    @GetMapping(value = "/recap-taches/export.docx")
+    @PreAuthorize(ROLES_MEN)
+    public ResponseEntity<byte[]> exportRecapTachesDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "JOUR") TacheGroupBy groupBy) {
+        return attachment("recap-taches.docx", docxMediaType(),
+                recapService.exportDocx(from, to, groupBy));
+    }
+
+    @GetMapping(value = "/recap-taches/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_MEN)
+    public ResponseEntity<byte[]> exportRecapTachesPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "JOUR") TacheGroupBy groupBy) {
+        return attachment("recap-taches.pdf", MediaType.APPLICATION_PDF,
+                recapService.exportPdf(from, to, groupBy));
+    }
+
     @GetMapping("/charge-personnel")
     @PreAuthorize(ROLES_MEN)
     public ResponseEntity<ChargePersonnelDto> getChargePersonnel(
@@ -78,8 +100,30 @@ public class MenageReportController {
                 chargeService.exportXlsx(from, to));
     }
 
+    @GetMapping(value = "/charge-personnel/export.docx")
+    @PreAuthorize(ROLES_MEN)
+    public ResponseEntity<byte[]> exportChargePersonnelDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("charge-personnel.docx", docxMediaType(),
+                chargeService.exportDocx(from, to));
+    }
+
+    @GetMapping(value = "/charge-personnel/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_MEN)
+    public ResponseEntity<byte[]> exportChargePersonnelPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("charge-personnel.pdf", MediaType.APPLICATION_PDF,
+                chargeService.exportPdf(from, to));
+    }
+
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType(XLSX_MEDIA_TYPE);
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType(DOCX_MEDIA_TYPE);
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

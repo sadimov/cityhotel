@@ -1,0 +1,11 @@
+:host { display: block; }
+
+.restaurant-reports {
+  .report-pane { animation: fadeInUp 0.25s ease-out; }
+  .card { border-radius: 0.5rem; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
