@@ -81,6 +81,8 @@
       "from": "Du",
       "to": "Au",
       "date": "Date",
+      "reference": "Date de référence",
+      "limit": "Limite",
       "groupBy": "Grouper par"
     },
     "actions": {
@@ -146,6 +148,7 @@
     },
     "finance": {
       "title": "Rapports Finance",
+      "pageTitle": "Reporting — Finance",
       "r001": "Chiffre d'affaires",
       "r001Desc": "CA émis et encaissé sur la période, par mode de paiement.",
       "r002": "Encours clients",
@@ -153,7 +156,43 @@
       "r003": "Récapitulatif TVA",
       "r003Desc": "Détail TVA collectée par taux pour la déclaration mensuelle.",
       "r004": "Top sociétés clientes",
-      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC)."
+      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC).",
+      "ca": {
+        "nbFactures": "Nb factures",
+        "caHt": "CA HT",
+        "caTva": "CA TVA",
+        "caTtc": "CA TTC",
+        "dejaPaye": "Déjà payé",
+        "nbPaiements": "Nb paiements",
+        "encaisse": "Encaissé",
+        "devise": "Devise"
+      },
+      "encours": {
+        "total": "Total encours",
+        "facture": "Facture",
+        "date": "Date",
+        "echeance": "Échéance",
+        "client": "Client",
+        "ttc": "TTC",
+        "paye": "Payé",
+        "du": "Dû",
+        "age": "Âge (j)",
+        "bucket": "Bucket"
+      },
+      "tva": {
+        "totalHt": "Total HT",
+        "totalTva": "Total TVA",
+        "totalTtc": "Total TTC",
+        "dimension": "Dimension"
+      },
+      "topSoc": {
+        "rang": "Rang",
+        "societe": "Société",
+        "siret": "NIF/SIRET",
+        "nbFactures": "Nb factures",
+        "caTtc": "CA TTC",
+        "caPaye": "CA payé"
+      }
     },
     "inventory": {
       "title": "Rapports Stocks",

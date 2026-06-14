@@ -7,19 +7,22 @@ import com.cityprojects.citybackend.dto.reporting.projection.CARecapProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
 import com.cityprojects.citybackend.repository.finance.PaiementRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Implementation R-FIN-001 (Tour 40 MVP).
+ * Implementation R-FIN-001 — Récap chiffre d'affaires.
+ *
+ * <p>Tour 51ter : exports XLSX / DOCX / PDF unifiés via
+ * {@link DocumentExportService} avec bordures sur toutes les tables.</p>
  */
 @Service
 @RequireTenant
@@ -30,14 +33,14 @@ public class CARecapReportServiceImpl implements CARecapReportService {
 
     private final FactureRepository factureRepository;
     private final PaiementRepository paiementRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public CARecapReportServiceImpl(FactureRepository factureRepository,
                                     PaiementRepository paiementRepository,
-                                    XlsxExportService xlsxExportService) {
+                                    DocumentExportService documentExportService) {
         this.factureRepository = factureRepository;
         this.paiementRepository = paiementRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -64,20 +67,46 @@ public class CARecapReportServiceImpl implements CARecapReportService {
 
     @Override
     public byte[] exportXlsx(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toXlsx(buildDocument(periode, from, to, reference));
+    }
+
+    @Override
+    public byte[] exportDocx(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toDocx(buildDocument(periode, from, to, reference));
+    }
+
+    @Override
+    public byte[] exportPdf(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toPdf(buildDocument(periode, from, to, reference));
+    }
+
+    private ReportDocument buildDocument(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
         CARecapDto dto = computeCA(periode, from, to, reference);
-        // Une seule ligne de donnees : les agregats.
-        List<ColumnSpec<CARecapDto>> columns = List.of(
-                new ColumnSpec<>("Du", ColumnType.DATE, CARecapDto::from),
-                new ColumnSpec<>("Au (exclus)", ColumnType.DATE, CARecapDto::to),
-                new ColumnSpec<>("Nb factures", ColumnType.INTEGER, CARecapDto::nbFactures),
-                new ColumnSpec<>("CA HT", ColumnType.MONEY, CARecapDto::caEmisHt),
-                new ColumnSpec<>("CA TVA", ColumnType.MONEY, CARecapDto::caEmisTva),
-                new ColumnSpec<>("CA TTC", ColumnType.MONEY, CARecapDto::caEmisTtc),
-                new ColumnSpec<>("Deja paye TTC", ColumnType.MONEY, CARecapDto::caPayeTtc),
-                new ColumnSpec<>("Nb paiements valides", ColumnType.INTEGER, CARecapDto::nbPaiements),
-                new ColumnSpec<>("Encaisse", ColumnType.MONEY, CARecapDto::montantEncaisse),
-                new ColumnSpec<>("Devise", ColumnType.TEXT, CARecapDto::devise));
-        return xlsxExportService.export("CA_Recap", columns, List.of(dto));
+        String title = "Récapitulatif Chiffre d'Affaires";
+        String period = String.format("Période : %s → %s · Devise : %s", dto.from(), dto.to(), dto.devise());
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb factures émises", String.valueOf(dto.nbFactures())),
+                new ReportDocument.Kpi("CA HT", money(dto.caEmisHt())),
+                new ReportDocument.Kpi("CA TVA", money(dto.caEmisTva())),
+                new ReportDocument.Kpi("CA TTC", money(dto.caEmisTtc())),
+                new ReportDocument.Kpi("Déjà payé TTC", money(dto.caPayeTtc())),
+                new ReportDocument.Kpi("Nb paiements validés", String.valueOf(dto.nbPaiements())),
+                new ReportDocument.Kpi("Encaissé", money(dto.montantEncaisse()))
+        );
+
+        List<String> headers = List.of("Indicateur", "Valeur");
+        List<List<Object>> rows = new java.util.ArrayList<>();
+        for (ReportDocument.Kpi k : kpis) {
+            rows.add(List.of(k.label(), k.value()));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Récapitulatif", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static BigDecimal nz(BigDecimal value) {

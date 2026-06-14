@@ -4,6 +4,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { FinanceReportsComponent } from './components/finance-reports/finance-reports.component';
 import { HebergementReportsComponent } from './components/hebergement-reports/hebergement-reports.component';
 import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 import { ReportingRoutingModule } from './reporting-routing.module';
@@ -21,7 +22,7 @@ import { ReportingRoutingModule } from './reporting-routing.module';
  *    (à migrer progressivement vers le pattern HebergementReports).
  */
 @NgModule({
-  declarations: [HebergementReportsComponent, ReportingHomeComponent],
+  declarations: [FinanceReportsComponent, HebergementReportsComponent, ReportingHomeComponent],
   imports: [CommonModule, FormsModule, HttpClientModule, TranslateModule.forChild(), ReportingRoutingModule],
 })
 export class ReportingModule {}

@@ -5,7 +5,7 @@ import com.cityprojects.citybackend.dto.reporting.TopSocieteDto;
 import com.cityprojects.citybackend.dto.reporting.projection.TopSocieteProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,13 +32,13 @@ class TopSocietesReportServiceTests {
     @Mock
     private FactureRepository factureRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private TopSocietesReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new TopSocietesReportServiceImpl(factureRepository, xlsxExportService);
+        service = new TopSocietesReportServiceImpl(factureRepository, documentExportService);
         TenantContext.set(1L);
     }
 

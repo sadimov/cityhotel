@@ -133,6 +133,26 @@ public class ReportController {
         return attachment("ca-recap.xlsx", xlsxMediaType(), xlsx);
     }
 
+    @GetMapping(value = "/ca/export.docx")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
+    public ResponseEntity<byte[]> exportCaDocx(
+            @RequestParam(name = "periode", defaultValue = "SEMAINE") ReportPeriode periode,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] docx = caRecapService.exportDocx(periode, from, to, LocalDate.now());
+        return attachment("ca-recap.docx", docxMediaType(), docx);
+    }
+
+    @GetMapping(value = "/ca/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT')")
+    public ResponseEntity<byte[]> exportCaPdf(
+            @RequestParam(name = "periode", defaultValue = "SEMAINE") ReportPeriode periode,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] pdf = caRecapService.exportPdf(periode, from, to, LocalDate.now());
+        return attachment("ca-recap.pdf", MediaType.APPLICATION_PDF, pdf);
+    }
+
     // ------------------------------------------------------------------
     // R-INV-001 Alertes stock
     // ------------------------------------------------------------------

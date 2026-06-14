@@ -2879,6 +2879,8 @@
       "from": "من",
       "to": "إلى",
       "date": "التاريخ",
+      "reference": "تاريخ المرجع",
+      "limit": "الحد",
       "groupBy": "تجميع حسب"
     },
     "actions": {
@@ -2939,15 +2941,52 @@
       }
     },
     "finance": {
-      "title": "Rapports Finance",
-      "r001": "Journal des ventes",
-      "r002": "Encaissements par mode",
-      "r003": "Clients débiteurs",
-      "r004": "Balance âgée des créances",
-      "r001Desc": "CA émis et encaissé sur la période, par mode de paiement.",
-      "r002Desc": "Comptes auxiliaires clients avec soldes en attente.",
-      "r003Desc": "Détail TVA collectée par taux pour la déclaration mensuelle.",
-      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC)."
+      "title": "تقارير المالية",
+      "pageTitle": "التقارير — المالية",
+      "r001": "ملخص رقم الأعمال",
+      "r002": "المستحقات المعلقة",
+      "r003": "ملخص ضريبة القيمة المضافة",
+      "r004": "أفضل الشركات B2B",
+      "r001Desc": "رقم الأعمال المُصدر والمُحصَّل خلال الفترة.",
+      "r002Desc": "الحسابات الفرعية للعملاء مع الأرصدة المعلقة.",
+      "r003Desc": "تفاصيل ضريبة القيمة المضافة المحصلة لكل معدل للإقرار الشهري.",
+      "r004Desc": "الشركات التي تحقق أعلى رقم أعمال (TTC).",
+      "ca": {
+        "nbFactures": "الفواتير",
+        "caHt": "الإيرادات HT",
+        "caTva": "الإيرادات TVA",
+        "caTtc": "الإيرادات TTC",
+        "dejaPaye": "المدفوع",
+        "nbPaiements": "المدفوعات",
+        "encaisse": "المُحصَّل",
+        "devise": "العملة"
+      },
+      "encours": {
+        "total": "إجمالي المستحقات",
+        "facture": "الفاتورة",
+        "date": "التاريخ",
+        "echeance": "تاريخ الاستحقاق",
+        "client": "العميل",
+        "ttc": "TTC",
+        "paye": "المدفوع",
+        "du": "المستحق",
+        "age": "العمر (يوم)",
+        "bucket": "الفئة"
+      },
+      "tva": {
+        "totalHt": "الإجمالي HT",
+        "totalTva": "إجمالي TVA",
+        "totalTtc": "الإجمالي TTC",
+        "dimension": "البُعد"
+      },
+      "topSoc": {
+        "rang": "الترتيب",
+        "societe": "الشركة",
+        "siret": "NIF/SIRET",
+        "nbFactures": "الفواتير",
+        "caTtc": "إيرادات TTC",
+        "caPaye": "إيرادات مدفوعة"
+      }
     },
     "inventory": {
       "title": "Rapports Stocks",

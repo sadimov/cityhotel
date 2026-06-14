@@ -5,14 +5,14 @@ import com.cityprojects.citybackend.dto.reporting.EncoursClientDto;
 import com.cityprojects.citybackend.dto.reporting.EncoursClientDto.EncoursLigneDto;
 import com.cityprojects.citybackend.entity.finance.Facture;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -32,12 +32,12 @@ public class EncoursClientsReportServiceImpl implements EncoursClientsReportServ
     static final int BUCKET_90 = 90;
 
     private final FactureRepository factureRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public EncoursClientsReportServiceImpl(FactureRepository factureRepository,
-                                           XlsxExportService xlsxExportService) {
+                                           DocumentExportService documentExportService) {
         this.factureRepository = factureRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -96,18 +96,55 @@ public class EncoursClientsReportServiceImpl implements EncoursClientsReportServ
 
     @Override
     public byte[] exportXlsx(LocalDate reference) {
+        return documentExportService.toXlsx(buildDocument(reference));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate reference) {
+        return documentExportService.toDocx(buildDocument(reference));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate reference) {
+        return documentExportService.toPdf(buildDocument(reference));
+    }
+
+    private ReportDocument buildDocument(LocalDate reference) {
         EncoursClientDto dto = computeEncours(reference);
-        List<ColumnSpec<EncoursLigneDto>> columns = List.of(
-                new ColumnSpec<>("Facture", ColumnType.TEXT, EncoursLigneDto::numeroFacture),
-                new ColumnSpec<>("Date", ColumnType.DATE, EncoursLigneDto::dateFacture),
-                new ColumnSpec<>("Echeance", ColumnType.DATE, EncoursLigneDto::dateEcheance),
-                new ColumnSpec<>("Client", ColumnType.INTEGER, EncoursLigneDto::clientId),
-                new ColumnSpec<>("Montant TTC", ColumnType.MONEY, EncoursLigneDto::montantTtc),
-                new ColumnSpec<>("Deja paye", ColumnType.MONEY, EncoursLigneDto::montantPaye),
-                new ColumnSpec<>("Du", ColumnType.MONEY, EncoursLigneDto::montantDu),
-                new ColumnSpec<>("Age jours", ColumnType.INTEGER, EncoursLigneDto::ageJours),
-                new ColumnSpec<>("Bucket", ColumnType.TEXT, EncoursLigneDto::bucket));
-        return xlsxExportService.export("Encours_Clients", columns, dto.lignes());
+        String title = "Encours clients";
+        String period = String.format("Référence : %s", dto.reference());
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Total encours", money(dto.totalEncours())),
+                new ReportDocument.Kpi("0 — 30 j", money(dto.bucket0_30())),
+                new ReportDocument.Kpi("30 — 60 j", money(dto.bucket30_60())),
+                new ReportDocument.Kpi("60 — 90 j", money(dto.bucket60_90())),
+                new ReportDocument.Kpi("90+ j", money(dto.bucket90Plus()))
+        );
+
+        List<String> headers = List.of("Facture", "Date", "Échéance", "Client",
+                "TTC", "Payé", "Dû", "Âge (j)", "Bucket");
+        List<List<Object>> rows = new ArrayList<>(dto.lignes().size());
+        for (EncoursLigneDto l : dto.lignes()) {
+            rows.add(List.of(
+                    l.numeroFacture() != null ? l.numeroFacture() : "",
+                    l.dateFacture() != null ? l.dateFacture().toString() : "",
+                    l.dateEcheance() != null ? l.dateEcheance().toString() : "",
+                    l.clientId() != null ? l.clientId() : "",
+                    money(l.montantTtc()),
+                    money(l.montantPaye()),
+                    money(l.montantDu()),
+                    l.ageJours(),
+                    l.bucket() != null ? l.bucket() : ""
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail factures non soldées", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static BigDecimal nz(BigDecimal value) {

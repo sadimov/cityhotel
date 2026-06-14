@@ -4,7 +4,7 @@ import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.reporting.EncoursClientDto;
 import com.cityprojects.citybackend.entity.finance.Facture;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,13 +30,13 @@ class EncoursClientsReportServiceTests {
     @Mock
     private FactureRepository factureRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private EncoursClientsReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new EncoursClientsReportServiceImpl(factureRepository, xlsxExportService);
+        service = new EncoursClientsReportServiceImpl(factureRepository, documentExportService);
         TenantContext.set(1L);
     }
 

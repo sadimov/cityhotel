@@ -8,14 +8,14 @@ import com.cityprojects.citybackend.dto.reporting.projection.LigneFactureMonthPr
 import com.cityprojects.citybackend.dto.reporting.projection.TvaRecapProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.LigneFactureRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -34,12 +34,12 @@ public class TvaCollecteeReportServiceImpl implements TvaCollecteeReportService 
     private static final DateTimeFormatter MOIS_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final LigneFactureRepository ligneFactureRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public TvaCollecteeReportServiceImpl(LigneFactureRepository ligneFactureRepository,
-                                         XlsxExportService xlsxExportService) {
+                                         DocumentExportService documentExportService) {
         this.ligneFactureRepository = ligneFactureRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -63,13 +63,47 @@ public class TvaCollecteeReportServiceImpl implements TvaCollecteeReportService 
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to, TvaGroupBy groupBy) {
+        return documentExportService.toXlsx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to, TvaGroupBy groupBy) {
+        return documentExportService.toDocx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to, TvaGroupBy groupBy) {
+        return documentExportService.toPdf(buildDocument(from, to, groupBy));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to, TvaGroupBy groupBy) {
         TvaRecapDto dto = computeTvaRecap(from, to, groupBy);
-        List<ColumnSpec<TvaBreakdownDto>> columns = List.of(
-                new ColumnSpec<>("Dimension", ColumnType.TEXT, TvaBreakdownDto::dimensionKey),
-                new ColumnSpec<>("Total HT", ColumnType.MONEY, TvaBreakdownDto::totalHt),
-                new ColumnSpec<>("Total TVA", ColumnType.MONEY, TvaBreakdownDto::totalTva),
-                new ColumnSpec<>("Total TTC", ColumnType.MONEY, TvaBreakdownDto::totalTtc));
-        return xlsxExportService.export("TVA_Recap", columns, dto.breakdown());
+        String title = "Récapitulatif TVA collectée";
+        String period = String.format("Période : %s → %s · Groupage : %s", from, to, groupBy);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Total HT", money(dto.totalHt())),
+                new ReportDocument.Kpi("Total TVA", money(dto.totalTva())),
+                new ReportDocument.Kpi("Total TTC", money(dto.totalTtc()))
+        );
+
+        List<String> headers = List.of("Dimension", "Total HT", "Total TVA", "Total TTC");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdown().size());
+        for (TvaBreakdownDto b : dto.breakdown()) {
+            rows.add(List.of(
+                    b.dimensionKey() != null ? b.dimensionKey() : "",
+                    money(b.totalHt()),
+                    money(b.totalTva()),
+                    money(b.totalTtc())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail par " + groupBy, headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private List<TvaBreakdownDto> breakdownByTaux(LocalDate from, LocalDate to) {

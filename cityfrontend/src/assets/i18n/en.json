@@ -2879,6 +2879,8 @@
       "from": "From",
       "to": "To",
       "date": "Date",
+      "reference": "Reference date",
+      "limit": "Limit",
       "groupBy": "Group by"
     },
     "actions": {
@@ -2939,15 +2941,52 @@
       }
     },
     "finance": {
-      "title": "Rapports Finance",
-      "r001": "Journal des ventes",
-      "r002": "Encaissements par mode",
-      "r003": "Clients débiteurs",
-      "r004": "Balance âgée des créances",
-      "r001Desc": "CA émis et encaissé sur la période, par mode de paiement.",
-      "r002Desc": "Comptes auxiliaires clients avec soldes en attente.",
-      "r003Desc": "Détail TVA collectée par taux pour la déclaration mensuelle.",
-      "r004Desc": "Sociétés générant le plus de chiffre d'affaires (TTC)."
+      "title": "Finance Reports",
+      "pageTitle": "Reporting — Finance",
+      "r001": "Revenue recap",
+      "r002": "Outstanding receivables",
+      "r003": "VAT recap",
+      "r004": "Top B2B clients",
+      "r001Desc": "Revenue issued and collected over the period.",
+      "r002Desc": "Auxiliary client accounts with pending balances.",
+      "r003Desc": "VAT collected per rate for the monthly declaration.",
+      "r004Desc": "Top companies by revenue (TTC).",
+      "ca": {
+        "nbFactures": "Invoices",
+        "caHt": "Revenue HT",
+        "caTva": "Revenue VAT",
+        "caTtc": "Revenue TTC",
+        "dejaPaye": "Already paid",
+        "nbPaiements": "Payments",
+        "encaisse": "Collected",
+        "devise": "Currency"
+      },
+      "encours": {
+        "total": "Total outstanding",
+        "facture": "Invoice",
+        "date": "Date",
+        "echeance": "Due date",
+        "client": "Client",
+        "ttc": "TTC",
+        "paye": "Paid",
+        "du": "Due",
+        "age": "Age (d)",
+        "bucket": "Bucket"
+      },
+      "tva": {
+        "totalHt": "Total HT",
+        "totalTva": "Total VAT",
+        "totalTtc": "Total TTC",
+        "dimension": "Dimension"
+      },
+      "topSoc": {
+        "rang": "Rank",
+        "societe": "Company",
+        "siret": "NIF/SIRET",
+        "nbFactures": "Invoices",
+        "caTtc": "Revenue TTC",
+        "caPaye": "Revenue paid"
+      }
     },
     "inventory": {
       "title": "Rapports Stocks",

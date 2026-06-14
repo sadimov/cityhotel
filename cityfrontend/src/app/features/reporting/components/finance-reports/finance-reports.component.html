@@ -1,0 +1,248 @@
+<section class="finance-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.finance.pageTitle' | translate }}</h2>
+  </header>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'ca'" (click)="selectTab('ca')">{{ 'reporting.finance.r001' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'encours'" (click)="selectTab('encours')">{{ 'reporting.finance.r002' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'tva'" (click)="selectTab('tva')">{{ 'reporting.finance.r003' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'topSocietes'" (click)="selectTab('topSocietes')">{{ 'reporting.finance.r004' | translate }}</button></li>
+  </ul>
+
+  <!-- ── R-FIN-001 CA ─────────────────────────────────────────────────── -->
+  @if (activeTab === 'ca') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="ca-periode">{{ 'reporting.filters.periode' | translate }}</label>
+          <select id="ca-periode" class="form-select" [(ngModel)]="filters.ca.periode">
+            @for (p of periodes; track p) { <option [value]="p">{{ p }}</option> }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="ca-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="ca-from" type="date" class="form-control" [(ngModel)]="filters.ca.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="ca-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="ca-to" type="date" class="form-control" [(ngModel)]="filters.ca.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('ca')" [disabled]="states.ca === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportCaXlsx()" [disabled]="exporting.ca || states.ca !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportCaDocx()" [disabled]="exporting.ca || states.ca !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportCaPdf()" [disabled]="exporting.ca || states.ca !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.ca === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.ca === 'ready' && ca) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.nbFactures' | translate }}</small><div class="h5">{{ ca.nbFactures }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.caHt' | translate }}</small><div class="h5">{{ ca.caEmisHt | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.caTva' | translate }}</small><div class="h5">{{ ca.caEmisTva | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.finance.ca.caTtc' | translate }}</small><div class="h5">{{ ca.caEmisTtc | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.dejaPaye' | translate }}</small><div class="h5">{{ ca.caPayeTtc | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.nbPaiements' | translate }}</small><div class="h5">{{ ca.nbPaiements }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.finance.ca.encaisse' | translate }}</small><div class="h5">{{ ca.montantEncaisse | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.ca.devise' | translate }}</small><div class="h5">{{ ca.devise }}</div></div></div>
+        </div>
+      } @else if (states.ca === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-FIN-002 Encours clients ────────────────────────────────────── -->
+  @if (activeTab === 'encours') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="enc-ref">{{ 'reporting.filters.reference' | translate }}</label>
+          <input id="enc-ref" type="date" class="form-control" [(ngModel)]="filters.encours.reference" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('encours')" [disabled]="states.encours === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportEncoursXlsx()" [disabled]="exporting.encours || states.encours !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportEncoursDocx()" [disabled]="exporting.encours || states.encours !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportEncoursPdf()" [disabled]="exporting.encours || states.encours !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.encours === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.encours === 'ready' && encours) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.finance.encours.total' | translate }}</small><div class="h5">{{ encours.totalEncours | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">0 — 30 j</small><div class="h5">{{ encours.bucket0_30 | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">30 — 60 j</small><div class="h5">{{ encours.bucket30_60 | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">60 — 90 j</small><div class="h5">{{ encours.bucket60_90 | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-warning-subtle"><small class="text-muted">90+ j</small><div class="h5">{{ encours.bucket90Plus | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.finance.encours.facture' | translate }}</th>
+                <th>{{ 'reporting.finance.encours.date' | translate }}</th>
+                <th>{{ 'reporting.finance.encours.echeance' | translate }}</th>
+                <th>{{ 'reporting.finance.encours.client' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.encours.ttc' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.encours.paye' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.encours.du' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.encours.age' | translate }}</th>
+                <th>{{ 'reporting.finance.encours.bucket' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of encours.lignes; track l.factureId) {
+                <tr>
+                  <td>{{ l.numeroFacture }}</td>
+                  <td>{{ l.dateFacture }}</td>
+                  <td>{{ l.dateEcheance || '-' }}</td>
+                  <td>{{ l.clientId }}</td>
+                  <td class="text-end">{{ l.montantTtc | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ l.montantPaye | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ l.montantDu | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ l.ageJours }}</td>
+                  <td>{{ l.bucket }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="9" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.encours === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-FIN-003 TVA ────────────────────────────────────────────────── -->
+  @if (activeTab === 'tva') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="tva-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="tva-from" type="date" class="form-control" [(ngModel)]="filters.tva.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="tva-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="tva-to" type="date" class="form-control" [(ngModel)]="filters.tva.to" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="tva-group">{{ 'reporting.filters.groupBy' | translate }}</label>
+          <select id="tva-group" class="form-select" [(ngModel)]="filters.tva.groupBy">
+            @for (g of tvaGroupOptions; track g) { <option [value]="g">{{ g }}</option> }
+          </select>
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('tva')" [disabled]="states.tva === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportTvaXlsx()" [disabled]="exporting.tva || states.tva !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportTvaDocx()" [disabled]="exporting.tva || states.tva !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportTvaPdf()" [disabled]="exporting.tva || states.tva !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.tva === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.tva === 'ready' && tva) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.tva.totalHt' | translate }}</small><div class="h5">{{ tva.totalHt | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.finance.tva.totalTva' | translate }}</small><div class="h5">{{ tva.totalTva | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.finance.tva.totalTtc' | translate }}</small><div class="h5">{{ tva.totalTtc | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.finance.tva.dimension' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.tva.totalHt' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.tva.totalTva' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.tva.totalTtc' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of tva.breakdown; track b.dimensionKey) {
+                <tr>
+                  <td>{{ b.dimensionKey }}</td>
+                  <td class="text-end">{{ b.totalHt | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ b.totalTva | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ b.totalTtc | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.tva === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-FIN-004 Top sociétés ───────────────────────────────────────── -->
+  @if (activeTab === 'topSocietes') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="top-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="top-from" type="date" class="form-control" [(ngModel)]="filters.topSocietes.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="top-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="top-to" type="date" class="form-control" [(ngModel)]="filters.topSocietes.to" />
+        </div>
+        <div class="col-md-1">
+          <label class="form-label" for="top-limit">{{ 'reporting.filters.limit' | translate }}</label>
+          <input id="top-limit" type="number" min="1" max="100" class="form-control" [(ngModel)]="filters.topSocietes.limit" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('topSocietes')" [disabled]="states.topSocietes === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportTopXlsx()" [disabled]="exporting.topSocietes || states.topSocietes !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportTopDocx()" [disabled]="exporting.topSocietes || states.topSocietes !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportTopPdf()" [disabled]="exporting.topSocietes || states.topSocietes !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.topSocietes === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.topSocietes === 'ready') {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.finance.topSoc.rang' | translate }}</th>
+                <th>{{ 'reporting.finance.topSoc.societe' | translate }}</th>
+                <th>{{ 'reporting.finance.topSoc.siret' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.topSoc.nbFactures' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.topSoc.caTtc' | translate }}</th>
+                <th class="text-end">{{ 'reporting.finance.topSoc.caPaye' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (s of topSocietes; track s.societeId) {
+                <tr>
+                  <td>{{ s.rang }}</td>
+                  <td>{{ s.societeNom }}</td>
+                  <td>{{ s.siret || '-' }}</td>
+                  <td class="text-end">{{ s.nbFactures }}</td>
+                  <td class="text-end">{{ s.caTtc | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ s.caPaye | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.topSocietes === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+</section>

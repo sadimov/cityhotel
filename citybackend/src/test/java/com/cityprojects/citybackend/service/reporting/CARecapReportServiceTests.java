@@ -7,7 +7,7 @@ import com.cityprojects.citybackend.dto.reporting.projection.CARecapProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.FactureRepository;
 import com.cityprojects.citybackend.repository.finance.PaiementRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
  * <ol>
  *   <li>T1 happy path : agg projection -&gt; DTO complet, devise MRU.</li>
  *   <li>T2 edge : agg projection NULL -&gt; valeurs 0.</li>
- *   <li>T3 export XLSX : delegue au XlsxExportService et renvoie le binaire.</li>
+ *   <li>T3 export XLSX : delegue au DocumentExportService et renvoie le binaire.</li>
  *   <li>T4 CUSTOM dates inversees -&gt; BusinessException.</li>
  * </ol>
  */
@@ -49,13 +49,13 @@ class CARecapReportServiceTests {
     private PaiementRepository paiementRepository;
 
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private CARecapReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new CARecapReportServiceImpl(factureRepository, paiementRepository, xlsxExportService);
+        service = new CARecapReportServiceImpl(factureRepository, paiementRepository, documentExportService);
         TenantContext.set(1L);
     }
 
@@ -110,7 +110,7 @@ class CARecapReportServiceTests {
         when(factureRepository.aggregateCaOnRange(any(), any())).thenReturn(null);
         when(paiementRepository.countValidesOnRange(any(), any())).thenReturn(0L);
         when(paiementRepository.sumMontantValidesOnRange(any(), any())).thenReturn(null);
-        when(xlsxExportService.export(anyString(), anyList(), anyList()))
+        when(documentExportService.toXlsx(any()))
                 .thenReturn(new byte[]{1, 2, 3});
 
         byte[] xlsx = service.exportXlsx(ReportPeriode.SEMAINE, null, null, LocalDate.now());

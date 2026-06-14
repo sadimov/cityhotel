@@ -35,6 +35,8 @@ public class FinanceReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String DOCX_MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     // NIGHTAUDIT inclus : l'auditeur de nuit consulte les encours / TVA / top
     // sociétés dans le cadre de la clôture quotidienne (lecture seule).
     private static final String ROLES_FIN = "hasAnyRole('SUPERADMIN','ADMIN','GERANT','NIGHTAUDIT')";
@@ -68,6 +70,24 @@ public class FinanceReportController {
                 encoursService.exportXlsx(reference));
     }
 
+    @GetMapping(value = "/encours-clients/export.docx")
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportEncoursDocx(
+            @RequestParam(name = "reference", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate reference) {
+        return attachment("encours-clients.docx", docxMediaType(),
+                encoursService.exportDocx(reference));
+    }
+
+    @GetMapping(value = "/encours-clients/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportEncoursPdf(
+            @RequestParam(name = "reference", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate reference) {
+        return attachment("encours-clients.pdf", MediaType.APPLICATION_PDF,
+                encoursService.exportPdf(reference));
+    }
+
     @GetMapping("/tva-recap")
     @PreAuthorize(ROLES_FIN)
     public ResponseEntity<TvaRecapDto> getTvaRecap(
@@ -85,6 +105,26 @@ public class FinanceReportController {
             @RequestParam(name = "groupBy", defaultValue = "MOIS") TvaGroupBy groupBy) {
         return attachment("tva-recap.xlsx", xlsxMediaType(),
                 tvaService.exportXlsx(from, to, groupBy));
+    }
+
+    @GetMapping(value = "/tva-recap/export.docx")
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportTvaRecapDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "MOIS") TvaGroupBy groupBy) {
+        return attachment("tva-recap.docx", docxMediaType(),
+                tvaService.exportDocx(from, to, groupBy));
+    }
+
+    @GetMapping(value = "/tva-recap/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportTvaRecapPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "MOIS") TvaGroupBy groupBy) {
+        return attachment("tva-recap.pdf", MediaType.APPLICATION_PDF,
+                tvaService.exportPdf(from, to, groupBy));
     }
 
     @GetMapping("/top-societes")
@@ -106,8 +146,32 @@ public class FinanceReportController {
                 topSocietesService.exportXlsx(from, to, limit));
     }
 
+    @GetMapping(value = "/top-societes/export.docx")
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportTopSocietesDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "limit", defaultValue = "10") int limit) {
+        return attachment("top-societes.docx", docxMediaType(),
+                topSocietesService.exportDocx(from, to, limit));
+    }
+
+    @GetMapping(value = "/top-societes/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_FIN)
+    public ResponseEntity<byte[]> exportTopSocietesPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "limit", defaultValue = "10") int limit) {
+        return attachment("top-societes.pdf", MediaType.APPLICATION_PDF,
+                topSocietesService.exportPdf(from, to, limit));
+    }
+
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType(XLSX_MEDIA_TYPE);
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType(DOCX_MEDIA_TYPE);
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

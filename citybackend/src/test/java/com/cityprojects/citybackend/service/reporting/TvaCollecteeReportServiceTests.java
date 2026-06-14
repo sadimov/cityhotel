@@ -6,7 +6,7 @@ import com.cityprojects.citybackend.dto.reporting.TvaRecapDto.TvaGroupBy;
 import com.cityprojects.citybackend.dto.reporting.projection.TvaRecapProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.finance.LigneFactureRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,13 +33,13 @@ class TvaCollecteeReportServiceTests {
     @Mock
     private LigneFactureRepository ligneFactureRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private TvaCollecteeReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new TvaCollecteeReportServiceImpl(ligneFactureRepository, xlsxExportService);
+        service = new TvaCollecteeReportServiceImpl(ligneFactureRepository, documentExportService);
         TenantContext.set(1L);
     }
 
