@@ -8,6 +8,7 @@ import com.cityprojects.citybackend.dto.reporting.OccupationDto;
 import com.cityprojects.citybackend.dto.reporting.ReportPeriode;
 import com.cityprojects.citybackend.dto.reporting.StockAlertDto;
 import com.cityprojects.citybackend.exception.BusinessException;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -40,13 +41,15 @@ class DashboardDirectionReportServiceTests {
     private RecapTachesReportService recapTachesService;
     @Mock
     private KpiReceptionReportService kpiReceptionService;
+    @Mock
+    private DocumentExportService documentExportService;
 
     private DashboardDirectionReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new DashboardDirectionReportServiceImpl(occupationService, caRecapService,
-                stockAlertService, recapTachesService, kpiReceptionService);
+                stockAlertService, recapTachesService, kpiReceptionService, documentExportService);
         TenantContext.set(1L);
     }
 

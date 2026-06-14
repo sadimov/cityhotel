@@ -3058,9 +3058,18 @@
       }
     },
     "direction": {
-      "title": "Rapports Direction",
-      "r001": "Synthèse direction",
-      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage). Consultable depuis le dashboard d'accueil — export à venir."
+      "title": "تقارير الإدارة",
+      "pageTitle": "التقارير — الإدارة",
+      "r001": "لوحة معلومات الإدارة",
+      "r001Desc": "عرض مجمع آني (الإشغال، الإيرادات، التنبيهات، المهام).",
+      "tauxOccupation": "معدل الإشغال",
+      "caJour": "إيرادات اليوم (TTC)",
+      "caSemaine": "إيرادات الأسبوع (TTC)",
+      "alertesStock": "تنبيهات المخزون",
+      "tachesEnCours": "مهام قيد التنفيذ",
+      "checkInJour": "تسجيلات الوصول اليوم",
+      "checkOutJour": "تسجيلات المغادرة اليوم",
+      "occupationParType": "الإشغال حسب نوع الغرفة"
     },
     "viewSoon": "Vue détaillée à venir",
     "downloadError": "Le téléchargement du rapport a échoué.",

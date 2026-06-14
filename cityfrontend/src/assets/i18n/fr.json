@@ -302,8 +302,17 @@
     },
     "direction": {
       "title": "Rapports Direction",
+      "pageTitle": "Reporting — Direction",
       "r001": "Dashboard direction",
-      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage). Consultable depuis le dashboard d'accueil — export à venir."
+      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage).",
+      "tauxOccupation": "Taux d'occupation",
+      "caJour": "CA du jour (TTC)",
+      "caSemaine": "CA semaine (TTC)",
+      "alertesStock": "Alertes stock",
+      "tachesEnCours": "Tâches en cours",
+      "checkInJour": "Check-in du jour",
+      "checkOutJour": "Check-out du jour",
+      "occupationParType": "Occupation par type de chambre"
     }
   },
   "common": {

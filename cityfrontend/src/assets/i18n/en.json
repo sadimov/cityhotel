@@ -3058,9 +3058,18 @@
       }
     },
     "direction": {
-      "title": "Rapports Direction",
-      "r001": "Synthèse direction",
-      "r001Desc": "Vue agrégée temps réel (occupation, CA, alertes, ménage). Consultable depuis le dashboard d'accueil — export à venir."
+      "title": "Management Reports",
+      "pageTitle": "Reporting — Management",
+      "r001": "Management dashboard",
+      "r001Desc": "Real-time aggregated view (occupancy, revenue, alerts, tasks).",
+      "tauxOccupation": "Occupancy rate",
+      "caJour": "Revenue today (TTC)",
+      "caSemaine": "Revenue this week (TTC)",
+      "alertesStock": "Stock alerts",
+      "tachesEnCours": "Tasks in progress",
+      "checkInJour": "Today check-ins",
+      "checkOutJour": "Today check-outs",
+      "occupationParType": "Occupancy by room type"
     },
     "viewSoon": "Vue détaillée à venir",
     "downloadError": "Le téléchargement du rapport a échoué.",

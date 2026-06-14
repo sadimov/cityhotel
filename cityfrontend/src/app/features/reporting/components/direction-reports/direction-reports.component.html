@@ -1,0 +1,71 @@
+<section class="direction-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.direction.pageTitle' | translate }}</h2>
+  </header>
+
+  <div class="report-pane">
+    <div class="row g-2 mb-3 align-items-end">
+      <div class="col-md-2">
+        <label class="form-label" for="dir-date">{{ 'reporting.filters.date' | translate }}</label>
+        <input id="dir-date" type="date" class="form-control" [(ngModel)]="filters.date" />
+      </div>
+      <div class="col-md-auto ms-md-auto d-flex gap-2">
+        <button type="button" class="btn btn-primary" (click)="refresh()" [disabled]="state === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+        <button type="button" class="btn btn-outline-success" (click)="exportXlsx()" [disabled]="exporting || state !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+        <button type="button" class="btn btn-outline-primary" (click)="exportDocx()" [disabled]="exporting || state !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+        <button type="button" class="btn btn-outline-danger" (click)="exportPdf()" [disabled]="exporting || state !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+      </div>
+    </div>
+
+    @if (state === 'loading') {
+      <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+    } @else if (state === 'ready' && dashboard) {
+      <!-- ── KPIs principaux ─────────────────────────────────────── -->
+      <div class="row g-2 mb-4">
+        <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.direction.tauxOccupation' | translate }}</small><div class="h4">{{ dashboard.occupation?.tauxOccupationGlobal | number:'1.2-2' }} %</div></div></div>
+        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caJour' | translate }}</small><div class="h4">{{ dashboard.caJour?.caEmisTtc | number:'1.2-2' }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caSemaine' | translate }}</small><div class="h4">{{ dashboard.caSemaine?.caEmisTtc | number:'1.2-2' }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3" [class.bg-danger-subtle]="dashboard.nbAlertesStock > 0"><small class="text-muted">{{ 'reporting.direction.alertesStock' | translate }}</small><div class="h4">{{ dashboard.nbAlertesStock }}</div></div></div>
+      </div>
+
+      <div class="row g-2 mb-4">
+        <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.direction.tachesEnCours' | translate }}</small><div class="h4">{{ dashboard.nbTachesEnCours }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.direction.checkInJour' | translate }}</small><div class="h4">{{ dashboard.nbCheckInJour }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.direction.checkOutJour' | translate }}</small><div class="h4">{{ dashboard.nbCheckOutJour }}</div></div></div>
+      </div>
+
+      <!-- ── Détails occupation par type de chambre ──────────────── -->
+      @if (dashboard.occupation?.breakdownParType?.length) {
+        <h3 class="h6 mb-2">{{ 'reporting.direction.occupationParType' | translate }}</h3>
+        <div class="table-responsive mb-4">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.hebergement.occupation.typeCode' | translate }}</th>
+                <th>{{ 'reporting.hebergement.occupation.typeNom' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nbChambres' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nuiteesDispo' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nuiteesOccupees' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.taux' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of dashboard.occupation.breakdownParType; track row.typeId) {
+                <tr>
+                  <td>{{ row.typeCode }}</td>
+                  <td>{{ row.typeNom }}</td>
+                  <td class="text-end">{{ row.nbChambres }}</td>
+                  <td class="text-end">{{ row.nuiteesDispo }}</td>
+                  <td class="text-end">{{ row.nuiteesOccupees }}</td>
+                  <td class="text-end">{{ row.tauxOccupation | number:'1.2-2' }} %</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else if (state === 'error') {
+      <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+    }
+  </div>
+</section>

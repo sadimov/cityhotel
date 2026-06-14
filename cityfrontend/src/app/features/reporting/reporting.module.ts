@@ -4,28 +4,31 @@ import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
 
+import { DirectionReportsComponent } from './components/direction-reports/direction-reports.component';
 import { FinanceReportsComponent } from './components/finance-reports/finance-reports.component';
 import { HebergementReportsComponent } from './components/hebergement-reports/hebergement-reports.component';
 import { InventoryReportsComponent } from './components/inventory-reports/inventory-reports.component';
 import { MenageReportsComponent } from './components/menage-reports/menage-reports.component';
 import { RestaurantReportsComponent } from './components/restaurant-reports/restaurant-reports.component';
-import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 import { ReportingRoutingModule } from './reporting-routing.module';
 
 /**
- * Module feature `reporting` — landing pages par domaine pour les 20 rapports
- * backend exposés sous `/api/reports/{hebergement,finance,inventory,restaurant,menage,direction}`.
+ * Module feature `reporting` — pages de consultation par domaine pour les
+ * 20 rapports backend exposés sous {@code /api/reports/{module}}.
  *
- * Tour 41 backend : 20 rapports R-HEB/R-FIN/R-INV/R-RES/R-MEN/R-DIR livrés
- * en read-only (JPQL + projections + cache).
- *
- * Tour 51ter : refonte UX consultation directe + exports.
- *  - HebergementReportsComponent : pilote (5 rapports R-HEB-001..005)
- *  - ReportingHomeComponent : catalogue + download pour les autres modules
- *    (à migrer progressivement vers le pattern HebergementReports).
+ * Tour 51ter : refonte UX terminée — consultation directe + exports
+ * (XLSX/DOCX/PDF) avec bordures pour tous les modules :
+ *  - Hebergement / Finance / Inventory / Restaurant / Menage / Direction
  */
 @NgModule({
-  declarations: [FinanceReportsComponent, HebergementReportsComponent, InventoryReportsComponent, MenageReportsComponent, RestaurantReportsComponent, ReportingHomeComponent],
+  declarations: [
+    DirectionReportsComponent,
+    FinanceReportsComponent,
+    HebergementReportsComponent,
+    InventoryReportsComponent,
+    MenageReportsComponent,
+    RestaurantReportsComponent,
+  ],
   imports: [CommonModule, FormsModule, HttpClientModule, TranslateModule.forChild(), ReportingRoutingModule],
 })
 export class ReportingModule {}
