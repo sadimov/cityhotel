@@ -8,9 +8,8 @@ import com.cityprojects.citybackend.entity.inventory.BonCommande;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.inventory.BonCommandeRepository;
 import com.cityprojects.citybackend.repository.inventory.MouvementStockRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,14 +35,14 @@ public class BcPendantsRotationReportServiceImpl implements BcPendantsRotationRe
 
     private final BonCommandeRepository bonCommandeRepository;
     private final MouvementStockRepository mouvementRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public BcPendantsRotationReportServiceImpl(BonCommandeRepository bonCommandeRepository,
                                                MouvementStockRepository mouvementRepository,
-                                               XlsxExportService xlsxExportService) {
+                                               DocumentExportService documentExportService) {
         this.bonCommandeRepository = bonCommandeRepository;
         this.mouvementRepository = mouvementRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -102,29 +101,80 @@ public class BcPendantsRotationReportServiceImpl implements BcPendantsRotationRe
     }
 
     @Override
-    public byte[] exportBcPendantsXlsx() {
-        List<BcPendantDto> data = findBcPendants();
-        List<ColumnSpec<BcPendantDto>> columns = List.of(
-                new ColumnSpec<>("Numero", ColumnType.TEXT, BcPendantDto::numeroBc),
-                new ColumnSpec<>("Statut", ColumnType.TEXT, bc -> bc.statut() == null ? "" : bc.statut().name()),
-                new ColumnSpec<>("Date commande", ColumnType.DATE, BcPendantDto::dateCommande),
-                new ColumnSpec<>("Livraison prevue", ColumnType.DATE, BcPendantDto::dateLivraisonPrevue),
-                new ColumnSpec<>("Fournisseur", ColumnType.INTEGER, BcPendantDto::fournisseurId),
-                new ColumnSpec<>("Age jours", ColumnType.INTEGER, BcPendantDto::ageJours),
-                new ColumnSpec<>("Montant", ColumnType.MONEY, BcPendantDto::montantTotal));
-        return xlsxExportService.export("BC_Pendants", columns, data);
-    }
+    public byte[] exportBcPendantsXlsx() { return documentExportService.toXlsx(buildBcPendantsDocument()); }
+    @Override
+    public byte[] exportBcPendantsDocx() { return documentExportService.toDocx(buildBcPendantsDocument()); }
+    @Override
+    public byte[] exportBcPendantsPdf() { return documentExportService.toPdf(buildBcPendantsDocument()); }
 
     @Override
-    public byte[] exportRotationXlsx(LocalDate from, LocalDate to) {
+    public byte[] exportRotationXlsx(LocalDate from, LocalDate to) { return documentExportService.toXlsx(buildRotationDocument(from, to)); }
+    @Override
+    public byte[] exportRotationDocx(LocalDate from, LocalDate to) { return documentExportService.toDocx(buildRotationDocument(from, to)); }
+    @Override
+    public byte[] exportRotationPdf(LocalDate from, LocalDate to) { return documentExportService.toPdf(buildRotationDocument(from, to)); }
+
+    private ReportDocument buildBcPendantsDocument() {
+        List<BcPendantDto> data = findBcPendants();
+        String title = "Bons de commande pendants";
+        String period = String.format("Date courante : %s · %d BC en attente", LocalDate.now(), data.size());
+
+        BigDecimal totalMontant = data.stream()
+                .map(d -> d.montantTotal() != null ? d.montantTotal() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int ageMax = data.stream().mapToInt(d -> d.ageJours() != null ? d.ageJours() : 0).max().orElse(0);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb BC pendants", String.valueOf(data.size())),
+                new ReportDocument.Kpi("Âge max (jours)", String.valueOf(ageMax)),
+                new ReportDocument.Kpi("Montant total", money(totalMontant))
+        );
+
+        List<String> headers = List.of("Numéro", "Statut", "Date commande", "Livraison prévue",
+                "Fournisseur", "Âge (j)", "Montant");
+        List<List<Object>> rows = new ArrayList<>(data.size());
+        for (BcPendantDto bc : data) {
+            rows.add(List.of(
+                    bc.numeroBc() != null ? bc.numeroBc() : "",
+                    bc.statut() != null ? bc.statut().name() : "",
+                    bc.dateCommande() != null ? bc.dateCommande().toString() : "",
+                    bc.dateLivraisonPrevue() != null ? bc.dateLivraisonPrevue().toString() : "",
+                    bc.fournisseurId() != null ? bc.fournisseurId() : "",
+                    bc.ageJours() != null ? bc.ageJours() : 0,
+                    money(bc.montantTotal())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail BC pendants", headers, rows));
+    }
+
+    private ReportDocument buildRotationDocument(LocalDate from, LocalDate to) {
         List<RotationProduitDto> data = computeRotation(from, to);
-        List<ColumnSpec<RotationProduitDto>> columns = List.of(
-                new ColumnSpec<>("Code", ColumnType.TEXT, RotationProduitDto::codeProduit),
-                new ColumnSpec<>("Produit", ColumnType.TEXT, RotationProduitDto::nomProduit),
-                new ColumnSpec<>("Sorties", ColumnType.INTEGER, RotationProduitDto::totalSorties),
-                new ColumnSpec<>("Stock actuel", ColumnType.INTEGER, RotationProduitDto::stockActuel),
-                new ColumnSpec<>("Rotation", ColumnType.DECIMAL, RotationProduitDto::rotation));
-        return xlsxExportService.export("Rotation_Produits", columns, data);
+        String title = "Rotation produits";
+        String period = String.format("Période : %s → %s · %d produit(s)", from, to, data.size());
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Nb produits avec sortie", String.valueOf(data.size()))
+        );
+
+        List<String> headers = List.of("Code", "Produit", "Sorties", "Stock actuel", "Rotation");
+        List<List<Object>> rows = new ArrayList<>(data.size());
+        for (RotationProduitDto r : data) {
+            rows.add(List.of(
+                    r.codeProduit() != null ? r.codeProduit() : "",
+                    r.nomProduit() != null ? r.nomProduit() : "",
+                    r.totalSorties() != null ? r.totalSorties() : 0,
+                    r.stockActuel() != null ? r.stockActuel() : 0,
+                    r.rotation() != null ? r.rotation().toPlainString() : "0.00"
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Indice de rotation", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private static long nz(Long value) {

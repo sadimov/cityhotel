@@ -33,6 +33,8 @@ public class InventoryReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String DOCX_MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String ROLES_INV = "hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')";
 
     private final MouvementsValorisesReportService mouvementsService;
@@ -63,6 +65,26 @@ public class InventoryReportController {
                 mouvementsService.exportXlsx(from, to, type));
     }
 
+    @GetMapping(value = "/mouvements-valorises/export.docx")
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportMouvementsDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "type", required = false) TypeMouvementStock type) {
+        return attachment("mouvements-valorises.docx", docxMediaType(),
+                mouvementsService.exportDocx(from, to, type));
+    }
+
+    @GetMapping(value = "/mouvements-valorises/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportMouvementsPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "type", required = false) TypeMouvementStock type) {
+        return attachment("mouvements-valorises.pdf", MediaType.APPLICATION_PDF,
+                mouvementsService.exportPdf(from, to, type));
+    }
+
     @GetMapping("/bc-pendants")
     @PreAuthorize(ROLES_INV)
     public ResponseEntity<List<BcPendantDto>> getBcPendants() {
@@ -74,6 +96,20 @@ public class InventoryReportController {
     public ResponseEntity<byte[]> exportBcPendantsXlsx() {
         return attachment("bc-pendants.xlsx", xlsxMediaType(),
                 bcRotationService.exportBcPendantsXlsx());
+    }
+
+    @GetMapping(value = "/bc-pendants/export.docx")
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportBcPendantsDocx() {
+        return attachment("bc-pendants.docx", docxMediaType(),
+                bcRotationService.exportBcPendantsDocx());
+    }
+
+    @GetMapping(value = "/bc-pendants/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportBcPendantsPdf() {
+        return attachment("bc-pendants.pdf", MediaType.APPLICATION_PDF,
+                bcRotationService.exportBcPendantsPdf());
     }
 
     @GetMapping("/rotation-produits")
@@ -93,8 +129,30 @@ public class InventoryReportController {
                 bcRotationService.exportRotationXlsx(from, to));
     }
 
+    @GetMapping(value = "/rotation-produits/export.docx")
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportRotationDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("rotation-produits.docx", docxMediaType(),
+                bcRotationService.exportRotationDocx(from, to));
+    }
+
+    @GetMapping(value = "/rotation-produits/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_INV)
+    public ResponseEntity<byte[]> exportRotationPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("rotation-produits.pdf", MediaType.APPLICATION_PDF,
+                bcRotationService.exportRotationPdf(from, to));
+    }
+
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType(XLSX_MEDIA_TYPE);
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType(DOCX_MEDIA_TYPE);
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

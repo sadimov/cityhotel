@@ -2989,13 +2989,36 @@
       }
     },
     "inventory": {
-      "title": "Rapports Stocks",
-      "r001": "Stock actuel valorisé",
-      "r002": "Valorisation des mouvements",
-      "r003": "Rotation produits",
-      "r001Desc": "Produits sous le seuil critique ou en rupture.",
-      "r002Desc": "Entrées et sorties de stock avec valorisation comptable.",
-      "r003Desc": "Indice de rotation des produits sur la période."
+      "title": "تقارير المخزون",
+      "pageTitle": "التقارير — المخزون والمستودع",
+      "r001": "تنبيهات المخزون",
+      "r002": "الحركات المُقيَّمة",
+      "r003": "دوران المنتجات",
+      "r003a": "أوامر شراء معلقة",
+      "r003b": "الدوران",
+      "r001Desc": "المنتجات تحت عتبة التنبيه.",
+      "r002Desc": "حركات الدخول/الخروج مع تقييم محاسبي.",
+      "r003Desc": "مؤشر دوران المنتجات خلال الفترة.",
+      "alerts": {
+        "code": "الرمز", "produit": "المنتج", "unite": "الوحدة",
+        "stock": "المخزون", "seuilAlerte": "عتبة التنبيه", "seuilCritique": "العتبة الحرجة",
+        "ecart": "الفارق", "statut": "الحالة", "valeurManquante": "القيمة المفقودة"
+      },
+      "mouvements": {
+        "nb": "عدد الحركات", "entrees": "قيمة الدخول", "sorties": "قيمة الخروج",
+        "type": "النوع", "allTypes": "جميع الأنواع",
+        "date": "التاريخ", "code": "الرمز", "produit": "المنتج",
+        "qte": "الكمية", "pu": "سعر الوحدة", "valeur": "القيمة", "ref": "المرجع"
+      },
+      "bc": {
+        "numero": "الرقم", "statut": "الحالة", "dateCommande": "تاريخ الطلب",
+        "dateLivraison": "موعد التسليم", "fournisseur": "المورد",
+        "age": "العمر (يوم)", "montant": "المبلغ"
+      },
+      "rotation": {
+        "code": "الرمز", "produit": "المنتج", "sorties": "الخروج",
+        "stock": "المخزون الحالي", "rotation": "الدوران"
+      }
     },
     "restaurant": {
       "title": "Rapports Restaurant",

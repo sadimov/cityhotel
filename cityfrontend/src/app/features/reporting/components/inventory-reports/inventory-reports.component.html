@@ -1,0 +1,246 @@
+<section class="inventory-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.inventory.pageTitle' | translate }}</h2>
+  </header>
+
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'alerts'" (click)="selectTab('alerts')">{{ 'reporting.inventory.r001' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'mouvements'" (click)="selectTab('mouvements')">{{ 'reporting.inventory.r002' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'bc'" (click)="selectTab('bc')">{{ 'reporting.inventory.r003a' | translate }}</button></li>
+    <li class="nav-item"><button class="nav-link" type="button" [class.active]="activeTab === 'rotation'" (click)="selectTab('rotation')">{{ 'reporting.inventory.r003b' | translate }}</button></li>
+  </ul>
+
+  <!-- ── R-INV-001 Alertes ──────────────────────────────────────── -->
+  @if (activeTab === 'alerts') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('alerts')" [disabled]="states.alerts === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportAlertsXlsx()" [disabled]="exporting.alerts || states.alerts !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportAlertsDocx()" [disabled]="exporting.alerts || states.alerts !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportAlertsPdf()" [disabled]="exporting.alerts || states.alerts !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.alerts === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.alerts === 'ready') {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.inventory.alerts.code' | translate }}</th>
+                <th>{{ 'reporting.inventory.alerts.produit' | translate }}</th>
+                <th>{{ 'reporting.inventory.alerts.unite' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.alerts.stock' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.alerts.seuilAlerte' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.alerts.seuilCritique' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.alerts.ecart' | translate }}</th>
+                <th>{{ 'reporting.inventory.alerts.statut' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.alerts.valeurManquante' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (a of alerts; track a.produitId) {
+                <tr>
+                  <td>{{ a.codeProduit }}</td>
+                  <td>{{ a.nomProduit }}</td>
+                  <td>{{ a.uniteMesure }}</td>
+                  <td class="text-end">{{ a.stockActuel }}</td>
+                  <td class="text-end">{{ a.seuilAlerte }}</td>
+                  <td class="text-end">{{ a.seuilCritique }}</td>
+                  <td class="text-end">{{ a.ecart }}</td>
+                  <td><span class="badge" [class.bg-danger]="a.statut === 'CRITIQUE'" [class.bg-warning]="a.statut === 'ALERTE'" [class.text-dark]="a.statut === 'ALERTE'">{{ a.statut }}</span></td>
+                  <td class="text-end">{{ a.valeurManquante | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="9" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.alerts === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-INV-002 Mouvements valorisés ─────────────────────────── -->
+  @if (activeTab === 'mouvements') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="mv-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="mv-from" type="date" class="form-control" [(ngModel)]="filters.mouvements.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="mv-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="mv-to" type="date" class="form-control" [(ngModel)]="filters.mouvements.to" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="mv-type">{{ 'reporting.inventory.mouvements.type' | translate }}</label>
+          <select id="mv-type" class="form-select" [(ngModel)]="filters.mouvements.type">
+            <option value="">{{ 'reporting.inventory.mouvements.allTypes' | translate }}</option>
+            @for (t of typeOptions; track t) { <option [value]="t">{{ t }}</option> }
+          </select>
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('mouvements')" [disabled]="states.mouvements === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportMouvementsXlsx()" [disabled]="exporting.mouvements || states.mouvements !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportMouvementsDocx()" [disabled]="exporting.mouvements || states.mouvements !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportMouvementsPdf()" [disabled]="exporting.mouvements || states.mouvements !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.mouvements === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.mouvements === 'ready' && mouvements) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.inventory.mouvements.nb' | translate }}</small><div class="h5">{{ mouvements.nbMouvements }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.inventory.mouvements.entrees' | translate }}</small><div class="h5">{{ mouvements.valeurEntrees | number:'1.2-2' }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.inventory.mouvements.sorties' | translate }}</small><div class="h5">{{ mouvements.valeurSorties | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.inventory.mouvements.date' | translate }}</th>
+                <th>{{ 'reporting.inventory.mouvements.code' | translate }}</th>
+                <th>{{ 'reporting.inventory.mouvements.produit' | translate }}</th>
+                <th>{{ 'reporting.inventory.mouvements.type' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.mouvements.qte' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.mouvements.pu' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.mouvements.valeur' | translate }}</th>
+                <th>{{ 'reporting.inventory.mouvements.ref' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of mouvements.lignes; track l.mouvementId) {
+                <tr>
+                  <td>{{ l.date }}</td>
+                  <td>{{ l.codeProduit }}</td>
+                  <td>{{ l.nomProduit }}</td>
+                  <td>{{ l.typeMouvement }}</td>
+                  <td class="text-end">{{ l.quantite }}</td>
+                  <td class="text-end">{{ l.prixUnitaire | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ l.valeur | number:'1.2-2' }}</td>
+                  <td>{{ l.referenceDocument || '-' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="8" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.mouvements === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-INV-003a BC pendants ─────────────────────────────────── -->
+  @if (activeTab === 'bc') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('bc')" [disabled]="states.bc === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportBcXlsx()" [disabled]="exporting.bc || states.bc !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportBcDocx()" [disabled]="exporting.bc || states.bc !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportBcPdf()" [disabled]="exporting.bc || states.bc !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.bc === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.bc === 'ready') {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.inventory.bc.numero' | translate }}</th>
+                <th>{{ 'reporting.inventory.bc.statut' | translate }}</th>
+                <th>{{ 'reporting.inventory.bc.dateCommande' | translate }}</th>
+                <th>{{ 'reporting.inventory.bc.dateLivraison' | translate }}</th>
+                <th>{{ 'reporting.inventory.bc.fournisseur' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.bc.age' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.bc.montant' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (b of bc; track b.bonCommandeId) {
+                <tr>
+                  <td>{{ b.numeroBc }}</td>
+                  <td><span class="badge bg-secondary">{{ b.statut }}</span></td>
+                  <td>{{ b.dateCommande }}</td>
+                  <td>{{ b.dateLivraisonPrevue || '-' }}</td>
+                  <td>{{ b.fournisseurId }}</td>
+                  <td class="text-end">{{ b.ageJours }}</td>
+                  <td class="text-end">{{ b.montantTotal | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="7" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.bc === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-INV-003b Rotation produits ───────────────────────────── -->
+  @if (activeTab === 'rotation') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="rot-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="rot-from" type="date" class="form-control" [(ngModel)]="filters.rotation.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="rot-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="rot-to" type="date" class="form-control" [(ngModel)]="filters.rotation.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('rotation')" [disabled]="states.rotation === 'loading'"><i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}</button>
+          <button type="button" class="btn btn-outline-success" (click)="exportRotationXlsx()" [disabled]="exporting.rotation || states.rotation !== 'ready'"><i class="bi bi-file-earmark-excel me-1"></i>XLSX</button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportRotationDocx()" [disabled]="exporting.rotation || states.rotation !== 'ready'"><i class="bi bi-file-earmark-word me-1"></i>DOCX</button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportRotationPdf()" [disabled]="exporting.rotation || states.rotation !== 'ready'"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</button>
+        </div>
+      </div>
+
+      @if (states.rotation === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.rotation === 'ready') {
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.inventory.rotation.code' | translate }}</th>
+                <th>{{ 'reporting.inventory.rotation.produit' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.rotation.sorties' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.rotation.stock' | translate }}</th>
+                <th class="text-end">{{ 'reporting.inventory.rotation.rotation' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of rotation; track r.produitId) {
+                <tr>
+                  <td>{{ r.codeProduit }}</td>
+                  <td>{{ r.nomProduit }}</td>
+                  <td class="text-end">{{ r.totalSorties }}</td>
+                  <td class="text-end">{{ r.stockActuel }}</td>
+                  <td class="text-end">{{ r.rotation | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="5" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.rotation === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+</section>

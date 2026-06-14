@@ -7,17 +7,22 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Rapport R-INV-003 — Bons de commande pendants + rotation produits (Tour 41 P2).
+ * Rapport R-INV-003 — Bons de commande pendants + rotation produits.
+ *
+ * <p>Tour 51ter : exports XLSX / DOCX / PDF unifiés via
+ * {@code DocumentExportService} avec bordures partout.</p>
  */
 public interface BcPendantsRotationReportService {
 
-    /** Liste des BC pendants (statut != RECU_COMPLET ET != ANNULE). */
     List<BcPendantDto> findBcPendants();
 
-    /** Calcule la rotation produit sur la plage [from, to). */
     List<RotationProduitDto> computeRotation(LocalDate from, LocalDate to);
 
     byte[] exportBcPendantsXlsx();
+    byte[] exportBcPendantsDocx();
+    byte[] exportBcPendantsPdf();
 
     byte[] exportRotationXlsx(LocalDate from, LocalDate to);
+    byte[] exportRotationDocx(LocalDate from, LocalDate to);
+    byte[] exportRotationPdf(LocalDate from, LocalDate to);
 }

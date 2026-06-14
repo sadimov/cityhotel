@@ -196,12 +196,56 @@
     },
     "inventory": {
       "title": "Rapports Stocks",
+      "pageTitle": "Reporting — Stocks & Magasin",
       "r001": "Alertes stock",
       "r001Desc": "Produits sous le seuil critique ou en rupture.",
       "r002": "Mouvements valorisés",
       "r002Desc": "Entrées et sorties de stock avec valorisation comptable.",
       "r003": "Rotation produits",
-      "r003Desc": "Indice de rotation des produits sur la période."
+      "r003Desc": "Indice de rotation des produits sur la période.",
+      "r003a": "BC pendants",
+      "r003b": "Rotation",
+      "alerts": {
+        "code": "Code",
+        "produit": "Produit",
+        "unite": "Unité",
+        "stock": "Stock",
+        "seuilAlerte": "Seuil alerte",
+        "seuilCritique": "Seuil critique",
+        "ecart": "Écart",
+        "statut": "Statut",
+        "valeurManquante": "Valeur manquante"
+      },
+      "mouvements": {
+        "nb": "Nb mouvements",
+        "entrees": "Valeur entrées",
+        "sorties": "Valeur sorties",
+        "type": "Type",
+        "allTypes": "Tous types",
+        "date": "Date",
+        "code": "Code",
+        "produit": "Produit",
+        "qte": "Quantité",
+        "pu": "PU",
+        "valeur": "Valeur",
+        "ref": "Référence"
+      },
+      "bc": {
+        "numero": "Numéro",
+        "statut": "Statut",
+        "dateCommande": "Date commande",
+        "dateLivraison": "Livraison prévue",
+        "fournisseur": "Fournisseur",
+        "age": "Âge (j)",
+        "montant": "Montant"
+      },
+      "rotation": {
+        "code": "Code",
+        "produit": "Produit",
+        "sorties": "Sorties",
+        "stock": "Stock actuel",
+        "rotation": "Rotation"
+      }
     },
     "restaurant": {
       "title": "Rapports Restaurant",

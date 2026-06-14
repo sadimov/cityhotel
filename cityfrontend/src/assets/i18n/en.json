@@ -2989,13 +2989,36 @@
       }
     },
     "inventory": {
-      "title": "Rapports Stocks",
-      "r001": "Stock actuel valorisé",
-      "r002": "Valorisation des mouvements",
-      "r003": "Rotation produits",
-      "r001Desc": "Produits sous le seuil critique ou en rupture.",
-      "r002Desc": "Entrées et sorties de stock avec valorisation comptable.",
-      "r003Desc": "Indice de rotation des produits sur la période."
+      "title": "Inventory Reports",
+      "pageTitle": "Reporting — Stocks & Warehouse",
+      "r001": "Stock alerts",
+      "r002": "Valued movements",
+      "r003": "Product rotation",
+      "r003a": "Pending POs",
+      "r003b": "Rotation",
+      "r001Desc": "Products below the alert threshold.",
+      "r002Desc": "Stock in/out with accounting valuation.",
+      "r003Desc": "Product rotation index over the period.",
+      "alerts": {
+        "code": "Code", "produit": "Product", "unite": "Unit",
+        "stock": "Stock", "seuilAlerte": "Alert", "seuilCritique": "Critical",
+        "ecart": "Gap", "statut": "Status", "valeurManquante": "Missing value"
+      },
+      "mouvements": {
+        "nb": "Movements", "entrees": "In value", "sorties": "Out value",
+        "type": "Type", "allTypes": "All types",
+        "date": "Date", "code": "Code", "produit": "Product",
+        "qte": "Qty", "pu": "Unit price", "valeur": "Value", "ref": "Reference"
+      },
+      "bc": {
+        "numero": "Number", "statut": "Status", "dateCommande": "Order date",
+        "dateLivraison": "Expected", "fournisseur": "Supplier",
+        "age": "Age (d)", "montant": "Amount"
+      },
+      "rotation": {
+        "code": "Code", "produit": "Product", "sorties": "Outflows",
+        "stock": "Current stock", "rotation": "Rotation"
+      }
     },
     "restaurant": {
       "title": "Rapports Restaurant",

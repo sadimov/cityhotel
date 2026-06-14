@@ -6,7 +6,7 @@ import com.cityprojects.citybackend.dto.reporting.projection.MouvementValorisePr
 import com.cityprojects.citybackend.entity.inventory.TypeMouvementStock;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.inventory.MouvementStockRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,13 +31,13 @@ class MouvementsValorisesReportServiceTests {
     @Mock
     private MouvementStockRepository mouvementStockRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private MouvementsValorisesReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new MouvementsValorisesReportServiceImpl(mouvementStockRepository, xlsxExportService);
+        service = new MouvementsValorisesReportServiceImpl(mouvementStockRepository, documentExportService);
         TenantContext.set(1L);
     }
 

@@ -4,22 +4,22 @@ import com.cityprojects.citybackend.common.tenant.RequireTenant;
 import com.cityprojects.citybackend.dto.reporting.StockAlertDto;
 import com.cityprojects.citybackend.entity.inventory.Produit;
 import com.cityprojects.citybackend.repository.inventory.ProduitRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation R-INV-001 (Tour 40 MVP).
+ * Implementation R-INV-001 — Alertes stock.
  *
- * <p>Reutilise {@code ProduitRepository#findEnAlerte()} qui filtre deja
- * {@code stockActuel <= seuilAlerte AND actif = true}. La classification
- * "CRITIQUE" vs "ALERTE" se fait cote service (regle metier).</p>
+ * <p>Tour 51ter : exports XLSX / DOCX / PDF unifiés via
+ * {@link DocumentExportService} avec bordures partout.</p>
  */
 @Service
 @RequireTenant
@@ -27,12 +27,12 @@ import java.util.List;
 public class StockAlertReportServiceImpl implements StockAlertReportService {
 
     private final ProduitRepository produitRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public StockAlertReportServiceImpl(ProduitRepository produitRepository,
-                                       XlsxExportService xlsxExportService) {
+                                       DocumentExportService documentExportService) {
         this.produitRepository = produitRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -45,18 +45,58 @@ public class StockAlertReportServiceImpl implements StockAlertReportService {
 
     @Override
     public byte[] exportXlsx() {
+        return documentExportService.toXlsx(buildDocument());
+    }
+
+    @Override
+    public byte[] exportDocx() {
+        return documentExportService.toDocx(buildDocument());
+    }
+
+    @Override
+    public byte[] exportPdf() {
+        return documentExportService.toPdf(buildDocument());
+    }
+
+    private ReportDocument buildDocument() {
         List<StockAlertDto> data = listStockAlerts();
-        List<ColumnSpec<StockAlertDto>> columns = List.of(
-                new ColumnSpec<>("Code", ColumnType.TEXT, StockAlertDto::codeProduit),
-                new ColumnSpec<>("Produit", ColumnType.TEXT, StockAlertDto::nomProduit),
-                new ColumnSpec<>("Unite", ColumnType.TEXT, StockAlertDto::uniteMesure),
-                new ColumnSpec<>("Stock actuel", ColumnType.INTEGER, StockAlertDto::stockActuel),
-                new ColumnSpec<>("Seuil alerte", ColumnType.INTEGER, StockAlertDto::seuilAlerte),
-                new ColumnSpec<>("Seuil critique", ColumnType.INTEGER, StockAlertDto::seuilCritique),
-                new ColumnSpec<>("Ecart", ColumnType.INTEGER, StockAlertDto::ecart),
-                new ColumnSpec<>("Statut", ColumnType.TEXT, StockAlertDto::statut),
-                new ColumnSpec<>("Valeur manquante (MRU)", ColumnType.MONEY, StockAlertDto::valeurManquante));
-        return xlsxExportService.export("Alertes_Stock", columns, data);
+        String title = "Alertes stock";
+        String period = String.format("État courant — %d produit(s) sous seuil", data.size());
+
+        long nbCritique = data.stream().filter(d -> "CRITIQUE".equals(d.statut())).count();
+        BigDecimal valeurTotale = data.stream()
+                .map(d -> d.valeurManquante() != null ? d.valeurManquante() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Produits en alerte", String.valueOf(data.size())),
+                new ReportDocument.Kpi("Dont critique", String.valueOf(nbCritique)),
+                new ReportDocument.Kpi("Valeur réappro. (MRU)", money(valeurTotale))
+        );
+
+        List<String> headers = List.of("Code", "Produit", "Unité",
+                "Stock", "Seuil alerte", "Seuil critique", "Écart", "Statut", "Valeur manquante");
+        List<List<Object>> rows = new ArrayList<>(data.size());
+        for (StockAlertDto d : data) {
+            rows.add(List.of(
+                    d.codeProduit() != null ? d.codeProduit() : "",
+                    d.nomProduit() != null ? d.nomProduit() : "",
+                    d.uniteMesure() != null ? d.uniteMesure() : "",
+                    d.stockActuel() != null ? d.stockActuel() : 0,
+                    d.seuilAlerte() != null ? d.seuilAlerte() : 0,
+                    d.seuilCritique() != null ? d.seuilCritique() : 0,
+                    d.ecart() != null ? d.ecart() : 0,
+                    d.statut() != null ? d.statut() : "",
+                    money(d.valeurManquante())
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail produits", headers, rows));
+    }
+
+    private static String money(BigDecimal v) {
+        if (v == null) return "0,00";
+        return v.setScale(2, RoundingMode.HALF_UP).toPlainString();
     }
 
     private StockAlertDto toDto(Produit p) {

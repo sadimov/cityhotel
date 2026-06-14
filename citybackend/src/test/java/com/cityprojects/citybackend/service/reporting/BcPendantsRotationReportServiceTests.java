@@ -9,7 +9,7 @@ import com.cityprojects.citybackend.entity.inventory.StatutBonCommande;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.inventory.BonCommandeRepository;
 import com.cityprojects.citybackend.repository.inventory.MouvementStockRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,14 +35,14 @@ class BcPendantsRotationReportServiceTests {
     @Mock
     private MouvementStockRepository mouvementStockRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private BcPendantsRotationReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new BcPendantsRotationReportServiceImpl(bonCommandeRepository,
-                mouvementStockRepository, xlsxExportService);
+                mouvementStockRepository, documentExportService);
         TenantContext.set(1L);
     }
 

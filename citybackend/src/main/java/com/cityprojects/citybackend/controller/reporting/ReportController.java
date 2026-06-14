@@ -162,6 +162,18 @@ public class ReportController {
         return ResponseEntity.ok(stockAlertService.listStockAlerts());
     }
 
+    @GetMapping(value = "/stock-alerts/export.docx")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
+    public ResponseEntity<byte[]> exportStockAlertsDocx() {
+        return attachment("alertes-stock.docx", docxMediaType(), stockAlertService.exportDocx());
+    }
+
+    @GetMapping(value = "/stock-alerts/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
+    public ResponseEntity<byte[]> exportStockAlertsPdf() {
+        return attachment("alertes-stock.pdf", MediaType.APPLICATION_PDF, stockAlertService.exportPdf());
+    }
+
     @GetMapping(value = "/stock-alerts/export.xlsx")
     @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','MAGASIN')")
     public ResponseEntity<byte[]> exportStockAlertsXlsx() {

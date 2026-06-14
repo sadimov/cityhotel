@@ -4,7 +4,7 @@ import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.reporting.StockAlertDto;
 import com.cityprojects.citybackend.entity.inventory.Produit;
 import com.cityprojects.citybackend.repository.inventory.ProduitRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,8 +19,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 /**
@@ -41,13 +40,13 @@ class StockAlertReportServiceTests {
     private ProduitRepository produitRepository;
 
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private StockAlertReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new StockAlertReportServiceImpl(produitRepository, xlsxExportService);
+        service = new StockAlertReportServiceImpl(produitRepository, documentExportService);
         TenantContext.set(3L);
     }
 
@@ -101,7 +100,7 @@ class StockAlertReportServiceTests {
     @DisplayName("T4 - export XLSX delegue + binaire renvoye")
     void shouldExportXlsx() {
         when(produitRepository.findEnAlerte()).thenReturn(Collections.emptyList());
-        when(xlsxExportService.export(anyString(), anyList(), anyList())).thenReturn(new byte[]{9});
+        when(documentExportService.toXlsx(any())).thenReturn(new byte[]{9});
 
         byte[] xlsx = service.exportXlsx();
         assertEquals(1, xlsx.length);

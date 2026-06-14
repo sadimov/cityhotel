@@ -4,6 +4,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { RoleGuard } from '../../guards/role-guard.guard';
 import { FinanceReportsComponent } from './components/finance-reports/finance-reports.component';
 import { HebergementReportsComponent } from './components/hebergement-reports/hebergement-reports.component';
+import { InventoryReportsComponent } from './components/inventory-reports/inventory-reports.component';
 import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 
 const REPORTING_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT'];
@@ -19,7 +20,7 @@ const routes: Routes = [
   // l'instant sur l'ancien ReportingHomeComponent (catalogue + download).
   { path: 'hebergement', component: HebergementReportsComponent, data: { roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
   { path: 'finance', component: FinanceReportsComponent, data: { roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
-  { path: 'inventory', component: ReportingHomeComponent, data: { module: 'inventory', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
+  { path: 'inventory', component: InventoryReportsComponent, data: { roles: [...REPORTING_ROLES, 'MAGASIN'] }, canActivate: [RoleGuard] },
   { path: 'restaurant', component: ReportingHomeComponent, data: { module: 'restaurant', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
   { path: 'menage', component: ReportingHomeComponent, data: { module: 'menage', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
   { path: 'direction', component: ReportingHomeComponent, data: { module: 'direction', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
