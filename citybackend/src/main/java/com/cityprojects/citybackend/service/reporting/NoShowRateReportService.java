@@ -6,18 +6,18 @@ import com.cityprojects.citybackend.dto.reporting.NoShowRateDto.NoShowGroupBy;
 import java.time.LocalDate;
 
 /**
- * Rapport R-HEB-003 — Taux de no-show (Tour 41 P1).
+ * Rapport R-HEB-003 — Taux de no-show.
+ *
+ * <p>Tour 51ter : exports XLSX / DOCX / PDF unifiés via
+ * {@code DocumentExportService} avec bordures partout.</p>
  */
 public interface NoShowRateReportService {
 
-    /**
-     * Calcule le taux de no-show global + breakdown sur la plage [from, to).
-     *
-     * @param from    borne inclusive
-     * @param to      borne exclusive
-     * @param groupBy dimension de breakdown (JOUR / SEMAINE / MOIS)
-     */
     NoShowRateDto computeNoShowRate(LocalDate from, LocalDate to, NoShowGroupBy groupBy);
 
     byte[] exportXlsx(LocalDate from, LocalDate to, NoShowGroupBy groupBy);
+
+    byte[] exportDocx(LocalDate from, LocalDate to, NoShowGroupBy groupBy);
+
+    byte[] exportPdf(LocalDate from, LocalDate to, NoShowGroupBy groupBy);
 }

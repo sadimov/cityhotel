@@ -6,7 +6,7 @@ import com.cityprojects.citybackend.dto.reporting.AlosDto.AlosGroupBy;
 import com.cityprojects.citybackend.dto.reporting.projection.AlosByTypeProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,13 +33,13 @@ class AlosReportServiceTests {
     @Mock
     private ReservationRepository reservationRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private AlosReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new AlosReportServiceImpl(reservationRepository, xlsxExportService);
+        service = new AlosReportServiceImpl(reservationRepository, documentExportService);
         TenantContext.set(1L);
     }
 

@@ -1,7 +1,6 @@
 package com.cityprojects.citybackend.service.reporting;
 
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
-import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.reporting.OccupationDto;
 import com.cityprojects.citybackend.dto.reporting.OccupationDto.TypeChambreOccupation;
 import com.cityprojects.citybackend.dto.reporting.ReportPeriode;
@@ -10,7 +9,8 @@ import com.cityprojects.citybackend.dto.reporting.projection.TypeChambreCountPro
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,14 +38,14 @@ public class OccupationReportServiceImpl implements OccupationReportService {
 
     private final ChambreRepository chambreRepository;
     private final NuiteeRepository nuiteeRepository;
-    private final PdfExportService pdfExportService;
+    private final DocumentExportService documentExportService;
 
     public OccupationReportServiceImpl(ChambreRepository chambreRepository,
                                        NuiteeRepository nuiteeRepository,
-                                       PdfExportService pdfExportService) {
+                                       DocumentExportService documentExportService) {
         this.chambreRepository = chambreRepository;
         this.nuiteeRepository = nuiteeRepository;
-        this.pdfExportService = pdfExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -95,18 +95,47 @@ public class OccupationReportServiceImpl implements OccupationReportService {
     }
 
     @Override
+    public byte[] exportXlsx(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toXlsx(buildDocument(periode, from, to, reference));
+    }
+
+    @Override
+    public byte[] exportDocx(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toDocx(buildDocument(periode, from, to, reference));
+    }
+
+    @Override
     public byte[] exportPdf(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
+        return documentExportService.toPdf(buildDocument(periode, from, to, reference));
+    }
+
+    private ReportDocument buildDocument(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {
         OccupationDto dto = computeOccupation(periode, from, to, reference);
-        Map<String, Object> params = new HashMap<>();
-        params.put("REPORT_TITLE", "Rapport d'occupation");
-        params.put("HOTEL_ID", TenantContext.get());
-        params.put("DATE_FROM", dto.from());
-        params.put("DATE_TO", dto.to());
-        params.put("TAUX_GLOBAL", dto.tauxOccupationGlobal());
-        params.put("TOTAL_CHAMBRES", dto.totalChambres());
-        params.put("TOTAL_OCCUPEES", dto.totalNuiteesOccupees());
-        params.put("TOTAL_DISPO", dto.totalNuiteesDispo());
-        return pdfExportService.exportToPdf("occupation", params, dto.breakdownParType());
+        String title = "Rapport d'occupation";
+        String period = String.format("Période : %s → %s (%s)", dto.from(), dto.to(), periode);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Chambres actives", String.valueOf(dto.totalChambres())),
+                new ReportDocument.Kpi("Nuitées disponibles", String.valueOf(dto.totalNuiteesDispo())),
+                new ReportDocument.Kpi("Nuitées occupées", String.valueOf(dto.totalNuiteesOccupees())),
+                new ReportDocument.Kpi("Taux global",
+                        (dto.tauxOccupationGlobal() != null ? dto.tauxOccupationGlobal().toPlainString() : "0.00") + " %")
+        );
+
+        List<String> headers = List.of("Code", "Type", "Nb chambres", "Nuitées dispo.", "Nuitées occ.", "Taux (%)");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdownParType().size());
+        for (TypeChambreOccupation row : dto.breakdownParType()) {
+            rows.add(List.of(
+                    row.typeCode() != null ? row.typeCode() : "",
+                    row.typeNom() != null ? row.typeNom() : "",
+                    row.nbChambres(),
+                    row.nuiteesDispo(),
+                    row.nuiteesOccupees(),
+                    row.tauxOccupation() != null ? row.tauxOccupation().toPlainString() : "0.00"
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail par type de chambre", headers, rows));
     }
 
     private static ReportPeriode.DateRange resolveRange(ReportPeriode periode, LocalDate from, LocalDate to, LocalDate reference) {

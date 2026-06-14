@@ -71,15 +71,28 @@
   },
   "reporting": {
     "subtitle": "Téléchargez les rapports au format PDF ou Excel depuis chaque module.",
-    "empty": "Aucun rapport disponible pour ce module.",
+    "empty": "Aucune donnée disponible.",
     "viewSoon": "Vue détaillée à venir",
     "downloadError": "Le téléchargement du rapport a échoué.",
+    "loadError": "Erreur de chargement du rapport.",
+    "exportError": "Erreur lors de l'export.",
+    "filters": {
+      "periode": "Période",
+      "from": "Du",
+      "to": "Au",
+      "date": "Date",
+      "groupBy": "Grouper par"
+    },
+    "actions": {
+      "refresh": "Actualiser"
+    },
     "download": {
       "pdf": "Télécharger PDF",
       "xlsx": "Télécharger Excel"
     },
     "hebergement": {
       "title": "Rapports Hébergement",
+      "pageTitle": "Reporting — Hébergement",
       "r001": "Taux d'occupation",
       "r001Desc": "Occupation quotidienne des chambres sur la période sélectionnée.",
       "r002": "Taux de no-show",
@@ -89,7 +102,47 @@
       "r004": "Sources de réservation",
       "r004Desc": "Répartition des réservations par canal de distribution.",
       "r005": "ALOS — Durée moyenne de séjour",
-      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées."
+      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées.",
+      "occupation": {
+        "totalChambres": "Chambres actives",
+        "nuiteesDispo": "Nuitées disponibles",
+        "nuiteesOccupees": "Nuitées occupées",
+        "tauxGlobal": "Taux global",
+        "taux": "Taux",
+        "typeCode": "Code",
+        "typeNom": "Type",
+        "nbChambres": "Nb chambres"
+      },
+      "alos": {
+        "nbReservations": "Réservations",
+        "totalNuits": "Total nuits",
+        "global": "ALOS global",
+        "dimension": "Dimension"
+      },
+      "noshow": {
+        "totalReservations": "Total réservations",
+        "nbNoShow": "No-show",
+        "tauxGlobal": "Taux global",
+        "taux": "Taux",
+        "dimension": "Dimension"
+      },
+      "sources": {
+        "totalReservations": "Total réservations",
+        "caTotal": "CA total",
+        "canal": "Canal",
+        "nbReservations": "Réservations",
+        "ca": "CA"
+      },
+      "kpi": {
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "walkIn": "Walk-in",
+        "noShow": "No-show",
+        "actives": "Réservations actives",
+        "totalChambres": "Chambres actives",
+        "chambresOccupees": "Chambres occupées",
+        "taux": "Taux d'occupation"
+      }
     },
     "finance": {
       "title": "Rapports Finance",

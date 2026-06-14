@@ -5,7 +5,7 @@ import com.cityprojects.citybackend.dto.reporting.ReservationSourceDto;
 import com.cityprojects.citybackend.dto.reporting.projection.ReservationSourceProjection;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,13 +32,13 @@ class ReservationSourceReportServiceTests {
     @Mock
     private ReservationRepository reservationRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private ReservationSourceReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new ReservationSourceReportServiceImpl(reservationRepository, xlsxExportService);
+        service = new ReservationSourceReportServiceImpl(reservationRepository, documentExportService);
         TenantContext.set(1L);
     }
 

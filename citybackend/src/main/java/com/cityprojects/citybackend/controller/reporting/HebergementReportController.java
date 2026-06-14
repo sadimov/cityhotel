@@ -40,6 +40,8 @@ public class HebergementReportController {
 
     private static final String XLSX_MEDIA_TYPE =
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    private static final String DOCX_MEDIA_TYPE =
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     private static final String ROLES_HEB =
             "hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')";
 
@@ -81,6 +83,26 @@ public class HebergementReportController {
                 alosService.exportXlsx(from, to, groupBy));
     }
 
+    @GetMapping(value = "/alos/export.docx")
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportAlosDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "TYPE_CHAMBRE") AlosGroupBy groupBy) {
+        return attachment("alos.docx", docxMediaType(),
+                alosService.exportDocx(from, to, groupBy));
+    }
+
+    @GetMapping(value = "/alos/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportAlosPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "TYPE_CHAMBRE") AlosGroupBy groupBy) {
+        return attachment("alos.pdf", MediaType.APPLICATION_PDF,
+                alosService.exportPdf(from, to, groupBy));
+    }
+
     // ------------------------------------------------------------------
     // R-HEB-003 No-show
     // ------------------------------------------------------------------
@@ -104,6 +126,26 @@ public class HebergementReportController {
                 noShowService.exportXlsx(from, to, groupBy));
     }
 
+    @GetMapping(value = "/no-show-rate/export.docx")
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportNoShowRateDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "JOUR") NoShowGroupBy groupBy) {
+        return attachment("no-show-rate.docx", docxMediaType(),
+                noShowService.exportDocx(from, to, groupBy));
+    }
+
+    @GetMapping(value = "/no-show-rate/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportNoShowRatePdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(name = "groupBy", defaultValue = "JOUR") NoShowGroupBy groupBy) {
+        return attachment("no-show-rate.pdf", MediaType.APPLICATION_PDF,
+                noShowService.exportPdf(from, to, groupBy));
+    }
+
     // ------------------------------------------------------------------
     // R-HEB-004 Sources
     // ------------------------------------------------------------------
@@ -125,6 +167,24 @@ public class HebergementReportController {
                 sourceService.exportXlsx(from, to));
     }
 
+    @GetMapping(value = "/sources/export.docx")
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportSourcesDocx(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("sources-reservations.docx", docxMediaType(),
+                sourceService.exportDocx(from, to));
+    }
+
+    @GetMapping(value = "/sources/export.pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportSourcesPdf(
+            @RequestParam(name = "from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        return attachment("sources-reservations.pdf", MediaType.APPLICATION_PDF,
+                sourceService.exportPdf(from, to));
+    }
+
     // ------------------------------------------------------------------
     // R-HEB-005 KPIs reception
     // ------------------------------------------------------------------
@@ -144,12 +204,32 @@ public class HebergementReportController {
                 kpiService.exportPdf(date));
     }
 
+    @GetMapping(value = "/kpi-reception/export.xlsx")
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportKpiReceptionXlsx(
+            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return attachment("kpi-reception.xlsx", xlsxMediaType(),
+                kpiService.exportXlsx(date));
+    }
+
+    @GetMapping(value = "/kpi-reception/export.docx")
+    @PreAuthorize(ROLES_HEB)
+    public ResponseEntity<byte[]> exportKpiReceptionDocx(
+            @RequestParam(name = "date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return attachment("kpi-reception.docx", docxMediaType(),
+                kpiService.exportDocx(date));
+    }
+
     // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType(XLSX_MEDIA_TYPE);
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType(DOCX_MEDIA_TYPE);
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

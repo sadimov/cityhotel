@@ -6,7 +6,7 @@ import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,14 +37,14 @@ class KpiReceptionReportServiceTests {
     @Mock
     private NuiteeRepository nuiteeRepository;
     @Mock
-    private PdfExportService pdfExportService;
+    private DocumentExportService documentExportService;
 
     private KpiReceptionReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
         service = new KpiReceptionReportServiceImpl(reservationRepository, chambreRepository,
-                nuiteeRepository, pdfExportService);
+                nuiteeRepository, documentExportService);
         TenantContext.set(1L);
     }
 

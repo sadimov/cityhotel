@@ -2869,21 +2869,74 @@
     }
   },
   "reporting": {
-    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
-    "empty": "Aucun rapport disponible pour ce module.",
-    "openEndpoint": "Ouvrir le rapport",
+    "subtitle": "تنزيل التقارير بصيغة PDF أو Excel من كل وحدة.",
+    "empty": "لا توجد بيانات متاحة.",
+    "openEndpoint": "فتح التقرير",
+    "loadError": "خطأ في تحميل التقرير.",
+    "exportError": "خطأ في التصدير.",
+    "filters": {
+      "periode": "الفترة",
+      "from": "من",
+      "to": "إلى",
+      "date": "التاريخ",
+      "groupBy": "تجميع حسب"
+    },
+    "actions": {
+      "refresh": "تحديث"
+    },
     "hebergement": {
-      "title": "Rapports Hébergement",
-      "r001": "Taux d'occupation quotidien",
-      "r002": "RevPAR (revenu par chambre disponible)",
-      "r003": "ADR (prix moyen par nuitée)",
-      "r004": "Sources des réservations",
-      "r005": "ALOS (durée moyenne de séjour)",
-      "r001Desc": "Occupation quotidienne des chambres sur la période sélectionnée.",
-      "r002Desc": "Réservations confirmées non honorées par les clients.",
-      "r003Desc": "Indicateurs clés de performance pour l'équipe réception.",
-      "r004Desc": "Répartition des réservations par canal de distribution.",
-      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées."
+      "title": "تقارير الإقامة",
+      "pageTitle": "التقارير — الإقامة",
+      "r001": "معدل الإشغال",
+      "r002": "معدل عدم الحضور",
+      "r003": "مؤشرات الاستقبال",
+      "r004": "مصادر الحجز",
+      "r005": "متوسط مدة الإقامة (ALOS)",
+      "r001Desc": "إشغال الغرف اليومي خلال الفترة المحددة.",
+      "r002Desc": "الحجوزات المؤكدة غير المنفذة من قبل النزلاء.",
+      "r003Desc": "مؤشرات الأداء الرئيسية لفريق الاستقبال.",
+      "r004Desc": "توزيع الحجوزات حسب قناة التوزيع.",
+      "r005Desc": "متوسط مدة الإقامة محسوبًا على الليالي المستهلكة.",
+      "occupation": {
+        "totalChambres": "الغرف الفعالة",
+        "nuiteesDispo": "ليالٍ متاحة",
+        "nuiteesOccupees": "ليالٍ مشغولة",
+        "tauxGlobal": "النسبة الإجمالية",
+        "taux": "النسبة",
+        "typeCode": "الرمز",
+        "typeNom": "النوع",
+        "nbChambres": "عدد الغرف"
+      },
+      "alos": {
+        "nbReservations": "الحجوزات",
+        "totalNuits": "إجمالي الليالي",
+        "global": "ALOS الإجمالي",
+        "dimension": "البُعد"
+      },
+      "noshow": {
+        "totalReservations": "إجمالي الحجوزات",
+        "nbNoShow": "عدم الحضور",
+        "tauxGlobal": "النسبة الإجمالية",
+        "taux": "النسبة",
+        "dimension": "البُعد"
+      },
+      "sources": {
+        "totalReservations": "إجمالي الحجوزات",
+        "caTotal": "إجمالي الإيرادات",
+        "canal": "القناة",
+        "nbReservations": "الحجوزات",
+        "ca": "الإيرادات"
+      },
+      "kpi": {
+        "checkIn": "تسجيل الوصول",
+        "checkOut": "تسجيل المغادرة",
+        "walkIn": "Walk-in",
+        "noShow": "عدم الحضور",
+        "actives": "الحجوزات النشطة",
+        "totalChambres": "الغرف الفعالة",
+        "chambresOccupees": "الغرف المشغولة",
+        "taux": "معدل الإشغال"
+      }
     },
     "finance": {
       "title": "Rapports Finance",

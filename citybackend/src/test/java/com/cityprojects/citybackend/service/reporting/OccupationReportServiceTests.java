@@ -8,7 +8,7 @@ import com.cityprojects.citybackend.dto.reporting.projection.TypeChambreCountPro
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -56,13 +56,13 @@ class OccupationReportServiceTests {
     private NuiteeRepository nuiteeRepository;
 
     @Mock
-    private PdfExportService pdfExportService;
+    private DocumentExportService documentExportService;
 
     private OccupationReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new OccupationReportServiceImpl(chambreRepository, nuiteeRepository, pdfExportService);
+        service = new OccupationReportServiceImpl(chambreRepository, nuiteeRepository, documentExportService);
         TenantContext.set(42L);
     }
 

@@ -6,19 +6,18 @@ import com.cityprojects.citybackend.dto.reporting.AlosDto.AlosGroupBy;
 import java.time.LocalDate;
 
 /**
- * Rapport R-HEB-002 — Average Length of Stay (Tour 41 P1).
+ * Rapport R-HEB-002 — Average Length of Stay.
+ *
+ * <p>Tour 51ter : exports XLSX / DOCX / PDF unifiés via
+ * {@code DocumentExportService} avec bordures partout.</p>
  */
 public interface AlosReportService {
 
-    /**
-     * Calcule l'ALOS global + breakdown sur la plage [from, to).
-     *
-     * @param from    borne inclusive
-     * @param to      borne exclusive
-     * @param groupBy dimension de breakdown (TYPE_CHAMBRE ou MOIS)
-     */
     AlosDto computeAlos(LocalDate from, LocalDate to, AlosGroupBy groupBy);
 
-    /** Export XLSX du rapport (Apache POI). */
     byte[] exportXlsx(LocalDate from, LocalDate to, AlosGroupBy groupBy);
+
+    byte[] exportDocx(LocalDate from, LocalDate to, AlosGroupBy groupBy);
+
+    byte[] exportPdf(LocalDate from, LocalDate to, AlosGroupBy groupBy);
 }

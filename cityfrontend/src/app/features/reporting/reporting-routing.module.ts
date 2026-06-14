@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { RoleGuard } from '../../guards/role-guard.guard';
+import { HebergementReportsComponent } from './components/hebergement-reports/hebergement-reports.component';
 import { ReportingHomeComponent } from './components/reporting-home/reporting-home.component';
 
 const REPORTING_ROLES = ['SUPERADMIN', 'ADMIN', 'GERANT'];
@@ -12,7 +13,10 @@ const REPORTING_ROLES_WITH_NIGHTAUDIT = [...REPORTING_ROLES, 'NIGHTAUDIT'];
 
 const routes: Routes = [
   { path: '', redirectTo: 'hebergement', pathMatch: 'full' },
-  { path: 'hebergement', component: ReportingHomeComponent, data: { module: 'hebergement', roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
+  // Refonte Tour 51ter : consultation directe + exports (pilote pour les
+  // autres modules reporting). Les autres routes ci-dessous restent pour
+  // l'instant sur l'ancien ReportingHomeComponent (catalogue + download).
+  { path: 'hebergement', component: HebergementReportsComponent, data: { roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
   { path: 'finance', component: ReportingHomeComponent, data: { module: 'finance', roles: REPORTING_ROLES_WITH_NIGHTAUDIT }, canActivate: [RoleGuard] },
   { path: 'inventory', component: ReportingHomeComponent, data: { module: 'inventory', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },
   { path: 'restaurant', component: ReportingHomeComponent, data: { module: 'restaurant', roles: REPORTING_ROLES }, canActivate: [RoleGuard] },

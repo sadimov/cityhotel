@@ -1,0 +1,389 @@
+<section class="hebergement-reports">
+  <header class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 m-0">{{ 'reporting.hebergement.pageTitle' | translate }}</h2>
+  </header>
+
+  <!-- ── Tabs ────────────────────────────────────────────────────────── -->
+  <ul class="nav nav-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" type="button" [class.active]="activeTab === 'occupation'"
+              (click)="selectTab('occupation')">
+        {{ 'reporting.hebergement.r001' | translate }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" type="button" [class.active]="activeTab === 'alos'"
+              (click)="selectTab('alos')">
+        {{ 'reporting.hebergement.r005' | translate }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" type="button" [class.active]="activeTab === 'noshow'"
+              (click)="selectTab('noshow')">
+        {{ 'reporting.hebergement.r002' | translate }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" type="button" [class.active]="activeTab === 'sources'"
+              (click)="selectTab('sources')">
+        {{ 'reporting.hebergement.r004' | translate }}
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" type="button" [class.active]="activeTab === 'kpi'"
+              (click)="selectTab('kpi')">
+        {{ 'reporting.hebergement.r003' | translate }}
+      </button>
+    </li>
+  </ul>
+
+  <!-- ── R-HEB-001 Occupation ────────────────────────────────────────── -->
+  @if (activeTab === 'occupation') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="occ-periode">{{ 'reporting.filters.periode' | translate }}</label>
+          <select id="occ-periode" class="form-select" [(ngModel)]="filters.occupation.periode">
+            @for (p of periodes; track p) {
+              <option [value]="p">{{ p }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="occ-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="occ-from" type="date" class="form-control" [(ngModel)]="filters.occupation.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="occ-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="occ-to" type="date" class="form-control" [(ngModel)]="filters.occupation.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('occupation')" [disabled]="states.occupation === 'loading'">
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}
+          </button>
+          <button type="button" class="btn btn-outline-success" (click)="exportOccupationXlsx()"
+                  [disabled]="exporting.occupation || states.occupation !== 'ready'">
+            <i class="bi bi-file-earmark-excel me-1"></i>XLSX
+          </button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportOccupationDocx()"
+                  [disabled]="exporting.occupation || states.occupation !== 'ready'">
+            <i class="bi bi-file-earmark-word me-1"></i>DOCX
+          </button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportOccupationPdf()"
+                  [disabled]="exporting.occupation || states.occupation !== 'ready'">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      @if (states.occupation === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.occupation === 'ready' && occupation) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.occupation.totalChambres' | translate }}</small><div class="h5">{{ occupation.totalChambres }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.occupation.nuiteesDispo' | translate }}</small><div class="h5">{{ occupation.totalNuiteesDispo }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.occupation.nuiteesOccupees' | translate }}</small><div class="h5">{{ occupation.totalNuiteesOccupees }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.hebergement.occupation.tauxGlobal' | translate }}</small><div class="h5">{{ occupation.tauxOccupationGlobal | number:'1.2-2' }} %</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.hebergement.occupation.typeCode' | translate }}</th>
+                <th>{{ 'reporting.hebergement.occupation.typeNom' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nbChambres' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nuiteesDispo' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.nuiteesOccupees' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.occupation.taux' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of occupation.breakdownParType; track row.typeId) {
+                <tr>
+                  <td>{{ row.typeCode }}</td>
+                  <td>{{ row.typeNom }}</td>
+                  <td class="text-end">{{ row.nbChambres }}</td>
+                  <td class="text-end">{{ row.nuiteesDispo }}</td>
+                  <td class="text-end">{{ row.nuiteesOccupees }}</td>
+                  <td class="text-end">{{ row.tauxOccupation | number:'1.2-2' }} %</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.occupation === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-HEB-002 ALOS ──────────────────────────────────────────────── -->
+  @if (activeTab === 'alos') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="alos-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="alos-from" type="date" class="form-control" [(ngModel)]="filters.alos.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="alos-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="alos-to" type="date" class="form-control" [(ngModel)]="filters.alos.to" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="alos-group">{{ 'reporting.filters.groupBy' | translate }}</label>
+          <select id="alos-group" class="form-select" [(ngModel)]="filters.alos.groupBy">
+            @for (g of alosGroupOptions; track g) {
+              <option [value]="g">{{ g }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('alos')" [disabled]="states.alos === 'loading'">
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}
+          </button>
+          <button type="button" class="btn btn-outline-success" (click)="exportAlosXlsx()"
+                  [disabled]="exporting.alos || states.alos !== 'ready'">
+            <i class="bi bi-file-earmark-excel me-1"></i>XLSX
+          </button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportAlosDocx()"
+                  [disabled]="exporting.alos || states.alos !== 'ready'">
+            <i class="bi bi-file-earmark-word me-1"></i>DOCX
+          </button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportAlosPdf()"
+                  [disabled]="exporting.alos || states.alos !== 'ready'">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      @if (states.alos === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.alos === 'ready' && alos) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.alos.nbReservations' | translate }}</small><div class="h5">{{ alos.nbReservations }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.alos.totalNuits' | translate }}</small><div class="h5">{{ alos.totalNuits }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.hebergement.alos.global' | translate }}</small><div class="h5">{{ alos.alosGlobal | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.hebergement.alos.dimension' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.alos.nbReservations' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.alos.totalNuits' | translate }}</th>
+                <th class="text-end">ALOS</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of alos.breakdown; track row.dimensionKey) {
+                <tr>
+                  <td>{{ row.dimensionLabel || row.dimensionKey }}</td>
+                  <td class="text-end">{{ row.nbReservations }}</td>
+                  <td class="text-end">{{ row.totalNuits }}</td>
+                  <td class="text-end">{{ row.alos | number:'1.2-2' }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.alos === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-HEB-003 No-show ───────────────────────────────────────────── -->
+  @if (activeTab === 'noshow') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="ns-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="ns-from" type="date" class="form-control" [(ngModel)]="filters.noshow.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="ns-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="ns-to" type="date" class="form-control" [(ngModel)]="filters.noshow.to" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="ns-group">{{ 'reporting.filters.groupBy' | translate }}</label>
+          <select id="ns-group" class="form-select" [(ngModel)]="filters.noshow.groupBy">
+            @for (g of noShowGroupOptions; track g) {
+              <option [value]="g">{{ g }}</option>
+            }
+          </select>
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('noshow')" [disabled]="states.noshow === 'loading'">
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}
+          </button>
+          <button type="button" class="btn btn-outline-success" (click)="exportNoshowXlsx()"
+                  [disabled]="exporting.noshow || states.noshow !== 'ready'">
+            <i class="bi bi-file-earmark-excel me-1"></i>XLSX
+          </button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportNoshowDocx()"
+                  [disabled]="exporting.noshow || states.noshow !== 'ready'">
+            <i class="bi bi-file-earmark-word me-1"></i>DOCX
+          </button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportNoshowPdf()"
+                  [disabled]="exporting.noshow || states.noshow !== 'ready'">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      @if (states.noshow === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.noshow === 'ready' && noshow) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.noshow.totalReservations' | translate }}</small><div class="h5">{{ noshow.totalReservations }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.noshow.nbNoShow' | translate }}</small><div class="h5">{{ noshow.nbNoShow }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.hebergement.noshow.tauxGlobal' | translate }}</small><div class="h5">{{ noshow.tauxNoShowGlobal | number:'1.2-2' }} %</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.hebergement.noshow.dimension' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.noshow.totalReservations' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.noshow.nbNoShow' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.noshow.taux' | translate }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of noshow.breakdown; track row.dimensionKey) {
+                <tr>
+                  <td>{{ row.dimensionLabel || row.dimensionKey }}</td>
+                  <td class="text-end">{{ row.totalReservations }}</td>
+                  <td class="text-end">{{ row.nbNoShow }}</td>
+                  <td class="text-end">{{ row.taux | number:'1.2-2' }} %</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.noshow === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-HEB-004 Sources ───────────────────────────────────────────── -->
+  @if (activeTab === 'sources') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="src-from">{{ 'reporting.filters.from' | translate }}</label>
+          <input id="src-from" type="date" class="form-control" [(ngModel)]="filters.sources.from" />
+        </div>
+        <div class="col-md-2">
+          <label class="form-label" for="src-to">{{ 'reporting.filters.to' | translate }}</label>
+          <input id="src-to" type="date" class="form-control" [(ngModel)]="filters.sources.to" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('sources')" [disabled]="states.sources === 'loading'">
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}
+          </button>
+          <button type="button" class="btn btn-outline-success" (click)="exportSourcesXlsx()"
+                  [disabled]="exporting.sources || states.sources !== 'ready'">
+            <i class="bi bi-file-earmark-excel me-1"></i>XLSX
+          </button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportSourcesDocx()"
+                  [disabled]="exporting.sources || states.sources !== 'ready'">
+            <i class="bi bi-file-earmark-word me-1"></i>DOCX
+          </button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportSourcesPdf()"
+                  [disabled]="exporting.sources || states.sources !== 'ready'">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      @if (states.sources === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.sources === 'ready' && sources) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.sources.totalReservations' | translate }}</small><div class="h5">{{ sources.totalReservations }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.hebergement.sources.caTotal' | translate }}</small><div class="h5">{{ sources.caTotal | number:'1.2-2' }}</div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>{{ 'reporting.hebergement.sources.canal' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.sources.nbReservations' | translate }}</th>
+                <th class="text-end">{{ 'reporting.hebergement.sources.ca' | translate }}</th>
+                <th class="text-end">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of sources.breakdown; track row.sourceCanal) {
+                <tr>
+                  <td>{{ row.sourceCanal }}</td>
+                  <td class="text-end">{{ row.nbReservations }}</td>
+                  <td class="text-end">{{ row.caMontant | number:'1.2-2' }}</td>
+                  <td class="text-end">{{ row.pourcentage | number:'1.2-2' }} %</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="4" class="text-center text-muted">{{ 'reporting.empty' | translate }}</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else if (states.sources === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+
+  <!-- ── R-HEB-005 KPI Réception ─────────────────────────────────────── -->
+  @if (activeTab === 'kpi') {
+    <div class="report-pane">
+      <div class="row g-2 mb-3 align-items-end">
+        <div class="col-md-2">
+          <label class="form-label" for="kpi-date">{{ 'reporting.filters.date' | translate }}</label>
+          <input id="kpi-date" type="date" class="form-control" [(ngModel)]="filters.kpi.date" />
+        </div>
+        <div class="col-md-auto ms-md-auto d-flex gap-2">
+          <button type="button" class="btn btn-primary" (click)="refresh('kpi')" [disabled]="states.kpi === 'loading'">
+            <i class="bi bi-arrow-clockwise me-1"></i>{{ 'reporting.actions.refresh' | translate }}
+          </button>
+          <button type="button" class="btn btn-outline-success" (click)="exportKpiXlsx()"
+                  [disabled]="exporting.kpi || states.kpi !== 'ready'">
+            <i class="bi bi-file-earmark-excel me-1"></i>XLSX
+          </button>
+          <button type="button" class="btn btn-outline-primary" (click)="exportKpiDocx()"
+                  [disabled]="exporting.kpi || states.kpi !== 'ready'">
+            <i class="bi bi-file-earmark-word me-1"></i>DOCX
+          </button>
+          <button type="button" class="btn btn-outline-danger" (click)="exportKpiPdf()"
+                  [disabled]="exporting.kpi || states.kpi !== 'ready'">
+            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+          </button>
+        </div>
+      </div>
+
+      @if (states.kpi === 'loading') {
+        <div class="text-center py-4"><div class="spinner-border text-primary"></div></div>
+      } @else if (states.kpi === 'ready' && kpi) {
+        <div class="row g-2 mb-3">
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.checkIn' | translate }}</small><div class="h5">{{ kpi.nbCheckIn }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.checkOut' | translate }}</small><div class="h5">{{ kpi.nbCheckOut }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.walkIn' | translate }}</small><div class="h5">{{ kpi.nbWalkIn }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.noShow' | translate }}</small><div class="h5">{{ kpi.nbNoShow }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.actives' | translate }}</small><div class="h5">{{ kpi.nbReservationsActives }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.totalChambres' | translate }}</small><div class="h5">{{ kpi.totalChambres }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3"><small class="text-muted">{{ 'reporting.hebergement.kpi.chambresOccupees' | translate }}</small><div class="h5">{{ kpi.nbChambresOccupees }}</div></div></div>
+          <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.hebergement.kpi.taux' | translate }}</small><div class="h5">{{ kpi.tauxOccupationJour | number:'1.2-2' }} %</div></div></div>
+        </div>
+      } @else if (states.kpi === 'error') {
+        <div class="alert alert-danger">{{ 'reporting.loadError' | translate }}</div>
+      }
+    </div>
+  }
+</section>

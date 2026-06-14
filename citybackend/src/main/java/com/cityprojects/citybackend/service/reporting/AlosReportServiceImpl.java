@@ -9,9 +9,8 @@ import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,12 +38,12 @@ public class AlosReportServiceImpl implements AlosReportService {
     private static final DateTimeFormatter MOIS_FMT = DateTimeFormatter.ofPattern("yyyy-MM");
 
     private final ReservationRepository reservationRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public AlosReportServiceImpl(ReservationRepository reservationRepository,
-                                 XlsxExportService xlsxExportService) {
+                                 DocumentExportService documentExportService) {
         this.reservationRepository = reservationRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -68,13 +67,43 @@ public class AlosReportServiceImpl implements AlosReportService {
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to, AlosGroupBy groupBy) {
+        return documentExportService.toXlsx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to, AlosGroupBy groupBy) {
+        return documentExportService.toDocx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to, AlosGroupBy groupBy) {
+        return documentExportService.toPdf(buildDocument(from, to, groupBy));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to, AlosGroupBy groupBy) {
         AlosDto dto = computeAlos(from, to, groupBy);
-        List<ColumnSpec<AlosBreakdownDto>> columns = List.of(
-                new ColumnSpec<>("Dimension", ColumnType.TEXT, AlosBreakdownDto::dimensionLabel),
-                new ColumnSpec<>("Nb reservations", ColumnType.INTEGER, AlosBreakdownDto::nbReservations),
-                new ColumnSpec<>("Total nuits", ColumnType.INTEGER, AlosBreakdownDto::totalNuits),
-                new ColumnSpec<>("ALOS", ColumnType.DECIMAL, AlosBreakdownDto::alos));
-        return xlsxExportService.export("ALOS", columns, dto.breakdown());
+        String title = "ALOS — Durée moyenne de séjour";
+        String period = String.format("Période : %s → %s · Groupage : %s", from, to, groupBy);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Total réservations", String.valueOf(dto.nbReservations())),
+                new ReportDocument.Kpi("Total nuits", String.valueOf(dto.totalNuits())),
+                new ReportDocument.Kpi("ALOS global", dto.alosGlobal() != null
+                        ? dto.alosGlobal().toPlainString() : "0.00")
+        );
+
+        List<String> headers = List.of("Dimension", "Nb réservations", "Total nuits", "ALOS");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdown().size());
+        for (AlosBreakdownDto b : dto.breakdown()) {
+            rows.add(List.of(
+                    b.dimensionLabel() != null ? b.dimensionLabel() : b.dimensionKey(),
+                    b.nbReservations(),
+                    b.totalNuits(),
+                    b.alos() != null ? b.alos().toPlainString() : "0.00"
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail par " + groupBy, headers, rows));
     }
 
     private List<AlosBreakdownDto> breakdownByType(LocalDate from, LocalDate to) {

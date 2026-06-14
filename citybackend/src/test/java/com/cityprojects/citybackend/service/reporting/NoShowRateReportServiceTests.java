@@ -7,7 +7,7 @@ import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,13 +34,13 @@ class NoShowRateReportServiceTests {
     @Mock
     private ReservationRepository reservationRepository;
     @Mock
-    private XlsxExportService xlsxExportService;
+    private DocumentExportService documentExportService;
 
     private NoShowRateReportServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new NoShowRateReportServiceImpl(reservationRepository, xlsxExportService);
+        service = new NoShowRateReportServiceImpl(reservationRepository, documentExportService);
         TenantContext.set(1L);
     }
 

@@ -8,9 +8,8 @@ import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.entity.hebergement.StatutReservation;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnSpec;
-import com.cityprojects.citybackend.service.reporting.export.XlsxExportService.ColumnType;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,12 +39,12 @@ public class NoShowRateReportServiceImpl implements NoShowRateReportService {
     private static final WeekFields WEEK_FIELDS = WeekFields.of(DayOfWeek.MONDAY, 4);
 
     private final ReservationRepository reservationRepository;
-    private final XlsxExportService xlsxExportService;
+    private final DocumentExportService documentExportService;
 
     public NoShowRateReportServiceImpl(ReservationRepository reservationRepository,
-                                       XlsxExportService xlsxExportService) {
+                                       DocumentExportService documentExportService) {
         this.reservationRepository = reservationRepository;
-        this.xlsxExportService = xlsxExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -67,13 +66,43 @@ public class NoShowRateReportServiceImpl implements NoShowRateReportService {
 
     @Override
     public byte[] exportXlsx(LocalDate from, LocalDate to, NoShowGroupBy groupBy) {
+        return documentExportService.toXlsx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate from, LocalDate to, NoShowGroupBy groupBy) {
+        return documentExportService.toDocx(buildDocument(from, to, groupBy));
+    }
+
+    @Override
+    public byte[] exportPdf(LocalDate from, LocalDate to, NoShowGroupBy groupBy) {
+        return documentExportService.toPdf(buildDocument(from, to, groupBy));
+    }
+
+    private ReportDocument buildDocument(LocalDate from, LocalDate to, NoShowGroupBy groupBy) {
         NoShowRateDto dto = computeNoShowRate(from, to, groupBy);
-        List<ColumnSpec<NoShowBreakdownDto>> columns = List.of(
-                new ColumnSpec<>("Periode", ColumnType.TEXT, NoShowBreakdownDto::dimensionLabel),
-                new ColumnSpec<>("Total reservations", ColumnType.INTEGER, NoShowBreakdownDto::totalReservations),
-                new ColumnSpec<>("Nb no-show", ColumnType.INTEGER, NoShowBreakdownDto::nbNoShow),
-                new ColumnSpec<>("Taux %", ColumnType.DECIMAL, NoShowBreakdownDto::taux));
-        return xlsxExportService.export("No_Show_Rate", columns, dto.breakdown());
+        String title = "Taux de no-show";
+        String period = String.format("Période : %s → %s · Groupage : %s", from, to, groupBy);
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Total réservations", String.valueOf(dto.totalReservations())),
+                new ReportDocument.Kpi("Nb no-show", String.valueOf(dto.nbNoShow())),
+                new ReportDocument.Kpi("Taux global",
+                        (dto.tauxNoShowGlobal() != null ? dto.tauxNoShowGlobal().toPlainString() : "0.00") + " %")
+        );
+
+        List<String> headers = List.of("Période", "Total réservations", "Nb no-show", "Taux (%)");
+        List<List<Object>> rows = new ArrayList<>(dto.breakdown().size());
+        for (NoShowBreakdownDto b : dto.breakdown()) {
+            rows.add(List.of(
+                    b.dimensionLabel() != null ? b.dimensionLabel() : b.dimensionKey(),
+                    b.totalReservations(),
+                    b.nbNoShow(),
+                    b.taux() != null ? b.taux().toPlainString() : "0.00"
+            ));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Détail par " + groupBy, headers, rows));
     }
 
     private List<NoShowBreakdownDto> buildBreakdown(List<Reservation> reservations, NoShowGroupBy groupBy) {

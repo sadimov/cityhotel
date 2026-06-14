@@ -91,6 +91,26 @@ public class ReportController {
         return attachment("occupation.pdf", MediaType.APPLICATION_PDF, pdf);
     }
 
+    @GetMapping(value = "/occupation/export.xlsx")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    public ResponseEntity<byte[]> exportOccupationXlsx(
+            @RequestParam(name = "periode", defaultValue = "JOUR") ReportPeriode periode,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] xlsx = occupationService.exportXlsx(periode, from, to, LocalDate.now());
+        return attachment("occupation.xlsx", xlsxMediaType(), xlsx);
+    }
+
+    @GetMapping(value = "/occupation/export.docx")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','GERANT','RECEPTION','RESREC','NIGHTAUDIT')")
+    public ResponseEntity<byte[]> exportOccupationDocx(
+            @RequestParam(name = "periode", defaultValue = "JOUR") ReportPeriode periode,
+            @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
+        byte[] docx = occupationService.exportDocx(periode, from, to, LocalDate.now());
+        return attachment("occupation.docx", docxMediaType(), docx);
+    }
+
     // ------------------------------------------------------------------
     // R-FIN-001 CA recap
     // ------------------------------------------------------------------
@@ -176,6 +196,10 @@ public class ReportController {
     // ------------------------------------------------------------------
     private static MediaType xlsxMediaType() {
         return MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    }
+
+    private static MediaType docxMediaType() {
+        return MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     }
 
     private static ResponseEntity<byte[]> attachment(String filename, MediaType type, byte[] body) {

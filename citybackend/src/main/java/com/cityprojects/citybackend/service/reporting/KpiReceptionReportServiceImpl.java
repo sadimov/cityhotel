@@ -1,14 +1,14 @@
 package com.cityprojects.citybackend.service.reporting;
 
 import com.cityprojects.citybackend.common.tenant.RequireTenant;
-import com.cityprojects.citybackend.common.tenant.TenantContext;
 import com.cityprojects.citybackend.dto.reporting.KpiReceptionDto;
 import com.cityprojects.citybackend.entity.hebergement.Reservation;
 import com.cityprojects.citybackend.exception.BusinessException;
 import com.cityprojects.citybackend.repository.hebergement.ChambreRepository;
 import com.cityprojects.citybackend.repository.hebergement.NuiteeRepository;
 import com.cityprojects.citybackend.repository.hebergement.ReservationRepository;
-import com.cityprojects.citybackend.service.reporting.export.PdfExportService;
+import com.cityprojects.citybackend.service.reporting.export.DocumentExportService;
+import com.cityprojects.citybackend.service.reporting.export.ReportDocument;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,9 +17,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Implementation R-HEB-005 — KPIs reception jour (Tour 41 P1).
@@ -34,16 +32,16 @@ public class KpiReceptionReportServiceImpl implements KpiReceptionReportService 
     private final ReservationRepository reservationRepository;
     private final ChambreRepository chambreRepository;
     private final NuiteeRepository nuiteeRepository;
-    private final PdfExportService pdfExportService;
+    private final DocumentExportService documentExportService;
 
     public KpiReceptionReportServiceImpl(ReservationRepository reservationRepository,
                                          ChambreRepository chambreRepository,
                                          NuiteeRepository nuiteeRepository,
-                                         PdfExportService pdfExportService) {
+                                         DocumentExportService documentExportService) {
         this.reservationRepository = reservationRepository;
         this.chambreRepository = chambreRepository;
         this.nuiteeRepository = nuiteeRepository;
-        this.pdfExportService = pdfExportService;
+        this.documentExportService = documentExportService;
     }
 
     @Override
@@ -77,21 +75,50 @@ public class KpiReceptionReportServiceImpl implements KpiReceptionReportService 
     }
 
     @Override
+    public byte[] exportXlsx(LocalDate date) {
+        return documentExportService.toXlsx(buildDocument(date));
+    }
+
+    @Override
+    public byte[] exportDocx(LocalDate date) {
+        return documentExportService.toDocx(buildDocument(date));
+    }
+
+    @Override
     public byte[] exportPdf(LocalDate date) {
+        return documentExportService.toPdf(buildDocument(date));
+    }
+
+    /**
+     * Rapport KPI sans détail tabulaire — uniquement des indicateurs scalaires.
+     * Le tableau récap regroupe tous les KPIs en 2 colonnes (label/valeur) avec
+     * bordures pour rester cohérent avec les autres rapports.
+     */
+    private ReportDocument buildDocument(LocalDate date) {
         KpiReceptionDto dto = computeKpis(date);
-        Map<String, Object> params = new HashMap<>();
-        params.put("REPORT_TITLE", "KPIs reception");
-        params.put("HOTEL_ID", TenantContext.get());
-        params.put("DATE", dto.date());
-        params.put("NB_CHECK_IN", dto.nbCheckIn());
-        params.put("NB_CHECK_OUT", dto.nbCheckOut());
-        params.put("NB_WALK_IN", dto.nbWalkIn());
-        params.put("NB_ACTIVES", dto.nbReservationsActives());
-        params.put("NB_NO_SHOW", dto.nbNoShow());
-        params.put("TOTAL_CHAMBRES", dto.totalChambres());
-        params.put("NB_OCCUPEES", dto.nbChambresOccupees());
-        params.put("TAUX_OCCUPATION", dto.tauxOccupationJour());
-        return pdfExportService.exportToPdf("kpi-reception", params, List.of(dto));
+        String title = "KPIs Réception";
+        String period = String.format("Date : %s", dto.date());
+
+        List<ReportDocument.Kpi> kpis = List.of(
+                new ReportDocument.Kpi("Check-in", String.valueOf(dto.nbCheckIn())),
+                new ReportDocument.Kpi("Check-out", String.valueOf(dto.nbCheckOut())),
+                new ReportDocument.Kpi("Walk-in", String.valueOf(dto.nbWalkIn())),
+                new ReportDocument.Kpi("No-show", String.valueOf(dto.nbNoShow())),
+                new ReportDocument.Kpi("Réservations actives", String.valueOf(dto.nbReservationsActives())),
+                new ReportDocument.Kpi("Chambres actives", String.valueOf(dto.totalChambres())),
+                new ReportDocument.Kpi("Chambres occupées", String.valueOf(dto.nbChambresOccupees())),
+                new ReportDocument.Kpi("Taux d'occupation",
+                        (dto.tauxOccupationJour() != null ? dto.tauxOccupationJour().toPlainString() : "0.00") + " %")
+        );
+
+        // Table récap : reprend les KPIs en format colonne pour cohérence visuelle
+        List<String> headers = List.of("Indicateur", "Valeur");
+        List<List<Object>> rows = new java.util.ArrayList<>(kpis.size());
+        for (ReportDocument.Kpi k : kpis) {
+            rows.add(List.of(k.label(), k.value()));
+        }
+        return new ReportDocument(title, period, kpis,
+                new ReportDocument.Table("Récapitulatif", headers, rows));
     }
 
     private static void validate(LocalDate date) {

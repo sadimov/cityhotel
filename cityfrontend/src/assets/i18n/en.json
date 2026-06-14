@@ -2869,21 +2869,74 @@
     }
   },
   "reporting": {
-    "subtitle": "Rapports disponibles via les endpoints REST. Cliquez sur un rapport pour ouvrir l'export brut.",
-    "empty": "Aucun rapport disponible pour ce module.",
-    "openEndpoint": "Ouvrir le rapport",
+    "subtitle": "Download reports as PDF or Excel from each module.",
+    "empty": "No data available.",
+    "openEndpoint": "Open report",
+    "loadError": "Report loading error.",
+    "exportError": "Export error.",
+    "filters": {
+      "periode": "Period",
+      "from": "From",
+      "to": "To",
+      "date": "Date",
+      "groupBy": "Group by"
+    },
+    "actions": {
+      "refresh": "Refresh"
+    },
     "hebergement": {
-      "title": "Rapports Hébergement",
-      "r001": "Taux d'occupation quotidien",
-      "r002": "RevPAR (revenu par chambre disponible)",
-      "r003": "ADR (prix moyen par nuitée)",
-      "r004": "Sources des réservations",
-      "r005": "ALOS (durée moyenne de séjour)",
-      "r001Desc": "Occupation quotidienne des chambres sur la période sélectionnée.",
-      "r002Desc": "Réservations confirmées non honorées par les clients.",
-      "r003Desc": "Indicateurs clés de performance pour l'équipe réception.",
-      "r004Desc": "Répartition des réservations par canal de distribution.",
-      "r005Desc": "Average Length of Stay calculé sur les nuitées consommées."
+      "title": "Lodging Reports",
+      "pageTitle": "Reporting — Lodging",
+      "r001": "Occupancy rate",
+      "r002": "No-show rate",
+      "r003": "Reception KPIs",
+      "r004": "Booking sources",
+      "r005": "ALOS — Average length of stay",
+      "r001Desc": "Daily room occupancy over the selected period.",
+      "r002Desc": "Confirmed reservations not honored by guests.",
+      "r003Desc": "Key performance indicators for the reception team.",
+      "r004Desc": "Reservations breakdown by distribution channel.",
+      "r005Desc": "Average Length of Stay over consumed nights.",
+      "occupation": {
+        "totalChambres": "Active rooms",
+        "nuiteesDispo": "Available nights",
+        "nuiteesOccupees": "Occupied nights",
+        "tauxGlobal": "Global rate",
+        "taux": "Rate",
+        "typeCode": "Code",
+        "typeNom": "Type",
+        "nbChambres": "Rooms"
+      },
+      "alos": {
+        "nbReservations": "Reservations",
+        "totalNuits": "Total nights",
+        "global": "Global ALOS",
+        "dimension": "Dimension"
+      },
+      "noshow": {
+        "totalReservations": "Total reservations",
+        "nbNoShow": "No-show",
+        "tauxGlobal": "Global rate",
+        "taux": "Rate",
+        "dimension": "Dimension"
+      },
+      "sources": {
+        "totalReservations": "Total reservations",
+        "caTotal": "Total revenue",
+        "canal": "Channel",
+        "nbReservations": "Reservations",
+        "ca": "Revenue"
+      },
+      "kpi": {
+        "checkIn": "Check-in",
+        "checkOut": "Check-out",
+        "walkIn": "Walk-in",
+        "noShow": "No-show",
+        "actives": "Active reservations",
+        "totalChambres": "Active rooms",
+        "chambresOccupees": "Occupied rooms",
+        "taux": "Occupancy rate"
+      }
     },
     "finance": {
       "title": "Rapports Finance",
