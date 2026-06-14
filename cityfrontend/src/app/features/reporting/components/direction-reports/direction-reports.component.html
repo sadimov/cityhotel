@@ -22,9 +22,9 @@
     } @else if (state === 'ready' && dashboard) {
       <!-- ── KPIs principaux ─────────────────────────────────────── -->
       <div class="row g-2 mb-4">
-        <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.direction.tauxOccupation' | translate }}</small><div class="h4">{{ dashboard.occupation?.tauxOccupationGlobal | number:'1.2-2' }} %</div></div></div>
-        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caJour' | translate }}</small><div class="h4">{{ dashboard.caJour?.caEmisTtc | number:'1.2-2' }}</div></div></div>
-        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caSemaine' | translate }}</small><div class="h4">{{ dashboard.caSemaine?.caEmisTtc | number:'1.2-2' }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3 bg-info-subtle"><small class="text-muted">{{ 'reporting.direction.tauxOccupation' | translate }}</small><div class="h4">{{ dashboard.occupation.tauxOccupationGlobal | number:'1.2-2' }} %</div></div></div>
+        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caJour' | translate }}</small><div class="h4">{{ dashboard.caJour.caEmisTtc | number:'1.2-2' }}</div></div></div>
+        <div class="col-md-3"><div class="card p-3 bg-success-subtle"><small class="text-muted">{{ 'reporting.direction.caSemaine' | translate }}</small><div class="h4">{{ dashboard.caSemaine.caEmisTtc | number:'1.2-2' }}</div></div></div>
         <div class="col-md-3"><div class="card p-3" [class.bg-danger-subtle]="dashboard.nbAlertesStock > 0"><small class="text-muted">{{ 'reporting.direction.alertesStock' | translate }}</small><div class="h4">{{ dashboard.nbAlertesStock }}</div></div></div>
       </div>
 
@@ -35,7 +35,7 @@
       </div>
 
       <!-- ── Détails occupation par type de chambre ──────────────── -->
-      @if (dashboard.occupation?.breakdownParType?.length) {
+      @if (dashboard.occupation.breakdownParType.length) {
         <h3 class="h6 mb-2">{{ 'reporting.direction.occupationParType' | translate }}</h3>
         <div class="table-responsive mb-4">
           <table class="table table-sm align-middle">
